@@ -8,7 +8,7 @@ public struct ArtworkTransition {
   public let id: String
   public let namespace: Namespace.ID
 
-  public init(id: String, namespace: Namespace.ID) {
+  nonisolated public init(id: String, namespace: Namespace.ID) {
     self.id = id
     self.namespace = namespace
   }
