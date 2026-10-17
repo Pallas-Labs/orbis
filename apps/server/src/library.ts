@@ -8,6 +8,12 @@ import type {
 import { and, asc, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { Context, Effect, Layer, Schema } from "effect";
 
+import {
+  appleMusicCues,
+  appleMusicDownloadRefused,
+  appleMusicSaveRefused,
+  appleMusicSetColumns,
+} from "./apple-music.js";
 import { releaseAudio } from "./audio-release.js";
 import {
   downloadJobs,
@@ -17,6 +23,7 @@ import {
   playbackPositions,
   playlistSets,
   playlists,
+  setCues,
   sets,
 } from "./db/schema.js";
 import { Database } from "./db/service.js";
@@ -61,6 +68,7 @@ const JsonStringArray = Schema.fromJsonString(
 );
 
 const TEMPORARY_TITLES: Record<SetSource, string> = {
+  "apple-music": "Apple Music mix",
   soundcloud: "SoundCloud track",
   youtube: "YouTube video",
 };
@@ -353,6 +361,11 @@ export class Library extends Context.Service<
         execute(
           Effect.gen(function* saveSetEffect() {
             const { source, url } = yield* normalizeUrl(input.url);
+            const album =
+              source === "apple-music" ? input.appleMusicAlbum : undefined;
+            if (source === "apple-music" && !album) {
+              return yield* Effect.fail(appleMusicSaveRefused());
+            }
             const title = input.title?.trim() ?? "";
             const tags = normalizeTags(input.tags);
             const savedRow = yield* db.transaction((tx) =>
@@ -374,6 +387,7 @@ export class Library extends Context.Service<
                       title: TEMPORARY_TITLES[source],
                       titleEditedByUser: false,
                       url,
+                      ...(album && appleMusicSetColumns(album)),
                     })
                     .onConflictDoNothing()
                     .returning();
@@ -387,6 +401,19 @@ export class Library extends Context.Service<
                 }
                 if (!row) {
                   return yield* Effect.fail(databaseError());
+                }
+                // A new Set, or one whose Cues went when its last saver removed it.
+                if (album && row.tracklistState !== "ready") {
+                  yield* tx.delete(setCues).where(eq(setCues.setId, row.id));
+                  yield* tx.insert(setCues).values(appleMusicCues(row.id, album));
+                  [row] = yield* tx
+                    .update(sets)
+                    .set({ tracklistState: "ready" })
+                    .where(eq(sets.id, row.id))
+                    .returning();
+                  if (!row) {
+                    return yield* Effect.fail(databaseError());
+                  }
                 }
                 if (personId === "host" && row.hostRemoved) {
                   yield* tx
@@ -739,6 +766,9 @@ export class Library extends Context.Service<
                   .where(eq(sets.id, id));
                 if (!current) {
                   return yield* Effect.fail(setNotFound());
+                }
+                if (current.source === "apple-music") {
+                  return yield* Effect.fail(appleMusicDownloadRefused());
                 }
                 if (
                   !["none", "failed", "canceled"].includes(

@@ -49,7 +49,7 @@ export const SavedSetSchema = Schema.Struct({
   releasedAt: Schema.NullOr(Schema.String),
   retainedAudioBytes: Schema.NullOr(Schema.Number),
   retainedAudioFormat: Schema.NullOr(Schema.String),
-  source: Schema.Literals(["youtube", "soundcloud"]),
+  source: Schema.Literals(["youtube", "soundcloud", "apple-music"]),
   tags: Schema.Array(Schema.String).pipe(Schema.mutable),
   title: Schema.String,
   titleEditedByUser: Schema.Boolean,
@@ -78,7 +78,9 @@ export const LibraryFiltersSchema = Schema.Struct({
   creatorId: Schema.optionalKey(Schema.String),
   playlistId: Schema.optionalKey(Schema.String),
   q: Schema.optionalKey(Schema.String),
-  source: Schema.optionalKey(Schema.Literals(["youtube", "soundcloud"])),
+  source: Schema.optionalKey(
+    Schema.Literals(["youtube", "soundcloud", "apple-music"])
+  ),
   tags: Schema.optionalKey(Schema.Array(Schema.String).pipe(Schema.mutable)),
 });
 
@@ -95,7 +97,40 @@ const Tags = Schema.Array(Schema.String.check(Schema.isMaxLength(40))).check(
   Schema.isMaxLength(20)
 );
 const Title = Schema.String.check(Schema.isMaxLength(200));
+const ArtworkAddress = Schema.NullOr(
+  Schema.String.check(Schema.isMaxLength(2048))
+);
+const SongLength = Schema.Number.check(
+  Schema.isFinite(),
+  Schema.isGreaterThan(0),
+  Schema.isLessThanOrEqualTo(86_400)
+);
+/**
+ * What the Apple app read from MusicKit about an Apple Music album. The service holds no
+ * Apple Music key, so an Apple Music save carries the album's details and its songs, which
+ * become the Set's Tracklist (ADR 0021). Other sources ignore it.
+ */
+export const AppleMusicAlbumPayload = Schema.Struct({
+  artworkLargeUrl: ArtworkAddress,
+  artworkUrl: ArtworkAddress,
+  creator: Schema.NullOr(Schema.String.check(Schema.isMaxLength(200))),
+  releasedAt: Schema.NullOr(Schema.String.check(Schema.isMaxLength(40))),
+  songs: Schema.Array(
+    Schema.Struct({
+      appleMusicId: Schema.String.check(
+        Schema.isMinLength(1),
+        Schema.isMaxLength(40)
+      ),
+      artist: Schema.String.check(Schema.isMaxLength(200)),
+      artworkUrl: ArtworkAddress,
+      durationSeconds: SongLength,
+      title: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(200)),
+    })
+  ).check(Schema.isMinLength(1), Schema.isMaxLength(500)),
+  title: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(200)),
+});
 export const SaveSetPayload = Schema.Struct({
+  appleMusicAlbum: Schema.optionalKey(AppleMusicAlbumPayload),
   tags: Schema.optionalKey(Tags),
   title: Schema.optionalKey(Title),
   url: Schema.String.check(Schema.isMaxLength(2048)),
@@ -416,6 +451,7 @@ export const SetsApi = HttpApi.make("orbis").add(
       }),
       HttpApiEndpoint.post("requestDownload", "/sets/:id/audio/download", {
         error: [
+          BadRequest,
           NotFound,
           Conflict,
           TooManyRequests,

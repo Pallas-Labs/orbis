@@ -41,6 +41,21 @@ export const ACCEPTED_SOURCE_URL_CASES: readonly AcceptedSourceUrlCase[] = [
     source: "soundcloud",
     url: "https://soundcloud.com/artist/track",
   },
+  {
+    input: "https://music.apple.com/us/album/example-dj-mix/1700000000",
+    source: "apple-music",
+    url: "https://music.apple.com/album/1700000000",
+  },
+  {
+    input: "https://music.apple.com/gb/album/example-dj-mix/1700000000?i=1700000002",
+    source: "apple-music",
+    url: "https://music.apple.com/album/1700000000",
+  },
+  {
+    input: "https://music.apple.com/album/1700000000/",
+    source: "apple-music",
+    url: "https://music.apple.com/album/1700000000",
+  },
 ];
 
 export const REJECTED_SOURCE_URLS: readonly string[] = [
@@ -58,4 +73,10 @@ export const REJECTED_SOURCE_URLS: readonly string[] = [
   "https://soundcloud.com/artist/albums",
   "https://soundcloud.com/artist/likes",
   "https://soundcloud.com/artist/reposts",
+  "https://music.apple.com/us/playlist/example/pl.0123456789abcdef",
+  "https://music.apple.com/us/artist/example-dj/123456",
+  "https://music.apple.com/us/song/example-song/1700000002",
+  "https://music.apple.com/us/album/example-dj-mix/not-an-id",
+  "https://music.apple.com/us/album/example-dj-mix/1700000000/extra",
+  "https://music.apple.com.evil.test/us/album/example/1700000000",
 ];

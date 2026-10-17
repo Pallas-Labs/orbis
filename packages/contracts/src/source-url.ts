@@ -5,7 +5,7 @@ import type { SavedSet } from "./index.js";
  * both supported sources, so a client never has to guess what to offer instead.
  */
 export const SOURCE_URL_MESSAGE =
-  "Use a direct YouTube video or SoundCloud track URL.";
+  "Use a direct YouTube video, SoundCloud track, or Apple Music album URL.";
 
 /**
  * A value that is not a supported Source Link. It stays a plain Error so a client
@@ -36,6 +36,14 @@ const videoIdFrom = (url: URL): string | null => {
 };
 
 /**
+ * The album identifier in an Apple Music album link, with or without a storefront and a slug.
+ * A song link inside an album (`?i=`) names the album too: the album is what Orbis saves.
+ */
+const appleMusicAlbumId = (url: URL): string | null =>
+  /^\/(?:[a-z]{2}\/)?album\/(?:[^/]+\/)?(?<id>\d{1,20})\/?$/u.exec(url.pathname)
+    ?.groups?.id ?? null;
+
+/**
  * The video identifier in any YouTube URL form, or null. YouTube reading shares this rule so
  * the reader and the validator cannot disagree about what names a video.
  */
@@ -51,7 +59,8 @@ export const youTubeVideoId = (value: string): string | null => {
 };
 
 /**
- * The canonical Source Link and source for any supported YouTube or SoundCloud URL form.
+ * The canonical Source Link and source for any supported YouTube, SoundCloud, or Apple Music
+ * URL form.
  * Every client shares this rule, so a saved link is the same Set whichever client sent it.
  */
 export const normalizeSourceUrl = (
@@ -104,6 +113,13 @@ export const normalizeSourceUrl = (
       source: "soundcloud",
       url: `https://soundcloud.com/${match.artist}/${match.track}`,
     };
+  }
+  if (host === "music.apple.com") {
+    const id = appleMusicAlbumId(url);
+    if (!id) {
+      throw invalid();
+    }
+    return { source: "apple-music", url: `https://music.apple.com/album/${id}` };
   }
   throw invalid();
 };

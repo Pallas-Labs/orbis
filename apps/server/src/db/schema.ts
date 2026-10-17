@@ -51,7 +51,9 @@ export const sets = sqliteTable("sets", {
   releasedAt: text("released_at"),
   retainedAudioBytes: integer("retained_audio_bytes"),
   retainedAudioFormat: text("retained_audio_format"),
-  source: text("source", { enum: ["youtube", "soundcloud"] }).notNull(),
+  source: text("source", {
+    enum: ["youtube", "soundcloud", "apple-music"],
+  }).notNull(),
   /** JSON array of `{ startSeconds, title }`; a DJ set's chapters are often its tracklist. */
   sourceChapters: text("source_chapters"),
   /** JSON array of the tags the source's own uploader chose. Not the person's Tags. */

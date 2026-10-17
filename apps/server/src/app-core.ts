@@ -48,6 +48,8 @@ import {
 } from "effect/unstable/http";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
+import { appleMusicDownloadRefused } from "./apple-music.js";
+
 import {
   addKey,
   addPerson,
@@ -225,7 +227,9 @@ const Filters = Schema.Struct({
   creatorId: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(100))),
   playlistId: Schema.String.check(Schema.isMaxLength(100)),
   q: Schema.String.check(Schema.isMaxLength(200)),
-  source: Schema.optionalKey(Schema.Literals(["youtube", "soundcloud"])),
+  source: Schema.optionalKey(
+    Schema.Literals(["youtube", "soundcloud", "apple-music"])
+  ),
   tags: Tags,
 });
 const logDetailsFailure = (set: SavedSet, reason: string) =>
@@ -519,6 +523,9 @@ export const createPortableApp = (options: {
             autoDownloadResult: (typeof SaveSetResultSchema.Type)["autoDownloadResult"],
             set?: SavedSet
           ) => ({ ...(set ?? saved), autoDownloadResult });
+          if (saved.source === "apple-music") {
+            return result("unavailable");
+          }
           if (person.autoDownload === false) {
             return result("disabled");
           }
@@ -552,7 +559,10 @@ export const createPortableApp = (options: {
             Effect.match(
               Effect.gen(function* requestPersonalDownload() {
                 const personal = yield* Library;
-                yield* personal.find(params.id);
+                const current = yield* personal.find(params.id);
+                if (current.source === "apple-music") {
+                  return yield* Effect.fail(appleMusicDownloadRefused());
+                }
                 const result = yield* audio.requestDownload(params.id);
                 return { ...result, set: yield* personal.find(params.id) };
               }).pipe(
@@ -649,6 +659,10 @@ export const createPortableApp = (options: {
                 yield* Effect.logInfo("set saved").pipe(
                   Effect.annotateLogs({ set: saved.id, source: saved.source })
                 );
+                // The app sent the album and its songs; there is nothing to read or ask.
+                if (saved.source === "apple-music") {
+                  return yield* autoDownloadSaved(saved);
+                }
                 if (
                   saved.titleEditedByUser ||
                   saved.metadataState === "enriched"
@@ -669,6 +683,10 @@ export const createPortableApp = (options: {
               Effect.gen(function* retrySetMetadata() {
                 const personal = yield* Library;
                 const set = yield* personal.find(params.id);
+                // Only the app can read an Apple Music album, so a retry keeps what it sent.
+                if (set.source === "apple-music") {
+                  return set;
+                }
                 return yield* enrichSavedSet(set, personal);
               }).pipe(Effect.tap(() => announce("set", readsSet(params.id))))
             )
@@ -688,7 +706,12 @@ export const createPortableApp = (options: {
             withFailureResponse(
               Effect.gen(function* retrySetTracklist() {
                 const personal = yield* Library;
-                yield* personal.find(params.id);
+                const saved = yield* personal.find(params.id);
+                if (saved.source === "apple-music") {
+                  return yield* readTracklist(params.id).pipe(
+                    Effect.provideService(Database, db)
+                  );
+                }
                 const [set] = yield* db
                   .select({ detailsState: setRows.detailsState })
                   .from(setRows)
