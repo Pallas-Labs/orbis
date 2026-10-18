@@ -253,10 +253,11 @@ private struct ListensResponse: Decodable {
   let listens: [Listen]
 }
 
-/// A frame of `/events`. Only Presence is read here; the queue and heartbeats are skipped.
+/// A frame of `/events`. Only Presence and playlist imports are read here; the rest are skipped.
 private struct EventFrame: Decodable {
   let kind: String
   let presence: [Presence]?
+  let playlistImport: PlaylistImportJob?
 }
 
 /// Talks to the Orbis service. Every request carries the device token, and the same
@@ -337,8 +338,33 @@ struct OrbisClient: Sendable {
   /// Reads `/events` until the stream closes, handing every Presence frame to `receive`. The
   /// service sends one as the stream opens and another whenever someone starts or stops.
   func watchPresence(_ receive: @escaping @MainActor @Sendable ([Presence]) -> Void) async throws {
+    try await readEvents(changes: false) { frame in
+      guard frame.kind == "presence", let presence = frame.presence else { return }
+      await receive(presence)
+    }
+  }
+
+  /// Reads `/events?changes=1` until the stream closes, handing every playlist import frame to
+  /// `receive`. `opened` runs once the stream is open, before its first frame, so the caller can
+  /// catch up on what it missed while it was not listening.
+  func watchPlaylistImports(
+    opened: @escaping @MainActor @Sendable () async -> Void,
+    _ receive: @escaping @MainActor @Sendable (PlaylistImportJob) async -> Void
+  ) async throws {
+    try await readEvents(changes: true, opened: opened) { frame in
+      guard frame.kind == "playlistImport", let job = frame.playlistImport else { return }
+      await receive(job)
+    }
+  }
+
+  private func readEvents(
+    changes: Bool,
+    opened: (@MainActor @Sendable () async -> Void)? = nil,
+    _ handle: (EventFrame) async -> Void
+  ) async throws {
     let root = address.absoluteString
-    guard let url = URL(string: root.hasSuffix("/") ? root + "events" : root + "/events") else {
+    let path = changes ? "events?changes=1" : "events"
+    guard let url = URL(string: root.hasSuffix("/") ? root + path : root + "/" + path) else {
       throw OrbisError.malformed
     }
     var request = URLRequest(url: url)
@@ -360,6 +386,7 @@ struct OrbisClient: Sendable {
     guard (200..<300).contains(http.statusCode) else {
       throw OrbisError.server(status: http.statusCode, message: "")
     }
+    await opened?()
     for try await line in bytes.lines {
       guard line.hasPrefix("data:") else { continue }
       let json = Data(line.dropFirst(5).trimmingCharacters(in: .whitespaces).utf8)
@@ -371,8 +398,7 @@ struct OrbisClient: Sendable {
         Self.logUnreadable(EventFrame.self, error)
         continue
       }
-      guard frame.kind == "presence", let presence = frame.presence else { continue }
-      await receive(presence)
+      await handle(frame)
     }
   }
 
@@ -490,19 +516,17 @@ struct OrbisClient: Sendable {
     return try Self.decode(Playlist.self, from: response)
   }
 
-  /// The service saves every track before it answers, so a long playlist takes more than a minute.
-  static let importTimeout: TimeInterval = 120
-
-  func importPlaylist(url: String) async throws -> ImportedPlaylist {
+  /// Starts importing a playlist. The service answers once the import is under way, and asking
+  /// again while it runs answers the same import.
+  func importPlaylist(url: String) async throws -> PlaylistImportJob {
     let body = try Self.encoder.encode(ImportPlaylistRequest(url: url))
-    // The shared session ends any request after a minute in all, which a long import outlasts.
-    let configuration = session.configuration
-    configuration.timeoutIntervalForResource = Self.importTimeout
-    let importSession = URLSession(configuration: configuration)
-    defer { importSession.finishTasksAndInvalidate() }
-    let response = try await send(
-      path: "playlists/import", method: "POST", body: body, timeout: Self.importTimeout, session: importSession)
-    return try Self.decode(ImportedPlaylist.self, from: response)
+    let response = try await send(path: "playlists/import", method: "POST", body: body)
+    return try Self.decode(PlaylistImportJob.self, from: response)
+  }
+
+  func playlistImport(_ id: String) async throws -> PlaylistImportJob {
+    let response = try await send(path: "playlists/imports/\(id)", method: "GET", body: nil)
+    return try Self.decode(PlaylistImportJob.self, from: response)
   }
 
   /// States the ordered Sets a Playlist holds. Removing a Set here leaves it in the Library.
@@ -664,9 +688,7 @@ struct OrbisClient: Sendable {
     "\(method) \(url.host() ?? "") \(url.path())"
   }
 
-  private func send(
-    path: String, method: String, body: Data?, timeout: TimeInterval = 15, session: URLSession? = nil
-  ) async throws -> Data {
+  private func send(path: String, method: String, body: Data?) async throws -> Data {
     // Resolving against the address would drop its last path segment, so an address such as
     // the Funnel address with `/api` would lose `/api`. Join the strings instead.
     let root = address.absoluteString
@@ -680,7 +702,7 @@ struct OrbisClient: Sendable {
       request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
     request.setValue("application/json", forHTTPHeaderField: "Accept")
-    request.timeoutInterval = timeout
+    request.timeoutInterval = 15
     if let body {
       request.httpBody = body
       request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -689,7 +711,7 @@ struct OrbisClient: Sendable {
     let data: Data
     let response: URLResponse
     do {
-      (data, response) = try await (session ?? self.session).data(for: request)
+      (data, response) = try await session.data(for: request)
     } catch let error as URLError where error.code == .cancelled {
       throw OrbisError.cancelled
     } catch {

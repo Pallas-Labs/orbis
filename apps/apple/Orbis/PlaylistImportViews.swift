@@ -71,7 +71,6 @@ struct PlaylistImportSheet: View {
         } else {
           ToolbarItem(placement: .cancellationAction) {
             Button("Close", systemImage: "xmark", role: .close) { dismiss() }
-              .disabled(model.playlistImport.isImporting)
           }
         }
       }
@@ -81,7 +80,7 @@ struct PlaylistImportSheet: View {
   }
 }
 
-/// The working row while an import runs, and the retry after one fails. The failure's sentence is
+/// The progress row while an import runs, and the retry after one fails. The failure's sentence is
 /// the link field's, so this adds only what to do next.
 struct PlaylistImportStatus: View {
   @Bindable var model: AppModel
@@ -90,18 +89,23 @@ struct PlaylistImportStatus: View {
     switch model.playlistImport {
     case .importing:
       Section {
-        WorkingRow(title: "Importing the playlist…", detail: "Long playlists take a minute.")
-          .accessibilityIdentifier("import-working")
+        WorkingRow(
+          title: model.playlistImport.progress ?? "Importing…",
+          detail: "You can close this. The import keeps going."
+        )
+        .accessibilityIdentifier("import-working")
       }
-    case .failed(_, let error):
+    case .failed(_, let failure):
       Section {
         Button("Try Again", systemImage: "arrow.clockwise") {
           Task { await model.retryPlaylistImport() }
         }
         .foregroundStyle(Color.orbis.tint)
         .accessibilityIdentifier("import-retry")
-        CopyFailureButton(
-          report: FailureReport(failure: error.failure(at: model.serviceAddress), context: "importing a playlist"))
+        if case .request(let error) = failure {
+          CopyFailureButton(
+            report: FailureReport(failure: error.failure(at: model.serviceAddress), context: "importing a playlist"))
+        }
       }
     case .idle, .imported:
       EmptyView()
@@ -143,7 +147,7 @@ struct PlaylistImportSummary: View {
         }
       }
       .accessibilityElement(children: .ignore)
-      .accessibilityLabel("\(imported.playlist.name), \(Self.addedLine(imported.added))")
+      .accessibilityLabel("\(imported.playlist.name), \(Self.addedLine(imported.summary.added))")
       .accessibilityIdentifier("import-summary")
       .onAppear(perform: playIn)
     }
@@ -164,26 +168,26 @@ struct PlaylistImportSummary: View {
 
   private var notes: [Note] {
     var notes: [Note] = []
-    if imported.downloading > 0 {
+    if imported.summary.downloading > 0 {
       notes.append(
         Note(
           id: "downloading", symbol: "arrow.down.circle",
-          text: "\(imported.downloading) downloading or already downloaded"))
+          text: "\(imported.summary.downloading) downloading or already downloaded"))
     }
-    if imported.waiting > 0 {
+    if imported.summary.waiting > 0 {
       notes.append(
-        Note(id: "waiting", symbol: "clock", text: "\(imported.waiting) waiting for the download queue"))
+        Note(id: "waiting", symbol: "clock", text: "\(imported.summary.waiting) waiting for the download queue"))
     }
-    if imported.unavailable > 0 {
-      let them = imported.unavailable == 1 ? "it" : "them"
+    if imported.summary.unavailable > 0 {
+      let them = imported.summary.unavailable == 1 ? "it" : "them"
       notes.append(
         Note(
           id: "unavailable", symbol: "eye.slash",
-          text: "\(imported.unavailable) skipped because YouTube no longer serves \(them)"))
+          text: "\(imported.summary.unavailable) skipped because YouTube no longer serves \(them)"))
     }
-    if imported.overLimit > 0 {
+    if imported.summary.overLimit > 0 {
       notes.append(
-        Note(id: "over-limit", symbol: "number", text: "\(imported.overLimit) left out past the 500-set limit"))
+        Note(id: "over-limit", symbol: "number", text: "\(imported.summary.overLimit) left out past the 500-set limit"))
     }
     return notes
   }
@@ -206,7 +210,7 @@ struct PlaylistImportSummary: View {
 
   /// A playlist shorter than four still fills the square, with placeholders in its own tones.
   private func tile(_ index: Int) -> some View {
-    let set = imported.sets.indices.contains(index) ? imported.sets[index].set : nil
+    let set = imported.firstSets.indices.contains(index) ? imported.firstSets[index] : nil
     return Artwork(
       url: set.flatMap { SetPresentation.row($0).artwork },
       seed: set?.title ?? "\(imported.playlist.name) \(index)",
@@ -225,11 +229,11 @@ struct PlaylistImportSummary: View {
     guard !tilesIn else { return }
     tilesIn = true
     guard !reduceMotion else {
-      shownCount = imported.added
+      shownCount = imported.summary.added
       return
     }
     withAnimation(ImportStoryboard.settle?.delay(ImportStoryboard.countRoll)) {
-      shownCount = imported.added
+      shownCount = imported.summary.added
     }
   }
 }
@@ -274,11 +278,10 @@ struct PlaylistImportSummaryToolbar: ToolbarContent {
 }
 
 extension View {
-  /// What every sheet that runs an import shares: it cannot be swiped away mid-import, a finished
-  /// import is felt, and closing it leaves nothing for the next sheet to show.
+  /// What every sheet that runs an import shares: a finished import is felt, and closing it leaves
+  /// nothing for the next sheet to show. A running import goes on after the sheet closes.
   func playlistImportPresentation(_ model: AppModel) -> some View {
     sensoryFeedback(.success, trigger: model.playlistImport.importedPlaylistId) { _, new in new != nil }
-      .interactiveDismissDisabled(model.playlistImport.isImporting)
       .onDisappear { model.finishPlaylistImport() }
   }
 }

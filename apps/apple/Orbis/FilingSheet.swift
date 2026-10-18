@@ -61,7 +61,6 @@ struct FilingSheet: View {
     } else if model.reveal == nil {
       ToolbarItem(placement: .cancellationAction) {
         Button("Close", systemImage: "xmark", role: .close, action: close)
-          .disabled(model.playlistImport.isImporting)
       }
     } else {
       ToolbarItem(placement: .cancellationAction) {

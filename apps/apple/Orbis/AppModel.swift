@@ -187,6 +187,10 @@ final class AppModel {
   var fileFailure: OrbisError?
 
   var playlistImport: PlaylistImport = .idle
+  private var importFollow: Task<Void, Never>?
+  /// While the event stream is open it brings the import's progress, so the poll stands down.
+  private var isImportStreamOpen = false
+  private static let importPollInterval: Duration = .seconds(2)
 
   /// The Set filed moments ago, whose title and Tags the service read from the link. This is
   /// the person's chance to overrule that reading, and it closes without a change.
@@ -487,6 +491,7 @@ final class AppModel {
     openedSets = [:]
     reveal = nil
     revealFailure = nil
+    stopFollowingImport()
     playlistImport = .idle
     // Recent Tags, filters, searches, and Playlists are the last Person's habits, not this
     // device's.
@@ -578,44 +583,45 @@ final class AppModel {
     }
   }
 
-  /// Reads a YouTube playlist into a new Playlist, saving every track to the Library. The lists
-  /// are refreshed in place before the summary shows, so Open Playlist lands on a listed Playlist.
+  /// Starts reading a YouTube playlist into a new Playlist. The service imports in the background
+  /// and this follows it, so the sheet can close while it runs and show it again when reopened.
   func importPlaylist(link: String) async {
     let link = link.trimmingCharacters(in: .whitespacesAndNewlines)
     guard let client, !link.isEmpty, !isFiling, !playlistImport.isImporting else { return }
     fileFailure = nil
     fileConfirmation = nil
-    playlistImport = .importing(link: link)
-    let outcome: PlaylistImport
+    let sent = PlaylistImport.importing(link: link, job: nil)
+    playlistImport = sent
+    let job: PlaylistImportJob
     do {
-      let imported = try await client.importPlaylist(url: link)
-      async let playlists: Void = refreshPlaylistsQuietly()
-      async let library: Void = refreshLibraryQuietly()
-      _ = await (playlists, library)
-      outcome = .imported(imported)
-    } catch OrbisError.cancelled {
-      outcome = .idle
-    } catch let error as OrbisError {
-      outcome = .failed(link: link, error)
+      job = try await client.importPlaylist(url: link)
     } catch {
-      outcome = .failed(link: link, .unreachable)
+      // Signing out while the request was out resets the import, and its answer belongs to the
+      // Person who left.
+      guard playlistImport == sent else { return }
+      switch error {
+      case OrbisError.cancelled: playlistImport = .idle
+      case let error as OrbisError: playlistImport = .failed(link: link, .request(error))
+      default: playlistImport = .failed(link: link, .request(.unreachable))
+      }
+      return
     }
-    // Signing out while the request was out resets the import, and its answer belongs to the
-    // Person who left.
-    guard playlistImport == .importing(link: link) else { return }
-    if case .imported = outcome, linkToFile.trimmingCharacters(in: .whitespacesAndNewlines) == link {
-      linkToFile = ""
-    }
-    playlistImport = outcome
+    guard playlistImport == sent else { return }
+    await receive(job)
+    guard playlistImport.isImporting else { return }
+    // Listed now, so the Playlists screen can show the import's progress on its row.
+    await refreshPlaylistsQuietly()
+    followImport(job.id)
   }
 
   func retryPlaylistImport() async {
     guard case .failed(let link, _) = playlistImport else { return }
+    playlistImport = .idle
     await importPlaylist(link: link)
   }
 
   /// Clears a summary or a failure once its sheet has gone. A running import keeps its state, so
-  /// its answer still lands.
+  /// its progress still lands and the next sheet shows it.
   func finishPlaylistImport() {
     if !playlistImport.isImporting {
       playlistImport = .idle
@@ -626,6 +632,102 @@ final class AppModel {
     guard case .imported(let imported) = playlistImport else { return }
     playlistImport = .idle
     showPlaylist(imported.playlist.id)
+  }
+
+  /// Applies where the service says the import stands. A frame for another import is ignored,
+  /// and so is a repeat of the end, which the stream and the poll can both deliver.
+  private func receive(_ job: PlaylistImportJob) async {
+    guard case .importing(let link, let current) = playlistImport, current == nil || current?.id == job.id
+    else { return }
+    if case .done? = current?.state { return }
+    switch job.state {
+    case .running:
+      let advanced = current?.state != job.state
+      playlistImport = .importing(link: link, job: job)
+      // The Playlist's row shows its Set count beside the progress, so it moves with each page.
+      if advanced, current != nil { await refreshPlaylistsQuietly() }
+    case .failed(let message):
+      playlistImport = .failed(link: link, .stopped(message: message))
+      stopFollowingImport()
+    case .done(let summary):
+      playlistImport = .importing(link: link, job: job)
+      let firstSets = (try? await client?.library(playlistId: job.playlist.id)) ?? []
+      async let playlists: Void = refreshPlaylistsQuietly()
+      async let library: Void = refreshLibraryQuietly()
+      _ = await (playlists, library)
+      guard playlistImport == .importing(link: link, job: job) else { return }
+      if linkToFile.trimmingCharacters(in: .whitespacesAndNewlines) == link {
+        linkToFile = ""
+      }
+      playlistImport = .imported(
+        ImportedPlaylist(playlist: job.playlist, summary: summary, firstSets: Array(firstSets.prefix(4))))
+      stopFollowingImport()
+    }
+  }
+
+  private func isFollowing(_ id: String) -> Bool {
+    if case .importing(_, let job?) = playlistImport { job.id == id } else { false }
+  }
+
+  /// Follows a running import on the event stream, and asks for it every two seconds while the
+  /// stream is not open. Both stop when the import ends or this device signs out.
+  private func followImport(_ id: String) {
+    stopFollowingImport()
+    importFollow = Task { [weak self] in
+      await withTaskGroup(of: Void.self) { group in
+        group.addTask { await self?.streamImport(id) }
+        group.addTask { await self?.pollImport(id) }
+      }
+    }
+  }
+
+  private func stopFollowingImport() {
+    importFollow?.cancel()
+    importFollow = nil
+    isImportStreamOpen = false
+  }
+
+  private func streamImport(_ id: String) async {
+    defer { isImportStreamOpen = false }
+    while !Task.isCancelled, isFollowing(id), let client {
+      do {
+        try await client.watchPlaylistImports(
+          opened: { [weak self] in
+            self?.isImportStreamOpen = true
+            // Frames sent before the stream opened are gone, so the import is read once.
+            await self?.refreshImport(id)
+          },
+          { [weak self] job in await self?.receive(job) })
+      } catch OrbisError.notSignedIn {
+        return
+      } catch {
+        if Task.isCancelled { return }
+      }
+      isImportStreamOpen = false
+      do {
+        try await Task.sleep(for: .seconds(2))
+      } catch {
+        return
+      }
+    }
+  }
+
+  private func pollImport(_ id: String) async {
+    while !Task.isCancelled, isFollowing(id) {
+      do {
+        try await Task.sleep(for: Self.importPollInterval)
+      } catch {
+        return
+      }
+      if !isImportStreamOpen {
+        await refreshImport(id)
+      }
+    }
+  }
+
+  private func refreshImport(_ id: String) async {
+    guard let client, let job = try? await client.playlistImport(id) else { return }
+    await receive(job)
   }
 
   /// Files the link the clipboard holds, once it is confirmed as one Orbis takes.

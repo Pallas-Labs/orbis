@@ -185,51 +185,72 @@ struct ImportPlaylistRequest: Encodable {
   let url: String
 }
 
-/// A YouTube playlist read into a new Playlist. Every track was also saved to the Library, so each
-/// carries what Auto Download did with it. `unavailable` counts tracks YouTube no longer serves and
-/// `overLimit` counts tracks past the Playlist maximum; neither was saved.
-struct ImportedPlaylist: Decodable, Equatable {
-  /// The service's answer is the Set's own fields plus `autoDownloadResult`.
-  struct ImportedSet: Decodable, Equatable {
-    enum CodingKeys: String, CodingKey {
-      case autoDownloadResult
-    }
-
-    let set: SavedSet
-    let autoDownloadResult: AutoDownloadResult
-
-    init(from decoder: any Decoder) throws {
-      set = try SavedSet(from: decoder)
-      autoDownloadResult = try decoder.container(keyedBy: CodingKeys.self)
-        .decode(AutoDownloadResult.self, forKey: .autoDownloadResult)
-    }
+/// A YouTube playlist being read into a new Playlist in the background. The service answers the
+/// import request with one and reports it again on `/events` as each page lands.
+struct PlaylistImportJob: Decodable, Equatable {
+  /// What the finished import did. `unavailable` counts tracks YouTube no longer serves and
+  /// `overLimit` tracks past the Playlist maximum; neither was saved.
+  struct Summary: Decodable, Equatable {
+    let added: Int
+    let downloading: Int
+    /// Saved while the download queue was full, so they wait for a Download to be asked for.
+    let waiting: Int
+    let unavailable: Int
+    let overLimit: Int
   }
 
-  enum AutoDownloadResult: String, Decodable {
-    case queued, disabled, ready, inProgress, queueFull, unavailable
-
-    /// A newer outcome is counted as nothing rather than failing the whole import's answer.
-    init(from decoder: any Decoder) throws {
-      let raw = try decoder.singleValueContainer().decode(String.self)
-      self = Self(rawValue: raw) ?? .disabled
-    }
+  enum State: Equatable {
+    /// `processed` counts the playlist's entries read so far, out of `total` when YouTube said.
+    case running(processed: Int, total: Int?)
+    case done(Summary)
+    case failed(message: String)
   }
 
+  let id: String
   let playlist: Playlist
-  let sets: [ImportedSet]
-  let unavailable: Int
-  let overLimit: Int
+  let state: State
 
-  var added: Int { sets.count }
-
-  var downloading: Int {
-    sets.count(where: { [.queued, .inProgress, .ready].contains($0.autoDownloadResult) })
+  private enum CodingKeys: String, CodingKey {
+    case id, playlist, state
   }
 
-  /// Saved while the download queue was full, so they wait for a Download to be asked for.
-  var waiting: Int {
-    sets.count(where: { $0.autoDownloadResult == .queueFull })
+  private enum StateKeys: String, CodingKey {
+    case kind, processed, total, message
   }
+
+  init(id: String, playlist: Playlist, state: State) {
+    self.id = id
+    self.playlist = playlist
+    self.state = state
+  }
+
+  init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    playlist = try container.decode(Playlist.self, forKey: .playlist)
+    let state = try container.nestedContainer(keyedBy: StateKeys.self, forKey: .state)
+    switch try state.decode(String.self, forKey: .kind) {
+    case "running":
+      self.state = .running(
+        processed: try state.decode(Int.self, forKey: .processed),
+        total: try state.decodeIfPresent(Int.self, forKey: .total))
+    case "done":
+      self.state = .done(try container.decode(Summary.self, forKey: .state))
+    case "failed":
+      self.state = .failed(message: try state.decode(String.self, forKey: .message))
+    case let kind:
+      throw DecodingError.dataCorruptedError(
+        forKey: .kind, in: state, debugDescription: "Unknown import state \(kind)")
+    }
+  }
+}
+
+/// A finished import as its summary shows it: the Playlist, what the import did, and the first
+/// Sets of the Playlist for the artwork mosaic.
+struct ImportedPlaylist: Equatable {
+  let playlist: Playlist
+  let summary: PlaylistImportJob.Summary
+  let firstSets: [SavedSet]
 }
 
 /// The one Listening Queue, in play order. `activeSetId` is the Set playing now, and at most one
