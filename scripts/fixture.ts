@@ -70,9 +70,12 @@ const cobaltUrl = audioFile
 const fixtureAudio = audioFile ? Bun.file(audioFile) : undefined;
 /**
  * The Data API as the lane sees it: one public playlist, answered from memory the way Google
- * would, so an import journey needs no network and no key. Every other read is refused, which
- * leaves a single save without provider metadata, as it was before this fake.
+ * would, so an import journey needs no network and no key. It has 60 entries, more than one
+ * page, so the import shows progress between pages. Every other read is refused, which leaves a
+ * single save without provider metadata, as it was before this fake.
  */
+const LANE_PAGE = 50;
+const LANE_SECOND_PAGE_DELAY_MS = 4000;
 const LANE_PLAYLIST = {
   entries: [
     ["laneMix0001", "Sunrise on the Pier", "Avery Coast"],
@@ -81,15 +84,20 @@ const LANE_PLAYLIST = {
     ["laneMix0003", "Night Ferry", "Avery Coast"],
     ["laneMix0004", "Salt and Static", "Mira Holt"],
     ["laneMix0005", "Last Light Session", "Harbour Unit"],
+    ...Array.from({ length: 54 }, (_, index) => {
+      const n = String(index + 6).padStart(4, "0");
+      return [`laneMix${n}`, `Lane Track ${n}`, "Lane Artist"] as const;
+    }),
   ],
   id: "PLorbisLaneMix",
   title: "Lane Mix",
 } as const;
 interface DataApiAnswer {
   readonly items: readonly unknown[];
+  readonly nextPageToken?: string | undefined;
 }
 const answer = (body: DataApiAnswer) => Promise.resolve(Response.json(body));
-const laneYouTube = (url: string) => {
+const laneYouTube = async (url: string) => {
   const parsed = new URL(url);
   const resource = parsed.pathname.split("/").at(-1);
   if (resource === "playlists") {
@@ -106,10 +114,18 @@ const laneYouTube = (url: string) => {
     });
   }
   if (resource === "playlistItems") {
+    const start = Number(parsed.searchParams.get("pageToken") ?? "0");
+    if (start > 0) {
+      // A slow second page keeps the import's progress on screen long enough to see.
+      await Bun.sleep(LANE_SECOND_PAGE_DELAY_MS);
+    }
+    const next = start + LANE_PAGE;
     return answer({
-      items: LANE_PLAYLIST.entries.map(([videoId]) => ({
-        contentDetails: { videoId },
-      })),
+      items: LANE_PLAYLIST.entries
+        .slice(start, next)
+        .map(([videoId]) => ({ contentDetails: { videoId } })),
+      nextPageToken:
+        next < LANE_PLAYLIST.entries.length ? String(next) : undefined,
     });
   }
   if (resource === "videos") {
@@ -129,7 +145,7 @@ const laneYouTube = (url: string) => {
         })),
     });
   }
-  return Promise.resolve(new Response("not found", { status: 404 }));
+  return new Response("not found", { status: 404 });
 };
 const app = createApp({
   audio: {
