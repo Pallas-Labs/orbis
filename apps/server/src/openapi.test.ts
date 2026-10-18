@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   AudioStateSchema,
   ListeningQueueSchema,
+  PlaylistImportSchema,
   PlaylistSchema,
   SavedSetSchema,
   SaveSetResultSchema,
@@ -31,6 +32,7 @@ const Samples = Schema.Struct({
     ),
   }),
   playlist: PlaylistSchema,
+  playlistImports: Schema.Array(PlaylistImportSchema),
   playlists: Schema.Struct({ playlists: Schema.Array(PlaylistSchema) }),
   queue: Schema.Struct({ queue: ListeningQueueSchema }),
   saveResult: SaveSetResultSchema,
@@ -164,14 +166,11 @@ const sampleFor = (operationId: string) => {
       sets: [samples.savedSet],
     };
   }
-  // The Swift client has no playlist import yet, so this sample lives here.
   if (operationId === "playlists.import") {
-    return {
-      overLimit: 0,
-      playlist: samples.playlist,
-      sets: [samples.saveResult],
-      unavailable: 1,
-    };
+    return samples.playlistImports[0];
+  }
+  if (operationId === "playlists.importStatus") {
+    return samples.playlistImports[1];
   }
   if (operationId === "people.friendPlaylists") {
     return { playlists: [{ ...samples.playlist, sets: [samples.savedSet] }] };
@@ -285,7 +284,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(47);
+    expect(checked).toBe(48);
   } finally {
     await app.dispose();
   }

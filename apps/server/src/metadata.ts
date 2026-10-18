@@ -65,7 +65,7 @@ export interface MetadataService {
   /** One page of a playlist's tracks. The first page has no token. */
   readonly playlistPage: (
     playlistId: string,
-    pageToken: string | undefined
+    pageToken: string | null
   ) => Effect.Effect<YouTubePlaylistPage, MetadataError>;
 }
 
@@ -353,7 +353,7 @@ const readYouTubePlaylist = (
  */
 const readYouTubePlaylistPage = (
   playlistId: string,
-  pageToken: string | undefined,
+  pageToken: string | null,
   youTubeApiKey: string,
   request: RequestFetch
 ): Effect.Effect<YouTubePlaylistPage, MetadataError> =>
@@ -362,7 +362,7 @@ const readYouTubePlaylistPage = (
     const page = yield* requestJson(
       youTubeApiRequest("playlistItems", youTubeApiKey, {
         maxResults: String(YOUTUBE_PAGE),
-        pageToken,
+        pageToken: pageToken ?? undefined,
         part: "contentDetails",
         playlistId,
       }),
@@ -512,7 +512,7 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
             : noProviders.playlist(playlistId)
         ),
         playlistPage: Effect.fn("Metadata.playlistPage")(
-          (playlistId: string, pageToken: string | undefined) =>
+          (playlistId: string, pageToken: string | null) =>
             youTubeApiKey
               ? readYouTubePlaylistPage(
                   playlistId,

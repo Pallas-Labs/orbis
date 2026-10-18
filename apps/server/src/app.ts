@@ -13,6 +13,7 @@ import { migrateTrustStore } from "./identity.js";
 import type { LoggingOptions } from "./logging.js";
 import { MediaStore } from "./media-store.js";
 import type { Metadata } from "./metadata.js";
+import type { PlaylistImporterOptions } from "./playlist-importer.js";
 import type { PresenceJournal } from "./presence-journal.js";
 import type { PresenceOptions } from "./presence.js";
 import { grantSecret } from "./stream-grant.js";
@@ -92,6 +93,7 @@ export const createApp = (
     /** How long after a Playback Position report a Person still counts as listening. */
     presenceWindowMs?: number;
     presence?: PresenceOptions & { journal?: Layer.Layer<PresenceJournal> };
+    playlistImports?: Pick<PlaylistImporterOptions, "retry">;
     /** The clock Sign-in Codes expire by. Tests move it to prove expiry. */
     signInCodeNow?: () => number;
     /** Follows short links such as `on.soundcloud.com`. Tests pass a stub to stay offline. */

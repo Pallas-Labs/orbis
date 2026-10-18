@@ -1,5 +1,5 @@
 import { youTubePlaylistId } from "@orbis/contracts";
-import type { SavedSet } from "@orbis/contracts";
+import type { PlaylistImport, SavedSet } from "@orbis/contracts";
 import type {
   ChangeTopic,
   SaveSetResultSchema,
@@ -93,7 +93,6 @@ import {
   updatePerson,
   updatePersonFilters,
 } from "./identity.js";
-import { MAX_SETS_PER_PLAYLIST } from "./library-limits.js";
 import { Library } from "./library.js";
 import type { LoggedRecord, LoggingOptions } from "./logging.js";
 import {
@@ -110,6 +109,11 @@ import {
 import type { MetadataError } from "./metadata-error.js";
 import { Metadata } from "./metadata.js";
 import type { EnrichedMetadata, PlaylistTrack } from "./metadata.js";
+import {
+  PlaylistImporter,
+  playlistImportRefusal,
+} from "./playlist-importer.js";
+import type { PlaylistImporterOptions } from "./playlist-importer.js";
 import { PresenceJournal } from "./presence-journal.js";
 import { Presence } from "./presence.js";
 import type { PresenceOptions } from "./presence.js";
@@ -321,42 +325,11 @@ const trustUnavailable = () =>
     statusCode: 500,
   });
 
-const importFailure = (error: MetadataError) => {
-  switch (error.reason) {
-    case "provider-rejected": {
-      return new LibraryError({
-        message:
-          "YouTube can't share this playlist. Only public and unlisted playlists can be imported.",
-        statusCode: 404,
-      });
-    }
-    case "not-configured": {
-      return new LibraryError({
-        message: "Playlist import is not set up on this server.",
-        statusCode: 503,
-      });
-    }
-    default: {
-      return new LibraryError({
-        message: "YouTube is not answering. Try the import again.",
-        statusCode: 503,
-      });
-    }
-  }
-};
-
-/**
- * A re-import keeps the earlier Playlist, so the new one takes the next free name. Names are
- * unique without regard to case, so `taken` holds them lowercased.
- */
-const freePlaylistName = (title: string, taken: ReadonlySet<string>) => {
-  const base = title.slice(0, 90).trim() || "YouTube playlist";
-  let name = base;
-  for (let n = 2; taken.has(name.toLowerCase()); n += 1) {
-    name = `${base} (${n})`;
-  }
-  return name;
-};
+/** What a change becomes on one `/events?changes=1` stream; null when it is not for that stream. */
+type ChangeFrame =
+  | { readonly kind: "changed"; readonly topic: ChangeTopic }
+  | { readonly kind: "playlistImport"; readonly playlistImport: PlaylistImport }
+  | null;
 
 const missingPlaylist = () =>
   new LibraryError({ message: "Playlist not found.", statusCode: 404 });
@@ -386,6 +359,7 @@ export const createPortableApp = (options: {
   /** How long after a Playback Position report a Person still counts as listening. */
   presenceWindowMs?: number;
   presence?: PresenceOptions & { journal?: Layer.Layer<PresenceJournal> };
+  playlistImports?: Pick<PlaylistImporterOptions, "heartbeat" | "retry">;
   /** The clock Sign-in Codes expire by. Tests move it to prove expiry. */
   signInCodeNow?: () => number;
   /** Follows short links such as `on.soundcloud.com`. Tests pass a stub to stay offline. */
@@ -415,6 +389,7 @@ export const createPortableApp = (options: {
     Layer.provide(options.presence?.journal ?? PresenceJournal.unrecorded)
   );
   let presenceService: typeof Presence.Service | null = null;
+  let importerService: typeof PlaylistImporter.Service | null = null;
   const routes = Layer.effectDiscard(
     Effect.gen(function* registerRoutes() {
       const library = yield* Library;
@@ -434,6 +409,11 @@ export const createPortableApp = (options: {
             readonly kind: "changed";
             readonly topic: ChangeTopic;
             readonly reaches: (viewerId: string) => Effect.Effect<boolean>;
+          }
+        | {
+            readonly kind: "playlistImport";
+            readonly personId: string;
+            readonly playlistImport: PlaylistImport;
           }
         | { readonly kind: "access" }
       >();
@@ -600,8 +580,7 @@ export const createPortableApp = (options: {
         );
       });
       const autoDownloadSaved = Effect.fn("AutoDownload.onSave")(
-        function* autoDownloadSaved(saved: SavedSet) {
-          const { person } = yield* SetCaller;
+        function* autoDownloadSaved(saved: SavedSet, person: PersonRecord) {
           const result = (
             autoDownloadResult: (typeof SaveSetResultSchema.Type)["autoDownloadResult"],
             set?: SavedSet
@@ -633,6 +612,69 @@ export const createPortableApp = (options: {
           );
         }
       );
+      const libraryFor = (personId: string) =>
+        Library.forPersonLayer(personId, libraryOptions).pipe(
+          Layer.provide(Layer.succeed(Database, db))
+        );
+      // Titles skip revision here: it is one model call per track.
+      const importTrack = Effect.fn("PlaylistImport.saveTrack")(
+        function* importTrack(personId: string, track: PlaylistTrack) {
+          const person = readTrustRegistry(trustPath).store.people.find(
+            (candidate) => candidate.id === personId && !candidate.removed
+          );
+          if (!person) {
+            return yield* Effect.fail(
+              new LibraryError({
+                message: "The Person who started this import was removed.",
+                statusCode: 404,
+              })
+            );
+          }
+          const personal = yield* Library;
+          const saved = yield* personal
+            .save({ tags: [], title: "", url: track.url })
+            .pipe(
+              Effect.catchIf(
+                (error) => error.statusCode === 409,
+                () => personal.findByUrl(track.url)
+              )
+            );
+          const known =
+            saved.titleEditedByUser || saved.metadataState === "enriched";
+          return yield* autoDownloadSaved(
+            known
+              ? saved
+              : yield* recordMetadata(saved, personal, track.metadata),
+            person
+          );
+        },
+        (effect, personId) =>
+          effect.pipe(
+            Effect.provide(libraryFor(personId)),
+            asLibraryError("Could not save a track of the playlist.")
+          )
+      );
+      const importer = Context.get(
+        yield* Layer.buildWithScope(
+          PlaylistImporter.layer({
+            ...options.playlistImports,
+            publish: (personId, playlistImport) =>
+              Effect.all([
+                PubSub.publish(changes, {
+                  kind: "playlistImport",
+                  personId,
+                  playlistImport,
+                }),
+                announce("library", ownDevices(personId)),
+                announce("playlist", seesPerson(personId)),
+              ]).pipe(Effect.asVoid),
+            saveTrack: importTrack,
+          }),
+          scope
+        ),
+        PlaylistImporter
+      );
+      importerService = importer;
       const setGroup = HttpApiBuilder.group(OrbisApi, "sets", (handlers) =>
         handlers
           .handleRaw("requestDownload", ({ params }) =>
@@ -748,6 +790,7 @@ export const createPortableApp = (options: {
                   input.url,
                   options.shortLinkFetch
                 );
+                const caller = yield* SetCaller;
                 const personal = yield* Library;
                 const saved = yield* personal.save({
                   tags: [...(input.tags ?? [])],
@@ -762,10 +805,11 @@ export const createPortableApp = (options: {
                   saved.metadataState === "enriched"
                 ) {
                   yield* fillDetails(saved);
-                  return yield* autoDownloadSaved(saved);
+                  return yield* autoDownloadSaved(saved, caller.person);
                 }
                 return yield* autoDownloadSaved(
-                  yield* enrichSavedSet(saved, personal)
+                  yield* enrichSavedSet(saved, personal),
+                  caller.person
                 );
               }).pipe(
                 Effect.tap(() => announceForCaller("library", ownDevices))
@@ -1083,8 +1127,8 @@ export const createPortableApp = (options: {
                   const input = yield* HttpServerRequest.schemaBodyJson(
                     ImportPlaylistPayload
                   );
-                  const playlistId = youTubePlaylistId(input.url);
-                  if (!playlistId) {
+                  const sourcePlaylistId = youTubePlaylistId(input.url);
+                  if (!sourcePlaylistId) {
                     return yield* Effect.fail(
                       new LibraryError({
                         message:
@@ -1093,111 +1137,29 @@ export const createPortableApp = (options: {
                       })
                     );
                   }
-                  const read = yield* Effect.gen(function* readPages() {
-                    const { itemCount, title } =
-                      yield* metadata.playlist(playlistId);
-                    const tracks: PlaylistTrack[] = [];
-                    const seen = new Set<string>();
-                    let entries = 0;
-                    let unavailable = 0;
-                    let pageToken: string | undefined;
-                    do {
-                      const page = yield* metadata.playlistPage(
-                        playlistId,
-                        pageToken
-                      );
-                      entries += page.entries;
-                      unavailable += page.unavailable;
-                      for (const track of page.tracks) {
-                        if (!seen.has(track.url)) {
-                          seen.add(track.url);
-                          tracks.push(track);
-                        }
-                      }
-                      pageToken = page.nextPageToken;
-                    } while (
-                      pageToken &&
-                      tracks.length < MAX_SETS_PER_PLAYLIST
-                    );
-                    const unread = pageToken
-                      ? Math.max(0, itemCount - entries)
-                      : 0;
-                    return {
-                      overLimit:
-                        Math.max(0, tracks.length - MAX_SETS_PER_PLAYLIST) +
-                        unread,
-                      title,
-                      tracks: tracks.slice(0, MAX_SETS_PER_PLAYLIST),
-                      unavailable,
-                    };
-                  }).pipe(Effect.mapError(importFailure));
-                  if (read.tracks.length === 0) {
-                    return yield* Effect.fail(
-                      new LibraryError({
-                        message: "This playlist has no tracks Orbis can play.",
-                        statusCode: 404,
-                      })
-                    );
-                  }
-                  const personal = yield* Library;
-                  const taken = new Set(
-                    (yield* personal.playlists()).map(({ name }) =>
-                      name.toLowerCase()
-                    )
-                  );
-                  const playlist = yield* personal.createPlaylist(
-                    freePlaylistName(read.title, taken)
-                  );
-                  // Titles skip revision here: it is one model call per track, inside the request.
-                  const saveTrack = Effect.fn("ImportPlaylist.saveTrack")(
-                    function* saveTrack(track: PlaylistTrack) {
-                      const saved = yield* personal
-                        .save({ tags: [], title: "", url: track.url })
-                        .pipe(
-                          Effect.catchIf(
-                            (error) => error.statusCode === 409,
-                            () => personal.findByUrl(track.url)
-                          )
-                        );
-                      const known =
-                        saved.titleEditedByUser ||
-                        saved.metadataState === "enriched";
-                      return yield* autoDownloadSaved(
-                        known
-                          ? saved
-                          : yield* recordMetadata(
-                              saved,
-                              personal,
-                              track.metadata
-                            )
-                      );
-                    }
-                  );
-                  const imported = yield* Effect.forEach(saveTrack)(
-                    read.tracks
-                  );
-                  yield* personal.setPlaylistMembers(
-                    playlist.id,
-                    imported.map((set) => set.id)
-                  );
-                  yield* Effect.logInfo("playlist imported").pipe(
-                    Effect.annotateLogs({
-                      overLimit: read.overLimit,
-                      playlist: playlist.id,
-                      tracks: imported.length,
-                      unavailable: read.unavailable,
+                  const caller = yield* SetCaller;
+                  return yield* importer
+                    .start({
+                      personId: caller.person.id,
+                      sourcePlaylistId,
+                      url: input.url,
                     })
-                  );
-                  return {
-                    overLimit: read.overLimit,
-                    playlist: { ...playlist, setCount: imported.length },
-                    sets: imported,
-                    unavailable: read.unavailable,
-                  };
+                    .pipe(
+                      Effect.catchTag("MetadataError", (error) =>
+                        Effect.fail(playlistImportRefusal(error))
+                      )
+                    );
                 }).pipe(
-                  Effect.tap(() => announceForCaller("library", ownDevices)),
                   Effect.tap(() => announceForCaller("playlist", seesPerson))
                 )
+              )
+            )
+            .handleRaw("importStatus", ({ params }) =>
+              withFailureResponse(
+                Effect.gen(function* readPlaylistImport() {
+                  const caller = yield* SetCaller;
+                  return yield* importer.read(caller.person.id, params.id);
+                })
               )
             )
             .handleRaw("rename", ({ params }) =>
@@ -2016,15 +1978,29 @@ export const createPortableApp = (options: {
             );
             // A null entry only makes `authorized` run, so a revoked key closes at once.
             const changeFrames = Stream.fromPubSub(changes).pipe(
-              Stream.mapEffect((change) =>
-                change.kind === "changed" && query.changes === "1"
-                  ? Effect.map(change.reaches(caller.person.id), (reached) =>
+              Stream.mapEffect((change): Effect.Effect<ChangeFrame> => {
+                if (query.changes !== "1") {
+                  return Effect.succeed(null);
+                }
+                if (change.kind === "changed") {
+                  return Effect.map(
+                    change.reaches(caller.person.id),
+                    (reached) =>
                       reached
                         ? { kind: "changed" as const, topic: change.topic }
                         : null
-                    )
-                  : Effect.succeed(null)
-              )
+                  );
+                }
+                return Effect.succeed(
+                  change.kind === "playlistImport" &&
+                    change.personId === caller.person.id
+                    ? {
+                        kind: "playlistImport" as const,
+                        playlistImport: change.playlistImport,
+                      }
+                    : null
+                );
+              })
             );
             return Stream.merge(
               Stream.merge(snapshots, presenceFrames),
@@ -2210,6 +2186,12 @@ export const createPortableApp = (options: {
       await initialize();
       if (presenceService) {
         await Effect.runPromise(presenceService.expire(Date.now()));
+      }
+    },
+    resumeImports: async (): Promise<void> => {
+      await initialize();
+      if (importerService) {
+        await Effect.runPromise(importerService.resume());
       }
     },
     handler: async (

@@ -65,6 +65,48 @@
       }
     ]
   },
+  "playlistImports": [
+    {
+      "id": "6f1d2c1e-6a51-4d55-9a4e-1f8f4f7d2b10",
+      "playlist": {
+        "createdAt": "2026-09-29T06:59:45.382Z",
+        "id": "b31eb1ab-d124-45bb-858e-8592e9ec15a3",
+        "name": "Contract playlist",
+        "setCount": 49
+      },
+      "state": { "kind": "running", "processed": 50, "total": 61 }
+    },
+    {
+      "id": "6f1d2c1e-6a51-4d55-9a4e-1f8f4f7d2b10",
+      "playlist": {
+        "createdAt": "2026-09-29T06:59:45.382Z",
+        "id": "b31eb1ab-d124-45bb-858e-8592e9ec15a3",
+        "name": "Contract playlist",
+        "setCount": 58
+      },
+      "state": {
+        "added": 58,
+        "downloading": 20,
+        "kind": "done",
+        "overLimit": 0,
+        "unavailable": 2,
+        "waiting": 38
+      }
+    },
+    {
+      "id": "6f1d2c1e-6a51-4d55-9a4e-1f8f4f7d2b10",
+      "playlist": {
+        "createdAt": "2026-09-29T06:59:45.382Z",
+        "id": "b31eb1ab-d124-45bb-858e-8592e9ec15a3",
+        "name": "Contract playlist",
+        "setCount": 49
+      },
+      "state": {
+        "kind": "failed",
+        "message": "YouTube is not answering. Try the import again."
+      }
+    }
+  ],
   "queue": {
     "queue": {
       "activeSetId": null,
