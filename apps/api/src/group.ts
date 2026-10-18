@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { Effect, Layer, ManagedRuntime, Redacted } from "effect";
 import { HttpServerResponse } from "effect/unstable/http";
 
+import { makeAlarmScheduler } from "../../server/src/alarm-scheduler.js";
 import { createPortableApp } from "../../server/src/app-core.js";
 import { releaseAudio } from "../../server/src/audio-release.js";
 import { Library } from "../../server/src/library.js";
@@ -18,6 +19,7 @@ import { recoverHost } from "./recovery.js";
 import { registerTrustStorage } from "./trust-storage.js";
 
 export class Group extends DurableObject<Environment> {
+  private readonly alarms;
   private readonly app;
   private readonly node: GroupAudioNode;
   constructor(ctx: DurableObjectState, env: Environment) {
@@ -43,6 +45,10 @@ export class Group extends DurableObject<Environment> {
       )
     );
     this.node = new GroupAudioNode(ctx, runtime, trustPath);
+    this.alarms = makeAlarmScheduler({
+      deleteAlarm: () => ctx.storage.deleteAlarm(),
+      setAlarm: (at) => ctx.storage.setAlarm(at),
+    });
     this.app = createPortableApp({
       audio: makeAudioLayer(this.node),
       audioResponse: (_file, _range, setId, personId, grant) => {
@@ -62,12 +68,8 @@ export class Group extends DurableObject<Environment> {
         youTubeApiKey: env.YOUTUBE_API_KEY,
         ytDlp: { read: this.node.readDetails },
       }),
-      presence: {
-        alarm: {
-          cancel: () => ctx.storage.deleteAlarm(),
-          set: (at) => ctx.storage.setAlarm(at),
-        },
-      },
+      playlistImports: { heartbeat: this.alarms.slot("playlist-imports") },
+      presence: { alarm: this.alarms.slot("presence") },
       releaseAudio: release,
       streamSecret,
       titleReviser: TitleReviser.layer({ apiKey: env.OPENROUTER_API_KEY }),
@@ -107,7 +109,18 @@ export class Group extends DurableObject<Environment> {
   }
 
   override async alarm(): Promise<void> {
-    await this.app.expirePresence();
+    this.alarms.fired(Date.now());
+    const [presence, imports] = await Promise.allSettled([
+      this.app.expirePresence(),
+      this.app.resumeImports(),
+    ]);
+    await this.alarms.sync();
+    // A failure makes Cloudflare run the alarm again.
+    for (const outcome of [presence, imports]) {
+      if (outcome.status === "rejected") {
+        throw outcome.reason;
+      }
+    }
   }
 
   override fetch(request: Request): Promise<Response> {
