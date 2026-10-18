@@ -1,3 +1,4 @@
+import { youTubePlaylistId } from "@orbis/contracts";
 import type { SavedSet } from "@orbis/contracts";
 import type {
   ChangeTopic,
@@ -7,6 +8,7 @@ import {
   AdminKeyPayload,
   AdminPersonPayload,
   CollaborationPayload,
+  ImportPlaylistPayload,
   JoinPayload,
   RedeemSignInCodePayload,
   SaveSetPayload,
@@ -106,7 +108,7 @@ import {
 } from "./logging.js";
 import type { MetadataError } from "./metadata-error.js";
 import { Metadata } from "./metadata.js";
-import type { EnrichedMetadata } from "./metadata.js";
+import type { EnrichedMetadata, PlaylistTrack } from "./metadata.js";
 import { PresenceJournal } from "./presence-journal.js";
 import { Presence } from "./presence.js";
 import type { PresenceOptions } from "./presence.js";
@@ -317,6 +319,30 @@ const trustUnavailable = () =>
     message: "The trust store is unavailable.",
     statusCode: 500,
   });
+
+/** What a playlist read that YouTube refused or could not answer means to the person importing. */
+const importFailure = (error: MetadataError) =>
+  new LibraryError(
+    error.reason === "provider-rejected"
+      ? {
+          message:
+            "YouTube can't share this playlist. Only public and unlisted playlists can be imported.",
+          statusCode: 404,
+        }
+      : {
+          message:
+            error.reason === "not-configured"
+              ? "Playlist import is not set up on this server."
+              : "YouTube is not answering. Try the import again.",
+          statusCode: 503,
+        }
+  );
+
+/** A re-import keeps the earlier Playlist, so the new one takes the next free name. */
+const importedPlaylistNames = (title: string) => {
+  const base = title.slice(0, 90).trim() || "YouTube playlist";
+  return [base, ...Array.from({ length: 49 }, (_, n) => `${base} (${n + 2})`)];
+};
 
 const missingPlaylist = () =>
   new LibraryError({ message: "Playlist not found.", statusCode: 404 });
@@ -1031,6 +1057,110 @@ export const createPortableApp = (options: {
                   const personal = yield* Library;
                   return yield* personal.createPlaylist(input.name);
                 }).pipe(
+                  Effect.tap(() => announceForCaller("playlist", seesPerson))
+                )
+              )
+            )
+            .handleRaw("import", () =>
+              withFailureResponse(
+                Effect.gen(function* importPlaylist() {
+                  const input = yield* HttpServerRequest.schemaBodyJson(
+                    ImportPlaylistPayload
+                  );
+                  const playlistId = youTubePlaylistId(input.url);
+                  if (!playlistId) {
+                    return yield* Effect.fail(
+                      new LibraryError({
+                        message:
+                          "Use a YouTube or YouTube Music playlist link.",
+                        statusCode: 400,
+                      })
+                    );
+                  }
+                  const read = yield* metadata
+                    .playlist(playlistId)
+                    .pipe(Effect.mapError(importFailure));
+                  if (read.tracks.length === 0) {
+                    return yield* Effect.fail(
+                      new LibraryError({
+                        message: "This playlist has no tracks Orbis can play.",
+                        statusCode: 404,
+                      })
+                    );
+                  }
+                  const personal = yield* Library;
+                  const playlist = yield* Effect.firstSuccessOf(
+                    importedPlaylistNames(read.title).map((name) =>
+                      personal.createPlaylist(name)
+                    )
+                  );
+                  const saveTrack = Effect.fn("ImportPlaylist.saveTrack")(
+                    function* saveTrack(track: PlaylistTrack) {
+                      const saved = yield* personal
+                        .save({ tags: [], title: "", url: track.url })
+                        .pipe(
+                          Effect.catchIf(
+                            (error) => error.statusCode === 409,
+                            () =>
+                              Effect.gen(function* findSaved() {
+                                const [row] = yield* db
+                                  .select({ id: setRows.id })
+                                  .from(setRows)
+                                  .where(eq(setRows.url, track.url))
+                                  .limit(1)
+                                  .pipe(
+                                    asLibraryError(
+                                      "Could not read the library."
+                                    )
+                                  );
+                                if (!row) {
+                                  return yield* Effect.fail(
+                                    new LibraryError({
+                                      message: "Set not found.",
+                                      statusCode: 404,
+                                    })
+                                  );
+                                }
+                                return yield* personal.find(row.id);
+                              })
+                          )
+                        );
+                      if (
+                        saved.titleEditedByUser ||
+                        saved.metadataState === "enriched"
+                      ) {
+                        return yield* autoDownloadSaved(saved);
+                      }
+                      yield* library.recordEnrichment(saved.id, track.metadata);
+                      yield* fillDetails(saved);
+                      return yield* autoDownloadSaved(
+                        yield* personal.find(saved.id)
+                      );
+                    }
+                  );
+                  const imported = yield* Effect.forEach(saveTrack)(
+                    read.tracks
+                  );
+                  yield* personal.setPlaylistMembers(
+                    playlist.id,
+                    imported.map((set) => set.id)
+                  );
+                  yield* Effect.logInfo("playlist imported").pipe(
+                    Effect.annotateLogs({
+                      overLimit: read.overLimit,
+                      playlist: playlist.id,
+                      tracks: imported.length,
+                      unavailable: read.unavailable,
+                    })
+                  );
+                  return {
+                    overLimit: read.overLimit,
+                    playlist: { ...playlist, setCount: imported.length },
+                    sets: imported,
+                    unavailable: read.unavailable,
+                  };
+                }).pipe(
+                  Effect.tap(() => announceForCaller("library", ownDevices)),
                   Effect.tap(() => announceForCaller("playlist", seesPerson))
                 )
               )

@@ -55,6 +55,7 @@ export {
   normalizeSourceUrl,
   SOURCE_URL_MESSAGE,
   UnsupportedSourceUrlError,
+  youTubePlaylistId,
   youTubeVideoId,
 } from "./source-url.js";
 export {
