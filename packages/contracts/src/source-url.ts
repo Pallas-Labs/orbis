@@ -35,6 +35,10 @@ const videoIdFrom = (url: URL): string | null => {
   );
 };
 
+/** The canonical Source Link for a YouTube video. */
+export const youTubeWatchUrl = (id: string) =>
+  `https://www.youtube.com/watch?v=${id}`;
+
 /**
  * The video identifier in any YouTube URL form, or null. YouTube reading shares this rule so
  * the reader and the validator cannot disagree about what names a video.
@@ -69,15 +73,13 @@ export const youTubePlaylistId = (value: string): string | null => {
   } catch {
     return null;
   }
+  const id = url.searchParams.get("list");
   if (
-    !(
-      ["http:", "https:"].includes(url.protocol) &&
-      YOUTUBE_HOSTS.has(url.hostname)
-    )
+    !["http:", "https:"].includes(url.protocol) ||
+    !YOUTUBE_HOSTS.has(url.hostname)
   ) {
     return null;
   }
-  const id = url.searchParams.get("list");
   return id && /^[\w-]{2,64}$/u.test(id) ? id : null;
 };
 
@@ -108,7 +110,7 @@ export const normalizeSourceUrl = (
     if (!id) {
       throw invalid();
     }
-    return { source: "youtube", url: `https://www.youtube.com/watch?v=${id}` };
+    return { source: "youtube", url: youTubeWatchUrl(id) };
   }
   if (
     ["soundcloud.com", "www.soundcloud.com", "m.soundcloud.com"].includes(host)

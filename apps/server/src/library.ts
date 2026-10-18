@@ -121,6 +121,7 @@ export class Library extends Context.Service<
       input: SaveSetInput
     ) => Effect.Effect<SavedSet, LibraryError>;
     readonly find: (id: string) => Effect.Effect<SavedSet, LibraryError>;
+    readonly findByUrl: (url: string) => Effect.Effect<SavedSet, LibraryError>;
     /** The Sets with these identifiers, in the order asked for. Missing ones are left out. */
     readonly byIds: (
       ids: readonly string[]
@@ -578,6 +579,23 @@ export class Library extends Context.Service<
 
       const find = Effect.fn("Library.find")((id: string) =>
         execute(resolve(id).pipe(Effect.flatMap((row) => hydrateSet(row))))
+      );
+
+      const findByUrl = Effect.fn("Library.findByUrl")((value: string) =>
+        execute(
+          Effect.gen(function* findByUrlEffect() {
+            const { url } = yield* normalizeUrl(value);
+            const [row] = yield* db
+              .select({ id: sets.id })
+              .from(sets)
+              .where(eq(sets.url, url))
+              .limit(1);
+            if (!row) {
+              return yield* Effect.fail(setNotFound());
+            }
+            return yield* find(row.id);
+          })
+        )
       );
 
       // Queue order comes from the caller; each Set must resolve for this Person.
@@ -1394,6 +1412,7 @@ export class Library extends Context.Service<
         deletePlaylist,
         failDownload,
         find,
+        findByUrl,
         finishDownload,
         list,
         playlists: playlistsList,

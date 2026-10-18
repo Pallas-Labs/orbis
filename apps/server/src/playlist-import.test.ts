@@ -232,12 +232,19 @@ test("a YouTube Music playlist becomes an ordered Playlist of saved Sets", async
       title: `Track ${videoId(0)}`,
     });
     // The Set saved by hand took one Download place before the import began.
-    const outcomes = body.sets.map((set) => set.autoDownloadResult);
-    expect(outcomes[2]).toBe("inProgress");
-    expect(outcomes.filter((outcome) => outcome === "queued")).toHaveLength(19);
-    expect(outcomes.filter((outcome) => outcome === "queueFull")).toHaveLength(
-      38
-    );
+    expect(body.sets[2]?.autoDownloadResult).toBe("inProgress");
+    const autoDownload = new Map<string, number>();
+    for (const { autoDownloadResult } of body.sets) {
+      autoDownload.set(
+        autoDownloadResult,
+        (autoDownload.get(autoDownloadResult) ?? 0) + 1
+      );
+    }
+    expect(Object.fromEntries(autoDownload)).toEqual({
+      inProgress: 1,
+      queueFull: 38,
+      queued: 19,
+    });
     expect(youTube.calls).toEqual([
       "playlists",
       "playlistItems",
@@ -270,12 +277,7 @@ test("a YouTube Music playlist becomes an ordered Playlist of saved Sets", async
       body.sets.map((set) => set.id)
     );
     await record("ordered-import", {
-      autoDownload: {
-        inProgress: outcomes.filter((outcome) => outcome === "inProgress")
-          .length,
-        queueFull: outcomes.filter((outcome) => outcome === "queueFull").length,
-        queued: outcomes.filter((outcome) => outcome === "queued").length,
-      },
+      autoDownload: Object.fromEntries(autoDownload),
       dataApiCalls: youTube.calls,
       firstSet: body.sets[0],
       playlist: body.playlist,

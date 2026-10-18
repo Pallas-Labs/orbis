@@ -5,7 +5,7 @@ import {
 
 import { LibraryError } from "./errors.js";
 
-export { youTubeVideoId } from "@orbis/contracts";
+export { youTubeVideoId, youTubeWatchUrl } from "@orbis/contracts";
 
 /**
  * The canonical rule lives in @orbis/contracts so every client shares it. The library

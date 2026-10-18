@@ -57,6 +57,7 @@ export {
   UnsupportedSourceUrlError,
   youTubePlaylistId,
   youTubeVideoId,
+  youTubeWatchUrl,
 } from "./source-url.js";
 export {
   formatSignInCode,

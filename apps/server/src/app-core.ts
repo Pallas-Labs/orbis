@@ -93,6 +93,7 @@ import {
   updatePerson,
   updatePersonFilters,
 } from "./identity.js";
+import { MAX_SETS_PER_PLAYLIST } from "./library-limits.js";
 import { Library } from "./library.js";
 import type { LoggedRecord, LoggingOptions } from "./logging.js";
 import {
@@ -320,28 +321,41 @@ const trustUnavailable = () =>
     statusCode: 500,
   });
 
-/** What a playlist read that YouTube refused or could not answer means to the person importing. */
-const importFailure = (error: MetadataError) =>
-  new LibraryError(
-    error.reason === "provider-rejected"
-      ? {
-          message:
-            "YouTube can't share this playlist. Only public and unlisted playlists can be imported.",
-          statusCode: 404,
-        }
-      : {
-          message:
-            error.reason === "not-configured"
-              ? "Playlist import is not set up on this server."
-              : "YouTube is not answering. Try the import again.",
-          statusCode: 503,
-        }
-  );
+const importFailure = (error: MetadataError) => {
+  switch (error.reason) {
+    case "provider-rejected": {
+      return new LibraryError({
+        message:
+          "YouTube can't share this playlist. Only public and unlisted playlists can be imported.",
+        statusCode: 404,
+      });
+    }
+    case "not-configured": {
+      return new LibraryError({
+        message: "Playlist import is not set up on this server.",
+        statusCode: 503,
+      });
+    }
+    default: {
+      return new LibraryError({
+        message: "YouTube is not answering. Try the import again.",
+        statusCode: 503,
+      });
+    }
+  }
+};
 
-/** A re-import keeps the earlier Playlist, so the new one takes the next free name. */
-const importedPlaylistNames = (title: string) => {
+/**
+ * A re-import keeps the earlier Playlist, so the new one takes the next free name. Names are
+ * unique without regard to case, so `taken` holds them lowercased.
+ */
+const freePlaylistName = (title: string, taken: ReadonlySet<string>) => {
   const base = title.slice(0, 90).trim() || "YouTube playlist";
-  return [base, ...Array.from({ length: 49 }, (_, n) => `${base} (${n + 2})`)];
+  let name = base;
+  for (let n = 2; taken.has(name.toLowerCase()); n += 1) {
+    name = `${base} (${n})`;
+  }
+  return name;
 };
 
 const missingPlaylist = () =>
@@ -554,6 +568,18 @@ export const createPortableApp = (options: {
           Effect.asVoid
         )
       );
+      // Stores provider metadata, then reads details unless the yt-dlp fallback already did.
+      const recordMetadata = (
+        set: SavedSet,
+        personal: typeof Library.Service,
+        enriched: EnrichedMetadata
+      ) =>
+        library.recordEnrichment(set.id, enriched).pipe(
+          Effect.tap(() =>
+            enriched.extras ? startTracklist(set.id) : fillDetails(set)
+          ),
+          Effect.flatMap(() => personal.find(set.id))
+        );
       // Enrichment failure is swallowed so the save still succeeds, so it is the
       // one outcome a client cannot see. The log records which set and which reason.
       const enrichSavedSet = Effect.fn("SaveSet.enrich")((
@@ -563,24 +589,14 @@ export const createPortableApp = (options: {
         const onMetadataFailure = (error: MetadataError) =>
           Effect.logWarning("set metadata enrichment failed").pipe(
             Effect.annotateLogs({ reason: error.reason, set: set.id }),
-            Effect.andThen(library.recordEnrichmentFailure(set.id))
+            Effect.andThen(library.recordEnrichmentFailure(set.id)),
+            Effect.tap(() => fillDetails(set)),
+            Effect.flatMap(() => personal.find(set.id))
           );
         return metadata.enrich({ source: set.source, url: set.url }).pipe(
           Effect.flatMap((enriched) => reviseTitle(set, enriched)),
-          Effect.flatMap((enriched) =>
-            library
-              .recordEnrichment(set.id, enriched)
-              // The yt-dlp fallback already stored the details, so a second read is skipped.
-              .pipe(
-                Effect.tap(() =>
-                  enriched.extras ? startTracklist(set.id) : fillDetails(set)
-                )
-              )
-          ),
-          Effect.catchTag("MetadataError", (failure) =>
-            onMetadataFailure(failure).pipe(Effect.tap(() => fillDetails(set)))
-          ),
-          Effect.flatMap(() => personal.find(set.id))
+          Effect.flatMap((enriched) => recordMetadata(set, personal, enriched)),
+          Effect.catchTag("MetadataError", onMetadataFailure)
         );
       });
       const autoDownloadSaved = Effect.fn("AutoDownload.onSave")(
@@ -1078,7 +1094,7 @@ export const createPortableApp = (options: {
                     );
                   }
                   const read = yield* metadata
-                    .playlist(playlistId)
+                    .playlist(playlistId, MAX_SETS_PER_PLAYLIST)
                     .pipe(Effect.mapError(importFailure));
                   if (read.tracks.length === 0) {
                     return yield* Effect.fail(
@@ -1089,11 +1105,15 @@ export const createPortableApp = (options: {
                     );
                   }
                   const personal = yield* Library;
-                  const playlist = yield* Effect.firstSuccessOf(
-                    importedPlaylistNames(read.title).map((name) =>
-                      personal.createPlaylist(name)
+                  const taken = new Set(
+                    (yield* personal.playlists()).map(({ name }) =>
+                      name.toLowerCase()
                     )
                   );
+                  const playlist = yield* personal.createPlaylist(
+                    freePlaylistName(read.title, taken)
+                  );
+                  // Titles skip revision here: it is one model call per track, inside the request.
                   const saveTrack = Effect.fn("ImportPlaylist.saveTrack")(
                     function* saveTrack(track: PlaylistTrack) {
                       const saved = yield* personal
@@ -1101,40 +1121,20 @@ export const createPortableApp = (options: {
                         .pipe(
                           Effect.catchIf(
                             (error) => error.statusCode === 409,
-                            () =>
-                              Effect.gen(function* findSaved() {
-                                const [row] = yield* db
-                                  .select({ id: setRows.id })
-                                  .from(setRows)
-                                  .where(eq(setRows.url, track.url))
-                                  .limit(1)
-                                  .pipe(
-                                    asLibraryError(
-                                      "Could not read the library."
-                                    )
-                                  );
-                                if (!row) {
-                                  return yield* Effect.fail(
-                                    new LibraryError({
-                                      message: "Set not found.",
-                                      statusCode: 404,
-                                    })
-                                  );
-                                }
-                                return yield* personal.find(row.id);
-                              })
+                            () => personal.findByUrl(track.url)
                           )
                         );
-                      if (
+                      const known =
                         saved.titleEditedByUser ||
-                        saved.metadataState === "enriched"
-                      ) {
-                        return yield* autoDownloadSaved(saved);
-                      }
-                      yield* library.recordEnrichment(saved.id, track.metadata);
-                      yield* fillDetails(saved);
+                        saved.metadataState === "enriched";
                       return yield* autoDownloadSaved(
-                        yield* personal.find(saved.id)
+                        known
+                          ? saved
+                          : yield* recordMetadata(
+                              saved,
+                              personal,
+                              track.metadata
+                            )
                       );
                     }
                   );
