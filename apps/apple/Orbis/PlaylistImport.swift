@@ -1,0 +1,48 @@
+import Foundation
+import OrbisDesign
+
+/// Where a playlist import stands. One value, so the sheet cannot show the working row over a
+/// summary or a failure beside a running import.
+enum PlaylistImport: Equatable {
+  case idle
+  case importing(link: String)
+  case imported(ImportedPlaylist)
+  case failed(link: String, OrbisError)
+
+  var isImporting: Bool {
+    if case .importing = self { true } else { false }
+  }
+
+  var importedPlaylistId: String? {
+    if case .imported(let imported) = self { imported.playlist.id } else { nil }
+  }
+
+  /// What the link field shows for the import, or nil when the import has nothing to say there.
+  var fieldState: LinkFieldState? {
+    switch self {
+    case .importing: .checking
+    case .failed(_, let error): .invalid(message: Self.message(for: error))
+    case .idle, .imported: nil
+    }
+  }
+
+  /// The sentence a failed import shows. Only here are a 404 and a 503 known to mean a playlist,
+  /// so the service's generic status line is replaced with what the person can do about it.
+  static func message(for error: OrbisError) -> String {
+    switch error {
+    // A 404 with no sentence did not come from the import, and an empty playlist keeps the
+    // service's own words.
+    case .server(404, let message) where !message.isEmpty && !message.contains("no tracks"):
+      "This playlist is private or no longer exists. Only public and unlisted playlists can be imported."
+    case .server(503, let message) where message.isEmpty || message.contains("not set up"):
+      "This Orbis server can't read YouTube playlists yet."
+    // The service writes these for people: a link that is not a playlist, a playlist with nothing
+    // playable, and YouTube not answering.
+    case .server(400, let message) where !message.isEmpty, .server(404, let message) where !message.isEmpty,
+      .server(503, let message) where !message.isEmpty:
+      message
+    default:
+      error.message
+    }
+  }
+}

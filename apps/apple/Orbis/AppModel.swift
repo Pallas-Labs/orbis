@@ -186,6 +186,8 @@ final class AppModel {
   /// does not know from one the library already holds.
   var fileFailure: OrbisError?
 
+  var playlistImport: PlaylistImport = .idle
+
   /// The Set filed moments ago, whose title and Tags the service read from the link. This is
   /// the person's chance to overrule that reading, and it closes without a change.
   struct Reveal: Equatable {
@@ -485,6 +487,7 @@ final class AppModel {
     openedSets = [:]
     reveal = nil
     revealFailure = nil
+    playlistImport = .idle
     // Recent Tags, filters, searches, and Playlists are the last Person's habits, not this
     // device's.
     recentTags = []
@@ -533,7 +536,13 @@ final class AppModel {
   func fileLink() async {
     guard let client else { return }
     let link = linkToFile.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !link.isEmpty else { return }
+    guard !link.isEmpty, !playlistImport.isImporting else { return }
+    // A playlist page names no single Set, so filing it would only be refused.
+    if PlaylistLink.kind(of: link) == .playlist {
+      await importPlaylist(link: link)
+      return
+    }
+    if case .failed = playlistImport { playlistImport = .idle }
     isFiling = true
     fileFailure = nil
     fileConfirmation = nil
@@ -567,6 +576,56 @@ final class AppModel {
     } catch {
       fileFailure = .unreachable
     }
+  }
+
+  /// Reads a YouTube playlist into a new Playlist, saving every track to the Library. The lists
+  /// are refreshed in place before the summary shows, so Open Playlist lands on a listed Playlist.
+  func importPlaylist(link: String) async {
+    let link = link.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let client, !link.isEmpty, !isFiling, !playlistImport.isImporting else { return }
+    fileFailure = nil
+    fileConfirmation = nil
+    playlistImport = .importing(link: link)
+    let outcome: PlaylistImport
+    do {
+      let imported = try await client.importPlaylist(url: link)
+      async let playlists: Void = refreshPlaylistsQuietly()
+      async let library: Void = refreshLibraryQuietly()
+      _ = await (playlists, library)
+      outcome = .imported(imported)
+    } catch OrbisError.cancelled {
+      outcome = .idle
+    } catch let error as OrbisError {
+      outcome = .failed(link: link, error)
+    } catch {
+      outcome = .failed(link: link, .unreachable)
+    }
+    // Signing out while the request was out resets the import, and its answer belongs to the
+    // Person who left.
+    guard playlistImport == .importing(link: link) else { return }
+    if case .imported = outcome, linkToFile.trimmingCharacters(in: .whitespacesAndNewlines) == link {
+      linkToFile = ""
+    }
+    playlistImport = outcome
+  }
+
+  func retryPlaylistImport() async {
+    guard case .failed(let link, _) = playlistImport else { return }
+    await importPlaylist(link: link)
+  }
+
+  /// Clears a summary or a failure once its sheet has gone. A running import keeps its state, so
+  /// its answer still lands.
+  func finishPlaylistImport() {
+    if !playlistImport.isImporting {
+      playlistImport = .idle
+    }
+  }
+
+  func openImportedPlaylist() {
+    guard case .imported(let imported) = playlistImport else { return }
+    playlistImport = .idle
+    showPlaylist(imported.playlist.id)
   }
 
   /// Files the link the clipboard holds, once it is confirmed as one Orbis takes.
