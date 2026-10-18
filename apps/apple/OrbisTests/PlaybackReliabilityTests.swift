@@ -91,7 +91,7 @@ final class PlaybackReliabilityTests: XCTestCase {
     player.pause()
     player.seek(to: 12)
     try await waitUntil("The report seek must land") {
-      abs((player.player?.currentTime().seconds ?? 0) - 12) < 0.25
+      player.settledPosition.map { abs($0 - 12) < 0.25 } ?? false
     }
 
     let report = try playbackReport(player)
@@ -100,18 +100,20 @@ final class PlaybackReliabilityTests: XCTestCase {
       return command
     }
     XCTAssertEqual(commands.suffix(2).map(\.kind), [.pause, .seek])
-    let result = try XCTUnwrap(report.entries.compactMap { entry -> PlaybackDiagnostics.SeekEvent? in
-      guard case .seekResult(let result) = entry.event else { return nil }
-      return result
-    }.last)
+    let result = try XCTUnwrap(
+      report.entries.compactMap { entry -> PlaybackDiagnostics.SeekEvent? in
+        guard case .seekResult(let result) = entry.event else { return nil }
+        return result
+      }.last)
     XCTAssertTrue(result.finished)
     XCTAssertEqual(try XCTUnwrap(result.target.value), 12, accuracy: 0.01)
     XCTAssertEqual(try XCTUnwrap(result.actual.value), 12, accuracy: 0.25)
     XCTAssertEqual(try XCTUnwrap(report.current.displayedTime.value), 12, accuracy: 0.25)
-    let installed = try XCTUnwrap(report.entries.last { entry in
-      if case .item(let item) = entry.event { return item.phase == .installed }
-      return false
-    })
+    let installed = try XCTUnwrap(
+      report.entries.last { entry in
+        if case .item(let item) = entry.event { return item.phase == .installed }
+        return false
+      })
     let itemEntries = report.entries.filter { $0.sequence >= installed.sequence }
     XCTAssertEqual(Set(itemEntries.map(\.snapshot.playbackGeneration)).count, 1)
   }

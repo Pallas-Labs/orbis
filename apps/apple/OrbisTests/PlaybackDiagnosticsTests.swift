@@ -68,4 +68,46 @@ final class PlaybackDiagnosticsTests: XCTestCase {
     }
     XCTAssertNoThrow(try decode(report))
   }
+
+  func testRoutineSamplesRetainAnIncidentAndFullSnapshotsStayBounded() throws {
+    var snapshot = PlaybackDiagnostics.Snapshot()
+    snapshot.state = .playing
+    snapshot.itemState = .ready
+    snapshot.actualTime = .init(123.456)
+    snapshot.displayedTime = .init(123.456)
+    snapshot.duration = .init(7_200)
+    snapshot.rate = .init(1)
+    snapshot.sessionReady = true
+    snapshot.bufferRanges = (0..<8).map {
+      .init(start: .init(Double($0) * 20.123456), duration: .init(10.123456))
+    }
+    snapshot.access = .init(
+      bytesTransferred: 1_234_567, transferDuration: .init(12.3456),
+      observedBitrate: .init(128_000.123), indicatedBitrate: .init(128_000),
+      stalls: 1, downloadedDuration: .init(120.1234))
+
+    let incidents = PlaybackDiagnostics()
+    incidents.record(
+      .discontinuity(.init(mediaDelta: .init(-1), wallDelta: .init(0.5), rate: .init(1), gap: .init(-1.5))),
+      snapshot: snapshot)
+    for _ in 0..<300 { incidents.record(.sample, snapshot: snapshot) }
+    let incidentReport = try decode(incidents.report(current: snapshot))
+    XCTAssertTrue(
+      incidentReport.entries.contains { if case .discontinuity = $0.event { true } else { false } },
+      "Routine samples must not evict the incident")
+
+    let full = PlaybackDiagnostics()
+    for index in 0..<256 {
+      full.record(.command(.init(kind: .seek, origin: .app, target: .init(Double(index)))), snapshot: snapshot)
+    }
+    let text = full.report(current: snapshot)
+    let report = try decode(text)
+    XCTAssertLessThanOrEqual(text.utf8.count, PlaybackDiagnostics.reportByteLimit)
+    XCTAssertLessThanOrEqual(report.entries.count, PlaybackDiagnostics.retainedEntryLimit)
+    XCTAssertEqual(report.entries.last?.sequence, 256)
+    let attachment = XCTAttachment(data: Data(text.utf8), uniformTypeIdentifier: "public.json")
+    attachment.name = "full-playback-report-\(report.entries.count)-entries-\(text.utf8.count)-bytes"
+    attachment.lifetime = .keepAlways
+    add(attachment)
+  }
 }

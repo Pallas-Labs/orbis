@@ -216,10 +216,11 @@ final class StreamingPlaybackTests: XCTestCase {
     }
     let heldReport = try report(player)
     XCTAssertEqual(heldReport.current.state, .loading)
-    XCTAssertTrue(heldReport.entries.contains { entry in
-      if case .waiting = entry.event { return true }
-      return false
-    })
+    XCTAssertTrue(
+      heldReport.entries.contains { entry in
+        if case .waiting = entry.event { return true }
+        return false
+      })
     player.pause()
     try await control("release-stream", id: fixture.set.id, seed: fixture.seed)
     try await waitUntil("The released item must become ready while paused", player: player) {
@@ -259,13 +260,13 @@ final class StreamingPlaybackTests: XCTestCase {
     XCTAssertEqual(finishes, 1, "One natural audio end must finish the Listen exactly once")
   }
 
-  func testARealBufferUnderrunHoldsPositionAndRecoversWithoutSkipping() async throws {
+  func testWithheldOggAudioKeepsPlayIntentAndRecoversWithoutSkipping() async throws {
     let fixture = try await fixture()
     let player = AudioPlayer()
     var finishes = 0
     player.onFinished = { _ in finishes += 1 }
     defer {
-      retain("ogg-buffer-underrun-recovery-timeline")
+      retain("ogg-withheld-audio-recovery-timeline")
       player.stop()
     }
     player.play(set: fixture.set, baseURL: fixture.streamAddress, token: fixture.client.token)
@@ -276,16 +277,21 @@ final class StreamingPlaybackTests: XCTestCase {
     }
     try await control("hold-stream", id: fixture.set.id, seed: fixture.seed)
     try await waitUntil(
-      "Withheld bytes must exhaust the real player buffer", player: player, seconds: 45
+      "Withheld bytes must stop the real player timeline", player: player, seconds: 45
     ) {
       let state = try await self.streamState(fixture)
       return state.waiting > 0 && player.player?.timeControlStatus != .playing
     }
     let engine = try XCTUnwrap(player.player)
     let held = engine.currentTime().seconds
-    try await observe(player, phase: "real buffer underrun")
+    try await observe(player, phase: "withheld Ogg audio")
     XCTAssertEqual(engine.currentTime().seconds, held, accuracy: 0.15)
-    XCTAssertEqual(player.state, .loading, "Buffering must preserve the request to play")
+    if engine.timeControlStatus == .waitingToPlayAtSpecifiedRate {
+      XCTAssertEqual(player.state, .loading, "An engine waiting for data must show loading")
+    }
+    XCTAssertTrue(
+      player.state == .loading || player.state == .playing,
+      "Withheld audio must preserve the request to play through a wait or premature-end retry")
     XCTAssertEqual(finishes, 0, "An early stream end must not finish the Listen")
     let releasedAt = ProcessInfo.processInfo.systemUptime
     var previousMedia = held

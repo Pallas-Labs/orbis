@@ -203,11 +203,12 @@ final class AudioPlayer {
   private func diagnosticSnapshot() -> PlaybackDiagnostics.Snapshot {
     let engine = player
     let item = engine?.currentItem
-    let ranges = item?.loadedTimeRanges.prefix(8).compactMap { value -> PlaybackDiagnostics.BufferRange? in
-      let range = value.timeRangeValue
-      guard range.start.seconds.isFinite, range.duration.seconds.isFinite else { return nil }
-      return .init(start: .init(range.start.seconds), duration: .init(range.duration.seconds))
-    } ?? []
+    let ranges =
+      item?.loadedTimeRanges.prefix(8).compactMap { value -> PlaybackDiagnostics.BufferRange? in
+        let range = value.timeRangeValue
+        guard range.start.seconds.isFinite, range.duration.seconds.isFinite else { return nil }
+        return .init(start: .init(range.start.seconds), duration: .init(range.duration.seconds))
+      } ?? []
     return PlaybackDiagnostics.Snapshot(
       state: diagnosticState(state), itemState: diagnosticItemState(item?.status),
       waitingReason: diagnosticWaitingReason(engine?.reasonForWaitingToPlay),
@@ -734,30 +735,20 @@ final class AudioPlayer {
   var canSkipCues: Bool { !cueStarts.isEmpty }
 
   /// Jumps to the start of the next Cue. Past the last one there is nowhere to go.
-  func skipToNextCue(
-    origin: PlaybackDiagnostics.Origin = .app, fallback: TimeInterval? = nil
-  ) {
+  func skipToNextCue(origin: PlaybackDiagnostics.Origin = .app) {
     record(.command(.init(kind: .nextCue, origin: origin)))
-    guard let start = nextCue?.startSeconds else {
-      if let fallback, !canSkipCues {
-        seek(to: elapsed + fallback, origin: .internalOperation)
-      }
-      return
-    }
+    guard let start = nextCue?.startSeconds else { return }
     logger.debug("Next track at \(clock(start), privacy: .public)")
     seek(to: start, origin: .internalOperation)
   }
 
   /// Jumps back the way a music player's back button does: to the start of this Cue, or to the
   /// previous one when this one has barely begun.
-  func skipToPreviousCue(
-    origin: PlaybackDiagnostics.Origin = .app, fallback: TimeInterval? = nil
-  ) {
+  func skipToPreviousCue(origin: PlaybackDiagnostics.Origin = .app) {
     record(.command(.init(kind: .previousCue, origin: origin)))
     let starts = cueStarts.filter { $0 <= elapsed }
     guard let current = starts.last else {
-      let target = !canSkipCues ? fallback.map { elapsed + $0 } ?? 0 : 0
-      seek(to: target, origin: .internalOperation)
+      seek(to: 0, origin: .internalOperation)
       return
     }
     if elapsed - current > 3 || starts.count < 2 {
@@ -845,7 +836,8 @@ final class AudioPlayer {
       playIfReady()
       publishNowPlaying(isPlaying: state == .playing)
     case .failed:
-      let itemError = item.error.map(PlaybackDiagnostics.NormalizedError.init)
+      let itemError =
+        item.error.map(PlaybackDiagnostics.NormalizedError.init)
         ?? Self.normalizedLastErrorLogEntry(of: item)
       let detail = itemError.map(Self.describe) ?? "no error"
       logger.error("Item failed: \(detail, privacy: .public)")
@@ -1185,18 +1177,12 @@ final class AudioPlayer {
     }
   }
 
-  /// An error as a fixed domain and numeric code. SDK text can contain request addresses.
   nonisolated static func describe(_ error: any Error) -> String {
     describe(PlaybackDiagnostics.NormalizedError(error))
   }
 
   nonisolated static func describe(_ error: PlaybackDiagnostics.NormalizedError) -> String {
     "domain=\(error.domain.rawValue) code=\(error.code)"
-  }
-
-  /// The newest entry of the item's own error log, without its SDK comment.
-  nonisolated static func lastErrorLogEntry(of item: AVPlayerItem) -> String {
-    normalizedLastErrorLogEntry(of: item).map { "; log: " + describe($0) } ?? ""
   }
 
   nonisolated static func normalizedLastErrorLogEntry(of item: AVPlayerItem)
@@ -1329,13 +1315,23 @@ final class AudioPlayer {
     // without a timed Tracklist has nothing to step between, so they skip like the buttons do.
     let next = center.nextTrackCommand.addTarget { [weak self] _ in
       guard let self else { return .noSuchContent }
-      self.skipToNextCue(origin: .systemRemote, fallback: Self.skipAhead)
+      if self.canSkipCues {
+        self.skipToNextCue(origin: .systemRemote)
+      } else {
+        self.record(.command(.init(kind: .nextCue, origin: .systemRemote)))
+        self.skip(by: Self.skipAhead, origin: .internalOperation)
+      }
       return .success
     }
     center.nextTrackCommand.isEnabled = true
     let previous = center.previousTrackCommand.addTarget { [weak self] _ in
       guard let self else { return .noSuchContent }
-      self.skipToPreviousCue(origin: .systemRemote, fallback: -Self.skipBack)
+      if self.canSkipCues {
+        self.skipToPreviousCue(origin: .systemRemote)
+      } else {
+        self.record(.command(.init(kind: .previousCue, origin: .systemRemote)))
+        self.skip(by: -Self.skipBack, origin: .internalOperation)
+      }
       return .success
     }
     center.previousTrackCommand.isEnabled = true

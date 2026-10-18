@@ -1,7 +1,5 @@
 import Foundation
 
-/// Recent typed playback evidence for a report copied during this app run.
-/// AudioPlayer owns one instance on the main actor.
 final class PlaybackDiagnostics {
   static let retainedEntryLimit = 256
   static let reportByteLimit = 256 * 1_024
@@ -199,7 +197,7 @@ final class PlaybackDiagnostics {
   }
 
   struct ActivationEvent: Codable, Equatable {
-    enum Phase: String, Codable { case began, intentChanged, accepted, superseded, failed }
+    enum Phase: String, Codable { case began, intentChanged, accepted, superseded, failed, cancelled }
     let phase: Phase
     let generation: Int
     let wantsSound: Bool
@@ -298,30 +296,38 @@ final class PlaybackDiagnostics {
         snapshot: snapshot))
     nextSequence += 1
     if entries.count > maxEntries {
-      let overflow = entries.count - maxEntries
-      entries.removeFirst(overflow)
-      evictedCount += overflow
+      let index = entries.firstIndex { $0.event == .sample } ?? entries.startIndex
+      entries.remove(at: index)
+      evictedCount += 1
     }
   }
 
   func report(current: Snapshot) -> String {
-    var renderedEntries = entries
-    var reportEvictions = evictedCount
     let generatedAt = Date()
     let generatedUptime = Finite(ProcessInfo.processInfo.systemUptime)
-    while true {
+    func encoded(_ retained: [Entry]) -> Data? {
       let report = Report(
-        schemaVersion: 1, metadata: metadata, generatedAt: generatedAt,
-        generatedUptime: generatedUptime, evictedCount: reportEvictions,
-        current: current, entries: renderedEntries)
-      if let data = Self.encode(report), data.count <= maxReportBytes {
-        return String(decoding: data, as: UTF8.self)
-      }
-      guard !renderedEntries.isEmpty else { return "{}" }
-      let removal = max(1, renderedEntries.count / 2)
-      renderedEntries.removeFirst(removal)
-      reportEvictions += removal
+        schemaVersion: 1, metadata: metadata, generatedAt: generatedAt, generatedUptime: generatedUptime,
+        evictedCount: evictedCount + entries.count - retained.count, current: current, entries: retained)
+      return Self.encode(report)
     }
+    if let data = encoded(entries), data.count <= maxReportBytes {
+      return String(decoding: data, as: UTF8.self)
+    }
+    let incidents = entries.filter { $0.event != .sample }
+    var lower = 0
+    var upper = incidents.count
+    var best = encoded([]) ?? Data("{}".utf8)
+    while lower <= upper {
+      let count = lower + (upper - lower) / 2
+      if let data = encoded(Array(incidents.suffix(count))), data.count <= maxReportBytes {
+        best = data
+        lower = count + 1
+      } else {
+        upper = count - 1
+      }
+    }
+    return best.count <= maxReportBytes ? String(decoding: best, as: UTF8.self) : "{}"
   }
 
   func reset() {
@@ -333,7 +339,7 @@ final class PlaybackDiagnostics {
   private static func encode(_ report: Report) -> Data? {
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+    encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
     return try? encoder.encode(report)
   }
 }

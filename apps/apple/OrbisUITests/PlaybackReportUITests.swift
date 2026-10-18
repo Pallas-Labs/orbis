@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class PlaybackReportUITests: LibraryJourney {
   func testSettingsCopiesAPlaybackReport() throws {
     let app = try launch()

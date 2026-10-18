@@ -809,13 +809,11 @@ final class AppModel {
     }
   }
 
-  private func recordPendingActivation(
-    _ phase: PlaybackDiagnostics.ActivationEvent.Phase, with pending: PendingActivation? = nil
-  ) {
-    guard let pending = pending ?? pendingActivation else { return }
+  private func recordPendingActivation(_ phase: PlaybackDiagnostics.ActivationEvent.Phase) {
+    guard let pending = pendingActivation else { return }
     let latency: TimeInterval? =
       switch phase {
-      case .accepted, .superseded, .failed:
+      case .accepted, .superseded, .failed, .cancelled:
         ProcessInfo.processInfo.systemUptime - pending.requestedAt
       case .began, .intentChanged:
         nil
@@ -938,7 +936,11 @@ final class AppModel {
       }
       // A newer play, or signing out, owns the player now. Playing this answer would start audio
       // with a key the device may no longer hold.
-      guard generation == playGeneration, !Task.isCancelled else { return }
+      guard generation == playGeneration else { return }
+      guard !Task.isCancelled else {
+        recordPendingActivation(.cancelled)
+        return
+      }
       if revision == queueMutationGeneration { queue = .loaded(loaded) }
       recordPendingActivation(.accepted)
       guard let playing = loaded.entries.first(where: { $0.id == id }) else { return }
@@ -954,10 +956,10 @@ final class AppModel {
       attachTracklist(to: playing)
       startReportingPosition(id)
     } catch is CancellationError {
-      if generation == playGeneration { recordPendingActivation(.failed) }
+      if generation == playGeneration { recordPendingActivation(.cancelled) }
       return
     } catch OrbisError.cancelled {
-      if generation == playGeneration { recordPendingActivation(.failed) }
+      if generation == playGeneration { recordPendingActivation(.cancelled) }
       return
     } catch let error as OrbisError {
       guard generation == playGeneration else { return }
@@ -1030,10 +1032,8 @@ final class AppModel {
         try await Task.sleep(for: .seconds(1))
       }
     } catch is CancellationError {
-      if generation == playGeneration { recordPendingActivation(.failed) }
       return
     } catch OrbisError.cancelled {
-      if generation == playGeneration { recordPendingActivation(.failed) }
       return
     } catch {
       if generation == tracklistGeneration, tracklists[id]?.state != .ready {
@@ -1052,7 +1052,6 @@ final class AppModel {
       if audioPlayer.currentSetId == id { audioPlayer.setCues(tracklist.cues) }
       if tracklist.state == .pending { await loadTracklist(id) }
     } catch OrbisError.cancelled {
-      if generation == playGeneration { recordPendingActivation(.failed) }
       return
     } catch {
       if generation == tracklistGeneration {
@@ -1128,15 +1127,21 @@ final class AppModel {
       } onCancel: {
         request.cancel()
       }
-      guard generation == playGeneration, !Task.isCancelled else { return }
+      guard generation == playGeneration else { return }
+      guard !Task.isCancelled else {
+        recordPendingActivation(.cancelled)
+        return
+      }
       if revision == queueMutationGeneration { queue = .loaded(loaded) }
       recordPendingActivation(.accepted)
       let wantsSound = pendingActivation?.wantsSound ?? false
       pendingActivation = nil
       playActiveEntry(of: loaded, from: client, autoplay: wantsSound)
     } catch is CancellationError {
+      if generation == playGeneration { recordPendingActivation(.cancelled) }
       return
     } catch OrbisError.cancelled {
+      if generation == playGeneration { recordPendingActivation(.cancelled) }
       return
     } catch let error as OrbisError {
       guard generation == playGeneration else { return }
@@ -1187,7 +1192,11 @@ final class AppModel {
     let revision = queueMutationGeneration
     do {
       let loaded = try await request.value
-      guard generation == playGeneration, !Task.isCancelled else { return }
+      guard generation == playGeneration else { return }
+      guard !Task.isCancelled else {
+        recordPendingActivation(.cancelled)
+        return
+      }
       if revision == queueMutationGeneration { queue = .loaded(loaded) }
       recordPendingActivation(.accepted)
       let wantsSound = pendingActivation?.wantsSound ?? false
@@ -1198,6 +1207,7 @@ final class AppModel {
       // was would be a flicker the person did not ask for.
       await refreshLibraryQuietly()
     } catch OrbisError.cancelled {
+      if generation == playGeneration { recordPendingActivation(.cancelled) }
       return
     } catch let error as OrbisError {
       guard generation == playGeneration else { return }
