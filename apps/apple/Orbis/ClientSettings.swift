@@ -19,7 +19,7 @@ protocol ClientSettingsStore: AnyObject {
 }
 
 extension ClientSettingsStore {
-  func configuredClient(address: URL, session: URLSession = .shared) -> OrbisClient? {
+  func configuredClient(address: URL, session: URLSession = .orbisAPI) -> OrbisClient? {
     guard let token = deviceToken, !token.isEmpty else { return nil }
     return OrbisClient(address: address, token: token, session: session)
   }
@@ -76,11 +76,25 @@ enum ClientSettings {
   /// or a fresh install. The file sits outside the repository, so no credential is committed,
   /// and a stored key always wins over its token.
   ///
-  /// macOS only, because the file is a path on the Mac and a phone has no such home directory.
+  /// macOS and the iOS simulator only, because the file is a path on the Mac. The simulator
+  /// names the Mac's home directory in `SIMULATOR_HOST_HOME`, so an agent driving a simulator
+  /// build sees live data without typing the pairing. A phone has no such directory.
+  ///
+  /// `ORBIS_DEVELOPMENT_CONFIG=off` turns it off for a journey that has to start, and stay,
+  /// signed out on a Mac that has the file.
   static var developmentConfiguration: (address: String, token: String)? {
-    #if DEBUG && os(macOS)
-      let file = FileManager.default.homeDirectoryForCurrentUser
-        .appending(path: ".orbis/config.json")
+    #if DEBUG && (os(macOS) || targetEnvironment(simulator))
+      guard ProcessInfo.processInfo.environment["ORBIS_DEVELOPMENT_CONFIG"] != "off" else {
+        return nil
+      }
+      #if os(macOS)
+        let home = FileManager.default.homeDirectoryForCurrentUser
+      #else
+        guard let hostHome = ProcessInfo.processInfo.environment["SIMULATOR_HOST_HOME"]
+        else { return nil }
+        let home = URL(filePath: hostHome, directoryHint: .isDirectory)
+      #endif
+      let file = home.appending(path: ".orbis/config.json")
       guard let data = try? Data(contentsOf: file),
         let json = try? JSONSerialization.jsonObject(with: data) as? [String: String],
         let address = json["serviceAddress"],

@@ -15,6 +15,7 @@ import {
   appleMusicSetColumns,
 } from "./apple-music.js";
 import { releaseAudio } from "./audio-release.js";
+import { insertBatches } from "./db/batches.js";
 import {
   downloadJobs,
   downloadRequesters,
@@ -27,7 +28,7 @@ import {
   sets,
 } from "./db/schema.js";
 import { Database } from "./db/service.js";
-import { LibraryError } from "./errors.js";
+import { asLibraryError, LibraryError } from "./errors.js";
 import type { PersonRecord } from "./identity.js";
 import {
   MAX_PLAYLISTS_PER_SET,
@@ -106,8 +107,7 @@ const setCapacityError = () =>
 const toLibraryError = <E>(error: E) =>
   error instanceof LibraryError ? error : databaseError();
 
-const execute = <A, E>(operation: Effect.Effect<A, E>) =>
-  operation.pipe(Effect.mapError(toLibraryError));
+const execute = asLibraryError("Could not complete the library request.");
 
 const decodeJsonArray = (value: string) =>
   Schema.decodeUnknownEffect(JsonStringArray)(value);
@@ -213,10 +213,11 @@ export class Library extends Context.Service<
           people: options.people?.() ?? [],
           personId,
         }).pipe(Effect.provideService(Database, db));
-      const release = (id: string) =>
+      const release = Effect.fn("Library.release")((id: string) =>
         (options.releaseAudio ?? releaseAudio)(id).pipe(
           Effect.provideService(Database, db)
-        );
+        )
+      );
 
       const entryFor = (setId: string) =>
         db
@@ -913,15 +914,46 @@ export class Library extends Context.Service<
       const cancelDownload = Effect.fn("Library.cancelDownload")((id: string) =>
         execute(
           Effect.gen(function* cancelDownloadEffect() {
-            const [canceled] = yield* db
-              .update(sets)
-              .set({
-                downloadState: "none",
-                retainedAudioBytes: null,
-                retainedAudioFormat: null,
+            const canceled = yield* db.transaction((tx) =>
+              Effect.gen(function* cancel() {
+                // Any Person who sees a Set may ask for its Download (ADR 0010);
+                // only the one who asked, or the Host, may take it away from the
+                // others while it is still in flight. A finished one answers the
+                // 400 below.
+                const [job] = yield* tx
+                  .select({
+                    personId: downloadJobs.personId,
+                    state: sets.downloadState,
+                  })
+                  .from(downloadJobs)
+                  .innerJoin(sets, eq(sets.id, downloadJobs.setId))
+                  .where(eq(downloadJobs.setId, id));
+                if (
+                  job &&
+                  job.state !== "ready" &&
+                  job.personId !== personId &&
+                  personId !== "host"
+                ) {
+                  return yield* Effect.fail(
+                    new LibraryError({
+                      message:
+                        "Only the Person who asked for this Download, or the Host, can cancel it.",
+                      statusCode: 403,
+                    })
+                  );
+                }
+                const [row] = yield* tx
+                  .update(sets)
+                  .set({
+                    downloadState: "none",
+                    retainedAudioBytes: null,
+                    retainedAudioFormat: null,
+                  })
+                  .where(and(eq(sets.id, id), ne(sets.downloadState, "ready")))
+                  .returning();
+                return row ?? null;
               })
-              .where(and(eq(sets.id, id), ne(sets.downloadState, "ready")))
-              .returning();
+            );
             if (canceled) {
               return yield* hydrateSet(canceled);
             }
@@ -1235,14 +1267,13 @@ export class Library extends Context.Service<
                   yield* tx
                     .delete(playlistSets)
                     .where(eq(playlistSets.playlistId, id));
-                  if (setIds.length > 0) {
-                    yield* tx.insert(playlistSets).values(
-                      setIds.map((setId, position) => ({
-                        playlistId: id,
-                        position,
-                        setId,
-                      }))
-                    );
+                  const rows = setIds.map((setId, position) => ({
+                    playlistId: id,
+                    position,
+                    setId,
+                  }));
+                  for (const batch of insertBatches(playlistSets, rows)) {
+                    yield* tx.insert(playlistSets).values(batch);
                   }
                   return currentRows.filter(
                     (row) => !setIds.includes(row.setId)
@@ -1385,7 +1416,7 @@ export class Library extends Context.Service<
         )
       );
 
-      return {
+      return Library.of({
         byIds,
         cancelDownload,
         claimDownload,
@@ -1412,7 +1443,7 @@ export class Library extends Context.Service<
         tags,
         updateTags,
         updateTitle,
-      };
+      });
     })
   );
 

@@ -1,5 +1,10 @@
 import Foundation
 import OrbisDesign
+import os
+
+/// What the client could not read, by type and field. Never a value: the values are the library's
+/// own titles and links.
+private let logger = Logger(subsystem: "app.orbis", category: "client")
 
 /// A failure the user can act on. Each case carries the sentence the app shows, so the
 /// recovery action is decided in one place rather than in every view.
@@ -162,6 +167,49 @@ struct GroupPerson: Decodable, Equatable, Identifiable, Sendable {
   let username: String
 }
 
+/// A Person the caller could see, with the caller's See and Appear for them (ADR 0009).
+struct PersonFilters: Decodable, Equatable, Identifiable, Sendable {
+  let id: String
+  let username: String
+  var see: Bool
+  var appear: Bool
+}
+
+/// The caller's See and Appear for one Person.
+struct SocialFilters: Decodable, Equatable, Sendable {
+  let see: Bool
+  let appear: Bool
+}
+
+/// A change to the caller's filters for one Person. Absent fields are left as they are.
+struct SocialFiltersUpdate: Encodable {
+  var see: Bool?
+  var appear: Bool?
+}
+
+/// What a visible Person is playing now, as `/events` reports it (ADR 0019).
+struct Presence: Decodable, Equatable, Sendable {
+  let personId: String
+  let set: SavedSet
+  let username: String
+}
+
+/// One of a visible Person's Playlists, with its Sets.
+struct FriendPlaylist: Decodable, Equatable, Identifiable, Sendable {
+  let id: String
+  let name: String
+  let setCount: Int
+  let sets: [SavedSet]
+}
+
+/// One time a visible Person played a Set. `finishedAt` is nil while it is still going or was
+/// left part-way.
+struct Listen: Decodable, Equatable, Sendable {
+  let set: SavedSet
+  let startedAt: String
+  let finishedAt: String?
+}
+
 /// A one-time code another device types to sign in as the same Person (ADR 0020).
 struct SignInCode: Decodable, Equatable, Sendable {
   let code: String
@@ -185,18 +233,30 @@ private struct SignedIn: Decodable {
   let key: String
 }
 
-private struct GroupPasscode: Codable {
+private struct GroupPasscode: Decodable {
   let passcode: String?
-
-  // Synthesized encoding drops nil; the service needs an explicit null to close joining.
-  func encode(to encoder: any Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
-    try container.encode(passcode, forKey: .passcode)
-  }
 }
 
 private struct GroupPeople: Decodable {
   let people: [GroupPerson]
+}
+
+private struct PeopleFiltersResponse: Decodable {
+  let people: [PersonFilters]
+}
+
+private struct FriendPlaylistsResponse: Decodable {
+  let playlists: [FriendPlaylist]
+}
+
+private struct ListensResponse: Decodable {
+  let listens: [Listen]
+}
+
+/// A frame of `/events`. Only Presence is read here; the queue and heartbeats are skipped.
+private struct EventFrame: Decodable {
+  let kind: String
+  let presence: [Presence]?
 }
 
 /// Talks to the Orbis service. Every request carries the device token, and the same
@@ -206,10 +266,15 @@ struct OrbisClient: Sendable {
   let token: String
   let session: URLSession
 
-  init(address: URL, token: String, session: URLSession = .shared) {
+  init(address: URL, token: String, session: URLSession = .orbisAPI) {
     self.address = address
     self.token = token
     self.session = session
+  }
+
+  /// The event stream's session. A session handed in, as a test does, carries the stream too.
+  private var eventSession: URLSession {
+    session === URLSession.orbisAPI ? .orbisEvents : session
   }
 
   /// An address is accepted only when it would carry the key safely: TLS, or the
@@ -236,6 +301,79 @@ struct OrbisClient: Sendable {
     let body = try Self.encoder.encode(update)
     let response = try await send(path: "me", method: "PATCH", body: body)
     return try Self.decode(Me.self, from: response)
+  }
+
+  // MARK: - Social (ADR 0009)
+
+  /// The People with Social on whom the caller could see, with the caller's See and Appear.
+  func socialFilters() async throws -> [PersonFilters] {
+    let response = try await send(path: "people/filters", method: "GET", body: nil)
+    return try Self.decode(PeopleFiltersResponse.self, from: response).people
+  }
+
+  func setFilters(for personId: String, _ update: SocialFiltersUpdate) async throws -> SocialFilters {
+    let body = try Self.encoder.encode(update)
+    let response = try await send(path: "people/\(personId)/filters", method: "PUT", body: body)
+    return try Self.decode(SocialFilters.self, from: response)
+  }
+
+  /// A visible Person's Library.
+  func friendSets(_ personId: String) async throws -> [SavedSet] {
+    let response = try await send(path: "people/\(personId)/sets", method: "GET", body: nil)
+    return try Self.decode(LibraryResponse.self, from: response).sets
+  }
+
+  func friendPlaylists(_ personId: String) async throws -> [FriendPlaylist] {
+    let response = try await send(path: "people/\(personId)/playlists", method: "GET", body: nil)
+    return try Self.decode(FriendPlaylistsResponse.self, from: response).playlists
+  }
+
+  /// What a visible Person played, newest first.
+  func friendListens(_ personId: String) async throws -> [Listen] {
+    let response = try await send(path: "people/\(personId)/listens", method: "GET", body: nil)
+    return try Self.decode(ListensResponse.self, from: response).listens
+  }
+
+  /// Reads `/events` until the stream closes, handing every Presence frame to `receive`. The
+  /// service sends one as the stream opens and another whenever someone starts or stops.
+  func watchPresence(_ receive: @escaping @MainActor @Sendable ([Presence]) -> Void) async throws {
+    let root = address.absoluteString
+    guard let url = URL(string: root.hasSuffix("/") ? root + "events" : root + "/events") else {
+      throw OrbisError.malformed
+    }
+    var request = URLRequest(url: url)
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+    request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+    // The service sends a heartbeat every 30 seconds, so a minute of silence is a dead stream.
+    request.timeoutInterval = 60
+    let bytes: URLSession.AsyncBytes
+    let response: URLResponse
+    do {
+      (bytes, response) = try await eventSession.bytes(for: request)
+    } catch let error as URLError where error.code == .cancelled {
+      throw OrbisError.cancelled
+    } catch {
+      throw OrbisError.unreachable
+    }
+    guard let http = response as? HTTPURLResponse else { throw OrbisError.malformed }
+    if http.statusCode == 401 { throw OrbisError.notSignedIn }
+    guard (200..<300).contains(http.statusCode) else {
+      throw OrbisError.server(status: http.statusCode, message: "")
+    }
+    for try await line in bytes.lines {
+      guard line.hasPrefix("data:") else { continue }
+      let json = Data(line.dropFirst(5).trimmingCharacters(in: .whitespaces).utf8)
+      let frame: EventFrame
+      do {
+        frame = try Self.decoder.decode(EventFrame.self, from: json)
+      } catch {
+        // Heartbeats and queue frames decode, so only a frame this build cannot read lands here.
+        Self.logUnreadable(EventFrame.self, error)
+        continue
+      }
+      guard frame.kind == "presence", let presence = frame.presence else { continue }
+      await receive(presence)
+    }
   }
 
   // MARK: - Signing in (ADR 0020)
@@ -279,10 +417,16 @@ struct OrbisClient: Sendable {
     return try Self.decode(GroupPasscode.self, from: response).passcode
   }
 
-  /// Sets the Group Passcode. Nil closes joining.
-  func setPasscode(_ passcode: String?) async throws -> String? {
-    let body = try Self.encoder.encode(GroupPasscode(passcode: passcode))
-    let response = try await send(path: "admin/passcode", method: "PUT", body: body)
+  /// Opens joining with a new random Group Passcode, which the service makes. The one shared
+  /// before stops working.
+  func newPasscode() async throws -> String? {
+    let response = try await send(path: "admin/passcode", method: "POST", body: nil)
+    return try Self.decode(GroupPasscode.self, from: response).passcode
+  }
+
+  /// Closes joining.
+  func closeJoining() async throws -> String? {
+    let response = try await send(path: "admin/passcode", method: "DELETE", body: nil)
     return try Self.decode(GroupPasscode.self, from: response).passcode
   }
 
@@ -465,20 +609,22 @@ struct OrbisClient: Sendable {
   }
 
   /// Decodes a body, reporting a shape this build cannot read as the one error the screens explain.
-  /// The failing key path reaches the debug log and the values do not: a version skew is worth
-  /// knowing by field, and the fields hold the library's own titles and links.
   private static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
     do {
       return try decoder.decode(type, from: data)
     } catch {
-      #if DEBUG
-        if let decoding = error as? DecodingError {
-          let line = "Orbis could not read \(T.self) at \(path(of: decoding))\n"
-          FileHandle.standardError.write(Data(line.utf8))
-        }
-      #endif
+      logUnreadable(T.self, error)
       throw OrbisError.malformed
     }
+  }
+
+  /// Logs the type and the failing key path, in every build, and never the values: a version skew
+  /// is worth knowing by field, and the fields hold the library's own titles and links.
+  private static func logUnreadable(_ type: Any.Type, _ error: any Error) {
+    guard let decoding = error as? DecodingError else { return }
+    logger.error(
+      "Could not read \(String(describing: type), privacy: .public) at \(path(of: decoding), privacy: .public)"
+    )
   }
 
   /// Where a decode failed, as the fields leading to it. No value is named.
@@ -584,4 +730,20 @@ struct OrbisClient: Sendable {
 
 private struct ServerMessage: Decodable {
   let message: String
+}
+
+extension URLSession {
+  /// Requests to the service. One made while the device has no connection waits for one rather
+  /// than failing at once, and gives up after a minute in all.
+  static let orbisAPI: URLSession = {
+    let configuration = URLSessionConfiguration.default
+    configuration.waitsForConnectivity = true
+    configuration.timeoutIntervalForResource = 60
+    return URLSession(configuration: configuration)
+  }()
+
+  /// The event stream, which stays open while People is on screen, so it has no limit on its
+  /// whole length beyond the default seven days. A stream whose heartbeat stops still times out
+  /// on its request's own interval.
+  static let orbisEvents = URLSession(configuration: .default)
 }

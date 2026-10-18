@@ -8,8 +8,8 @@ The [API Worker and Group](../api/README.md) own the application API and product
 
 The sign-in page offers two ways in ([ADR 0020](../../docs/adr/0020-sign-in-by-group-passcode-and-sign-in-code.md)):
 
-- **Sign in with a code.** On a device that is already signed in, open Devices and choose Sign in another device. Type the eight-character code on the new browser. The page accepts lower case, spaces, and the dash. A code works once and expires after 10 minutes.
-- **Join Orbis.** A new Person chooses a username and types the Group Passcode. The Host sets, changes, or clears the passcode on the Admin page. While no passcode is set, joining is closed.
+- **Sign in with a login code.** On a device that is already signed in, open Devices and choose Sign in another device. Type the eight-character code on the new browser. The page accepts lower case, spaces, and the dash. A code works once and expires after 10 minutes.
+- **Join with the Group Passcode.** A new Person chooses a username and types the Group Passcode. On the Admin page the Host opens joining, which makes a random passcode, and can copy it, make a new one, or close joining. While joining is closed, there is no passcode.
 
 The API returns a daily key, which the browser keeps in `localStorage` and labels with the browser and system, such as "Chrome on Mac". The page shows the API's own message when it refuses a passcode, a username, or a code.
 
@@ -43,14 +43,14 @@ This removes both Workers, the custom domain, the `/api/*` route, and the Group 
 ## Develop
 
 ```sh
-ORBIS_API_URL=https://vanta.tail01d084.ts.net:10000/api bun run dev
+ORBIS_API_URL=https://vanta.example.ts.net:10000/api bun run dev
 ```
 
 The API allows browser requests from `http://localhost` and `http://127.0.0.1` only when the server runs with development origins enabled. Against the Funnel, test the deployed page.
 
 ## Historical Funnel API behavior
 
-Before the Group cutover, the web client called the Funnel API. This section records the 2026-09-29 browser check; the current client calls its own API origin. On a device running Tailscale, MagicDNS resolves the Funnel name to Vanta's tailnet address (`100.77.187.21`). Chrome treats that as a local address and blocks a public site from calling it until the Person allows it: Chrome's Local Network Access prompt ("wants to access devices on your local network") appears on the first API call, once per site. A device without Tailscale resolves the public Funnel relay and sees no prompt. Safari does not have the rule. Checked on 2026-09-29 with Playwright's Chromium: denied, the request fails; granted, or resolved to the public relay, the API answers.
+Before the Group cutover, the web client called the Funnel API. This section records the 2026-09-29 browser check; the current client calls its own API origin. On a device running Tailscale, MagicDNS resolves the Funnel name to Vanta's tailnet address (a `100.x` address). Chrome treats that as a local address and blocks a public site from calling it until the Person allows it: Chrome's Local Network Access prompt ("wants to access devices on your local network") appears on the first API call, once per site. A device without Tailscale resolves the public Funnel relay and sees no prompt. Safari does not have the rule. Checked on 2026-09-29 with Playwright's Chromium: denied, the request fails; granted, or resolved to the public relay, the API answers.
 
 ## Security headers
 
@@ -73,7 +73,7 @@ The four original journey groups keep their entrypoint names. Their assertions n
 | Original group | Runnable suite | Verified behavior | Artifact directory |
 | --- | --- | --- | --- |
 | `journey` | `e2e/journey.mjs`, `e2e/sign-in.mjs`, `e2e/playlists.mjs`, `e2e/live-queue.mjs` | Joining with the Group Passcode, a Sign-in Code, the API's refusals and rate limit, saved-key expiry, Library saves, search, Tags, Downloads, Auto Download in both directions, Collaborative Playlists, player grants and audio retry | `.cache/web-library`, `.cache/web-sign-in`, `.cache/web-playlists`, `.cache/web-player` |
-| `admin-journey` | `e2e/admin-journey.mjs` | Admin hidden from a friend, the Host's own key, Group Passcode set and closed, a Sign-in Code for a Person, key creation, copying, and revocation, and removal | `.cache/web-admin` |
+| `admin-journey` | `e2e/admin-journey.mjs` | Admin hidden from a friend, the Host's own key, Group Passcode opened, copied, replaced, and closed, a Sign-in Code for a Person, key creation, copying, and revocation, and removal | `.cache/web-admin` |
 | `live-queue` | `e2e/live-queue.mjs` | Remote Playlist enqueue, another Person's queue isolation, bearer-authenticated events, reconnect, Playback Position, and automatic advance | `.cache/web-player` |
 | `shared-audio` | `e2e/shared-audio.mjs` | Shared playback without saving, the caller's Playback Position, a save without the friend's title, and a shared Download that plays | `.cache/web-social` |
 | `presence` | `e2e/presence.mjs` | Presence actions from real audio events: a failed play sends none, play shows Presence to another Person, renew, pause clears it, and a Library change from a second browser appears without a reload ([#212](https://github.com/ParthMmm/orbis/issues/212)) | `.cache/web-presence` |

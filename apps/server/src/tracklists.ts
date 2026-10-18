@@ -1,7 +1,8 @@
 import type { Cue, Tracklist } from "@orbis/contracts";
 import { and, asc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
-import { Duration, Effect } from "effect";
+import { Duration, Effect, Schedule } from "effect";
 
+import { insertBatches } from "./db/batches.js";
 import {
   libraryEntries,
   playlistSets,
@@ -13,7 +14,13 @@ import { Database } from "./db/service.js";
 import { LibraryError } from "./errors.js";
 import { Versos } from "./versos.js";
 
-const POLL_DELAYS_MS = [250, 500, 1000, 2000, 4000, 4000, 4000, 4000];
+// Waits 250 ms, doubling to a 4 s ceiling, for 8 waits: 19.75 s before the run times out.
+const pollSchedule = Schedule.exponential("250 millis").pipe(
+  Schedule.modifyDelay(({ duration }) =>
+    Effect.succeed(Duration.min(duration, Duration.seconds(4)))
+  ),
+  Schedule.upTo({ times: 8 })
+);
 const RUN_LEASE_MS = 5 * 60_000;
 
 interface TracklistClaim {
@@ -132,10 +139,11 @@ const finishTracklist = (
           return false;
         }
         yield* tx.delete(setCues).where(eq(setCues.setId, claim.id));
-        if (result.state === "ready" && result.cues.length > 0) {
-          yield* tx
-            .insert(setCues)
-            .values(result.cues.map((cue) => ({ ...cue, setId: claim.id })));
+        if (result.state === "ready") {
+          const rows = result.cues.map((cue) => ({ ...cue, setId: claim.id }));
+          for (const batch of insertBatches(setCues, rows)) {
+            yield* tx.insert(setCues).values(batch);
+          }
         }
         return true;
       })
@@ -174,6 +182,9 @@ export const runClaimedTracklist = Effect.fn("Tracklists.runClaimed")(
       if (requested._tag === "Failure") {
         if (requested.failure.reason === "not-configured") {
           yield* releaseClaim(claim, "pending");
+          yield* Effect.logWarning(
+            "set Tracklist skipped: Versos is not configured"
+          ).pipe(Effect.annotateLogs({ set: claim.id }));
           return "pending" as const;
         }
         yield* releaseClaim(claim, "failed");
@@ -185,26 +196,28 @@ export const runClaimedTracklist = Effect.fn("Tracklists.runClaimed")(
         );
         return "failed" as const;
       }
-      for (const delay of POLL_DELAYS_MS) {
-        const answer = yield* Effect.result(
-          versos.poll(requested.success.requestId)
+      const answer = yield* Effect.result(
+        Effect.suspend(() => versos.poll(requested.success.requestId)).pipe(
+          Effect.repeat({
+            schedule: pollSchedule,
+            until: (poll): boolean => poll.state !== "pending",
+          })
+        )
+      );
+      if (answer._tag === "Failure") {
+        yield* releaseClaim(claim, "failed");
+        yield* Effect.logWarning("set Tracklist poll failed").pipe(
+          Effect.annotateLogs({
+            reason: answer.failure.reason,
+            set: claim.id,
+          })
         );
-        if (answer._tag === "Failure") {
-          yield* releaseClaim(claim, "failed");
-          yield* Effect.logWarning("set Tracklist poll failed").pipe(
-            Effect.annotateLogs({
-              reason: answer.failure.reason,
-              set: claim.id,
-            })
-          );
-          return "failed" as const;
-        }
-        if (answer.success.state !== "pending") {
-          return (yield* finishTracklist(claim, answer.success))
-            ? answer.success.state
-            : "pending";
-        }
-        yield* Effect.sleep(Duration.millis(delay));
+        return "failed" as const;
+      }
+      if (answer.success.state !== "pending") {
+        return (yield* finishTracklist(claim, answer.success))
+          ? answer.success.state
+          : "pending";
       }
       yield* releaseClaim(claim, "failed");
       yield* Effect.logWarning("set Tracklist poll timed out").pipe(

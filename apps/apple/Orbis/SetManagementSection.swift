@@ -9,7 +9,7 @@ struct SetManagementSection: View {
   @Binding var isRenaming: Bool
   var style: Style = .page
 
-  /// `.page` shows the Tags and puts the source and the menu in the toolbar; `.inline` is the
+  /// `.page` shows the Tags and puts the menu in the toolbar; `.inline` is the
   /// menu alone, as one button, for Now Playing.
   enum Style {
     case page
@@ -54,34 +54,24 @@ struct SetManagementSection: View {
       SetManagement(
         tags: set.tags,
         category: SetPresentation.category(for:),
+        showTag: { model.showTag($0) },
         editTags: { isEditingTags = true }
       )
       .toolbar {
-        ToolbarItemGroup(placement: .primaryAction) {
-          Button("Open in \(set.source.label)", systemImage: SetPresentation.sourceSymbol(set.source)) {
-            open()
-          }
-          .accessibilityIdentifier("detail-open")
-          actions
-        }
+        ToolbarItem(placement: .primaryAction) { actions }
       }
     case .inline:
       actions
-        .labelStyle(.iconOnly)
-        .font(.title3.weight(.semibold))
-        .frame(width: 44, height: 44)
-        .buttonStyle(.glass)
-        .buttonBorderShape(.circle)
+        .buttonStyle(.plain)
     }
   }
 
   private var actions: some View {
     Menu {
-      if style == .inline {
-        Button(set.tags.isEmpty ? "Add Tags" : "Edit Tags", systemImage: "tag") {
-          isEditingTags = true
-        }
+      Button(set.tags.isEmpty ? "Add Tags" : "Edit Tags", systemImage: "tag") {
+        isEditingTags = true
       }
+      .accessibilityIdentifier("detail-edit-tags")
       Button("Rename", systemImage: "pencil") { isRenaming = true }
         .accessibilityIdentifier("detail-rename-action")
       Button("Add to Playlist", systemImage: "text.badge.plus") { isAddingToPlaylist = true }
@@ -89,6 +79,7 @@ struct SetManagementSection: View {
       Button("Open in \(set.source.label)", systemImage: SetPresentation.sourceSymbol(set.source)) {
         open()
       }
+      .accessibilityIdentifier("detail-open")
       if let link = SetPresentation.sourceURL(set) {
         ShareLink(item: link, subject: Text(set.title)) {
           Label("Share", systemImage: "square.and.arrow.up")
@@ -101,7 +92,16 @@ struct SetManagementSection: View {
       }
       .accessibilityIdentifier("detail-remove")
     } label: {
-      Label("More", systemImage: "ellipsis")
+      if style == .inline {
+        // Glass drawn on the label, not by a glass button style, which pads the circle past 44.
+        Label("More", systemImage: "ellipsis")
+          .labelStyle(.iconOnly)
+          .font(.title3.weight(.semibold))
+          .frame(width: 44, height: 44)
+          .glassEffect(.regular.interactive(), in: .circle)
+      } else {
+        Label("More", systemImage: "ellipsis")
+      }
     }
     .accessibilityIdentifier("detail-actions")
   }
@@ -172,7 +172,7 @@ private struct RenameSheet: View {
   }
 }
 
-private struct TagSheet: View {
+struct TagSheet: View {
   let suggestions: [String]
   let save: ([String]) -> Void
   @State private var draft: [String]
@@ -209,6 +209,87 @@ private struct TagSheet: View {
       }
     }
     .presentationDetents([.medium, .large])
+  }
+}
+
+/// One Tag at a time, put on or taken off every selected Set. A Tag shows whether all, some, or
+/// none of the Sets carry it, and a tap makes it all, unless all already carry it.
+struct BulkTagSheet: View {
+  @Bindable var model: AppModel
+  let ids: [String]
+  @State private var draft = ""
+  @Environment(\.dismiss) private var dismiss
+
+  private enum Coverage {
+    case all, some, none
+  }
+
+  private func coverage(of tag: String) -> Coverage {
+    let carrying = ids.count { model.savedSet($0)?.tags.contains(tag) == true }
+    return carrying == ids.count ? .all : carrying == 0 ? .none : .some
+  }
+
+  var body: some View {
+    NavigationStack {
+      Form {
+        Section {
+          TextField("New Tag", text: $draft)
+            .onSubmit(create)
+            .autocorrectionDisabled()
+            #if os(iOS)
+              .textInputAutocapitalization(.never)
+            #endif
+            .accessibilityIdentifier("bulk-tag-field")
+        }
+        if !model.availableTags.isEmpty {
+          Section("Tags") {
+            GlassEffectContainer(spacing: 8) {
+              ChipFlow(spacing: 8) {
+                ForEach(model.availableTags, id: \.self) { tag in
+                  chip(tag, coverage: coverage(of: tag))
+                }
+              }
+            }
+            .padding(.vertical, 4)
+            // One write at a time: each reads the Tags the last one left.
+            .disabled(model.isWorkingOnSet)
+          }
+        }
+      }
+      .formStyle(.grouped)
+      .navigationTitle(ids.count == 1 ? "Tag 1 Set" : "Tag \(ids.count) Sets")
+      .toolbarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .confirmationAction) {
+          Button("Done", systemImage: "checkmark", role: .confirm) { dismiss() }
+            .tint(Color.orbis.tint)
+            .accessibilityIdentifier("bulk-tag-done")
+        }
+      }
+      .setChangeStatus(model)
+    }
+    .presentationDetents([.medium, .large])
+  }
+
+  private func chip(_ tag: String, coverage: Coverage) -> some View {
+    Button {
+      Task { await model.setTag(tag, on: ids, to: coverage != .all) }
+    } label: {
+      GlassTagChip(
+        tag, category: SetPresentation.category(for: tag), selected: coverage == .all,
+        accessory: coverage == .all ? "checkmark" : coverage == .some ? "minus" : "plus")
+    }
+    .buttonStyle(.plain)
+    .accessibilityValue(
+      coverage == .all ? "On every set" : coverage == .some ? "On some sets" : "On no sets"
+    )
+    .accessibilityIdentifier("bulk-tag-\(tag)")
+  }
+
+  private func create() {
+    let tag = draft
+    draft = ""
+    Task { await model.setTag(tag, on: ids, to: true) }
   }
 }
 

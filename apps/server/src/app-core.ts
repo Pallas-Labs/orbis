@@ -7,7 +7,6 @@ import {
   AdminKeyPayload,
   AdminPersonPayload,
   CollaborationPayload,
-  GroupPasscodePayload,
   JoinPayload,
   RedeemSignInCodePayload,
   SaveSetPayload,
@@ -59,15 +58,18 @@ import {
   listDevices,
   listKeys,
   listPeople,
+  closeJoining,
+  newPasscode,
   readPasscode,
   redeemSignInCode,
   removePerson,
   revokeDevice,
   revokeKey,
-  setPasscode,
 } from "./admin.js";
+import { makeAttemptLimiter } from "./attempt-limiter.js";
 import { Audio } from "./audio-service.js";
 import type { AudioFile } from "./audio-service.js";
+import { insertBatches } from "./db/batches.js";
 import {
   listens,
   playlistEditors,
@@ -76,7 +78,7 @@ import {
   sets as setRows,
 } from "./db/schema.js";
 import { Database } from "./db/service.js";
-import { LibraryError } from "./errors.js";
+import { asLibraryError, LibraryError } from "./errors.js";
 import type {
   AccessDecision,
   AccessMode,
@@ -92,9 +94,10 @@ import {
   updatePersonFilters,
 } from "./identity.js";
 import { Library } from "./library.js";
-import type { LoggingOptions } from "./logging.js";
+import type { LoggedRecord, LoggingOptions } from "./logging.js";
 import {
   annotateForwardedRequest,
+  annotateWideEvent,
   configureLogging,
   finishRequestLog,
   loggingLayer,
@@ -113,7 +116,8 @@ import { QueueSignals } from "./queue-signals.js";
 import { Queue } from "./queue.js";
 import { expandShortLink } from "./short-link.js";
 import { Stats } from "./stats.js";
-import { issueStreamGrant, verifyStreamGrant } from "./stream-grant-core.js";
+import { checkStreamGrant, issueStreamGrant } from "./stream-grant-core.js";
+import type { StreamGrantVerdict } from "./stream-grant-core.js";
 import type { TitleReviserError } from "./title-reviser-error.js";
 import { TitleReviser } from "./title-reviser.js";
 import {
@@ -121,7 +125,7 @@ import {
   readTracklist,
   runClaimedTracklist,
 } from "./tracklists.js";
-import { retryTrustOperation } from "./trust-storage.js";
+import { trustOperation } from "./trust-storage.js";
 import { Versos } from "./versos.js";
 import {
   listFilterablePeople,
@@ -142,40 +146,69 @@ class AcceptedAccess extends Context.Service<
   Exclude<AccessDecision, { readonly kind: "rejected" }>
 >()("Orbis/AcceptedAccess") {}
 
+/** A request that presents a stream grant, and what checking it decided. */
+interface StreamAccess {
+  readonly set: string;
+  readonly grant: StreamGrantVerdict["kind"] | "unknown-person";
+  readonly decision: AccessDecision;
+}
+
 const grantAccess = (
   request: Request,
   mode: AccessMode,
   store: TrustStore,
   secret: Buffer
-): AccessDecision | null => {
+): StreamAccess | null => {
   if (mode !== "device" || request.method !== "GET") {
     return null;
   }
   const url = new URL(request.url);
   const match = /^\/sets\/(?<id>[^/]+)\/audio$/u.exec(url.pathname);
-  const grant = url.searchParams.get("grant");
-  if (!match?.groups?.id || !grant) {
+  if (!match?.groups?.id || !url.searchParams.has("grant")) {
     return null;
   }
-  const personId = verifyStreamGrant(
-    secret,
-    decodeURIComponent(match.groups.id),
-    grant
-  );
-  const person = store.people.find(
-    (candidate) => candidate.id === personId && !candidate.removed
-  );
-  return person
-    ? { keyId: null, kind: "accepted", person }
-    : { kind: "rejected", message: "Invalid stream grant.", statusCode: 401 };
+  const set = decodeURIComponent(match.groups.id);
+  const verdict = checkStreamGrant(secret, set, url.searchParams.get("grant"));
+  const person =
+    verdict.kind === "valid"
+      ? store.people.find(
+          (candidate) => candidate.id === verdict.personId && !candidate.removed
+        )
+      : undefined;
+  if (person) {
+    return {
+      decision: { keyId: null, kind: "accepted", person },
+      grant: verdict.kind,
+      set,
+    };
+  }
+  return {
+    decision: {
+      kind: "rejected",
+      message: "Invalid stream grant.",
+      statusCode: 401,
+    },
+    grant: verdict.kind === "valid" ? "unknown-person" : verdict.kind,
+    set,
+  };
 };
 
-const rejectedStreamGrant = (
-  request: Request,
-  decision: AccessDecision | null
-) =>
+const rejectedStreamGrant = (request: Request, access: StreamAccess | null) =>
   new URL(request.url).searchParams.has("grant") &&
-  decision?.kind !== "accepted";
+  access?.decision.kind !== "accepted";
+
+const annotateAudio = (fields: LoggedRecord) =>
+  annotateWideEvent({ audio: fields });
+
+/** How the audio route answered, for the request's wide event. */
+const audioDelivery = (response: HttpServerResponse.HttpServerResponse) => {
+  if (response.status !== 302) {
+    return { result: "served" };
+  }
+  const location = response.headers.location ?? "";
+  // The origin alone: the redirect's query string carries the grant.
+  return { node: URL.parse(location)?.origin ?? null, result: "redirected" };
+};
 
 const forwardedResponse = (
   request: Request,
@@ -204,19 +237,36 @@ const meBody = (person: PersonRecord) => ({
 });
 
 const PRESENCE_WINDOW_MS = 30_000;
-/** Failed key attempts one client may make in a minute before it gets 429. */
-const FAILED_KEY_LIMIT = 20;
 const tooManyAttempts = () =>
   Response.json({ message: "Too many invalid keys." }, { status: 429 });
 /**
- * Routes a new device calls before it has a key (ADR 0020), mapped to the
- * status of a failed guess. They run whatever the Authorization header says,
- * so a key cannot skip the failed-key limit.
+ * Routes a new device calls before it has a key (ADR 0020). They run whatever
+ * the Authorization header says, so a key cannot skip the failed-key limit.
  */
-const OPEN_ROUTES: ReadonlyMap<string, number> = new Map([
-  ["/sign-in/code", 404],
-  ["/sign-in/join", 403],
+const OPEN_ROUTES: ReadonlySet<string> = new Set([
+  "/sign-in/code",
+  "/sign-in/join",
 ]);
+/**
+ * The router also matches a path with repeated or trailing slashes, other
+ * casing, or percent-encoding, so the open-route lookup sees the same
+ * spelling the router does. Otherwise a guess on `/sign-in/code/` would run
+ * without being counted.
+ */
+const isOpenRoute = (url: string): boolean => {
+  const raw = new URL(url).pathname;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    decoded = raw;
+  }
+  const pathname = decoded
+    .toLowerCase()
+    .replaceAll(/\/+/gu, "/")
+    .replace(/(?<=.)\/$/u, "");
+  return OPEN_ROUTES.has(pathname);
+};
 const invalidSignInCode = () =>
   new LibraryError({
     message: "That code is not valid. Get a new one.",
@@ -266,6 +316,12 @@ const failureResponse = <E>(error: E) => {
   );
 };
 
+const trustUnavailable = () =>
+  new LibraryError({
+    message: "The trust store is unavailable.",
+    statusCode: 500,
+  });
+
 const missingPlaylist = () =>
   new LibraryError({ message: "Playlist not found.", statusCode: 404 });
 
@@ -304,23 +360,7 @@ export const createPortableApp = (options: {
   configureLogging(options.logging);
   const { trustPath } = options;
   const { streamSecret } = options;
-  const failedKeys = new Map<string, { count: number; until: number }>();
-  /** Counts one failed attempt for a client; true once the client is over the limit. */
-  const recordFailedKey = (client: string): boolean => {
-    const previous = failedKeys.get(client);
-    const count =
-      previous && previous.until > Date.now() ? previous.count + 1 : 1;
-    failedKeys.set(client, { count, until: Date.now() + 60_000 });
-    return count > FAILED_KEY_LIMIT;
-  };
-  const overFailedKeyLimit = (client: string): boolean => {
-    const previous = failedKeys.get(client);
-    return (
-      previous !== undefined &&
-      previous.until > Date.now() &&
-      previous.count > FAILED_KEY_LIMIT
-    );
-  };
+  const attempts = makeAttemptLimiter();
   const signInCodeNow = options.signInCodeNow ?? Date.now;
   const { database } = options;
   const libraryOptions = {
@@ -403,7 +443,7 @@ export const createPortableApp = (options: {
           yield* announce(topic, reaches(caller.person.id));
         });
       const runningTracklists = new Set<string>();
-      const startTracklist = Effect.fn("startSavedSetTracklist")(
+      const startTracklist = Effect.fn("SaveSet.startTracklist")(
         (id: string, retry = false) =>
           Effect.gen(function* startSavedSetTracklist() {
             if (runningTracklists.has(id)) {
@@ -443,7 +483,7 @@ export const createPortableApp = (options: {
             );
           })
       );
-      const reviseTitle = Effect.fn("reviseSavedSetTitle")((
+      const reviseTitle = Effect.fn("SaveSet.reviseTitle")((
         set: SavedSet,
         enriched: EnrichedMetadata
       ) => {
@@ -467,7 +507,7 @@ export const createPortableApp = (options: {
       });
       // The slow yt-dlp read runs after the response, tied to the app so `dispose` stops it. A
       // failure is logged and marks the Set's details failed; the save itself is unaffected.
-      const fillDetails = Effect.fn("fillSavedSetDetails")((set: SavedSet) =>
+      const fillDetails = Effect.fn("SaveSet.fillDetails")((set: SavedSet) =>
         metadata.details({ source: set.source, url: set.url }).pipe(
           Effect.flatMap((details) => library.recordDetails(set.id, details)),
           Effect.tap(() => startTracklist(set.id)),
@@ -478,7 +518,12 @@ export const createPortableApp = (options: {
                 ? Effect.void
                 : logDetailsFailure(set, error.reason).pipe(
                     Effect.andThen(
-                      library.recordDetailsFailure(set.id).pipe(Effect.ignore)
+                      library.recordDetailsFailure(set.id).pipe(
+                        Effect.ignore({
+                          log: "Warn",
+                          message: "set details failure not recorded",
+                        })
+                      )
                     )
                   ),
           }),
@@ -489,7 +534,7 @@ export const createPortableApp = (options: {
       );
       // Enrichment failure is swallowed so the save still succeeds, so it is the
       // one outcome a client cannot see. The log records which set and which reason.
-      const enrichSavedSet = Effect.fn("enrichSavedSet")((
+      const enrichSavedSet = Effect.fn("SaveSet.enrich")((
         set: SavedSet,
         personal: typeof Library.Service
       ) => {
@@ -603,11 +648,29 @@ export const createPortableApp = (options: {
           .handleRaw("audio", ({ params, request }) =>
             Effect.gen(function* serveAudio() {
               const caller = yield* SetCaller;
+              yield* annotateAudio({
+                person: caller.person.id,
+                set: params.id,
+              });
               return yield* Effect.match(
                 Effect.gen(function* personalAudioFile() {
                   const personal = yield* Library;
-                  yield* personal.find(params.id);
-                  return yield* audio.audioFile(params.id);
+                  const set = yield* personal.find(params.id).pipe(
+                    Effect.tapError(() =>
+                      annotateAudio({
+                        reason: "set-not-found",
+                        result: "refused",
+                      })
+                    )
+                  );
+                  yield* annotateAudio({ downloadState: set.downloadState });
+                  return yield* audio
+                    .audioFile(params.id)
+                    .pipe(
+                      Effect.tapError(() =>
+                        annotateAudio({ reason: "no-audio", result: "refused" })
+                      )
+                    );
                 }).pipe(
                   Effect.map((file) =>
                     options.audioResponse(
@@ -621,6 +684,9 @@ export const createPortableApp = (options: {
                         "grant"
                       )
                     )
+                  ),
+                  Effect.tap((response) =>
+                    annotateAudio(audioDelivery(response))
                   ),
                   Effect.tapError(logLibraryFailure)
                 ),
@@ -1122,14 +1188,16 @@ export const createPortableApp = (options: {
                       yield* tx
                         .delete(playlistEditors)
                         .where(eq(playlistEditors.playlistId, params.id));
-                      if (input.editorIds.length > 0) {
-                        yield* tx.insert(playlistEditors).values(
-                          input.editorIds.map((editorId) => ({
-                            creatorId: caller.person.id,
-                            editorId,
-                            playlistId: params.id,
-                          }))
-                        );
+                      const rows = input.editorIds.map((editorId) => ({
+                        creatorId: caller.person.id,
+                        editorId,
+                        playlistId: params.id,
+                      }));
+                      for (const batch of insertBatches(
+                        playlistEditors,
+                        rows
+                      )) {
+                        yield* tx.insert(playlistEditors).values(batch);
                       }
                     })
                   );
@@ -1338,11 +1406,9 @@ export const createPortableApp = (options: {
                 const caller = yield* SetCaller;
                 const input =
                   yield* HttpServerRequest.schemaBodyJson(UpdateMePayload);
-                const result = yield* Effect.promise(() =>
-                  retryTrustOperation(() =>
-                    updatePerson(trustPath, caller.person.id, input)
-                  )
-                );
+                const result = yield* trustOperation(() =>
+                  updatePerson(trustPath, caller.person.id, input)
+                ).pipe(Effect.mapError(trustUnavailable));
                 if (result.kind === "updated") {
                   return HttpServerResponse.jsonUnsafe(meBody(result.person));
                 }
@@ -1398,16 +1464,14 @@ export const createPortableApp = (options: {
                 const caller = yield* SetCaller;
                 const input =
                   yield* HttpServerRequest.schemaBodyJson(SocialFiltersPayload);
-                const result = yield* Effect.promise(() =>
-                  retryTrustOperation(() =>
-                    updatePersonFilters(
-                      trustPath,
-                      caller.person.id,
-                      params.id,
-                      input
-                    )
+                const result = yield* trustOperation(() =>
+                  updatePersonFilters(
+                    trustPath,
+                    caller.person.id,
+                    params.id,
+                    input
                   )
-                );
+                ).pipe(Effect.mapError(trustUnavailable));
                 if (result.kind === "updated") {
                   return { appear: result.appear, see: result.see };
                 }
@@ -1514,23 +1578,24 @@ export const createPortableApp = (options: {
         }
       });
       const trustCall = <A>(action: (storePath: string) => A) =>
-        Effect.tryPromise({
-          catch: (error) =>
-            new LibraryError({
-              message:
-                error instanceof AdminError
-                  ? error.message
-                  : "The trust store is unavailable.",
-              statusCode: error instanceof AdminError ? error.statusCode : 500,
-            }),
-          try: () =>
-            retryTrustOperation(() => {
-              if (!trustPath) {
-                throw new AdminError(500, "The trust store is unavailable.");
-              }
-              return action(trustPath);
-            }),
-        });
+        trustOperation(() => {
+          if (!trustPath) {
+            throw new AdminError(500, "The trust store is unavailable.");
+          }
+          return action(trustPath);
+        }).pipe(
+          Effect.mapError(
+            ({ cause }) =>
+              new LibraryError({
+                message:
+                  cause instanceof AdminError
+                    ? cause.message
+                    : "The trust store is unavailable.",
+                statusCode:
+                  cause instanceof AdminError ? cause.statusCode : 500,
+              })
+          )
+        );
       const adminCall = <A>(action: (storePath: string) => A) =>
         Effect.andThen(requireHost, trustCall(action));
       const issueCodeFor = (personId: string) =>
@@ -1627,7 +1692,7 @@ export const createPortableApp = (options: {
                   UNION SELECT set_id AS id FROM queue_entries WHERE person_id = ${params.id}
                   UNION SELECT set_id AS id FROM playlist_sets INNER JOIN playlists ON playlists.id = playlist_sets.playlist_id WHERE creator_id = ${params.id}
                 `)
-                  .pipe(Effect.orDie);
+                  .pipe(asLibraryError("Could not remove the Person's data."));
                 yield* db
                   .transaction((tx) =>
                     Effect.gen(function* deleteAdminPersonRows() {
@@ -1725,17 +1790,11 @@ export const createPortableApp = (options: {
           .handleRaw("passcode", () =>
             withFailureResponse(adminCall(readPasscode))
           )
-          .handleRaw("setPasscode", () =>
-            withFailureResponse(
-              Effect.gen(function* updatePasscode() {
-                yield* requireHost;
-                const input =
-                  yield* HttpServerRequest.schemaBodyJson(GroupPasscodePayload);
-                return yield* adminCall((storePath) =>
-                  setPasscode(storePath, input.passcode)
-                );
-              })
-            )
+          .handleRaw("newPasscode", () =>
+            withFailureResponse(adminCall(newPasscode))
+          )
+          .handleRaw("closeJoining", () =>
+            withFailureResponse(adminCall(closeJoining))
           )
       );
       const signInGroup = HttpApiBuilder.group(OrbisApi, "signIn", (handlers) =>
@@ -1981,32 +2040,25 @@ export const createPortableApp = (options: {
     }
   );
   /**
-   * A wrong code or passcode counts toward the failed-key limit. A client over
-   * the limit is refused before any lookup, so it cannot spend a code.
+   * A sign-in attempt counts toward the failed-key limit before it runs. A
+   * client over the limit is refused before any lookup, so it cannot spend a
+   * code.
    */
-  const openRoute = async (
-    request: Request,
-    client: string,
-    failedStatus: number
-  ): Promise<Response> => {
-    if (overFailedKeyLimit(client)) {
-      return tooManyAttempts();
+  const openRoute = (request: Request, client: string): Promise<Response> => {
+    if (attempts.signInAttempt(client)) {
+      return Promise.resolve(tooManyAttempts());
     }
     // SAFETY: the sign-in handlers read no caller-bound service.
-    const response = await app.handler(
+    return app.handler(
       request,
-      Context.empty() as Context.Context<Library | Queue | SetCaller>
+      Context.empty() as Context.Context<Library | Queue>
     );
-    if (response.status === failedStatus && recordFailedKey(client)) {
-      return tooManyAttempts();
-    }
-    return response;
   };
   const initialize = () =>
     // SAFETY: The health route reads no caller-bound service.
     app.handler(
       new Request("http://orbis.internal/health"),
-      Context.empty() as Context.Context<Library | Queue | SetCaller>
+      Context.empty() as Context.Context<Library | Queue>
     );
   // oxlint-disable-next-line eslint/sort-keys -- Lifecycle methods precede the request boundary.
   return {
@@ -2035,24 +2087,44 @@ export const createPortableApp = (options: {
       };
       const host = request.headers.get("host") ?? new URL(request.url).host;
       const authorization = request.headers.get("authorization");
-      const failedStatus = OPEN_ROUTES.get(new URL(request.url).pathname);
-      if (request.method === "POST" && failedStatus !== undefined) {
-        return openRoute(request, clientAddress, failedStatus);
+      if (request.method === "POST" && isOpenRoute(request.url)) {
+        return openRoute(request, clientAddress);
       }
       const registry = readTrustRegistry(trustPath);
-      const streamDecision = grantAccess(
+      const logRefusal = (status: number, fields: LoggedRecord) => {
+        const logger = startRequestLog({
+          method: request.method,
+          path: safeRequestPath(request.url),
+          requestId: crypto.randomUUID(),
+        });
+        logger.set(fields);
+        finishRequestLog(
+          logger,
+          { outcome: "rejected", status },
+          options.logging
+        );
+      };
+      const streamAccess = grantAccess(
         request,
         mode,
         registry.store,
         streamSecret
       );
-      if (rejectedStreamGrant(request, streamDecision)) {
+      if (rejectedStreamGrant(request, streamAccess)) {
+        logRefusal(401, {
+          audio: {
+            grant: streamAccess?.grant ?? "unchecked",
+            reason: "grant-refused",
+            result: "refused",
+            set: streamAccess?.set ?? null,
+          },
+        });
         return withOrigin(
           Response.json({ message: "Invalid stream grant." }, { status: 401 })
         );
       }
       const decision =
-        streamDecision ??
+        streamAccess?.decision ??
         decideAccess({
           authorization,
           hasOrigin: false,
@@ -2065,26 +2137,17 @@ export const createPortableApp = (options: {
         authorization !== null &&
         decision.kind === "rejected" &&
         decision.statusCode === 401 &&
-        recordFailedKey(clientAddress)
+        attempts.badKey(clientAddress)
       ) {
         return withOrigin(tooManyAttempts());
       }
       if (decision.kind === "rejected") {
-        const logger = startRequestLog({
-          method: request.method,
-          path: safeRequestPath(request.url),
-          requestId: crypto.randomUUID(),
+        // A damaged trust store refuses every device. Without `trustStore` the
+        // only visible symptom is a sudden run of 401 responses.
+        logRefusal(decision.statusCode, {
+          reason: decision.message,
+          trustStore: registry.storeError,
         });
-        if (registry.storeError !== undefined) {
-          // A damaged trust store refuses every device. Without this field the
-          // only visible symptom is a sudden run of 401 responses.
-          logger.set({ trustStore: registry.storeError });
-        }
-        finishRequestLog(
-          logger,
-          { outcome: "rejected", status: decision.statusCode },
-          options.logging
-        );
         return withOrigin(
           Response.json(
             { message: decision.message },
@@ -2093,9 +2156,11 @@ export const createPortableApp = (options: {
         );
       }
       if (options.recordKeyUse !== false) {
-        await retryTrustOperation(() =>
-          markKeyUsed(trustPath, decision.keyId)
-        ).catch(() => null);
+        await Effect.runPromise(
+          trustOperation(() => markKeyUsed(trustPath, decision.keyId)).pipe(
+            Effect.ignore
+          )
+        );
       }
       // SAFETY: SetAccess provides the caller-bound Library and Queue before handlers read them.
       const response = await app.handler(

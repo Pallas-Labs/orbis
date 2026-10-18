@@ -35,13 +35,20 @@ final class AppModel {
   var isSigningIn = false
   /// Why the last sign-in failed, said under the button.
   var signInFailure: OrbisFailure?
+  /// The name a new Person just joined with, greeted over the library while it loads. Cleared
+  /// once the greeting has faded.
+  var welcomedUsername: String?
 
   /// iOS presents Settings as a sheet from the gear on Home and Library. The Mac has a Settings
   /// scene instead.
   var isShowingSettings = false
 
   var library: Loadable<[SavedSet]> = .idle {
-    didSet { refreshDerivedState() }
+    didSet {
+      refreshDerivedState()
+      refreshPlaylistArtwork()
+      refreshCueMatches()
+    }
   }
   var playlists: Loadable<[Playlist]> = .idle
   /// The one Listening Queue. It is where the active Set and the Playback Position live, so the
@@ -49,7 +56,9 @@ final class AppModel {
   var queue: Loadable<ListeningQueue> = .idle
   /// What the last queue action did, said where the action was taken.
   var queueNotice: String?
-  private(set) var tracklists: [String: Tracklist] = [:]
+  private(set) var tracklists: [String: Tracklist] = [:] {
+    didSet { refreshCueMatches() }
+  }
   /// The playlist the Library is showing. Nil is everything the library holds.
   var selectedPlaylistId: String?
   var searchQuery = ""
@@ -58,11 +67,13 @@ final class AppModel {
   /// The query the loaded search results answer. Held beside the results rather than read
   /// back from the field, so the heading never names results with a query that was typed
   /// but not submitted.
-  private(set) var searchResultsFor: String?
+  private(set) var searchResultsFor: String? {
+    didSet { refreshCueMatches() }
+  }
 
-  /// The tag the Library is filtered by. One tag at a time, because the row marks the one
-  /// tag a view is filtered by and a Set carries several.
-  var activeTag: String? {
+  /// The Tags the Library is filtered by, in the order they were chosen. A Set must carry every
+  /// one of them, so each Tag added narrows the list.
+  var activeTags: [String] = [] {
     didSet { refreshDerivedState() }
   }
 
@@ -81,6 +92,32 @@ final class AppModel {
 
   private(set) var tagCounts: [String: Int] = [:]
 
+  /// The Tags this device last put on a Set, newest first, and the last Tag filters it applied.
+  /// Kept on the device, like recent searches: they are this person's habits here, not part of
+  /// the library.
+  private(set) var recentTags: [String] = [] {
+    didSet {
+      recentStore?.set(recentTags, forKey: Self.recentTagsKey)
+      refreshDerivedState()
+    }
+  }
+  private(set) var recentTagFilters: [[String]] = [] {
+    didSet { recentStore?.set(recentTagFilters, forKey: Self.recentTagFiltersKey) }
+  }
+  /// Nil outside the running app, so a test never reads or writes this device's habits.
+  private let recentStore: UserDefaults?
+  private static let recentTagsKey = "orbis.recentTags"
+  private static let recentTagFiltersKey = "orbis.recentTagFilters"
+  /// Where Search and the Add to Playlist sheet keep their recent entries.
+  static let recentSearchesKey = "orbis.recentSearches"
+  static let recentPlaylistIdsKey = "orbis.recentPlaylistIds"
+  private static let recentTagLimit = 20
+  private static let recentTagFilterLimit = 4
+
+  /// How the Library orders the Sets the filter admits. Held here rather than on the screen, so
+  /// leaving the tab and coming back keeps the order a person chose.
+  var librarySort: LibrarySort = .newest
+
   /// The Sets the filter admits. Unfiltered, it is the library itself. Held for the same
   /// reason as the tags: the body of every list reads it on every pass.
   private(set) var visibleSets: Loadable<[SavedSet]> = .idle
@@ -95,11 +132,33 @@ final class AppModel {
       return
     }
     tagCounts = SetPresentation.tagCounts(sets)
-    availableTags = tagCounts.keys.sorted()
+    availableTags = SetPresentation.orderedTags(sets, recent: recentTags)
     visibleSets = .loaded(
       sets.filter { set in
-        (activeTag.map(set.tags.contains) ?? true) && (activeCreator?.admits(set) ?? true)
+        activeTags.allSatisfy(set.tags.contains) && (activeCreator?.admits(set) ?? true)
       })
+  }
+
+  /// The artwork of the first three Sets in each Playlist, in Library order, keyed by Playlist.
+  /// Built once per library change, because every Playlist folder on screen reads it.
+  private(set) var playlistArtwork: [String: [URL?]] = [:]
+
+  private func refreshPlaylistArtwork() {
+    guard case .loaded(let sets) = library else {
+      playlistArtwork = [:]
+      return
+    }
+    var artwork: [String: [URL?]] = [:]
+    for set in sets {
+      for id in set.playlistIds where artwork[id, default: []].count < 3 {
+        artwork[id, default: []].append(set.artworkUrl.flatMap(URL.init(string:)))
+      }
+    }
+    playlistArtwork = artwork
+  }
+
+  func artwork(ofPlaylist id: String) -> [URL?] {
+    playlistArtwork[id] ?? []
   }
 
   /// How many times a cancelled load has been restarted without a success in between.
@@ -112,6 +171,9 @@ final class AppModel {
   private var playlistGeneration = 0
   private var queueGeneration = 0
   private var tracklistGeneration = 0
+  /// Plays the queue starts: a Set, a Playlist, or the entry after one finishes. Kept apart from
+  /// `queueGeneration`, because a refresh of the queue must not drop a play the person asked for.
+  private var playGeneration = 0
 
   /// What the person has pasted but not filed yet, and what the last filing said.
   var linkToFile = ""
@@ -154,20 +216,32 @@ final class AppModel {
   var revealFailure: OrbisFailure?
 
   /// The latest download progress the service reported, by Set. Terminal states reload
-  /// the library instead, so this only ever holds a download that is still running.
+  /// the library instead, so this only holds a download that is still running, or
+  /// `AudioState.unwatched` for one whose watch gave up.
   var audioStates: [String: AudioState] = [:]
 
   /// The watches on downloads that are still running, by Set. Held by the model rather than by
   /// the page that asked for the download, because a person who starts one and leaves still needs
-  /// its result in the Library.
-  private var downloadWatchers: [String: Task<Void, Never>] = [:]
+  /// its result in the Library. Each watch has its own id, so a stopped watch that ends late
+  /// cannot remove the newer watch on the same Set.
+  private var downloadWatchers: [String: (watch: UUID, task: Task<Void, Never>)] = [:]
 
-  /// How many times one download is polled before a watch gives up: ten minutes at one second a
-  /// poll. Bounded, so a service that never reaches a terminal state cannot leave a task running
-  /// for the life of the app.
+  /// How many answers one download is polled for before a watch gives up: ten minutes at one
+  /// second a poll. Bounded, so a service that never reaches a terminal state cannot leave a task
+  /// running for the life of the app.
   private static let downloadWatchLimit = 600
 
+  /// How many polls in a row may fail before a watch gives up. Each failure doubles the wait, up
+  /// to 30 seconds, so a service that is down is asked eight times over about two minutes.
+  private static let downloadWatchFailureLimit = 8
+
   var destination: Destination = .home
+  /// Counts taps on the Search tab while Search is already open. Each one focuses the field, the
+  /// way a second tap on Search does in Apple Music.
+  var searchFocusRequests = 0
+  /// Counts second taps on the People tab. People holds the open Person itself, so it closes the
+  /// page on each one.
+  var peopleRootRequests = 0
 
   /// Where this model keeps the key. Held per model, so a test hands a model a store of its
   /// own instead of writing the device's real one.
@@ -183,10 +257,14 @@ final class AppModel {
 
   init(
     settings: any ClientSettingsStore = ClientSettings.forCurrentProcess(),
-    session: URLSession = .shared
+    session: URLSession = .orbisAPI,
+    recentStore: UserDefaults? = nil
   ) {
     self.settings = settings
     self.session = session
+    self.recentStore = recentStore
+    recentTags = recentStore?.stringArray(forKey: Self.recentTagsKey) ?? []
+    recentTagFilters = recentStore?.array(forKey: Self.recentTagFiltersKey) as? [[String]] ?? []
     let arguments = ProcessInfo.processInfo.arguments
     Self.resetSettings(ifRequestedBy: arguments, in: settings)
     #if DEBUG
@@ -197,7 +275,7 @@ final class AppModel {
     if let flag = arguments.firstIndex(of: "-orbisStartTagFiltered"),
       arguments.indices.contains(flag + 1)
     {
-      activeTag = arguments[flag + 1]
+      activeTags = [arguments[flag + 1]]
     }
     serviceAddress = OrbisService.address(for: arguments)
     client = settings.configuredClient(address: serviceAddress, session: session)
@@ -209,6 +287,7 @@ final class AppModel {
   /// path; this one exists so tests and previews can drive a change without either.
   init(client: OrbisClient, settings: any ClientSettingsStore) {
     self.settings = settings
+    recentStore = nil
     self.client = client
     session = client.session
     serviceAddress = client.address
@@ -253,7 +332,36 @@ final class AppModel {
   }
 
   func setTagFilter(_ tag: String?) {
-    activeTag = tag
+    activeTags = tag.map { [$0] } ?? []
+  }
+
+  /// Adds a Tag to the filter, or takes it out when the filter already holds it.
+  func toggleTagFilter(_ tag: String) {
+    if activeTags.contains(tag) {
+      activeTags.removeAll { $0 == tag }
+    } else {
+      activeTags.append(tag)
+      rememberFilter(activeTags)
+    }
+  }
+
+  /// Puts a filter at the front of the recent ones. A filter built one Tag at a time replaces
+  /// the narrower one it grew from, so building "techno and live" leaves one entry, not two.
+  private func rememberFilter(_ tags: [String]) {
+    guard !tags.isEmpty else { return }
+    var kept = recentTagFilters.filter { $0 != tags }
+    if let latest = kept.first, Set(latest).isStrictSubset(of: tags) {
+      kept.removeFirst()
+    }
+    recentTagFilters = Array(([tags] + kept).prefix(Self.recentTagFilterLimit))
+  }
+
+  /// Puts Tags just added to a Set at the front of the recent ones.
+  private func rememberTags(_ tags: [String]) {
+    guard !tags.isEmpty else { return }
+    let used = Array(tags.reversed())
+    recentTags = Array(
+      (used + recentTags.filter { !used.contains($0) }).prefix(Self.recentTagLimit))
   }
 
   /// Shows the Library filtered to one Set's creator, from wherever that Set's page was opened.
@@ -264,10 +372,24 @@ final class AppModel {
     destination = .library
   }
 
-  var isFilteringLibrary: Bool { activeTag != nil || activeCreator != nil }
+  /// Goes to the Library filtered by one Tag, from Home, Search, or a Set's page.
+  func showTag(_ tag: String) {
+    showTags([tag])
+  }
+
+  /// Goes to the Library filtered by every one of these Tags, as a recent filter asks.
+  func showTags(_ tags: [String]) {
+    activeTags = tags
+    rememberFilter(tags)
+    activeCreator = nil
+    openedSets[.library] = nil
+    destination = .library
+  }
+
+  var isFilteringLibrary: Bool { !activeTags.isEmpty || activeCreator != nil }
 
   func clearLibraryFilters() {
-    activeTag = nil
+    activeTags = []
     activeCreator = nil
   }
 
@@ -289,12 +411,15 @@ final class AppModel {
     let signedOut = OrbisClient(address: serviceAddress, token: "", session: session)
     let label = String(Self.deviceLabel.prefix(100))
     let key: String
+    var joinedAs: String?
     do {
       switch request {
       case .join(let username, let passcode):
+        let username = username.trimmingCharacters(in: .whitespacesAndNewlines)
         key = try await signedOut.join(
-          username: username.trimmingCharacters(in: .whitespacesAndNewlines),
+          username: username,
           passcode: passcode.trimmingCharacters(in: .whitespacesAndNewlines), label: label)
+        joinedAs = username
       case .code(let typed):
         key = try await signedOut.redeem(code: SignInCode.normalized(typed), label: label)
       }
@@ -306,6 +431,7 @@ final class AppModel {
       signInFailure = OrbisError.storageRefused.failure(at: serviceAddress)
       return
     }
+    welcomedUsername = joinedAs
     client = OrbisClient(address: serviceAddress, token: key, session: session)
     await loadLibrary()
     await loadPlaylists()
@@ -329,6 +455,7 @@ final class AppModel {
     searchGeneration += 1
     playlistGeneration += 1
     queueGeneration += 1
+    playGeneration += 1
     // Audio still playing comes from a key this device no longer holds, and a download the
     // service is running is the same: nothing here may keep asking about it.
     audioPlayer.stop()
@@ -341,6 +468,8 @@ final class AppModel {
     client = nil
     signInFailure = nil
     isShowingSettings = false
+    // The next sign-in starts on Home, so the first Set opened lands in the stack on screen.
+    destination = .home
     library = .idle
     search = .idle
     searchResultsFor = nil
@@ -351,11 +480,17 @@ final class AppModel {
     openedPlaylistId = nil
     playlistMembers = .idle
     playlistFailure = nil
-    activeTag = nil
+    activeTags = []
     activeCreator = nil
     openedSets = [:]
     reveal = nil
     revealFailure = nil
+    // Recent Tags, filters, searches, and Playlists are the last Person's habits, not this
+    // device's.
+    recentTags = []
+    recentTagFilters = []
+    recentStore?.removeObject(forKey: Self.recentSearchesKey)
+    recentStore?.removeObject(forKey: Self.recentPlaylistIdsKey)
   }
 
   func loadLibrary() async {
@@ -473,6 +608,7 @@ final class AppModel {
         updated = try await client.updateTags(open.set.id, tags: open.tags)
         guard reveal?.set.id == open.set.id, !Task.isCancelled else { return }
         await publish(updated)
+        rememberTags(open.tags.filter { !open.set.tags.contains($0) })
       }
       closeReveal(with: updated)
     } catch OrbisError.cancelled {
@@ -543,12 +679,13 @@ final class AppModel {
     }
   }
 
-  /// Reads the service's download progress into the running map. A terminal state
-  /// reloads the library so the Set's own state is what the service holds; a poll
-  /// that fails says nothing, because the next poll or the next visit retries it.
-  func refreshAudioState(_ id: String) async {
-    guard let client else { return }
-    guard let state = try? await client.audioState(id) else { return }
+  /// Reads the service's download progress into the running map, and says whether the service
+  /// answered. A terminal state reloads the library so the Set's own state is what the service
+  /// holds.
+  @discardableResult
+  func refreshAudioState(_ id: String) async -> Bool {
+    guard let client else { return false }
+    guard let state = try? await client.audioState(id) else { return false }
     audioStates[id] = state
     if state.state == "ready" || state.state == "failed" {
       // Quietly: a reload through `.loading` emptied the library for a moment, and the open Set
@@ -556,6 +693,7 @@ final class AppModel {
       await refreshLibraryQuietly()
       audioStates[id] = nil
     }
+    return true
   }
 
   /// True while the service is still working on this Set's audio.
@@ -564,29 +702,45 @@ final class AppModel {
   }
 
   /// Watches a Set's download until the service reports a state that is no longer running. One
-  /// watch per Set, ended by the terminal state, by cancellation, or at the attempt limit.
+  /// watch per Set, ended by the terminal state, by cancellation, or at one of the limits.
   private func watchDownload(_ id: String) {
     guard downloadWatchers[id] == nil, isDownloading(id) else { return }
-    downloadWatchers[id] = Task { [weak self] in
-      defer { self?.downloadWatchers[id] = nil }
-      for _ in 0..<Self.downloadWatchLimit {
+    let watch = UUID()
+    let task = Task { [weak self] in
+      defer {
+        if self?.downloadWatchers[id]?.watch == watch { self?.downloadWatchers[id] = nil }
+      }
+      var answers = 0
+      var failures = 0
+      while answers < Self.downloadWatchLimit {
         guard !Task.isCancelled, let self else { return }
-        await self.refreshAudioState(id)
+        if await self.refreshAudioState(id) {
+          answers += 1
+          failures = 0
+        } else {
+          failures += 1
+          if failures == Self.downloadWatchFailureLimit { break }
+        }
         guard self.isDownloading(id) else { return }
         do {
-          try await Task.sleep(for: .seconds(1))
+          try await Task.sleep(for: .seconds(min(1 << failures, 30)))
         } catch {
           // Cancelled: the answer this watch was waiting for is no longer wanted.
           return
         }
       }
+      // The watch stopped before the service said the download ended, so the progress on screen
+      // no longer moves. The Set says so and offers the retry, which watches again.
+      guard !Task.isCancelled, let self else { return }
+      self.audioStates[id] = .unwatched
     }
+    downloadWatchers[id] = (watch, task)
   }
 
   /// Ends every watch, so nothing keeps asking a service this device has left.
   private func stopDownloadWatches() {
     for watcher in downloadWatchers.values {
-      watcher.cancel()
+      watcher.task.cancel()
     }
     downloadWatchers.removeAll()
   }
@@ -617,8 +771,13 @@ final class AppModel {
   func playSet(_ id: String, startAt: TimeInterval? = nil) async {
     guard let client else { return }
     queueNotice = nil
+    playGeneration += 1
+    let generation = playGeneration
     do {
       let loaded = try await client.playSet(id)
+      // A newer play, or signing out, owns the player now. Playing this answer would start audio
+      // with a key the device may no longer hold.
+      guard generation == playGeneration else { return }
       queue = .loaded(loaded)
       guard let playing = loaded.entries.first(where: { $0.id == id }) else { return }
       audioPlayer.play(
@@ -635,13 +794,40 @@ final class AppModel {
     }
   }
 
+  /// Whether a Set has a place to start over from: a saved position, or a place in the player.
+  func canPlayFromBeginning(_ set: SavedSet) -> Bool {
+    audioPlayer.currentSetId == set.id || set.playbackPositionSeconds > 0
+  }
+
+  /// Starts a Set at its first second. The Set in the player moves back there and plays, so the
+  /// Listen goes on; any other Set starts the way Play would, but not at its saved position. The
+  /// position reporter then writes the new place over the old one.
+  func playFromBeginning(_ id: String) async {
+    await play(id, from: 0)
+  }
+
+  /// Plays a Set from a Cue's start. A tap on a track means hear it, so a paused Set plays too,
+  /// and one that failed in the player starts again there rather than ignoring the tap.
   func playCue(_ cue: Cue, in id: String) async {
     guard let seconds = cue.startSeconds else { return }
-    if audioPlayer.currentSetId == id {
-      audioPlayer.seek(to: seconds)
-    } else {
+    await play(id, from: seconds)
+  }
+
+  /// Moves the Set in the player to a position and plays it, so the Listen goes on; any other Set,
+  /// or one the player cannot resume, starts there the way Play would.
+  private func play(_ id: String, from seconds: TimeInterval) async {
+    let inPlayer =
+      switch audioPlayer.state {
+      case .loading, .playing, .paused, .interrupted: audioPlayer.currentSetId == id
+      // A failed item cannot resume, so a Set that failed in the player starts again too.
+      case .idle, .failed: false
+      }
+    guard inPlayer else {
       await playSet(id, startAt: seconds)
+      return
     }
+    audioPlayer.seek(to: seconds)
+    audioPlayer.resume()
   }
 
   private func attachTracklist(to set: SavedSet) {
@@ -728,8 +914,11 @@ final class AppModel {
   func playPlaylist(_ id: String) async {
     guard let client else { return }
     queueNotice = nil
+    playGeneration += 1
+    let generation = playGeneration
     do {
       let loaded = try await client.playPlaylist(id)
+      guard generation == playGeneration else { return }
       queue = .loaded(loaded)
       playActiveEntry(of: loaded, from: client)
     } catch OrbisError.cancelled {
@@ -761,13 +950,17 @@ final class AppModel {
   func finishedPlaying(_ id: String) async {
     guard let client else { return }
     stopReportingPosition()
+    playGeneration += 1
+    let generation = playGeneration
     do {
       let loaded = try await client.reportCompletion(id)
+      guard generation == playGeneration else { return }
       queue = .loaded(loaded)
       // The finished Set left the queue and its position went back to the beginning, so the
       // Library is read again rather than patched. Read quietly, because a spinner where the list
       // was would be a flicker the person did not ask for.
       await refreshLibraryQuietly()
+      guard generation == playGeneration else { return }
       playActiveEntry(of: loaded, from: client)
     } catch OrbisError.cancelled {
       return
@@ -789,7 +982,9 @@ final class AppModel {
       guard generation == queueGeneration, !Task.isCancelled else { return }
       queue = .loaded(loaded)
     } catch OrbisError.cancelled {
+      // A refresh cancelled by leaving the app keeps the queue already on screen.
       guard generation == queueGeneration else { return }
+      if case .loaded = queue { return }
       queue = .idle
     } catch let error as OrbisError {
       guard generation == queueGeneration else { return }
@@ -848,6 +1043,9 @@ final class AppModel {
   /// a completion, a settled position — must not put a spinner where the list was.
   func refreshLibraryQuietly() async {
     guard let client else { return }
+    // A load already in flight will answer; taking its generation would leave its spinner up if
+    // this refresh then failed or was cancelled.
+    if case .loading = library { return }
     libraryGeneration += 1
     let generation = libraryGeneration
     guard let sets = try? await client.library(playlistId: selectedPlaylistId) else { return }
@@ -859,10 +1057,9 @@ final class AppModel {
   /// Set is already the active one and pausing is part of the same Listen.
   func togglePlayback() {
     switch audioPlayer.state {
-    case .playing:
-      audioPlayer.pause()
-    case .loading, .paused:
-      audioPlayer.resume()
+    case .playing, .loading, .paused, .interrupted:
+      // A press while the Set loads is a pause: the person asked for quiet before it started.
+      audioPlayer.togglePlayPause()
     case .idle, .failed:
       // A Set that failed to play is not resumable, so the button starts it again.
       if let id = audioPlayer.currentSetId {
@@ -878,11 +1075,7 @@ final class AppModel {
       Task { await playSet(id) }
       return
     }
-    if audioPlayer.state == .playing {
-      audioPlayer.pause()
-    } else {
-      audioPlayer.resume()
-    }
+    togglePlayback()
   }
 
   /// Closes the reveal, leaving nothing behind when the person filed the Set and walked away.
@@ -956,6 +1149,17 @@ final class AppModel {
     openedSetId = nil
   }
 
+  /// Takes the destination on screen back to its first page: the Set, Playlist, or Person open in
+  /// it closes.
+  func returnToRoot() {
+    closeSet()
+    switch destination {
+    case .playlists: closePlaylist()
+    case .people: peopleRootRequests += 1
+    case .home, .library, .search: break
+    }
+  }
+
   /// Runs one change from the page. Every path reports through `setError`, so a refusal is
   /// readable where the action was taken and nothing disappears before it is understood.
   private func change(
@@ -983,8 +1187,26 @@ final class AppModel {
   }
 
   func replaceTags(_ id: String, with tags: [String]) async {
-    guard tags != savedSet(id)?.tags else { return }
+    let before = savedSet(id)?.tags ?? []
+    guard tags != before else { return }
     await change(id) { try await $0.updateTags(id, tags: tags) }
+    guard setFailure == nil, !Task.isCancelled else { return }
+    rememberTags(tags.filter { !before.contains($0) })
+  }
+
+  /// Puts one Tag on every one of these Sets, or takes it off. The service changes one Set's
+  /// Tags at a time, so each Set is its own write, and the first refusal stops the rest and
+  /// stays on screen the way a single change's does.
+  func setTag(_ tag: String, on ids: [String], to included: Bool) async {
+    guard let tag = TagInput.normalize(tag) else { return }
+    for id in ids {
+      guard let current = savedSet(id)?.tags else { continue }
+      let wanted = included ? TagInput.adding(tag, to: current) : current.filter { $0 != tag }
+      guard wanted != current else { continue }
+      await change(id) { try await $0.updateTags(id, tags: wanted) }
+      guard setFailure == nil, !Task.isCancelled else { return }
+    }
+    if included { rememberTags([tag]) }
   }
 
   /// Moves a Set to a Playlist, or out of every one. Orbis holds a Set in one Playlist, so
@@ -1003,6 +1225,20 @@ final class AppModel {
     await change(id) { try await $0.updatePlaylists(id, playlistIds: wanted) }
     guard setFailure == nil else { return }
     await refreshPlaylistsQuietly()
+  }
+
+  /// Puts a Set in a Playlist, or takes it out when it is already there. Answers whether the Set
+  /// went in, which is when the Add to Playlist sheet remembers the Playlist and closes.
+  func choosePlaylist(_ playlistId: String, for setId: String, isMember: Bool) async -> Bool {
+    await setMembership(setId, in: playlistId, !isMember)
+    return setFailure == nil && !isMember
+  }
+
+  /// Makes a Playlist and puts the Set in it first. Answers the Playlist once the Set is in it.
+  func createPlaylist(named name: String, adding setId: String) async -> Playlist? {
+    guard let created = await createPlaylist(named: name, opening: false) else { return nil }
+    await setMembership(setId, in: created.id, true)
+    return setFailure == nil ? created : nil
   }
 
   func refreshPlaylistsQuietly() async {
@@ -1093,7 +1329,17 @@ final class AppModel {
 
   func openPlaylist(_ id: String) {
     playlistFailure = nil
+    // A page left open from the last Playlist must not be the first thing this one shows.
+    openedSets[.playlists] = nil
+    playlistMembers = .idle
     openedPlaylistId = id
+  }
+
+  /// Goes to a Playlist's own page from anywhere: Home's folders, the sidebar, or Search.
+  func showPlaylist(_ id: String) {
+    destination = .playlists
+    openPlaylist(id)
+    Task { [weak self] in await self?.loadPlaylistMembers(id) }
   }
 
   func closePlaylist() {
@@ -1117,6 +1363,19 @@ final class AppModel {
     } catch {
       guard openedPlaylistId == id else { return }
       playlistMembers = .failed(OrbisError.unreachable.failure(at: client.address))
+    }
+  }
+
+  /// A Playlist's members, in Playlist order, read without touching `playlistMembers`, so the car
+  /// can open a Playlist while the phone shows another.
+  func playlistSets(_ id: String) async -> Loadable<[SavedSet]> {
+    guard let client else { return .idle }
+    do {
+      return .loaded(try await client.library(playlistId: id))
+    } catch let error as OrbisError {
+      return .failed(error.failure(at: client.address))
+    } catch {
+      return .failed(OrbisError.unreachable.failure(at: client.address))
     }
   }
 
@@ -1255,8 +1514,13 @@ final class AppModel {
     }
     searchGeneration += 1
     let generation = searchGeneration
-    search = .loading
     searchResultsFor = query
+    // The Tags come from the library already loaded, so a Tag search asks the service nothing.
+    guard !SetPresentation.isTagQuery(query) else {
+      search = .loaded([])
+      return
+    }
+    search = .loading
     do {
       let sets = try await client.library(query: query)
       guard generation == searchGeneration, !Task.isCancelled else { return }
@@ -1271,6 +1535,78 @@ final class AppModel {
     } catch {
       guard generation == searchGeneration else { return }
       search = .failed(OrbisError.unreachable.failure(at: client.address))
+    }
+  }
+
+  /// Tracks inside the library's Tracklists whose title or artist holds the submitted query, with
+  /// the Set each plays in. Only Tracklists this device has loaded are read, so
+  /// `loadTracklistsForSearch` runs first. Held rather than derived on demand, because the scan
+  /// reads every cue and the results body renders on every change of the player.
+  private(set) var cueMatches: [CueMatch] = []
+
+  private func refreshCueMatches() {
+    let query = (searchResultsFor ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !query.isEmpty, case .loaded(let sets) = library else {
+      if !cueMatches.isEmpty { cueMatches = [] }
+      return
+    }
+    cueMatches = sets.flatMap { set in
+      (tracklists[set.id]?.cues ?? [])
+        .filter {
+          $0.title.localizedCaseInsensitiveContains(query)
+            || $0.artist.localizedCaseInsensitiveContains(query)
+        }
+        .map { CueMatch(set: set, cue: $0) }
+    }
+  }
+
+  /// Reads every ready Tracklist the device has not loaded yet, a few at a time, so Search can
+  /// look inside them. One read per Set and no polling: a pending Tracklist has nothing to match.
+  func loadTracklistsForSearch() async {
+    guard let client, case .loaded(let sets) = library else { return }
+    let missing = sets.filter { $0.tracklistState == .ready && tracklists[$0.id] == nil }.map(\.id)
+    await withTaskGroup(of: (String, Tracklist?).self) { group in
+      var pending = missing[...]
+      for _ in 0..<4 {
+        guard let id = pending.popFirst() else { break }
+        group.addTask { (id, try? await client.tracklist(id)) }
+      }
+      while let (id, tracklist) = await group.next() {
+        if let tracklist { tracklists[id] = tracklist }
+        if let next = pending.popFirst() {
+          group.addTask { (next, try? await client.tracklist(next)) }
+        }
+      }
+    }
+  }
+
+  /// Plays a Playlist's playable members in a random order: the first starts now and the rest
+  /// follow it in the queue.
+  ///
+  /// The service has no route that queues many Sets at once, and each one goes to the end, so the
+  /// requests run one after another to keep the shuffled order. The queue is published once, from
+  /// the last answer, rather than redrawn for every Set.
+  func shufflePlaylist(_ id: String) async {
+    guard let client, case .loaded(let members) = playlistMembers else { return }
+    let order = members.filter { $0.downloadState == "ready" }.shuffled()
+    guard let first = order.first else { return }
+    await playSet(first.id)
+    let generation = playGeneration
+    var queued: ListeningQueue?
+    do {
+      for set in order.dropFirst() {
+        // Another play, or signing out, replaced this shuffle.
+        guard generation == playGeneration else { return }
+        queued = try await client.queueSet(set.id, placement: .end)
+      }
+    } catch OrbisError.cancelled {
+    } catch let error as OrbisError {
+      setFailure = error.failure(at: client.address)
+    } catch {
+      setFailure = OrbisError.unreachable.failure(at: client.address)
+    }
+    if let queued, generation == playGeneration {
+      queue = .loaded(queued)
     }
   }
 
@@ -1308,6 +1644,30 @@ enum Destination: String, CaseIterable, Identifiable, Hashable {
     case .playlists: "rectangle.stack"
     case .people: "person.2"
     case .search: "magnifyingglass"
+    }
+  }
+}
+
+/// A track found inside a Set's Tracklist.
+struct CueMatch: Identifiable {
+  let set: SavedSet
+  let cue: Cue
+  var id: String { "\(set.id)-\(cue.position)" }
+}
+
+/// The orders the Library offers. Newest is the order the service returns, grouped by day.
+enum LibrarySort: String, CaseIterable, Identifiable {
+  case newest = "Newest"
+  case title = "Title"
+  case longest = "Longest"
+
+  var id: Self { self }
+
+  func ordered(_ sets: [SavedSet]) -> [SavedSet] {
+    switch self {
+    case .newest: sets
+    case .title: sets.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    case .longest: sets.sorted { ($0.durationSeconds ?? 0) > ($1.durationSeconds ?? 0) }
     }
   }
 }

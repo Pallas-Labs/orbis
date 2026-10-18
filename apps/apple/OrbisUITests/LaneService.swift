@@ -39,6 +39,7 @@ struct LaneService {
   struct Set: Decodable {
     let id: String
     let title: String
+    let tags: [String]
     let playbackPositionSeconds: Int
   }
 
@@ -68,8 +69,8 @@ struct LaneService {
   private struct Sets: Decodable { let sets: [Set] }
   private struct Playlists: Decodable { let playlists: [Playlist] }
 
-  func saveSet(title: String, url: String) throws -> Set {
-    try send("POST", "sets", ["title": title, "url": url, "tags": []])
+  func saveSet(title: String, url: String, tags: [String] = []) throws -> Set {
+    try send("POST", "sets", ["title": title, "url": url, "tags": tags])
   }
 
   func saveReadySet(title: String, url: String) throws -> Set {
@@ -149,13 +150,25 @@ struct LaneService {
   }
 
   func position(of id: String, becomesAtLeast minimum: Int) throws -> Int {
+    try position(of: id) { $0 >= minimum }
+  }
+
+  /// The stored Playback Position once it satisfies `expected`, or the last one read after ten
+  /// seconds.
+  func position(of id: String, until expected: (Int) -> Bool) throws -> Int {
     let deadline = Date().addingTimeInterval(10)
     repeat {
       let stored = try set(id: id)?.playbackPositionSeconds ?? 0
-      if stored >= minimum { return stored }
+      if expected(stored) { return stored }
       usleep(250_000)
     } while Date() < deadline
     return try set(id: id)?.playbackPositionSeconds ?? 0
+  }
+
+  /// Stores a Playback Position, as another device that stopped part-way would.
+  func setPosition(of id: String, to seconds: Int) throws {
+    let code = try status("PUT", "sets/\(id)/position", ["seconds": seconds])
+    guard (200..<300).contains(code) else { throw URLError(.badServerResponse) }
   }
 
   struct Device: Decodable {
@@ -188,10 +201,11 @@ struct LaneService {
     return answer.passcode
   }
 
-  /// Sets the Group Passcode. Host only; nil closes joining.
-  func setPasscode(_ passcode: String?) throws {
-    let value: Any = passcode.map { $0 as Any } ?? NSNull()
-    let _: Passcode = try send("PUT", "admin/passcode", ["passcode": value])
+  /// Opens joining with a new passcode the service makes, and returns it. Host only.
+  func newPasscode() throws -> String {
+    let answer: Passcode = try send("POST", "admin/passcode", nil)
+    guard let passcode = answer.passcode else { throw URLError(.badServerResponse) }
+    return passcode
   }
 
   /// Everyone in the Group. Host only.
@@ -274,6 +288,10 @@ extension XCTestCase {
     }
     if keychain {
       app.launchArguments.append("-orbisResetSettings")
+      // With the keychain cleared, a Debug build signs in with the developer's own
+      // ~/.orbis/config.json. Turn that off, so the journey starts signed out on any Mac. It
+      // holds for every relaunch of this app.
+      app.launchEnvironment["ORBIS_DEVELOPMENT_CONFIG"] = "off"
     } else {
       app.launchEnvironment["ORBIS_TEST_SETTINGS"] = "memory"
     }

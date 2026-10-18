@@ -13,8 +13,8 @@ struct SetList: View {
   let empty: AnyView
   /// What the app was doing when a failure happened, in the words the screen would use.
   var failureContext = "loading the library"
-  /// The tag the list is filtered by, so the row marks it as the active one.
-  let activeTag: String?
+  /// The Tags the list is filtered by, which every row carries and so leaves out.
+  var hiddenTags: [String] = []
   /// Filter controls shown beside the heading, absent on a screen that only reads.
   let filters: AnyView?
   /// The state a filter shows when it admits nothing. A screen that can narrow its list
@@ -29,6 +29,8 @@ struct SetList: View {
   /// playlists — between the hero and the list header, the way a music app's home carries its
   /// sections. Absent on a screen that only reads.
   var rails: AnyView?
+  /// What follows the rows, such as the tracks a search found inside Tracklists.
+  var belowRows: AnyView?
   let footer: String
   let retry: () async -> Void
   /// What a journey or a manual pass reads this list by, so the two destinations do not
@@ -44,8 +46,32 @@ struct SetList: View {
   var isPlaying = false
   /// Starts, pauses, or resumes a Set from its row. Absent on a screen that only reads.
   var togglePlayback: ((SavedSet) -> Void)?
+  /// False when the list is in an order other than the day each Set was filed, where grouping
+  /// by day would scatter one day across the list.
+  var groupsByDay = true
+  /// The Tags a row's long-press menu offers to put on or take off, and what that does. Absent
+  /// on a screen that only reads, such as Search.
+  var menuTags: [String] = []
+  var toggleTag: ((SavedSet, String) -> Void)?
+  var editTags: ((SavedSet) -> Void)?
+  /// The Sets picked while the list is in selection mode, or nil when it is not. A row then
+  /// toggles its Set instead of opening or playing it.
+  var selection: Set<String>?
+  var toggleSelection: ((SavedSet) -> Void)?
+  /// What the page takes its light from: a Set's artwork, blurred behind the top of the list,
+  /// plain paper, or nothing, when the list is one column of a page that draws the light itself.
+  var backdrop: Backdrop = .paper
+
+  enum Backdrop {
+    case paper
+    case artwork(URL?)
+    case none
+  }
 
   @Environment(\.openURL) private var openURL
+  /// The rows under their headings, built when the Sets change rather than on every render,
+  /// because grouping parses each Set's date.
+  @State private var groups: [DayGroup] = []
 
   var body: some View {
     Group {
@@ -62,12 +88,20 @@ struct SetList: View {
         if sets.isEmpty, aboveRows == nil {
           emptyPresentation
         } else {
-          rows(sets)
+          rows
         }
       }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color.orbis.paper)
+    .onChange(of: state, initial: true) { regroup() }
+    .onChange(of: groupsByDay) { regroup() }
+    .background {
+      switch backdrop {
+      case .paper: Color.orbis.paper.ignoresSafeArea()
+      case .artwork(let url): ArtworkGlow(url: url, reach: 0.55)
+      case .none: Color.clear
+      }
+    }
   }
 
   /// An empty Library and a filter that admits nothing are different states, and they were once
@@ -102,8 +136,8 @@ struct SetList: View {
     openURL(link)
   }
 
-  /// The heading, the rule under it, and the line that carries the count and the filters. The
-  /// rows and the no-matches state share it, because both are answers about the same list.
+  /// The heading and the line that carries the count and the filters. The rows and the
+  /// no-matches state share it, because both are answers about the same list.
   private var listHeader: some View {
     VStack(alignment: .leading, spacing: 0) {
       if let heading {
@@ -111,7 +145,6 @@ struct SetList: View {
           .font(.orbis.sectionTitle)
           .padding(.bottom, 12)
       }
-      ListingRule()
       HStack(alignment: .firstTextBaseline) {
         ListingLabel(footer)
         Spacer()
@@ -120,11 +153,10 @@ struct SetList: View {
         }
       }
       .padding(.vertical, 12)
-      .overlay(alignment: .bottom) { Divider() }
     }
   }
 
-  private func rows(_ sets: [SavedSet]) -> some View {
+  private var rows: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 0) {
         if let aboveRows {
@@ -141,15 +173,18 @@ struct SetList: View {
         // rather than all at once. Sets group under the day they were filed, so the date is
         // structure rather than a value on every row.
         LazyVStack(alignment: .leading, spacing: 0) {
-          ForEach(Self.days(of: sets), id: \.day) { group in
-            ListingHeader(group.day)
+          ForEach(groups) { group in
+            if let label = group.label {
+              ListingHeader(label)
+            }
             ForEach(Array(group.sets.enumerated()), id: \.element.id) { index, set in
-              if index > 0 {
-                Divider()
-              }
               row(set)
+                .padding(.top, index > 0 ? 8 : 0)
             }
           }
+        }
+        if let belowRows {
+          belowRows.padding(.top, 28)
         }
       }
       .padding()
@@ -159,10 +194,48 @@ struct SetList: View {
     .accessibilityIdentifier(listIdentifier)
   }
 
+  @ViewBuilder private func row(_ set: SavedSet) -> some View {
+    if let selection, let toggleSelection {
+      selectableRow(set, isSelected: selection.contains(set.id)) { toggleSelection(set) }
+    } else {
+      openableRow(set)
+    }
+  }
+
+  /// The row in selection mode: one target, with nothing that plays or opens.
+  private func selectableRow(
+    _ set: SavedSet, isSelected: Bool, toggle: @escaping () -> Void
+  ) -> some View {
+    let model = SetPresentation.row(set)
+    return Button(action: toggle) {
+      HStack(spacing: 12) {
+        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+          .font(.title2)
+          .foregroundStyle(isSelected ? Color.orbis.tint : Color.secondary)
+          .orbisSymbolReplace()
+        SetRow(
+          title: model.title,
+          source: model.source,
+          artwork: model.artwork,
+          creator: model.creator,
+          length: model.length,
+          tags: model.tags,
+          hiddenTags: hiddenTags,
+          state: model.state,
+          progress: model.progress
+        )
+      }
+      .contentShape(.rect)
+    }
+    .buttonStyle(.plain)
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
+    .accessibilityIdentifier("set-row-\(set.id)")
+  }
+
   /// One Set. The row owns both of its targets: the artwork plays and the rest opens. The
   /// long-press menu repeats both, and adds the Source Link, for anyone who reaches for it.
-  private func row(_ set: SavedSet) -> some View {
-    let model = SetPresentation.row(set, activeTag: activeTag)
+  private func openableRow(_ set: SavedSet) -> some View {
+    let model = SetPresentation.row(set)
     let playback = SetPresentation.playback(
       of: set, currentSetId: currentSetId, isPlaying: isPlaying)
     return SetRow(
@@ -171,15 +244,15 @@ struct SetList: View {
       artwork: model.artwork,
       creator: model.creator,
       length: model.length,
-      dates: SetPresentation.datesLine(set),
       tags: model.tags,
-      activeTag: activeTag,
+      hiddenTags: hiddenTags,
       state: model.state,
       progress: model.progress,
       playback: playback,
       togglePlayback: togglePlayback.map { toggle in { toggle(set) } },
       select: select.map { select in { select(set) } }
     )
+    .zoomsSetPage(set.id)
     .accessibilityIdentifier("set-row-\(set.id)")
     .contextMenu {
       if let playback, let togglePlayback {
@@ -189,24 +262,52 @@ struct SetList: View {
       if let select {
         Button("Details", systemImage: "info.circle") { select(set) }
       }
+      if let toggleTag {
+        Menu("Tags", systemImage: "tag") {
+          ForEach(menuTags.prefix(Self.menuTagLimit), id: \.self) { tag in
+            Toggle(
+              tag,
+              isOn: Binding(get: { set.tags.contains(tag) }, set: { _ in toggleTag(set, tag) }))
+          }
+          if let editTags {
+            Divider()
+            Button("Edit Tags…", systemImage: "pencil") { editTags(set) }
+          }
+        }
+      }
       Button("Open Source", systemImage: "safari") { open(set) }
     }
   }
 
+  private static let menuTagLimit = 8
+
+  private func regroup() {
+    guard case .loaded(let sets) = state else {
+      groups = []
+      return
+    }
+    groups = groupsByDay ? Self.days(of: sets) : [DayGroup(id: .distantPast, label: nil, sets: sets)]
+  }
+
   /// The Sets in the order given, grouped under the day each was filed.
-  struct DayGroup {
-    let day: String
-    let sets: [SavedSet]
+  struct DayGroup: Identifiable {
+    /// The start of the day. The label leaves out the year, so the same date in two years would
+    /// share it; the day itself does not.
+    let id: Date
+    /// The heading, absent when the list is not grouped.
+    let label: String?
+    var sets: [SavedSet]
   }
 
   static func days(of sets: [SavedSet]) -> [DayGroup] {
+    let calendar = Calendar.current
     var groups: [DayGroup] = []
     for set in sets {
-      let day = SetPresentation.day(set.createdAt)
-      if groups.last?.day == day {
-        groups[groups.count - 1] = DayGroup(day: day, sets: groups[groups.count - 1].sets + [set])
+      let day = calendar.startOfDay(for: SetPresentation.date(from: set.createdAt))
+      if groups.last?.id == day {
+        groups[groups.count - 1].sets.append(set)
       } else {
-        groups.append(DayGroup(day: day, sets: [set]))
+        groups.append(DayGroup(id: day, label: SetPresentation.day(day), sets: [set]))
       }
     }
     return groups

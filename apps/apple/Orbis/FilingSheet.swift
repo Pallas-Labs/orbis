@@ -3,6 +3,8 @@ import SwiftUI
 
 #if os(iOS)
   import UIKit
+#elseif os(macOS)
+  import AppKit
 #endif
 
 struct FilingSheet: View {
@@ -35,6 +37,7 @@ struct FilingSheet: View {
       .toolbar { toolbar }
     }
     .presentationDetents([.medium, .large], selection: $detent)
+    .sensoryFeedback(.success, trigger: model.reveal?.set.id) { _, new in new != nil }
     .onChange(of: model.reveal != nil, initial: true) { _, hasReveal in
       if hasReveal { detent = .large }
     }
@@ -79,15 +82,13 @@ struct FilingSheet: View {
     } footer: {
       VStack(alignment: .leading, spacing: 10) {
         Text("A YouTube or SoundCloud link. Orbis reads the title, artist and artwork from it.")
-        #if os(iOS)
-          PasteButton(payloadType: String.self) { pasted in
-            guard let text = pasted.first else { return }
-            Task { await model.pasteAndFile(text) }
-          }
-          .labelStyle(.titleAndIcon)
-          .buttonBorderShape(.capsule)
-          .accessibilityIdentifier("paste-and-file")
-        #endif
+        PasteButton(payloadType: String.self) { pasted in
+          guard let text = pasted.first else { return }
+          Task { await model.pasteAndFile(text) }
+        }
+        .labelStyle(.titleAndIcon)
+        .buttonBorderShape(.capsule)
+        .accessibilityIdentifier("paste-and-file")
         if let notice = model.pasteNotice {
           Text(notice)
             .accessibilityIdentifier("paste-notice")
@@ -97,7 +98,11 @@ struct FilingSheet: View {
     if model.isFiling {
       Section {
         HStack(spacing: 10) {
-          ProgressView()
+          Image(systemName: "waveform")
+            .font(.title3.weight(.semibold))
+            .foregroundStyle(Color.orbis.tint)
+            .orbisWorking(true)
+            .accessibilityHidden(true)
           Text("Reading the link…")
             .foregroundStyle(.secondary)
         }
@@ -169,6 +174,7 @@ struct FilingSheet: View {
         set: { model.reveal?.tags = $0 }
       ),
       suggestions: model.availableTags,
+      title: "Tags",
       category: SetPresentation.category(for:)
     )
 
@@ -191,6 +197,23 @@ enum ClipboardLink {
   static func isFiled(_ text: String, in sets: [SavedSet]) -> Bool {
     let wanted = text.trimmingCharacters(in: .whitespacesAndNewlines)
     return sets.contains { $0.url == wanted }
+  }
+
+  /// The clipboard's change count when it may hold a link worth offering, or nil. Only the kind
+  /// of thing on the clipboard is asked about, never its contents, so no paste prompt is raised;
+  /// the system Paste button reads it when the person chooses to.
+  @MainActor
+  static func offerableChange() async -> Int? {
+    #if os(iOS)
+      let board = UIPasteboard.general
+      guard board.hasURLs || board.hasStrings else { return nil }
+      let patterns = try? await board.detectedPatterns(for: [\.probableWebURL])
+      return board.hasURLs || patterns?.contains(\.probableWebURL) == true ? board.changeCount : nil
+    #else
+      // A Mac browser puts a URL on the clipboard alongside the text when an address is copied.
+      let board = NSPasteboard.general
+      return board.availableType(from: [.URL]) == nil ? nil : board.changeCount
+    #endif
   }
 
   #if os(iOS)

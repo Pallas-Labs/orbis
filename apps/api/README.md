@@ -4,18 +4,18 @@ The Worker at `https://orbis.p11a.xyz/api/*` forwards requests to one SQLite Dur
 
 `createPortableApp` composes the HTTP routes with an injected database, Audio service, audio response, audio release operation, and stream signing secret. The Bun `createApp` wrapper supplies the local implementations. The Group supplies its SQLite driver and trust adapter, persists Download requests without running a local worker, and redirects audio to the audio node. Its bundle excludes Bun, filesystem access, and local download backends.
 
-Presence, Queue signals, and the failed-key limit live in the Group's memory. Sign-in Codes live in the trust tables, so a restart or eviction keeps them. The limit uses `CF-Connecting-IP`. Events retain the 30-second heartbeat and end when the caller's key is revoked. Requests produce JSON logs.
+Presence, Queue signals, and the failed-key limit live in the Group's memory. Sign-in Codes live in the trust tables, so a restart or eviction keeps them. The limit uses `CF-Connecting-IP`, counts an IPv6 client by its /64 block, and adds one Group-wide ceiling on failed sign-in attempts. Events retain the 30-second heartbeat and end when the caller's key is revoked. Requests produce JSON logs.
 
 ## Worker configuration
 
-Alchemy enables `nodejs_compat` for the portable crypto APIs. Configure these values in the deploy environment before deploying:
+Alchemy enables `nodejs_compat` for the portable crypto APIs. The deploy reads these values from its environment:
 
 - `STREAM_GRANT_SECRET` is the 64-character hex encoding of the existing 32-byte `stream-grant.key`. Preserve that key so existing grants remain valid.
 - `AUDIO_NODE_URL` is the audio node's HTTPS origin.
 - `YOUTUBE_API_KEY` and `OPENROUTER_API_KEY` configure metadata and title revision.
-- `VERSOS_URL` and `VERSOS_API_KEY` configure Tracklist discovery.
+- `VERSOS_URL` and `VERSOS_API_KEY` configure Tracklist discovery. `VERSOS_URL` defaults to `https://versos.studio`.
 
-Alchemy stores API keys and the stream secret as Worker secrets. Optional provider keys default to empty and disable that provider. SoundCloud uses its public metadata endpoint and requires no key. No credentials are embedded in the Worker bundle.
+Alchemy stores API keys and the stream secret as Worker secrets. A deploy sends only the secrets set in its environment. Each unset secret keeps the value already on the Worker, so a deploy needs only `AUDIO_NODE_URL` and the secrets it changes. A Worker with no stored value for a provider key disables that provider. A first deploy must set `STREAM_GRANT_SECRET`. SoundCloud uses its public metadata endpoint and requires no key. No credentials are embedded in the Worker bundle.
 
 ## Migrations
 

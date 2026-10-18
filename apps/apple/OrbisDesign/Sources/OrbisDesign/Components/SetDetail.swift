@@ -23,10 +23,13 @@ public struct SetDetail: View {
   public struct Dates: Equatable, Sendable {
     public let imported: String
     public let released: String?
+    /// The release year alone, for the line under the creator. The full date sits in the footer.
+    public let releaseYear: String?
 
-    public init(imported: String, released: String? = nil) {
+    public init(imported: String, released: String? = nil, releaseYear: String? = nil) {
       self.imported = imported
       self.released = released
+      self.releaseYear = releaseYear
     }
   }
 
@@ -100,28 +103,29 @@ public struct SetDetail: View {
     "\(title), \(source)"
   }
 
-  public static func factsLine(dates: Dates?, statistics: Statistics?) -> String? {
-    var parts: [String] = []
-    if let released = dates?.released { parts.append("Released \(released)") }
-    if let imported = dates?.imported { parts.append("Added \(imported)") }
-    if let statistics, !statistics.isEmpty {
-      let count = statistics.listenCount
-      parts.append(count == 1 ? "1 listen" : "\(count) listens")
-      switch statistics.finishCount {
-      case 0: break
-      case 1: parts.append("finished once")
-      case let n: parts.append("finished \(n) times")
-      }
-    }
-    return parts.isEmpty ? nil : parts.joined(separator: " · ")
+  /// The line under the creator: the source, the length, and the release year.
+  public static func eyebrow(source: String, length: String?, dates: Dates?) -> String {
+    [source, length, dates?.releaseYear].compactMap { $0 }.joined(separator: " · ").uppercased()
   }
 
-  public static func metaLine(
-    source: String, length: String?, dates: Dates?, statistics: Statistics?
-  ) -> String {
-    ([source, length] + [factsLine(dates: dates, statistics: statistics)])
-      .compactMap { $0 }
-      .joined(separator: " · ")
+  /// The facts under the tracklist, one subject per line, so no line breaks inside a phrase.
+  public static func footerLines(dates: Dates?, statistics: Statistics?) -> [String] {
+    var lines: [String] = []
+    var when: [String] = []
+    if let released = dates?.released { when.append("Released \(released)") }
+    if let imported = dates?.imported { when.append("Added \(imported)") }
+    if !when.isEmpty { lines.append(when.joined(separator: " · ")) }
+    if let statistics, !statistics.isEmpty {
+      let count = statistics.listenCount
+      var heard = [count == 1 ? "1 listen" : "\(count) listens"]
+      switch statistics.finishCount {
+      case 0: break
+      case 1: heard.append("finished once")
+      case let n: heard.append("finished \(n) times")
+      }
+      lines.append(heard.joined(separator: " · "))
+    }
+    return lines
   }
 
   /// The line under the artwork: the source, then whatever the caller composed.
@@ -129,40 +133,113 @@ public struct SetDetail: View {
     [source, subtitle].compactMap { $0 }.joined(separator: " · ")
   }
 
+  @State private var titleBottom = CGFloat.infinity
+  @State private var showsBarTitle = false
+  @State private var topInset: CGFloat = 0
+  private static let content = "set-detail-content"
+
   public var body: some View {
     ScrollView {
       VStack(spacing: 0) {
-        Artwork(url: artwork, seed: title, size: .header)
-          .clipShape(.rect(cornerRadius: Radius.row))
-          .shadow(color: .black.opacity(0.3), radius: 18, y: 10)
-          .padding([.horizontal, .top])
-        VStack(spacing: 24) {
-          header
-          transport
-          tracklist
-          management
-        }
-        .padding(.horizontal)
-        .padding(.top, 20)
-        .padding(.bottom)
+        #if os(macOS)
+          // A Mac window is wide, so the artwork sits beside the words and the controls, as
+          // Home's hero and a Playlist's do, and the Tracklist runs under both.
+          HStack(alignment: .center, spacing: 36) {
+            cover
+              .frame(maxWidth: 420)
+            VStack(alignment: .leading, spacing: 20) {
+              header
+              transport
+              management
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+          }
+          .padding(.horizontal)
+          .padding(.top, 8)
+          VStack(spacing: 20) {
+            tracklist
+            footer
+          }
+          .padding(.horizontal)
+          .padding(.top, 28)
+          .padding(.bottom, 32)
+        #else
+          cover
+            .padding(.horizontal, 30)
+            .padding(.top, 8)
+          VStack(spacing: 20) {
+            header
+            transport
+            management
+            tracklist
+            footer
+          }
+          .padding(.horizontal)
+          .padding(.top, 18)
+          .padding(.bottom, 32)
+        #endif
+      }
+      .coordinateSpace(.named(Self.content))
+      // The glow belongs to the header, so it scrolls away with it rather than staying behind the
+      // tracklist. One screen tall, and raised under the bar, where the content does not reach.
+      .background(alignment: .top) {
+        ArtworkGlow(url: artwork, reach: 0.6)
+          .containerRelativeFrame(.vertical) { length, _ in length + topInset }
+          .offset(y: -topInset)
       }
     }
-    .background { ArtworkBackdrop(url: artwork) }
+    .onScrollGeometryChange(for: CGFloat.self) {
+      $0.contentInsets.top
+    } action: { _, inset in
+      topInset = inset
+    }
+    // The bar names the Set only once the large title has scrolled under it, as an album does.
+    .onScrollGeometryChange(for: Bool.self) { geometry in
+      geometry.contentOffset.y + geometry.contentInsets.top > titleBottom
+    } action: { _, scrolledPast in
+      showsBarTitle = scrolledPast
+    }
+    .navigationTitle(showsBarTitle ? title : "")
+    .background(Color.orbis.paper)
+  }
+
+  @ViewBuilder private var footer: some View {
+    let lines = Self.footerLines(dates: dates, statistics: statistics)
+    if !lines.isEmpty {
+      VStack(alignment: .leading, spacing: 2) {
+        ForEach(lines, id: \.self) { Text($0) }
+      }
+      .font(.orbis.detail)
+      .foregroundStyle(.secondary)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .accessibilityElement(children: .combine)
+      .accessibilityIdentifier("detail-facts")
+    }
+  }
+
+  private var cover: some View {
+    Artwork(url: artwork, seed: title, size: .header)
+      .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
   }
 
   private var header: some View {
-    VStack(spacing: 6) {
+    VStack(alignment: HeaderAlignment.horizontal, spacing: 2) {
       Text(title)
         .font(.orbis.title)
-        .multilineTextAlignment(.center)
+        .multilineTextAlignment(HeaderAlignment.text)
         .accessibilityLabel(Self.headerLabel(title: title, source: source))
         .accessibilityAddTraits(.isHeader)
         .accessibilityIdentifier("detail-title")
+        .onGeometryChange(for: CGFloat.self) {
+          $0.frame(in: .named(Self.content)).maxY
+        } action: {
+          titleBottom = $0
+        }
       if let creator, !creator.isEmpty {
         let name = Text(creator)
-          .font(.title3.weight(.semibold))
+          .font(.title3)
           .foregroundStyle(Color.orbis.tint)
-          .multilineTextAlignment(.center)
+          .multilineTextAlignment(HeaderAlignment.text)
         if let showCreator {
           Button(action: showCreator) { name }
             .buttonStyle(.plain)
@@ -172,12 +249,10 @@ public struct SetDetail: View {
           name
         }
       }
-      Text(Self.metaLine(source: source, length: length, dates: dates, statistics: statistics))
-        .font(.orbis.detail)
+      Text(Self.eyebrow(source: source, length: length, dates: dates))
+        .font(.caption.weight(.semibold))
         .foregroundStyle(.secondary)
-        .multilineTextAlignment(.center)
-        .padding(.top, 2)
-        .accessibilityIdentifier("detail-facts")
+        .padding(.top, 4)
       if failedToName {
         HStack(spacing: 6) {
           Text("Orbis could not name this set.")
@@ -191,23 +266,41 @@ public struct SetDetail: View {
         .padding(.top, 4)
       }
     }
-    .frame(maxWidth: .infinity)
+    .frame(maxWidth: .infinity, alignment: HeaderAlignment.frame)
   }
 
 }
 
+/// The header and its Tags sit centred under the artwork on a phone, and beside it on a Mac, where
+/// they read from the leading edge.
+private enum HeaderAlignment {
+  #if os(macOS)
+    static let horizontal = HorizontalAlignment.leading
+    static let text = TextAlignment.leading
+    static let frame = Alignment.leading
+  #else
+    static let horizontal = HorizontalAlignment.center
+    static let text = TextAlignment.center
+    static let frame = Alignment.center
+  #endif
+}
+
+/// A Set's Tags, each one tap from the Library filtered by it, and a "+" to change them.
 public struct SetManagement: View {
   public let tags: [String]
   public let category: @MainActor (String) -> OrbisColor.Category
+  public let showTag: (String) -> Void
   public let editTags: () -> Void
 
   public init(
     tags: [String] = [],
     category: @escaping @MainActor (String) -> OrbisColor.Category = OrbisColor.Category.forTag,
+    showTag: @escaping (String) -> Void = { _ in },
     editTags: @escaping () -> Void
   ) {
     self.tags = tags
     self.category = category
+    self.showTag = showTag
     self.editTags = editTags
   }
 
@@ -226,22 +319,46 @@ public struct SetManagement: View {
   }
 
   public var body: some View {
-    ChipFlow(spacing: 8, alignment: .center) {
-      ForEach(tags, id: \.self) { tag in
+    GlassEffectContainer(spacing: 8) {
+      ChipFlow(spacing: 8, alignment: HeaderAlignment.horizontal) {
+        ForEach(tags, id: \.self) { tag in
+          Button {
+            showTag(tag)
+          } label: {
+            GlassTagChip(tag, category: category(tag))
+          }
+          .buttonStyle(.plain)
+          .accessibilityHint("Shows the Library filtered by \(tag)")
+          .accessibilityIdentifier("detail-tag-\(tag)")
+        }
         Button(action: editTags) {
-          TagWord(tag, category: category(tag))
+          Label(tags.isEmpty ? "Add Tags" : "Edit Tags", systemImage: tags.isEmpty ? "tag" : "plus")
+            .labelStyle(AddTagLabelStyle(showsTitle: tags.isEmpty))
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, tags.isEmpty ? 14 : 0)
+            .frame(minWidth: 40, minHeight: 40)
+            .glassEffect(.regular.interactive(), in: .capsule)
+            .contentShape(.capsule)
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Edits Tags")
-      }
-      Button(tags.isEmpty ? "Add Tags" : "Edit Tags", systemImage: "tag", action: editTags)
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
-        .controlSize(.small)
-        .tint(.secondary)
+        .accessibilityLabel(tags.isEmpty ? "Add Tags" : "Edit Tags")
         .accessibilityIdentifier("detail-tags-row")
+      }
     }
-    .frame(maxWidth: .infinity)
+    .frame(maxWidth: .infinity, alignment: HeaderAlignment.frame)
+  }
+}
+
+/// With no Tags the button says what it does; beside Tags it is a "+".
+private struct AddTagLabelStyle: LabelStyle {
+  let showsTitle: Bool
+
+  func makeBody(configuration: Configuration) -> some View {
+    HStack(spacing: 6) {
+      configuration.icon
+      if showsTitle { configuration.title }
+    }
   }
 }
 
@@ -252,7 +369,7 @@ private struct SetDetailSample: View {
       source: "YouTube",
       creator: "CHRIS STASSY",
       length: "2h 33m",
-      dates: .init(imported: "11 Sep 2026", released: "22 Aug 2026"),
+      dates: .init(imported: "11 Sep 2026", released: "22 Aug 2026", releaseYear: "2026"),
       statistics: .init(listenCount: 3, finishCount: 1, lastHeard: "Thu 11 Sep"),
       management: {
         SetManagement(tags: ["techno", "festival", "hardgroove"], editTags: {})

@@ -18,8 +18,22 @@ struct Transport: View {
   var start: () -> Void = {}
   var leading: AnyView?
   var trailing: AnyView?
-  /// Play as the tinted glass disc, or, on Now Playing, as a large plain glyph.
+  /// Play as the tinted glass disc, or, on Now Playing, as a large plain glyph over the artwork's
+  /// colour.
   var prominentPlay = true
+  /// Previous and next track beside Play, the way a music player lays them out; the skips
+  /// move outward. Only Now Playing asks for it.
+  var showsCueSkips = false
+  /// The skips and Play. Off on the Set's page, which carries its own Play and only needs the
+  /// seek bar once the Set is in the player.
+  var showsControls = true
+  /// Where the Set's Cues start. Each one is a mark on the seek bar, so the shape of the mix
+  /// is visible before it is heard.
+  var cueStarts: [TimeInterval] = []
+
+  /// The track skips and the plain Play glyph grow with the text size from these default sizes.
+  @ScaledMetric(relativeTo: .title) private var cueSkipSize: CGFloat = 30
+  @ScaledMetric(relativeTo: .largeTitle) private var plainPlaySize: CGFloat = 48
 
   private var isPlaying: Bool {
     guard isCurrent else { return false }
@@ -36,47 +50,81 @@ struct Transport: View {
         duration: (isCurrent ? player.duration : nil) ?? fallbackDuration,
         isCurrent: isCurrent,
         savedPosition: savedPosition,
-        identifierPrefix: identifierPrefix
+        identifierPrefix: identifierPrefix,
+        cueStarts: cueStarts
       )
-      HStack {
-        slot(leading)
-        Spacer()
-        Button("Back 15 seconds", systemImage: "gobackward.15") {
-          player.seek(to: player.elapsed - 15)
-        }
-        .disabled(!isCurrent)
-        .accessibilityIdentifier("\(identifierPrefix)-back")
-        Spacer()
-        Button(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill") {
-          if !isCurrent {
-            start()
-          } else if isPlaying {
-            player.pause()
+      if showsControls {
+        HStack {
+          if showsCueSkips {
+            backButton
+            Spacer()
+            Button("Previous track", systemImage: "backward.fill") { player.skipToPreviousCue() }
+              .font(.system(size: cueSkipSize))
+              .disabled(!isCurrent || !player.canSkipCues)
+              .accessibilityIdentifier("\(identifierPrefix)-previous-cue")
+            Spacer()
+            playButton
+            Spacer()
+            Button("Next track", systemImage: "forward.fill") { player.skipToNextCue() }
+              .font(.system(size: cueSkipSize))
+              .disabled(!isCurrent || player.nextCue == nil)
+              .accessibilityIdentifier("\(identifierPrefix)-next-cue")
+            Spacer()
+            forwardButton
           } else {
-            player.resume()
+            slot(leading)
+            Spacer()
+            backButton
+            Spacer()
+            playButton
+            Spacer()
+            forwardButton
+            Spacer()
+            slot(trailing)
           }
         }
-        .contentTransition(.symbolEffect(.replace))
-        .playStyle(prominent: prominentPlay)
-        .accessibilityIdentifier("\(identifierPrefix)-play-toggle")
-        Spacer()
-        Button("Forward 30 seconds", systemImage: "goforward.30") {
-          player.seek(to: player.elapsed + 30)
-        }
-        .disabled(!isCurrent)
-        .accessibilityIdentifier("\(identifierPrefix)-forward")
-        Spacer()
-        slot(trailing)
+        .buttonStyle(.orbisIcon)
+        .labelStyle(.iconOnly)
+        .font(prominentPlay ? .title2 : .title3)
       }
-      .buttonStyle(.plain)
-      .labelStyle(.iconOnly)
-      .font(prominentPlay ? .title2 : .system(size: 30))
       if isCurrent, case .failed(let message) = player.state {
         Text(message)
           .font(.orbis.detail)
           .foregroundStyle(.secondary)
       }
     }
+  }
+
+  private var backButton: some View {
+    Button("Back 15 seconds", systemImage: "gobackward.15") {
+      player.skip(by: -AudioPlayer.skipBack)
+    }
+    .disabled(!isCurrent)
+    .accessibilityIdentifier("\(identifierPrefix)-back")
+  }
+
+  private var forwardButton: some View {
+    Button("Forward 30 seconds", systemImage: "goforward.30") {
+      player.skip(by: AudioPlayer.skipAhead)
+    }
+    .disabled(!isCurrent)
+    .accessibilityIdentifier("\(identifierPrefix)-forward")
+  }
+
+  private var playButton: some View {
+    Button(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill") {
+      if !isCurrent {
+        start()
+      } else if isPlaying {
+        player.pause()
+      } else {
+        player.resume()
+      }
+    }
+    .orbisSymbolReplace()
+    .playStyle(prominent: prominentPlay, plainSize: plainPlaySize)
+    .sensoryFeedback(.impact(weight: .medium), trigger: isPlaying)
+    .accessibilityIdentifier("\(identifierPrefix)-play-toggle")
   }
 
   @ViewBuilder private func slot(_ control: AnyView?) -> some View {
@@ -97,6 +145,7 @@ private struct PlaybackProgress: View {
   let isCurrent: Bool
   let savedPosition: TimeInterval
   let identifierPrefix: String
+  let cueStarts: [TimeInterval]
 
   /// Where the person has dragged to but not let go of. Nil is following the player.
   @State private var scrubPosition: TimeInterval?
@@ -115,6 +164,12 @@ private struct PlaybackProgress: View {
       Slider(
         value: position,
         in: 0...max(length, 1),
+        label: { Text("Position") },
+        ticks: {
+          SliderTickContentForEach(cueStarts.filter { $0 > 0 && $0 < length }, id: \.self) {
+            SliderTick($0)
+          }
+        },
         onEditingChanged: { editing in
           if !editing, let position = scrubPosition {
             player.seek(to: position)
@@ -122,9 +177,15 @@ private struct PlaybackProgress: View {
           }
         }
       )
+      // The label is for VoiceOver; a Mac draws it beside the bar, which neither player wants.
+      .labelsHidden()
       .disabled(!isCurrent || duration == nil)
       .accessibilityIdentifier("\(identifierPrefix)-seek")
-      .accessibilityValue(SetPresentation.timestamp(shown))
+      // Spoken words, as the TV's bar says it: a timestamp is read out as a string of digits.
+      .accessibilityValue(
+        duration.map { "\(SetPresentation.spoken(shown)) of \(SetPresentation.spoken($0))" }
+          ?? SetPresentation.spoken(shown)
+      )
       HStack {
         Text(SetPresentation.timestamp(shown))
         Spacer()
@@ -145,15 +206,15 @@ private struct PlaybackProgress: View {
 }
 
 extension View {
-  @ViewBuilder fileprivate func playStyle(prominent: Bool) -> some View {
+  @ViewBuilder fileprivate func playStyle(prominent: Bool, plainSize: CGFloat) -> some View {
     if prominent {
       buttonStyle(.glassProminent)
         .tint(Color.orbis.tint)
         .controlSize(.extraLarge)
     } else {
-      font(.system(size: 48))
-        .frame(width: 72, height: 72)
-        .contentShape(.rect)
+      font(.system(size: plainSize))
+        .frame(width: plainSize + 28, height: plainSize + 28)
+        .contentShape(.circle)
     }
   }
 }

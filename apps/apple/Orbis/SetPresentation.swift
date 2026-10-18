@@ -16,11 +16,35 @@ struct SetRowModel {
   let progress: Double?
 }
 
+/// What Home shows: the Set it leads with and the Sets on its two rails. One definition for every
+/// surface that draws Home, the phone's page and the car's tab, so they cannot pick differently.
+struct HomeSelection: Equatable {
+  /// A rail shows what is new, not the whole library.
+  static let recentLimit = 8
+
+  /// Every Set left part-way, the most recently heard first. The first of them leads Home.
+  let continueListening: [SavedSet]
+  /// The newest Sets the Library's filter admits.
+  let recentlyFiled: [SavedSet]
+
+  init(library: [SavedSet], visible: [SavedSet]) {
+    continueListening = SetPresentation.continueListening(library)
+    recentlyFiled = Array(visible.prefix(Self.recentLimit))
+  }
+
+  /// The one most recently left part-way, or else the newest filed.
+  var lead: SavedSet? { continueListening.first ?? recentlyFiled.first }
+  /// Whether the lead is a Set to go back to rather than a new one.
+  var isResume: Bool { !continueListening.isEmpty }
+  /// The rail under the lead: the rest of what was left part-way.
+  var continueRail: [SavedSet] { Array(continueListening.dropFirst()) }
+}
+
 enum SetPresentation {
   /// The design package defaults its types to the main actor, so the mapper that builds them
   /// is main actor too.
   @MainActor
-  static func row(_ set: SavedSet, activeTag: String? = nil) -> SetRowModel {
+  static func row(_ set: SavedSet) -> SetRowModel {
     SetRowModel(
       title: set.title,
       source: set.source.label,
@@ -64,7 +88,9 @@ enum SetPresentation {
     case "downloading":
       guard let live, let total = live.bytesTotal, total > 0 else { return .downloading(nil) }
       return .downloading(Double(live.bytesReceived) / Double(total))
-    case "failed", "canceled":
+    // A watch that gave up offers the retry: asking again is safe while the service still runs
+    // the download, and it starts a new watch.
+    case "failed", "canceled", AudioState.unwatched.state:
       return .failed
     case "ready":
       return live == nil ? .available : .downloading(1)
@@ -77,6 +103,38 @@ enum SetPresentation {
     sets.reduce(into: [:]) { counts, set in
       for tag in Set(set.tags) { counts[tag, default: 0] += 1 }
     }
+  }
+
+  /// Every Tag the Sets carry, the ones this device used last first, then the rest by the
+  /// newest Set carrying each, so a Tag in use now is near the front wherever Tags are offered.
+  static func orderedTags(_ sets: [SavedSet], recent: [String]) -> [String] {
+    var newest: [String: String] = [:]
+    for set in sets {
+      for tag in set.tags where set.createdAt > newest[tag, default: ""] {
+        newest[tag] = set.createdAt
+      }
+    }
+    let leading = recent.filter { newest[$0] != nil }
+    let led = Set(leading)
+    let rest = newest.keys.filter { !led.contains($0) }.sorted { a, b in
+      newest[a]! == newest[b]! ? a < b : newest[a]! > newest[b]!
+    }
+    return leading + rest
+  }
+
+  /// A search that starts with `#` asks for Tags only.
+  static func isTagQuery(_ query: String) -> Bool {
+    query.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("#")
+  }
+
+  /// The Tags whose names hold the query, ignoring case and a leading `#`. A bare `#` asks for
+  /// every Tag.
+  static func tagsMatching(_ query: String, in tags: [String]) -> [String] {
+    let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+      .drop { $0 == "#" }
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !needle.isEmpty else { return isTagQuery(query) ? tags : [] }
+    return tags.filter { $0.localizedCaseInsensitiveContains(needle) }
   }
 
   static func continueListening(_ sets: [SavedSet], limit: Int = 6) -> [SavedSet] {
@@ -126,7 +184,7 @@ enum SetPresentation {
     // Kept audio is a fact the row draws as a symbol; the words are for a Download in flight.
     let kept = set.downloadState == "ready"
     let state = SetRow.State(
-      resumeAt: set.playbackPositionSeconds > 0 ? set.playbackPositionSeconds : nil,
+      remaining: timeLeft(set),
       download: kept ? nil : downloadLabel(set.downloadState),
       kept: kept
     )
@@ -184,7 +242,11 @@ enum SetPresentation {
   /// The day a Set was filed, as a listing heads its group: "Thu 11 Sep".
   @MainActor
   static func day(_ timestamp: String) -> String {
-    date(from: timestamp).formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+    day(date(from: timestamp))
+  }
+
+  static func day(_ date: Date) -> String {
+    date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
   }
 
   /// A plain date a person can read: "11 Sep 2026".
@@ -196,14 +258,16 @@ enum SetPresentation {
     )
   }
 
-  /// When the Set was saved and, when the provider named it, when it was released.
+  /// "2026", for the line under a Set page's creator.
   @MainActor
-  static func datesLine(_ set: SavedSet) -> String {
-    var parts = ["Imported \(plainDate(set.createdAt))"]
-    if let releasedAt = set.releasedAt {
-      parts.append("Released \(plainDate(releasedAt))")
-    }
-    return parts.joined(separator: " · ")
+  static func year(_ timestamp: String) -> String {
+    date(from: timestamp).formatted(.dateTime.year().locale(Locale(identifier: "en_GB")))
+  }
+
+  /// How far through the Set playback stopped, from 0 to 1, or nothing when the length is unknown.
+  static func progress(_ set: SavedSet) -> Double? {
+    guard let duration = set.durationSeconds, duration > 0 else { return nil }
+    return min(max(Double(set.playbackPositionSeconds) / Double(duration), 0), 1)
   }
 
   /// The line under a Set's title: who made it and how long it runs. Only the parts the
@@ -227,17 +291,19 @@ enum SetPresentation {
     return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
   }
 
+  /// A position said aloud: "1 hour, 5 minutes, 25 seconds", for a screen reader that would
+  /// otherwise read the digits of a timestamp.
+  static func spoken(_ seconds: TimeInterval) -> String {
+    Duration.seconds(max(Int(seconds), 0))
+      .formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide))
+  }
+
   /// A seek position said the way a player says it: m:ss, or h:mm:ss past the hour.
   /// Truncates rather than rounds, so the thumb never claims a second it has not reached.
   static func timestamp(_ seconds: TimeInterval) -> String {
     let total = max(Int(seconds), 0)
-    let hours = total / 3600
-    let minutes = (total % 3600) / 60
-    let rest = total % 60
-    if hours > 0 {
-      return String(format: "%d:%02d:%02d", hours, minutes, rest)
-    }
-    return String(format: "%d:%02d", minutes, rest)
+    return Duration.seconds(total).formatted(
+      .time(pattern: total >= 3600 ? .hourMinuteSecond : .minuteSecond))
   }
 
   /// "26:14 · 1:15:25", or the elapsed time alone until the length is known.

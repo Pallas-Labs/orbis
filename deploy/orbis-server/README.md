@@ -39,7 +39,7 @@ Use the approved Vanta update window. Preserve the installed unit and drop-ins.
 
 ## Enrol a device
 
-A new Person joins with their username and the Group Passcode, which the Host sets in Settings. A Person adds another device with a Sign-in Code shown on a device they already use. Each device receives its own daily key. If the Host has no signed-in device left, run `trust recover` on Vanta as the [API README](../../apps/api/README.md#recover-host-access) describes. See [Sign in with a Group Passcode or a Sign-in Code](../../docs/adr/0020-sign-in-by-group-passcode-and-sign-in-code.md).
+A new Person joins with their username and the Group Passcode, which Orbis makes when the Host turns on Allow Joining in Settings. A Person adds another device with a Sign-in Code shown on a device they already use. Each device receives its own daily key. If the Host has no signed-in device left, run `trust recover` on Vanta as the [API README](../../apps/api/README.md#recover-host-access) describes. See [Sign in with a Group Passcode or a Sign-in Code](../../docs/adr/0020-sign-in-by-group-passcode-and-sign-in-code.md).
 
 ## Check the API and forwarding
 
@@ -49,10 +49,10 @@ A new Person joins with their username and the Group Passcode, which the Host se
 curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
   https://orbis.p11a.xyz/api/health
 curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
-  https://vanta.tail01d084.ts.net:10000/api/health
+  https://vanta.example.ts.net:10000/api/health
 curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
   -H "Authorization: Bearer $ORBIS_DEVICE_TOKEN" \
-  https://vanta.tail01d084.ts.net:10000/api/sets
+  https://vanta.example.ts.net:10000/api/sets
 ```
 
 Expect `200` for both health requests and for `/api/sets` with a valid daily key. Inject the existing key without printing it or saving response data. On `/api/sets`, a missing key returns `403`, an invalid key returns `401`, and a node key returns `403`. Audio requires a signed stream grant from the Group.
@@ -95,6 +95,20 @@ journalctl --user -u orbis-canary --since today -o cat |
 ```
 
 A download's wide event (`job: audio-download`) lists every backend attempt in `logs`: bytes received, yt-dlp's exit code with the start and end of its error output, Cobalt's tunnel status and content length, and ffprobe's error output. The `stderrHead` annotation names yt-dlp's identifying error; `stderr` keeps the end, where its hint is. The canary's event (`job: download-canary`) holds the same evidence for each check. The startup line `youtube downloads use cobalt only` means `ORBIS_YTDLP_BIN` is missing; see [Check the yt-dlp configuration](#check-the-yt-dlp-configuration).
+
+## Where to look when a Set does not play
+
+Playback crosses two hosts. The Group on Cloudflare answers `GET /api/sets/<id>/audio` with a redirect to this node, and the node serves the file. Each side writes one wide event per request, with an `audio` record. Neither records the grant.
+
+```sh
+# What did the node do with the Set's audio requests?
+journalctl --user -u orbis-server --since today -o cat |
+  jq -cR 'fromjson? | select(.ingress == "funnel-audio" and .audio.set == "<id>") | {timestamp, status, audio}'
+```
+
+On the node, `audio.grant` is `valid`, `missing`, `malformed`, `bad-signature`, `expired`, or `future-expiry`. `bad-signature` on every request means the node's grant secret differs from the Group's `STREAM_GRANT_SECRET`; `expired` or `future-expiry` on a fresh grant means the two clocks disagree. `audio.file: missing` means the node has no file for the Set. A served request records `range`, `size`, and `bytes`, the body length sent.
+
+On Cloudflare, the Api worker keeps Workers Logs. Filter on `audio.set` in the dashboard's Observability view. `audio.result` is `redirected` (with the `node` origin), `served`, or `refused`, and a refusal's `audio.reason` is `grant-refused` (with `audio.grant`), `set-not-found`, or `no-audio` (with `downloadState`). A request that died records `cause` with the error name and a cleaned message.
 
 ## Check the yt-dlp configuration
 
