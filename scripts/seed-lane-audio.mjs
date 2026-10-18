@@ -1,5 +1,12 @@
 import { Database } from "bun:sqlite";
-import { copyFileSync, mkdirSync, readFileSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import {
+  copyFileSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from "node:fs";
 import { createServer } from "node:http";
 import path from "node:path";
 import { Readable } from "node:stream";
@@ -14,6 +21,112 @@ const audioDirectory = path.join(dataDirectory, "audio");
 const slowSets = new Map();
 const downloads = new Map();
 const audio = readFileSync(fixture);
+const streams = new Map();
+let ogg;
+
+const longOgg = () => {
+  if (ogg) {
+    return ogg;
+  }
+  const destination = path.join(dataDirectory, "streaming-fixture.ogg");
+  execFileSync("ffmpeg", [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    "-f",
+    "lavfi",
+    "-i",
+    "sine=frequency=440:sample_rate=48000",
+    "-t",
+    "600",
+    "-c:a",
+    "libopus",
+    "-b:a",
+    "96k",
+    "-vbr",
+    "off",
+    destination,
+  ]);
+  ogg = readFileSync(destination);
+  return ogg;
+};
+
+const streamState = (setId) => {
+  if (!streams.has(setId)) {
+    streams.set(setId, {
+      bytesSent: 0,
+      held: false,
+      requests: 0,
+      waiting: new Set(),
+    });
+  }
+  return streams.get(setId);
+};
+
+const streamAudio = (setId, request, response) => {
+  const bytes = longOgg();
+  const range = /^bytes=(?<start>\d*)-(?<end>\d*)$/u.exec(
+    request.headers.range ?? ""
+  )?.groups;
+  if (request.headers.range && (!range || (!range.start && !range.end))) {
+    response.writeHead(416, { "content-range": `bytes */${bytes.length}` });
+    return response.end();
+  }
+  let start = 0;
+  if (range) {
+    start = range.start
+      ? Number(range.start)
+      : Math.max(0, bytes.length - Number(range.end));
+  }
+  const end =
+    range?.start && range.end
+      ? Math.min(Number(range.end), bytes.length - 1)
+      : bytes.length - 1;
+  if (start >= bytes.length || start > end) {
+    response.writeHead(416, { "content-range": `bytes */${bytes.length}` });
+    return response.end();
+  }
+  const headers = {
+    "accept-ranges": "bytes",
+    "cache-control": "no-store",
+    "content-length": String(end - start + 1),
+    "content-type": "audio/ogg",
+  };
+  if (range) {
+    headers["content-range"] = `bytes ${start}-${end}/${bytes.length}`;
+  }
+  response.writeHead(range ? 206 : 200, headers);
+  response.flushHeaders();
+  if (request.method === "HEAD") {
+    return response.end();
+  }
+  const state = streamState(setId);
+  state.requests += 1;
+  const chunks = async function* chunks() {
+    for (let offset = start; offset <= end; offset += 4096) {
+      while (state.held && !response.destroyed) {
+        const gate = Promise.withResolvers();
+        state.waiting.add(gate);
+        const closed = () => gate.resolve();
+        response.once("close", closed);
+        // oxlint-disable-next-line no-await-in-loop -- Explicit per-response body gate.
+        await gate.promise;
+        response.off("close", closed);
+        state.waiting.delete(gate);
+      }
+      if (response.destroyed) {
+        return;
+      }
+      const chunk = bytes.subarray(offset, Math.min(offset + 4096, end + 1));
+      state.bytesSent += chunk.length;
+      yield chunk;
+      // oxlint-disable-next-line no-await-in-loop -- Keep the asset from completing before a hold.
+      await Bun.sleep(50);
+    }
+  };
+  Readable.from(chunks()).pipe(response);
+};
 
 const slowAudio = (setId, response) => {
   const completion = Promise.withResolvers();
@@ -57,10 +170,83 @@ const respond = (response, status, body) => {
   response.end(body ? JSON.stringify(body) : undefined);
 };
 
+const handleStream = (route, request, response) => {
+  const ready = /^\/ready-ogg\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(route);
+  if (ready?.groups && request.method === "POST") {
+    const { setId } = ready.groups;
+    if (!db.query("SELECT id FROM sets WHERE id = ?").get(setId)) {
+      respond(response, 404);
+      return true;
+    }
+    mkdirSync(audioDirectory, { recursive: true });
+    const bytes = longOgg();
+    const destination = path.join(audioDirectory, `${setId}.ogg`);
+    copyFileSync(
+      path.join(dataDirectory, "streaming-fixture.ogg"),
+      destination
+    );
+    db.query(
+      "UPDATE sets SET download_state = 'ready', retained_audio_format = ?, retained_audio_bytes = ?, duration_seconds = 600 WHERE id = ?"
+    ).run("ogg", bytes.length, setId);
+    respond(response, 204);
+    return true;
+  }
+  const stream = /^\/stream\/sets\/(?<setId>[a-zA-Z0-9-]+)\/audio$/u.exec(
+    route
+  );
+  if (
+    stream?.groups &&
+    (request.method === "GET" || request.method === "HEAD")
+  ) {
+    const set = db
+      .query("SELECT retained_audio_format FROM sets WHERE id = ?")
+      .get(stream.groups.setId);
+    if (!set || set.retained_audio_format !== "ogg") {
+      respond(response, 404);
+      return true;
+    }
+    streamAudio(stream.groups.setId, request, response);
+    return true;
+  }
+  const control =
+    /^\/(?<action>hold-stream|release-stream|stream-state)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
+      route
+    );
+  if (control?.groups) {
+    const { action, setId } = control.groups;
+    const state = streamState(setId);
+    if (action === "stream-state" && request.method === "GET") {
+      respond(response, 200, {
+        bytesSent: state.bytesSent,
+        held: state.held,
+        requests: state.requests,
+        waiting: state.waiting.size,
+      });
+      return true;
+    }
+    if (request.method !== "POST") {
+      respond(response, 404);
+      return true;
+    }
+    state.held = action === "hold-stream";
+    if (!state.held) {
+      for (const gate of state.waiting) {
+        gate.resolve();
+      }
+    }
+    respond(response, 204);
+    return true;
+  }
+  return false;
+};
+
 createServer(async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
   if (route === "/health") {
     return respond(response, 204);
+  }
+  if (handleStream(route, request, response)) {
+    return;
   }
   if (request.method === "POST" && route === "/cobalt") {
     const { url } = await new Response(Readable.toWeb(request)).json();
@@ -73,7 +259,7 @@ createServer(async (request, response) => {
       : respond(response, 404);
   }
   const match =
-    /^\/(?<action>ready-audio|slow-download|slow-audio|finish-download|tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
+    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
       route
     );
   if (!match?.groups) {
@@ -93,6 +279,10 @@ createServer(async (request, response) => {
     return respond(response, 404);
   }
   switch (action) {
+    case "unavailable-audio": {
+      rmSync(path.join(audioDirectory, `${setId}.m4a`), { force: true });
+      break;
+    }
     case "slow-download": {
       slowSets.set(set.url, setId);
       break;
@@ -113,7 +303,8 @@ createServer(async (request, response) => {
       ).run(statSync(fixture).size, setId);
       break;
     }
-    case "tracklist": {
+    case "tracklist":
+    case "late-tracklist": {
       db.transaction(() => {
         db.query(
           "UPDATE sets SET tracklist_state = 'ready', tracklist_run_id = NULL, tracklist_run_started_at = NULL WHERE id = ?"
@@ -122,7 +313,13 @@ createServer(async (request, response) => {
           "INSERT INTO set_cues (set_id, position, start_seconds, artist, title, apple_music_id, artwork_url) VALUES (?, ?, ?, ?, ?, NULL, NULL)"
         );
         insert.run(setId, 0, 0, "First Artist", "First Cue");
-        insert.run(setId, 1, 12, "Second Artist", "Second Cue");
+        insert.run(
+          setId,
+          1,
+          action === "late-tracklist" ? 26 : 12,
+          "Second Artist",
+          "Second Cue"
+        );
         insert.run(setId, 2, null, "Untimed Artist", "Untimed Cue");
       })();
       break;
