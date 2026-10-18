@@ -121,6 +121,24 @@ final class StreamingPlaybackTests: XCTestCase {
     } while ProcessInfo.processInfo.systemUptime < deadline
   }
 
+  private func report(_ player: AudioPlayer) throws -> PlaybackDiagnostics.Report {
+    let text = player.playbackReport()
+    let attachment = XCTAttachment(data: Data(text.utf8), uniformTypeIdentifier: "public.json")
+    attachment.name = "held-stream-playback-report.json"
+    attachment.lifetime = .keepAlways
+    add(attachment)
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(PlaybackDiagnostics.Report.self, from: Data(text.utf8))
+  }
+
+  private func decodedReport(_ player: AudioPlayer) throws -> PlaybackDiagnostics.Report {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(
+      PlaybackDiagnostics.Report.self, from: Data(player.playbackReport().utf8))
+  }
+
   func testOrdinaryOggStreamingAdvancesWithoutTimelineJumps() async throws {
     let fixture = try await fixture()
     let player = AudioPlayer()
@@ -190,8 +208,18 @@ final class StreamingPlaybackTests: XCTestCase {
     player.play(set: fixture.set, baseURL: fixture.streamAddress, token: fixture.client.token)
     player.player?.volume = 0
     try await waitUntil("The audio request must reach the body gate", player: player) {
-      try await self.streamState(fixture).waiting > 0
+      guard try await self.streamState(fixture).waiting > 0 else { return false }
+      return try self.decodedReport(player).entries.contains { entry in
+        if case .waiting = entry.event { return true }
+        return false
+      }
     }
+    let heldReport = try report(player)
+    XCTAssertEqual(heldReport.current.state, .loading)
+    XCTAssertTrue(heldReport.entries.contains { entry in
+      if case .waiting = entry.event { return true }
+      return false
+    })
     player.pause()
     try await control("release-stream", id: fixture.set.id, seed: fixture.seed)
     try await waitUntil("The released item must become ready while paused", player: player) {

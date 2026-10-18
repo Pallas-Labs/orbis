@@ -68,6 +68,54 @@ final class PlaybackReliabilityTests: XCTestCase {
     add(attachment)
   }
 
+  private func playbackReport(_ player: AudioPlayer) throws -> PlaybackDiagnostics.Report {
+    let text = player.playbackReport()
+    let attachment = XCTAttachment(data: Data(text.utf8), uniformTypeIdentifier: "public.json")
+    attachment.name = "playback-report.json"
+    attachment.lifetime = .keepAlways
+    add(attachment)
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    return try decoder.decode(PlaybackDiagnostics.Report.self, from: Data(text.utf8))
+  }
+
+  func testReportFollowsRealAdvancementPauseAndSeek() async throws {
+    let fixture = try await fixture()
+    let player = AudioPlayer()
+    defer { player.stop() }
+    player.play(set: fixture.set, baseURL: fixture.client.address, token: fixture.client.token)
+    player.player?.volume = 0
+    try await waitUntil("The real stream must advance before the report") {
+      player.state == .playing && (player.player?.currentTime().seconds ?? 0) > 0.5
+    }
+    player.pause()
+    player.seek(to: 12)
+    try await waitUntil("The report seek must land") {
+      abs((player.player?.currentTime().seconds ?? 0) - 12) < 0.25
+    }
+
+    let report = try playbackReport(player)
+    let commands = report.entries.compactMap { entry -> PlaybackDiagnostics.CommandEvent? in
+      guard case .command(let command) = entry.event else { return nil }
+      return command
+    }
+    XCTAssertEqual(commands.suffix(2).map(\.kind), [.pause, .seek])
+    let result = try XCTUnwrap(report.entries.compactMap { entry -> PlaybackDiagnostics.SeekEvent? in
+      guard case .seekResult(let result) = entry.event else { return nil }
+      return result
+    }.last)
+    XCTAssertTrue(result.finished)
+    XCTAssertEqual(try XCTUnwrap(result.target.value), 12, accuracy: 0.01)
+    XCTAssertEqual(try XCTUnwrap(result.actual.value), 12, accuracy: 0.25)
+    XCTAssertEqual(try XCTUnwrap(report.current.displayedTime.value), 12, accuracy: 0.25)
+    let installed = try XCTUnwrap(report.entries.last { entry in
+      if case .item(let item) = entry.event { return item.phase == .installed }
+      return false
+    })
+    let itemEntries = report.entries.filter { $0.sequence >= installed.sequence }
+    XCTAssertEqual(Set(itemEntries.map(\.snapshot.playbackGeneration)).count, 1)
+  }
+
   func testInitialSeekFinishesBeforeAudioStarts() async throws {
     let fixture = try await fixture()
     let player = AudioPlayer()
@@ -274,5 +322,14 @@ final class PlaybackReliabilityTests: XCTestCase {
     XCTAssertEqual(log.all.filter { $0 == "PUT /queue/active" }.count, 1)
     XCTAssertEqual(model.audioPlayer.state, .paused)
     XCTAssertEqual(model.audioPlayer.player?.rate, 0)
+    let report = try playbackReport(model.audioPlayer)
+    let activations = report.entries.compactMap { entry -> PlaybackDiagnostics.ActivationEvent? in
+      guard case .activation(let activation) = entry.event else { return nil }
+      return activation
+    }
+    XCTAssertEqual(activations.map(\.phase), [.began, .intentChanged, .accepted])
+    XCTAssertEqual(Set(activations.map(\.generation)).count, 1)
+    XCTAssertEqual(activations.last?.wantsSound, false)
+    XCTAssertNotNil(activations.last?.requestDuration.value)
   }
 }

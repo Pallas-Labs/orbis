@@ -116,6 +116,18 @@ log stream --level debug --predicate 'subsystem == "app.orbis" AND category == "
 
 For a reported jump or repeat, compare `Command seek`, `Seek completed`, `Time jumped`, and `Timeline discontinuity` with the numeric buffer and access records. A generation identifies one player item and a seek number identifies an app-requested seek. A discontinuity compares actual media time with monotonic time during uninterrupted playback. These records can distinguish requested seeks from unexplained timeline movement; they cannot prove that the audio file contains no repeated sound.
 
+### Playback reports
+
+On iPhone or Mac, open Settings and choose Copy Playback Report after a playback problem. The action builds JSON at tap time, including a fresh player snapshot and recent typed playback events from the current app run. Closing Orbis loses the report. Signing out clears it.
+
+The report holds the newest 256 entries in chronological order and states how many older entries were evicted. Its complete UTF-8 output is capped at 256 KiB. Each entry has wall time, monotonic uptime, player generation, seek number, normalized state and waiting reason, actual and displayed media time, audio-session readiness, pending seek state, up to eight finite buffer ranges, and the latest numeric access-log counters. The tap-time snapshot has its own wall and monotonic timestamps so it can be compared with server logs even when playback has been paused for a long time.
+
+Commands record `app`, `systemRemote`, or `internalOperation` only when the caller is known. `systemRemote` covers the system command center and does not identify the Lock Screen, Control Center, a headset, or a car. Activation entries show the model generation, desired sound, optional media target, outcome, and request duration without naming a Set. A seek command followed by a matching seek result shows an app-requested move. A time jump or timeline discontinuity without that seek evidence is a player or stream observation, not proof of an audible skip.
+
+The existing half-second media-time observer adds a periodic snapshot at most once every five seconds. AVPlayer may stop that observer while media time is paused or waiting, so these samples are best effort rather than a wall-clock heartbeat. Waiting and stall transitions are recorded when their callbacks arrive, and Copy always adds the current snapshot without a second timer.
+
+The schema accepts fixed enums, booleans, counts, and finite numbers. Unknown numbers encode as `null`. It excludes Set ids, titles, service addresses, tokens, device or account names, SDK error descriptions, error comments, and failure messages. Errors use a fixed domain category and numeric code. App version, build, OS name, and OS version are the only report metadata.
+
 The runner prints its screenshot directory, defaulting to `orbis-lane-shots` in the host's system temporary directory. Set `--out <unique-directory>` to choose it. Successful exports include `xcodebuild.log`, `lane.json`, attachments, and worker manifests. Follow [evidence retention](#retain-verification-evidence) before another run replaces the result bundle. For manual checks, read [UI verification](agents/ui-verification.md).
 
 ## Releases
