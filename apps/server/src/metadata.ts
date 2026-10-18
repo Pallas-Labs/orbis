@@ -1,5 +1,5 @@
 import type { SetSource } from "@orbis/contracts";
-import { Array as Arr, Context, Effect, Layer, Option, Schema } from "effect";
+import { Context, Effect, Layer, Option, Schema } from "effect";
 
 import { MetadataError } from "./metadata-error.js";
 import { youTubeVideoId, youTubeWatchUrl } from "./source-url.js";
@@ -33,12 +33,20 @@ export interface PlaylistTrack {
 }
 
 export interface YouTubePlaylist {
-  /** Tracks past the caller's limit, which were not read. */
-  readonly overLimit: number;
+  /** Every entry YouTube lists, including repeats and videos it no longer serves. */
+  readonly itemCount: number;
   readonly title: string;
+}
+
+/** One page of a playlist's entries, at most fifty. */
+export interface YouTubePlaylistPage {
+  /** Entries read on this page, including repeats and videos YouTube no longer serves. */
+  readonly entries: number;
+  /** Absent on the last page. */
+  readonly nextPageToken: string | undefined;
   /** In the playlist's order, each video once. */
   readonly tracks: readonly PlaylistTrack[];
-  /** Entries YouTube lists but no longer serves: deleted, private, or blocked. */
+  /** Videos on this page YouTube lists but no longer serves: deleted, private, or blocked. */
   readonly unavailable: number;
 }
 
@@ -50,11 +58,15 @@ export interface MetadataService {
   readonly details: (
     input: EnrichInput
   ) => Effect.Effect<SourceDetails, MetadataError>;
-  /** Up to `limit` tracks of a public or unlisted YouTube playlist, from the Data API. */
+  /** A public or unlisted YouTube playlist's name and length, from the Data API. */
   readonly playlist: (
-    playlistId: string,
-    limit: number
+    playlistId: string
   ) => Effect.Effect<YouTubePlaylist, MetadataError>;
+  /** One page of a playlist's tracks. The first page has no token. */
+  readonly playlistPage: (
+    playlistId: string,
+    pageToken: string | undefined
+  ) => Effect.Effect<YouTubePlaylistPage, MetadataError>;
 }
 
 export interface MetadataOptions {
@@ -308,26 +320,19 @@ const youTubeProvider = (
 /** The Data API's largest page, for both playlist entries and a batch of videos. */
 const YOUTUBE_PAGE = 50;
 
-/**
- * Each read costs one quota unit: the playlist's name, its entries a page at a time, then its
- * videos fifty at a time. The videos are the records a single save reads, so an imported track
- * gets the same title, artwork, and length as a pasted one.
- */
 const readYouTubePlaylist = (
   playlistId: string,
-  limit: number,
   youTubeApiKey: string,
   request: RequestFetch
 ): Effect.Effect<YouTubePlaylist, MetadataError> =>
   Effect.gen(function* readPlaylist() {
-    const options = { label: "YouTube", request };
     const found = yield* requestJson(
       youTubeApiRequest("playlists", youTubeApiKey, {
         id: playlistId,
         part: "snippet,contentDetails",
       }),
       YouTubePlaylistResponse,
-      options
+      { label: "YouTube", request }
     );
     const [playlist] = found.items;
     if (!playlist) {
@@ -335,59 +340,66 @@ const readYouTubePlaylist = (
         rejected("YouTube does not have this playlist, or it is private.")
       );
     }
-    // A Set keeps first-seen order, so a video listed twice keeps its first place.
-    const ids = new Set<string>();
-    let entriesRead = 0;
-    let pageToken: string | undefined;
-    do {
-      const page = yield* requestJson(
-        youTubeApiRequest("playlistItems", youTubeApiKey, {
-          maxResults: String(YOUTUBE_PAGE),
-          pageToken,
-          part: "contentDetails",
-          playlistId,
-        }),
-        YouTubePlaylistItemsResponse,
-        options
-      );
-      entriesRead += page.items.length;
-      for (const { contentDetails } of page.items) {
-        ids.add(contentDetails.videoId);
-      }
-      pageToken = page.nextPageToken;
-    } while (pageToken && ids.size < limit);
-    const unread = pageToken
-      ? Math.max(0, playlist.contentDetails.itemCount - entriesRead)
-      : 0;
-    const kept = [...ids].slice(0, limit);
-    const batches = yield* Effect.forEach(
-      Arr.chunksOf(kept, YOUTUBE_PAGE),
-      (batch) =>
-        requestJson(
-          youTubeApiRequest("videos", youTubeApiKey, {
-            id: batch.join(","),
-            part: "snippet,contentDetails",
-          }),
-          YouTubeVideoBatch,
-          options
-        ),
-      { concurrency: 4 }
+    return {
+      itemCount: playlist.contentDetails.itemCount,
+      title: playlist.snippet.title.trim(),
+    };
+  });
+
+/**
+ * Two quota units: one page of entries, then its videos in one batch. The videos are the
+ * records a single save reads, so an imported track gets the same title, artwork, and length
+ * as a pasted one.
+ */
+const readYouTubePlaylistPage = (
+  playlistId: string,
+  pageToken: string | undefined,
+  youTubeApiKey: string,
+  request: RequestFetch
+): Effect.Effect<YouTubePlaylistPage, MetadataError> =>
+  Effect.gen(function* readPlaylistPage() {
+    const options = { label: "YouTube", request };
+    const page = yield* requestJson(
+      youTubeApiRequest("playlistItems", youTubeApiKey, {
+        maxResults: String(YOUTUBE_PAGE),
+        pageToken,
+        part: "contentDetails",
+        playlistId,
+      }),
+      YouTubePlaylistItemsResponse,
+      options
     );
+    // A Set keeps first-seen order, so a video listed twice keeps its first place.
+    const ids = [
+      ...new Set(
+        page.items.map(({ contentDetails }) => contentDetails.videoId)
+      ),
+    ];
+    const batch =
+      ids.length === 0
+        ? { items: [] }
+        : yield* requestJson(
+            youTubeApiRequest("videos", youTubeApiKey, {
+              id: ids.join(","),
+              part: "snippet,contentDetails",
+            }),
+            YouTubeVideoBatch,
+            options
+          );
     const videos = new Map(
-      batches
-        .flatMap((batch) => batch.items)
+      batch.items
         .map((video) => [video.id, youTubeMetadata(video)] as const)
         .filter(([, metadata]) => metadata.title)
     );
-    const tracks = kept.flatMap((id) => {
+    const tracks = ids.flatMap((id) => {
       const metadata = videos.get(id);
       return metadata ? [{ metadata, url: youTubeWatchUrl(id) }] : [];
     });
     return {
-      overLimit: ids.size - kept.length + unread,
-      title: playlist.snippet.title.trim(),
+      entries: page.items.length,
+      nextPageToken: page.nextPageToken,
       tracks,
-      unavailable: kept.length - tracks.length,
+      unavailable: ids.length - tracks.length,
     };
   });
 
@@ -464,6 +476,10 @@ const noProviders: MetadataService = {
     Effect.fail(
       notConfigured("YouTube playlists are not configured on this server.")
     ),
+  playlistPage: () =>
+    Effect.fail(
+      notConfigured("YouTube playlists are not configured on this server.")
+    ),
 };
 
 export class Metadata extends Context.Service<Metadata, MetadataService>()(
@@ -490,11 +506,21 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
             noProviders.enrich(input);
           return ytDlp ? orYtDlp(provider, ytDlp, input.url) : provider;
         }),
-        playlist: Effect.fn("Metadata.playlist")(
-          (playlistId: string, limit: number) =>
+        playlist: Effect.fn("Metadata.playlist")((playlistId: string) =>
+          youTubeApiKey
+            ? readYouTubePlaylist(playlistId, youTubeApiKey, request)
+            : noProviders.playlist(playlistId)
+        ),
+        playlistPage: Effect.fn("Metadata.playlistPage")(
+          (playlistId: string, pageToken: string | undefined) =>
             youTubeApiKey
-              ? readYouTubePlaylist(playlistId, limit, youTubeApiKey, request)
-              : noProviders.playlist(playlistId, limit)
+              ? readYouTubePlaylistPage(
+                  playlistId,
+                  pageToken,
+                  youTubeApiKey,
+                  request
+                )
+              : noProviders.playlistPage(playlistId, pageToken)
         ),
       })
     );
@@ -510,13 +536,14 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
 
   static layerOf(
     metadata: Pick<MetadataService, "enrich"> &
-      Partial<Pick<MetadataService, "details" | "playlist">>
+      Partial<Pick<MetadataService, "details" | "playlist" | "playlistPage">>
   ): Layer.Layer<Metadata> {
     return Layer.succeed(
       Metadata,
       Metadata.of({
         details: noProviders.details,
         playlist: noProviders.playlist,
+        playlistPage: noProviders.playlistPage,
         ...metadata,
       })
     );

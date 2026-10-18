@@ -248,8 +248,8 @@ test("a YouTube Music playlist becomes an ordered Playlist of saved Sets", async
     expect(youTube.calls).toEqual([
       "playlists",
       "playlistItems",
-      "playlistItems",
       "videos",
+      "playlistItems",
       "videos",
     ]);
 

@@ -1093,9 +1093,44 @@ export const createPortableApp = (options: {
                       })
                     );
                   }
-                  const read = yield* metadata
-                    .playlist(playlistId, MAX_SETS_PER_PLAYLIST)
-                    .pipe(Effect.mapError(importFailure));
+                  const read = yield* Effect.gen(function* readPages() {
+                    const { itemCount, title } =
+                      yield* metadata.playlist(playlistId);
+                    const tracks: PlaylistTrack[] = [];
+                    const seen = new Set<string>();
+                    let entries = 0;
+                    let unavailable = 0;
+                    let pageToken: string | undefined;
+                    do {
+                      const page = yield* metadata.playlistPage(
+                        playlistId,
+                        pageToken
+                      );
+                      entries += page.entries;
+                      unavailable += page.unavailable;
+                      for (const track of page.tracks) {
+                        if (!seen.has(track.url)) {
+                          seen.add(track.url);
+                          tracks.push(track);
+                        }
+                      }
+                      pageToken = page.nextPageToken;
+                    } while (
+                      pageToken &&
+                      tracks.length < MAX_SETS_PER_PLAYLIST
+                    );
+                    const unread = pageToken
+                      ? Math.max(0, itemCount - entries)
+                      : 0;
+                    return {
+                      overLimit:
+                        Math.max(0, tracks.length - MAX_SETS_PER_PLAYLIST) +
+                        unread,
+                      title,
+                      tracks: tracks.slice(0, MAX_SETS_PER_PLAYLIST),
+                      unavailable,
+                    };
+                  }).pipe(Effect.mapError(importFailure));
                   if (read.tracks.length === 0) {
                     return yield* Effect.fail(
                       new LibraryError({
