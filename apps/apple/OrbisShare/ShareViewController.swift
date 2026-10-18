@@ -138,6 +138,8 @@ enum ShareExtensionPayloads {
 enum ShareStage: Equatable {
   case reading
   case unsupported
+  /// A playlist page names no single Set. Importing it is the app's job, not the share sheet's.
+  case playlist
   case signedOut
   case editing(URL)
   case saved(SavedSet)
@@ -198,6 +200,12 @@ struct ShareConfirmationView: View {
       refusal(
         "No YouTube or SoundCloud link", symbol: "link",
         message: "Share a link from YouTube or SoundCloud to save it.")
+    case .playlist:
+      refusal(
+        "A Playlist Link", symbol: "music.note.list",
+        message: "This is a playlist. Open Orbis and paste it in Add Set to import every track."
+      )
+      .accessibilityIdentifier("share-playlist-notice")
     case .signedOut:
       refusal(
         "Sign in to Orbis", symbol: "person.crop.circle.badge.exclamationmark",
@@ -210,7 +218,7 @@ struct ShareConfirmationView: View {
   }
 
   @ToolbarContentBuilder private var toolbar: some ToolbarContent {
-    if isSaved {
+    if isSaved || stage == .playlist {
       ToolbarItem(placement: .confirmationAction) {
         Button("Done", systemImage: "checkmark", role: .confirm, action: dismiss)
           .tint(Color.orbis.tint)
@@ -340,6 +348,10 @@ struct ShareConfirmationView: View {
   private func prepare() async {
     guard let link = ShareCapture.sourceLink(from: await payloads()) else {
       stage = .unsupported
+      return
+    }
+    if PlaylistLink.kind(of: link.absoluteString) == .playlist {
+      stage = .playlist
       return
     }
     guard let client = settings.configuredClient(address: ShareCapture.serviceAddress) else {
