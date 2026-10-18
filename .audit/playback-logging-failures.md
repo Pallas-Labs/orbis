@@ -5,7 +5,7 @@ The playback report must remain useful when the symptom is a short jump, repeat,
 ## Collection failures
 
 - A report generated while SwiftUI evaluates `body` can be stale by the time the person taps Copy. The button must call `playbackReport()` in its action and copy that result.
-- A second timer can sample a different state from the player's existing half-second observer and adds work during playback. Periodic diagnostic samples must use that observer and occur no more than once every five seconds, including while the player waits.
+- A second timer can sample a different state from the player's existing half-second observer and adds work during playback. Periodic diagnostic samples must use that observer and occur no more than once every five seconds when callbacks arrive. Media-time callbacks may stop while paused or waiting. Wait transitions and the current copy-time snapshot cover those states.
 - AVPlayer KVO and completion callbacks can arrive on non-main threads or after a newer item replaced the old item. Each callback must enter the main actor through the existing documented boundary and reject stale generations before recording.
 - A pending server activation can accept, fail, or lose to a newer request after Play, Pause, or Cue changes the pending intent. The report must record the activation generation, initial intent and target, later intent changes, and the accepted, superseded, or failed outcome with request duration.
 - Remote next, previous, and interval skip commands delegate to seek. The report must retain the original remote command before delegation and must not claim that the derived seek came from an app button or a specific remote surface.
@@ -29,3 +29,9 @@ The playback report must remain useful when the symptom is a short jump, repeat,
 - A controlled streaming test withholds response bytes, exports while the player waits, and verifies a waiting event plus a tap-time current snapshot.
 - A delayed activation test changes pending playback intent before the HTTP response and verifies begin, intent-change, and accepted outcomes with the same model generation.
 - A Settings UI journey taps Copy Playback Report, observes the Copied acknowledgement, and attaches a screenshot. Payload correctness comes from native report tests, not from the acknowledgement label.
+
+## Retention correction from independent review
+
+Written before changing retention. Routine samples can evict a discontinuity even when no newer incident occurred. Prefer evicting the oldest periodic sample before command or incident entries, and preserve chronological order of the remainder. The byte cap can still require dropping old entries, so the public guarantee is up to 256 entries rather than exactly 256. Remove formatting whitespace and find the largest suffix that fits in bounded encoding passes instead of halving away more history than necessary.
+
+The focused regression probe must record an incident followed by 300 routine samples and require the incident to remain. It must also export 256 realistic snapshots with eight buffer ranges and access metrics, retain the actual JSON, report its entry/byte counts and check the 256 KiB ceiling. Write and run that probe against the current recorder before changing its eviction or rendering policy.

@@ -45,3 +45,7 @@ These probes post the public reset notification from off MainActor. They do not 
 DeepSeek V4.1 Flash Free independently reviewed the tested source and found no high or medium objection. Five low findings remain recorded in [axiom-review-r7.md](axiom-review-r7.md), with dispositions in [axiom-review-responses.md](axiom-review-responses.md). The owned simulator was shut down after evidence retention. No shared services were reset.
 
 The delayed [Claude round 5 review](axiom-review-r5.md) also found no high or medium source objection. It identified that both reset JSON artifacts record the initial 12-second position. They establish Set retention, quiet recovery, player replacement and resumed advancement, not preservation of a position reached later. The narrowed claims and new low missed final position report are in [the late response](axiom-review-responses.md). No source, test or verification result changed.
+
+## Playback report follow-up
+
+Settings now offers Copy Playback Report for recent in-memory playback evidence. The [logging verification record](playback-logging-verification.md) identifies the final 131-test pass, four iOS UI journeys, separately checked clipboard JSON, Swift style and tvOS build. It also retains the failed retention probe and narrowed withheld-Ogg test claim. [Independent review dispositions](playback-logging-responses.md) record the source verdict and remaining limits. Physical iPhone audible-skip acceptance remains open on issue #277.

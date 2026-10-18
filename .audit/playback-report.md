@@ -48,3 +48,7 @@ The user requested Axiom for Apple playback and networking. The [follow-up revie
 DeepSeek V4.1 Flash Free independently found no high or medium source objection. The [five low findings and dispositions](axiom-review-responses.md) include unmeasured reset races and the existing row/detail Play path using the server position rather than the retained local position. The source hashes still match the verified run.
 
 The delayed Claude Opus 5.5 round 5 also found no high or medium source objection. It caught the reached-position evidence overclaim, now narrowed above. It also showed that discarding the player prevents a final settled position report. Row/detail or another device can therefore resume up to about five seconds earlier. That missed report is a new low reset limitation, beyond the existing server-position selection policy. See the [late review response](axiom-review-responses.md).
+
+## Playback report follow-up
+
+Settings now offers Copy Playback Report for recent in-memory playback evidence. The [logging verification record](playback-logging-verification.md) identifies the final 131-test pass, four iOS UI journeys, separately checked clipboard JSON, Swift style and tvOS build. It also retains the failed retention probe and narrowed withheld-Ogg test claim. [Independent review dispositions](playback-logging-responses.md) record the source verdict and remaining limits. Physical iPhone audible-skip acceptance remains open on issue #277.
