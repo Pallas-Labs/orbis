@@ -87,7 +87,7 @@ struct PlaylistImportStatus: View {
 
   var body: some View {
     switch model.playlistImport {
-    case .importing:
+    case .requesting, .importing:
       Section {
         WorkingRow(
           title: model.playlistImport.progress ?? "Importing…",

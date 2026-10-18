@@ -30,7 +30,6 @@ import type { PlaylistTrack, YouTubePlaylistPage } from "./metadata.js";
 export type AutoDownloadResult =
   (typeof SaveSetResultSchema.Type)["autoDownloadResult"];
 
-/** A track saved to the owner's Library, with what Auto Download did with it. */
 export interface SavedTrack {
   readonly autoDownloadResult: AutoDownloadResult;
   readonly id: string;
@@ -42,7 +41,6 @@ export interface PlaylistImporterOptions {
     personId: string,
     track: PlaylistTrack
   ) => Effect.Effect<SavedTrack, LibraryError>;
-  /** Tells the owner's devices where an import stands. */
   readonly publish: (
     personId: string,
     playlistImport: PlaylistImport
@@ -199,7 +197,6 @@ const freePlaylistName = (title: string, taken: ReadonlySet<string>) => {
 
 const execute = asLibraryError("Could not complete the playlist import.");
 
-/** The rows an import reads and writes. Each change commits in one transaction. */
 const importStore = (db: DatabaseClient) => {
   const withPlaylist = Effect.fn("PlaylistImports.withPlaylist")(
     function* withPlaylist(client: DatabaseClient, job: ImportJob) {
@@ -226,7 +223,6 @@ const importStore = (db: DatabaseClient) => {
       .set({ ...job.counts, ...stateColumns(job.state), updatedAt: now })
       .where(eq(playlistImports.id, job.id));
 
-  /** The person's running import of this playlist, or a failed one to resume. */
   const reopen = Effect.fn("PlaylistImports.reopen")(
     (personId: string, sourcePlaylistId: string) =>
       execute(
@@ -484,7 +480,6 @@ const importStore = (db: DatabaseClient) => {
             const processed = job.state.processed + page.entries;
             const full = memberCount >= MAX_SETS_PER_PLAYLIST;
             if (page.nextPageToken && full) {
-              // The entries left unread are past the maximum.
               counts.overLimit += Math.max(0, (total ?? processed) - processed);
             }
             const committed: ImportJob = {
@@ -591,7 +586,6 @@ export class PlaylistImporter extends Context.Service<
             })
           );
 
-        /** One page: read it, save its tracks, then commit them with the cursor. */
         const runPage = Effect.fn("PlaylistImporter.runPage")(function* runPage(
           job: ImportJob
         ) {

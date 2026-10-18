@@ -5,25 +5,26 @@ import OrbisDesign
 /// summary or a failure beside a running import.
 enum PlaylistImport: Equatable {
   case idle
-  /// The request is out (`job` is nil), or the service is importing in the background.
-  case importing(link: String, job: PlaylistImportJob?)
+  case requesting(link: String)
+  case importing(link: String, job: PlaylistImportJob)
   case imported(ImportedPlaylist)
   case failed(link: String, Failure)
 
   enum Failure: Equatable {
-    /// The service refused to start the import, or could not be reached.
     case request(OrbisError)
-    /// The import started and then stopped. Its Sets so far stay in the Playlist.
+    /// Its Sets so far stay in the Playlist, and Try Again continues it.
     case stopped(message: String)
   }
 
   var isImporting: Bool {
-    if case .importing = self { true } else { false }
+    switch self {
+    case .requesting, .importing: true
+    case .idle, .imported, .failed: false
+    }
   }
 
-  /// The Playlist the running import is filling, once the service has made it.
   var importingPlaylistId: String? {
-    if case .importing(_, let job?) = self { job.playlist.id } else { nil }
+    if case .importing(_, let job) = self { job.playlist.id } else { nil }
   }
 
   var importedPlaylistId: String? {
@@ -32,17 +33,23 @@ enum PlaylistImport: Equatable {
 
   /// "Importing 23 of 140…", or "Importing…" until the service says how long the playlist is.
   var progress: String? {
-    guard case .importing(_, let job) = self else { return nil }
-    if case .running(let processed, let total?)? = job?.state, total > 0 {
-      return "Importing \(min(processed, total)) of \(total)…"
+    switch self {
+    case .importing(_, let job):
+      if case .running(let processed, let total?) = job.state, total > 0 {
+        return "Importing \(min(processed, total)) of \(total)…"
+      }
+      return "Importing…"
+    case .requesting:
+      return "Importing…"
+    case .idle, .imported, .failed:
+      return nil
     }
-    return "Importing…"
   }
 
   /// What the link field shows for the import, or nil when the import has nothing to say there.
   var fieldState: LinkFieldState? {
     switch self {
-    case .importing: .checking
+    case .requesting, .importing: .checking
     case .failed(_, let failure): .invalid(message: failure.message)
     case .idle, .imported: nil
     }

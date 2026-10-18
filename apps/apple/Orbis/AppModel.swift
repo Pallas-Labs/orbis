@@ -590,7 +590,7 @@ final class AppModel {
     guard let client, !link.isEmpty, !isFiling, !playlistImport.isImporting else { return }
     fileFailure = nil
     fileConfirmation = nil
-    let sent = PlaylistImport.importing(link: link, job: nil)
+    let sent = PlaylistImport.requesting(link: link)
     playlistImport = sent
     let job: PlaylistImportJob
     do {
@@ -634,11 +634,19 @@ final class AppModel {
     showPlaylist(imported.playlist.id)
   }
 
-  /// Applies where the service says the import stands. A frame for another import is ignored,
-  /// and so is a repeat of the end, which the stream and the poll can both deliver.
+  /// A frame for another import is ignored, and so is a repeat of the end, which the stream and
+  /// the poll can both deliver.
   private func receive(_ job: PlaylistImportJob) async {
-    guard case .importing(let link, let current) = playlistImport, current == nil || current?.id == job.id
-    else { return }
+    let link: String
+    let current: PlaylistImportJob?
+    switch playlistImport {
+    case .requesting(let requested):
+      (link, current) = (requested, nil)
+    case .importing(let importing, let running) where running.id == job.id:
+      (link, current) = (importing, running)
+    default:
+      return
+    }
     if case .done? = current?.state { return }
     switch job.state {
     case .running:
@@ -666,7 +674,7 @@ final class AppModel {
   }
 
   private func isFollowing(_ id: String) -> Bool {
-    if case .importing(_, let job?) = playlistImport { job.id == id } else { false }
+    if case .importing(_, let job) = playlistImport { job.id == id } else { false }
   }
 
   /// Follows a running import on the event stream, and asks for it every two seconds while the

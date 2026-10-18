@@ -4,7 +4,6 @@ export interface AlarmSlot {
   readonly cancel: () => Promise<void>;
 }
 
-/** A Durable Object's storage holds one alarm. */
 export interface AlarmStorage {
   readonly setAlarm: (at: number) => Promise<void>;
   readonly deleteAlarm: () => Promise<void>;
