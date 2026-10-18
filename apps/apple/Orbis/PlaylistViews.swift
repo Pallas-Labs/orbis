@@ -7,6 +7,7 @@ import SwiftUI
 struct PlaylistsDestination: View {
   @Bindable var model: AppModel
   @State private var isCreating = false
+  @State private var isImporting = false
   @State private var draftName = ""
   @State private var renamingPlaylist: Playlist?
   @State private var renameDraft = ""
@@ -25,6 +26,12 @@ struct PlaylistsDestination: View {
     .toolbar {
       if model.openedPlaylistId == nil {
         ToolbarItem {
+          Button("Import Playlist", systemImage: "square.and.arrow.down") { isImporting = true }
+            .tint(Color.orbis.tint)
+            .help("Import Playlist")
+            .accessibilityIdentifier("playlist-import")
+        }
+        ToolbarItem {
           Button("New playlist", systemImage: "plus") { beginCreate() }
             .tint(Color.orbis.tint)
             .accessibilityIdentifier("playlist-create")
@@ -33,6 +40,7 @@ struct PlaylistsDestination: View {
     }
     .playlistChangeStatus(model)
     .sheet(isPresented: $isCreating) { createSheet }
+    .sheet(isPresented: $isImporting) { PlaylistImportSheet(model: model) }
     .alert("Rename playlist", isPresented: renameBinding) {
       TextField("Name", text: $renameDraft)
       Button("Save") {
