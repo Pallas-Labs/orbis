@@ -11,3 +11,11 @@ DeepSeek V4.1 Flash Free independently accepted the reset adapter with no high o
 Physical media-daemon recovery, Lock Screen/AirPods delivery and Wi-Fi/cellular handovers remain unverified. The original ordinary-streaming audible jumps and repeats remain unexplained. The two low completion/queue limits accepted in round 4 also remain.
 
 The final diff adds no code comments. The review found no comment removal needed. The final local cleanup checked wording, source hashes, formatting and whitespace; no production or test bytes changed after native verification or review.
+
+## Delayed round 5 response
+
+Claude Opus 5.5 resumed after its initial rate limit and delivered `axiom-review-r5.md` after publication. It found no high or medium source objection. Its medium evidence finding is valid. Both reset artifacts record 12 seconds before and after, the initial timestamp, so they cannot prove capture of a position reached after playback advances. The current report and coverage document now claim Set retention, quiet recovery, replacement and resumed advancement only. Local position capture has source review, not measured acceptance. This supersedes the position coverage claims in round 7 and the historical `axiom-verified` trail row.
+
+The low reporting finding is also valid. Once the player is discarded, `settledPosition` is nil and the position reporter skips the final settled report. The server can remain up to the five-second reporting interval behind. The row/detail path already uses the server position, but this missed report is a new reset limitation. Accept it explicitly rather than calling it wholly pre-existing. The toggle and remote Play use local elapsed time by source reading. A later change should measure a reset after timeline advancement and settle the retained position to the server.
+
+The reset policy comes from Apple's documentation. Axiom 27.3.0 supplied concurrency/isolation patterns and networking checks; it contains no media-services reset guidance. The failure document now credits the sources separately, and a new trail row supersedes the earlier combined attribution. No production or test source changed and no new run is claimed.
