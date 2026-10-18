@@ -42,9 +42,14 @@ const audioRange = (
     return null;
   }
   let start = first === "" ? size - Number(last) : Number(first);
-  const end = last === "" ? size - 1 : Number(last);
-  if (!Number.isInteger(start) || !Number.isInteger(end) || end < 0) {
-    return null;
+  const end =
+    first === "" || last === "" ? size - 1 : Math.min(Number(last), size - 1);
+  if (
+    !Number.isSafeInteger(start) ||
+    !Number.isSafeInteger(end) ||
+    end < start
+  ) {
+    return { unsatisfiable: true };
   }
   start = Math.max(start, 0);
   if (start >= size) {
