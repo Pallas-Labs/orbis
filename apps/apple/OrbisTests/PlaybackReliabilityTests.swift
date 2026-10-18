@@ -149,6 +149,58 @@ final class PlaybackReliabilityTests: XCTestCase {
     XCTAssertEqual(model.audioPlayer.currentSetId, fixture.set.id)
   }
 
+  #if !os(macOS)
+    func testAMediaServicesResetWaitsForPlayBeforeReplacingThePlayer() async throws {
+      try await assertMediaServicesResetRecovery(paused: false)
+    }
+
+    func testAMediaServicesResetKeepsAPausedSetQuiet() async throws {
+      try await assertMediaServicesResetRecovery(paused: true)
+    }
+
+    @concurrent nonisolated private static func postMediaServicesReset() async {
+      NotificationCenter.default.post(name: AVAudioSession.mediaServicesWereResetNotification, object: nil)
+    }
+
+    private func assertMediaServicesResetRecovery(paused: Bool) async throws {
+      let fixture = try await fixture()
+      let model = AppModel(client: fixture.client, settings: MemoryClientSettings())
+      defer { model.signOut() }
+      await model.playSet(fixture.set.id, startAt: 12)
+      let player = model.audioPlayer
+      player.player?.volume = 0
+      try await waitUntil("The stream must play before media services reset") { player.state == .playing }
+      if paused { player.pause() }
+      let oldEngine = try XCTUnwrap(player.player)
+      let position = oldEngine.currentTime().seconds
+      await Self.postMediaServicesReset()
+      guard case .failed = player.state else {
+        XCTFail("A media-services reset must require an explicit Play to recover")
+        return
+      }
+      XCTAssertEqual(oldEngine.rate, 0)
+      XCTAssertEqual(player.currentSetId, fixture.set.id)
+      XCTAssertEqual(player.elapsed, position, accuracy: 0.3)
+      try await Task.sleep(for: .milliseconds(200))
+      XCTAssertEqual(oldEngine.rate, 0, "Old callbacks must not resume the invalid player")
+      model.togglePlayback()
+      try await waitUntil("Play must replace the invalid player and resume") { player.state == .playing }
+      let recovered = try XCTUnwrap(player.player)
+      XCTAssertFalse(recovered === oldEngine)
+      let resumed = recovered.currentTime().seconds
+      XCTAssertGreaterThanOrEqual(resumed, position - 0.2)
+      XCTAssertLessThan(resumed, position + 2)
+      try await waitUntil("The recovered stream must keep advancing") {
+        recovered.currentTime().seconds > resumed + 0.3
+      }
+      try record(
+        "media-services-reset-\(paused ? "paused" : "playing")",
+        [
+          "positionBeforeReset": position, "resumedPosition": resumed, "replacedPlayer": recovered !== oldEngine,
+        ])
+    }
+  #endif
+
   func testACueOnTheCurrentSetSupersedesADelayedPlayOfAnotherSet() async throws {
     let a = OrbisClientTests.savedSet(title: "Current Set", tags: [], downloadState: "ready")
       .replacingOccurrences(of: "\"id\":\"1\"", with: "\"id\":\"a\"")

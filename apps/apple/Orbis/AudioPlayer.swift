@@ -1199,6 +1199,30 @@ final class AudioPlayer {
           }
         }
       )
+      observers.append(
+        center.addObserver(
+          forName: AVAudioSession.mediaServicesWereResetNotification,
+          object: nil,
+          queue: .main
+        ) { [weak self] _ in
+          MainActor.assumeIsolated {
+            guard let self else { return }
+            self.capturePosition()
+            self.pause()
+            self.playbackGeneration += 1
+            self.sessionReady = false
+            self.itemNeedsReload = true
+            self.pendingSeek = nil
+            self.isSeeking = false
+            self.dropPlayerObservers()
+            self.player = nil
+            self.artworkFetch?.cancel()
+            self.state = .failed("Audio was reset on this device. Press Play to resume.")
+            self.publishNowPlaying(isPlaying: false)
+            logger.notice("Media services reset; waiting for Play to reload the audio")
+          }
+        }
+      )
     #endif
   }
 

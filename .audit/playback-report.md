@@ -40,3 +40,9 @@ The known-duration end check uses a two-second allowance against the shorter kno
 ## Decision trail
 
 The workflow is [playback-workflow.md](playback-workflow.md). Decisions are in [playback.tsv](playback.tsv). Independent design alternatives and review responses remain alongside this report. Claude Opus5.5 round4 found no high or medium source objection. Final native acceptance passed after that review began. Physical acceptance remains open. See [review-r4.md](review-r4.md) and [review-responses.md](review-responses.md).
+
+## Axiom follow-up
+
+The user requested Axiom for Apple playback and networking. The [follow-up review](axiom-playback-networking.md) found a missing media-services reset handler. It now discards the old player, preserves position and waits for explicit Play before reloading. Both new notification probes failed before the handler. The updated source passed 127 native tests and three focused recovery/Cue UI journeys. These probes post the public notification; a real system media-daemon reset remains unverified. The networking source review found no reason to replace URLSession or add reachability checks.
+
+DeepSeek V4.1 Flash Free independently found no high or medium source objection. The [five low findings and dispositions](axiom-review-responses.md) include unmeasured reset races and the existing row/detail Play path using the server position rather than the retained local position. The source hashes still match the verified run.
