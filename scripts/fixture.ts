@@ -116,7 +116,8 @@ const laneYouTube = async (url: string) => {
   if (resource === "playlistItems") {
     const start = Number(parsed.searchParams.get("pageToken") ?? "0");
     if (start > 0) {
-      // A slow second page keeps the import's progress on screen long enough to see.
+      // A slow second page keeps the import's progress on screen long enough to see. It stays
+      // under the server's five-second provider timeout, past which the page would fail.
       await Bun.sleep(LANE_SECOND_PAGE_DELAY_MS);
     }
     const next = start + LANE_PAGE;
