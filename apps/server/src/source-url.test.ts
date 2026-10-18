@@ -1,11 +1,10 @@
 import { expect, test } from "bun:test";
 
+import { SOURCE_URL_MESSAGE } from "@orbis/contracts";
 import {
   ACCEPTED_SOURCE_URL_CASES,
   REJECTED_SOURCE_URLS,
 } from "@orbis/contracts/source-url-cases";
-
-import { SOURCE_URL_MESSAGE } from "@orbis/contracts";
 
 import { LibraryError } from "./errors.js";
 import { normalizeSourceUrl } from "./source-url.js";

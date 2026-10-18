@@ -124,7 +124,10 @@ export const AppleMusicAlbumPayload = Schema.Struct({
       artist: Schema.String.check(Schema.isMaxLength(200)),
       artworkUrl: ArtworkAddress,
       durationSeconds: SongLength,
-      title: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(200)),
+      title: Schema.String.check(
+        Schema.isMinLength(1),
+        Schema.isMaxLength(200)
+      ),
     })
   ).check(Schema.isMinLength(1), Schema.isMaxLength(500)),
   title: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(200)),

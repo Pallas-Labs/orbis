@@ -406,7 +406,9 @@ export class Library extends Context.Service<
                 // A new Set, or one whose Cues went when its last saver removed it.
                 if (album && row.tracklistState !== "ready") {
                   yield* tx.delete(setCues).where(eq(setCues.setId, row.id));
-                  yield* tx.insert(setCues).values(appleMusicCues(row.id, album));
+                  yield* tx
+                    .insert(setCues)
+                    .values(appleMusicCues(row.id, album));
                   [row] = yield* tx
                     .update(sets)
                     .set({ tracklistState: "ready" })

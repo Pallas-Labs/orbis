@@ -47,8 +47,6 @@ import {
 } from "effect/unstable/http";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
 
-import { appleMusicDownloadRefused } from "./apple-music.js";
-
 import {
   addKey,
   addPerson,
@@ -66,6 +64,7 @@ import {
   revokeDevice,
   revokeKey,
 } from "./admin.js";
+import { appleMusicDownloadRefused } from "./apple-music.js";
 import { makeAttemptLimiter } from "./attempt-limiter.js";
 import { Audio } from "./audio-service.js";
 import type { AudioFile } from "./audio-service.js";
@@ -718,6 +717,9 @@ export const createPortableApp = (options: {
                 );
                 const personal = yield* Library;
                 const saved = yield* personal.save({
+                  ...(input.appleMusicAlbum && {
+                    appleMusicAlbum: input.appleMusicAlbum,
+                  }),
                   tags: [...(input.tags ?? [])],
                   title: input.title ?? "",
                   url,

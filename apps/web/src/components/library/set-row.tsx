@@ -46,7 +46,11 @@ import type { Playlist } from "@/lib/playlists";
 
 type Dialogs = "rename" | "tags" | "playlists" | "remove";
 
-const SOURCE_LABELS = { soundcloud: "SoundCloud", youtube: "YouTube" } as const;
+const SOURCE_LABELS = {
+  "apple-music": "Apple Music",
+  soundcloud: "SoundCloud",
+  youtube: "YouTube",
+} as const;
 
 const duration = (seconds: number | null): string | null => {
   if (seconds === null) {

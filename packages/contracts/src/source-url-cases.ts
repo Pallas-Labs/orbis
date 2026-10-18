@@ -47,7 +47,8 @@ export const ACCEPTED_SOURCE_URL_CASES: readonly AcceptedSourceUrlCase[] = [
     url: "https://music.apple.com/album/1700000000",
   },
   {
-    input: "https://music.apple.com/gb/album/example-dj-mix/1700000000?i=1700000002",
+    input:
+      "https://music.apple.com/gb/album/example-dj-mix/1700000000?i=1700000002",
     source: "apple-music",
     url: "https://music.apple.com/album/1700000000",
   },

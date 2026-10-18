@@ -119,7 +119,10 @@ export const normalizeSourceUrl = (
     if (!id) {
       throw invalid();
     }
-    return { source: "apple-music", url: `https://music.apple.com/album/${id}` };
+    return {
+      source: "apple-music",
+      url: `https://music.apple.com/album/${id}`,
+    };
   }
   throw invalid();
 };

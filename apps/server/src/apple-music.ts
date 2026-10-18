@@ -1,4 +1,4 @@
-import type { AppleMusicAlbumPayload } from "@orbis/contracts";
+import type { AppleMusicAlbumPayload } from "@orbis/contracts/http-api";
 
 import { LibraryError } from "./errors.js";
 
@@ -36,9 +36,11 @@ const songStarts = (album: AppleMusicAlbum): number[] => {
 };
 
 const mixLength = (album: AppleMusicAlbum): number =>
-  Math.round(album.songs.reduce((total, song) => total + song.durationSeconds, 0));
+  Math.round(
+    album.songs.reduce((total, song) => total + song.durationSeconds, 0)
+  );
 
-/** The shared Set's columns for a new Apple Music Set: metadata, details, and Tracklist are complete. */
+/** The shared Set's columns for a new Apple Music Set: its metadata and details are complete. */
 export const appleMusicSetColumns = (album: AppleMusicAlbum) => ({
   artworkLargeUrl: album.artworkLargeUrl,
   artworkUrl: album.artworkUrl,
@@ -48,7 +50,6 @@ export const appleMusicSetColumns = (album: AppleMusicAlbum) => ({
   metadataState: "enriched" as const,
   releasedAt: album.releasedAt,
   title: album.title.trim(),
-  tracklistState: "ready" as const,
 });
 
 /** One Cue per song, in album order. */
