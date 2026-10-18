@@ -64,3 +64,11 @@ export {
   SIGN_IN_CODE_ALPHABET,
   SIGN_IN_CODE_LENGTH,
 } from "./sign-in-code.js";
+
+/**
+ * Whether a Set can enter the Listening Queue and be played: it has Retained Audio, or it is
+ * an Apple Music Set, which the Apple app plays through MusicKit (ADR 0021).
+ */
+export const isPlayableSet = (
+  set: Pick<SavedSet, "downloadState" | "source">
+): boolean => set.downloadState === "ready" || set.source === "apple-music";

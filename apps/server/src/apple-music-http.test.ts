@@ -17,6 +17,7 @@ const failures = [
   "Cue start times drift from the sum of the song lengths",
   "the service asks a provider or Versos about an Apple Music Set",
   "a Download or Auto Download is queued for DRM audio",
+  "the Listening Queue refuses a mix because it has no Retained Audio",
   "a metadata or Tracklist retry wipes the album the app sent",
   "removing and saving the mix again loses its Tracklist",
 ];
@@ -192,6 +193,14 @@ test("an Apple Music album saves once as a Set whose songs are its Tracklist, an
     expect(download.json().message).toBe(
       "Apple Music audio plays through Apple Music and is never downloaded."
     );
+
+    const queued = await request(server.app, {
+      method: "PUT",
+      payload: { setId: id },
+      url: "/queue/active",
+    });
+    expect(queued.statusCode).toBe(200);
+    expect(queued.json().queue.activeSetId).toBe(id);
 
     const retriedMetadata = await request(server.app, {
       method: "POST",
