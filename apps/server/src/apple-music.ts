@@ -6,8 +6,8 @@ type AppleMusicAlbum = typeof AppleMusicAlbumPayload.Type;
 
 /**
  * The service holds no Apple Music key (ADR 0021), so the album details arrive with the save
- * from the Apple app. A save from anywhere else carries none and is refused, so an Apple Music
- * Set never exists without its Tracklist.
+ * from the Apple app. A save without them is refused unless Orbis already holds the album with
+ * its Tracklist, so an Apple Music Set never exists without one.
  */
 export const appleMusicSaveRefused = () =>
   new LibraryError({

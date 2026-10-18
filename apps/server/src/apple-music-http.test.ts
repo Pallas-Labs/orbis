@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { Effect } from "effect";
 
+import { hashToken } from "./identity.js";
 import { Metadata } from "./metadata.js";
 import { createTestApp as createApp } from "./test-app.js";
 import { request } from "./test-http.js";
@@ -20,6 +21,7 @@ const failures = [
   "the Listening Queue refuses a mix because it has no Retained Audio",
   "a metadata or Tracklist retry wipes the album the app sent",
   "removing and saving the mix again loses its Tracklist",
+  "a friend saving a mix Orbis already has must read it with MusicKit again",
 ];
 
 const record = async <Result>(name: string, result: Result) => {
@@ -246,5 +248,61 @@ test("an Apple Music album saves once as a Set whose songs are its Tracklist, an
     });
   } finally {
     await server.dispose();
+  }
+});
+
+test("a friend saves a mix Orbis already holds without sending the album again", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "orbis-apple-music-"));
+  const friendToken = "apple-music-friend-token";
+  const devicesPath = path.join(directory, "devices.json");
+  await writeFile(
+    devicesPath,
+    JSON.stringify({
+      keys: [
+        {
+          addedAt: "2026-01-01T00:00:00.000Z",
+          id: "friend",
+          label: "friend",
+          lastUsedAt: null,
+          personId: "friend",
+          scope: "daily",
+          tokenHash: hashToken(friendToken),
+        },
+      ],
+      people: [
+        { id: "host", removed: false, username: "host" },
+        { id: "friend", removed: false, username: "friend" },
+      ],
+      version: 2,
+    })
+  );
+  const app = createApp({
+    databasePath: path.join(directory, "library.sqlite"),
+    devicesPath,
+    metadata: Metadata.unconfigured(),
+  });
+  try {
+    const saved = await request(app, {
+      method: "POST",
+      payload: { appleMusicAlbum: ALBUM, url: ALBUM_URL },
+      url: "/sets",
+    });
+    expect(saved.statusCode).toBe(201);
+    const friend = await request(app, {
+      headers: { authorization: `Bearer ${friendToken}` },
+      method: "POST",
+      payload: { url: "https://music.apple.com/us/album/example/1700000000" },
+      url: "/sets",
+    });
+    expect(friend.statusCode).toBe(201);
+    expect(friend.json()).toMatchObject({
+      id: saved.json().id,
+      title: "Example DJ: DJ Mix",
+      tracklistState: "ready",
+    });
+    await record("friend-save", { friend: friend.json() });
+  } finally {
+    await app.dispose();
+    await rm(directory, { force: true, recursive: true });
   }
 });

@@ -364,9 +364,6 @@ export class Library extends Context.Service<
             const { source, url } = yield* normalizeUrl(input.url);
             const album =
               source === "apple-music" ? input.appleMusicAlbum : undefined;
-            if (source === "apple-music" && !album) {
-              return yield* Effect.fail(appleMusicSaveRefused());
-            }
             const title = input.title?.trim() ?? "";
             const tags = normalizeTags(input.tags);
             const savedRow = yield* db.transaction((tx) =>
@@ -376,6 +373,15 @@ export class Library extends Context.Service<
                   .from(sets)
                   .where(eq(sets.url, url))
                   .limit(1);
+                // Only the app can read an album, so a save without one needs the Set and its
+                // Tracklist to be here already: a friend saving a mix someone filed.
+                if (
+                  source === "apple-music" &&
+                  !album &&
+                  row?.tracklistState !== "ready"
+                ) {
+                  return yield* Effect.fail(appleMusicSaveRefused());
+                }
                 if (!row) {
                   const [inserted] = yield* tx
                     .insert(sets)
