@@ -56,3 +56,9 @@ Settings now offers Copy Playback Report for recent in-memory playback evidence.
 ## SigNoz follow-up
 
 The user subsequently requested automatic delivery to SigNoz. The [delivery verification record](signoz-verification.md) supersedes the earlier no-upload scope and records bounded native delivery, authenticated Group relay, actual collector ingestion and rollout limits. Physical audible-skip acceptance remains separate.
+
+## Cleanup follow-up
+
+At the user's simplify/deslop request, three parallel reviews covered reuse, quality and efficiency across the branch. Source `d809367` consolidates unchanged UI time helpers, reuses the existing settings store and strict decoder, removes a duplicate access-log lookup and uses typed buffer reasons with unchanged console labels. It removes 35 lines across six source/test files. Encoder caches and loop rewrites were skipped as low return.
+
+All 140 native tests, eight playback/recovery UI journeys, 18 affected HTTP tests, server typecheck, lint, formatting and a tvOS build passed. All 125 Swift inputs match the native and UI pre/post manifests, and the built/installed UI libraries match. Evidence, source hashes, the exact patch and all three review results are in `/home/parth/.cache/orbis-playback-evidence/2026-10-18/simplify`. Earlier manifests identify their earlier revisions. No deployment or new physical acceptance is claimed.
