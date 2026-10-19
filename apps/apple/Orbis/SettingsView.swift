@@ -38,6 +38,7 @@ struct SettingsView: View {
   let model: AppModel
   @Bindable var settings: SettingsModel
   @State private var isConfirmingSignOut = false
+  @State private var copiedPlaybackReport = false
 
   var body: some View {
     Group {
@@ -71,6 +72,7 @@ struct SettingsView: View {
         downloads(person)
       }
       devices
+      playbackSection
       Section {
         Button("Sign Out", role: .destructive) { isConfirmingSignOut = true }
           .accessibilityIdentifier("settings-sign-out")
@@ -90,6 +92,21 @@ struct SettingsView: View {
       Button("Cancel", role: .cancel) {}
     } message: {
       Text("To sign in again, you need a Sign-in Code from another device or from your Host.")
+    }
+  }
+
+  private var playbackSection: some View {
+    Section {
+      Button(copiedPlaybackReport ? "Copied" : "Copy Playback Report") {
+        copyToPasteboard(model.audioPlayer.playbackReport())
+        copiedPlaybackReport = true
+      }
+      .accessibilityIdentifier("settings-copy-playback-report")
+      .sensoryFeedback(.success, trigger: copiedPlaybackReport) { _, now in now }
+    } header: {
+      Text("Playback")
+    } footer: {
+      Text("Copies recent playback activity from this app run. The report is lost when Orbis closes.")
     }
   }
 

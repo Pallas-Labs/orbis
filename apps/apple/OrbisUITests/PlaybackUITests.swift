@@ -118,7 +118,8 @@ final class PlaybackUITests: LibraryJourney {
     let restarted = try service.position(of: seeded.id) { $0 < 10 }
     XCTAssertLessThan(restarted, 10, "The saved position must move back to the start")
 
-    XCTAssertEqual(XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 20), .completed)
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 20), .completed)
     toggle.tap()
     XCTAssertEqual(toggle.label, "Play")
     let paused = try service.position(of: seeded.id, becomesAtLeast: 10)
@@ -175,7 +176,8 @@ final class PlaybackUITests: LibraryJourney {
     second.tap()
     let seek = app.sliders["detail-seek"]
     XCTAssertTrue(seek.waitForExistence(timeout: 15))
-    XCTAssertEqual(XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 8), .completed)
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 8), .completed)
     XCTAssertTrue(second.isSelected)
     capture("tracklist-second-cue-playing")
 
@@ -207,6 +209,47 @@ final class PlaybackUITests: LibraryJourney {
     openNowPlaying.tap()
     XCTAssertEqual(app.staticTexts["now-playing-cue"].label, "First Cue · First Artist")
     capture("tracklist-now-playing")
+  }
+
+  func testAColdCueNearTheEndStartsAtItsTimestamp() throws {
+    let service = try LaneService()
+    let seeded = try service.saveReadySet(
+      title: "Late Cue journey", url: "https://www.youtube.com/watch?v=latecue0001")
+    try service.seedLateTracklist(seeded.id)
+    let app = try launch()
+    openLibrary(in: app)
+    let row = app.descendants(matching: .any)["set-row-\(seeded.id)"]
+    XCTAssertTrue(row.waitForExistence(timeout: 60))
+    tapAtCentre(of: row, in: app)
+    let cue = app.buttons["cue-1"]
+    XCTAssertTrue(cue.waitForExistence(timeout: 30))
+    XCTAssertEqual(cue.label, "Second Cue, Second Artist, starts at 0:26")
+    for _ in 0..<3 {
+      if cue.isHittable { break }
+      app.swipeUp()
+    }
+    XCTAssertTrue(cue.isHittable)
+    capture("cold-late-cue-before-play")
+    cue.tap()
+    let seek = app.sliders["detail-seek"]
+    XCTAssertTrue(seek.waitForExistence(timeout: 10))
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [elapsed(on: seek) { (26...29).contains($0) }], timeout: 6),
+      .completed, "An explicit Cue must keep its timestamp even within five seconds of the end")
+    let deadline = Date().addingTimeInterval(12)
+    var finishes = 0
+    repeat {
+      finishes = try service.set(id: seeded.id)?.finishCount ?? 0
+      if finishes > 0 { break }
+      usleep(100_000)
+    } while Date() < deadline
+    usleep(3_000_000)
+    finishes = try service.set(id: seeded.id)?.finishCount ?? 0
+    capture("cold-late-cue-finished")
+    try record(
+      "cold-late-cue", ["setId": seeded.id, "requestedSeconds": 26, "finishCount": finishes])
+    XCTAssertEqual(
+      finishes, 1, "Starting at 26 seconds must finish the 30-second Set within 12 seconds")
   }
 
   func testMiniPlayerNowPlayingAndStoredPosition() throws {
@@ -278,29 +321,4 @@ final class PlaybackUITests: LibraryJourney {
       ])
   }
 
-  /// Waits for the seek bar's elapsed time to satisfy `matches`. The bar speaks its position, as
-  /// "1 minute, 12 seconds of 2 minutes", so the elapsed part is read back into seconds.
-  private func elapsed(on seek: XCUIElement, _ matches: @escaping (Int) -> Bool)
-    -> XCTNSPredicateExpectation
-  {
-    XCTNSPredicateExpectation(
-      predicate: NSPredicate { _, _ in Self.elapsedSeconds(seek.value as? String).map(matches) ?? false },
-      object: nil)
-  }
-
-  private static func elapsedSeconds(_ value: String?) -> Int? {
-    guard let elapsed = value?.components(separatedBy: " of ").first else { return nil }
-    var seconds = 0
-    for part in elapsed.components(separatedBy: ", ") {
-      let words = part.split(separator: " ")
-      guard words.count == 2, let count = Int(words[0]) else { return nil }
-      switch words[1] {
-      case "hour", "hours": seconds += count * 3600
-      case "minute", "minutes": seconds += count * 60
-      case "second", "seconds": seconds += count
-      default: return nil
-      }
-    }
-    return seconds
-  }
 }

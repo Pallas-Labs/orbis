@@ -68,6 +68,9 @@ targets:
         "CODE_SIGN_ENTITLEMENTS[sdk=appletv*]": Orbis/Orbis-tvOS.entitlements
         # orbis.icon, the Icon Composer document. This replaces the AppIcon image set.
         ASSETCATALOG_COMPILER_APPICON_NAME: orbis
+        # tvOS takes no Icon Composer icon: App Store Connect rejects a TV build without a layered
+        # brand asset (CFBundlePrimaryIcon) and a wide Top Shelf image, so the TV gets its own.
+        "ASSETCATALOG_COMPILER_APPICON_NAME[sdk=appletv*]": "App Icon & Top Shelf Image"
         # The system tint (tab selection, links, toggles) comes from the catalog, so it carries the
         # same values as the tint token in docs/design/tokens.json.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

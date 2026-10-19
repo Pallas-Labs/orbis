@@ -41,7 +41,8 @@ final class OrbisClientTests: XCTestCase {
     let signedOut = OrbisClient(
       address: address, token: "", session: StubProtocol.session(status: 201, body: signedIn))
 
-    let joined = try await signedOut.join(username: "ada", passcode: "sesame", label: "Orbis on Mac")
+    let joined = try await signedOut.join(
+      username: "ada", passcode: "sesame", label: "Orbis on Mac")
     XCTAssertEqual(joined, "synthetic-key")
     XCTAssertEqual(StubProtocol.lastRequest?.url?.path(), "/api/sign-in/join")
     XCTAssertEqual(StubProtocol.lastRequest?.httpMethod, "POST")
@@ -250,12 +251,15 @@ final class StubProtocol: URLProtocol {
 
   /// Records a request and its body together, so a test that waits for the request is never
   /// woken between the two and reads a request whose body has not arrived yet.
-  private static func observe(_ request: URLRequest) {
+  private static func observe(_ request: URLRequest) -> URLRequest {
     let body = Self.readBody(request)
+    var buffered = request
+    buffered.httpBody = body
     observationLock.withLock {
-      observedRequest = request
+      observedRequest = buffered
       observedBody = body
     }
+    return buffered
   }
 
   /// How the next requests are answered. Written by the tests and read by `startLoading`, so it
@@ -318,7 +322,7 @@ final class StubProtocol: URLProtocol {
   override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
   override func startLoading() {
-    StubProtocol.observe(request)
+    let buffered = StubProtocol.observe(request)
     let stub = StubProtocol.observationLock.withLock { StubProtocol.stub }
     if let failure = stub.failure {
       client?.urlProtocol(self, didFailWithError: failure)
@@ -327,7 +331,7 @@ final class StubProtocol: URLProtocol {
     let status: Int
     let body: String
     if let responder = stub.responder {
-      (status, body) = responder(request)
+      (status, body) = responder(buffered)
     } else {
       status = stub.status
       body = stub.body
@@ -339,7 +343,7 @@ final class StubProtocol: URLProtocol {
       headerFields: nil
     )!
     let data = Data(body.utf8)
-    let hold = stub.holdResponse?(request) ?? 0
+    let hold = stub.holdResponse?(buffered) ?? 0
     if hold > 0 {
       // The session drives its requests from one queue, so a response that is held must be
       // delivered later from its own thread rather than by blocking here.
@@ -363,7 +367,9 @@ final class StubProtocol: URLProtocol {
     private let response: HTTPURLResponse
     private let body: Data
 
-    init(sender: URLProtocol, client: (any URLProtocolClient)?, response: HTTPURLResponse, body: Data) {
+    init(
+      sender: URLProtocol, client: (any URLProtocolClient)?, response: HTTPURLResponse, body: Data
+    ) {
       self.sender = sender
       self.client = client
       self.response = response

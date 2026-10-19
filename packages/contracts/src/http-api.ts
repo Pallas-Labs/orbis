@@ -8,7 +8,18 @@ import {
   HttpApiSecurity,
 } from "effect/unstable/httpapi";
 
+import {
+  PlaybackDiagnosticsBatch,
+  PlaybackDiagnosticsReceipt,
+} from "./playback-diagnostics.js";
 import type { SetCaller } from "./set-caller.js";
+
+export type { PlaybackDiagnosticsPayload } from "./playback-diagnostics.js";
+export {
+  decodePlaybackDiagnosticsBatch,
+  PlaybackDiagnosticsBatch,
+  PlaybackDiagnosticsReceipt,
+} from "./playback-diagnostics.js";
 
 export { SetCaller } from "./set-caller.js";
 
@@ -87,6 +98,7 @@ const BadRequest = ErrorBody.pipe(HttpApiSchema.status(400));
 const NotFound = ErrorBody.pipe(HttpApiSchema.status(404));
 const Conflict = ErrorBody.pipe(HttpApiSchema.status(409));
 const RangeNotSatisfiable = Schema.Void.pipe(HttpApiSchema.status(416));
+const PayloadTooLarge = ErrorBody.pipe(HttpApiSchema.status(413));
 const InternalError = ErrorBody.pipe(HttpApiSchema.status(500));
 const TooManyRequests = ErrorBody.pipe(HttpApiSchema.status(429));
 const ServiceUnavailable = ErrorBody.pipe(HttpApiSchema.status(503));
@@ -750,6 +762,23 @@ export const OrbisApi = PlaylistApi.add(
           ],
           payload: PresenceActionPayload,
           success: PresenceActionResultSchema,
+        })
+      )
+      .middleware(SetAccess)
+  )
+  .add(
+    HttpApiGroup.make("diagnostics")
+      .add(
+        HttpApiEndpoint.post("playback", "/diagnostics/playback", {
+          error: [
+            BadRequest,
+            PayloadTooLarge,
+            InternalError,
+            TooManyRequests,
+            ServiceUnavailable,
+          ],
+          payload: PlaybackDiagnosticsBatch,
+          success: PlaybackDiagnosticsReceipt,
         })
       )
       .middleware(SetAccess)

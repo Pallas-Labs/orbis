@@ -4,7 +4,7 @@ import SwiftUI
 /// A screen puts it in the environment around a row or card whose artwork opens a page, so a
 /// component that draws one `Artwork` needs no parameter for it and the design system needs no
 /// idea of what the page is.
-nonisolated public struct ArtworkTransition {
+nonisolated public struct ArtworkTransition: Sendable {
   public let id: String
   public let namespace: Namespace.ID
 
