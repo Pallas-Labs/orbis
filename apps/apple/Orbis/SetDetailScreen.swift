@@ -20,6 +20,7 @@ struct SetDetailScreen: View {
           showCreator: { model.showCreator(of: set) },
           length: set.durationSeconds.flatMap { $0 > 0 ? SetPresentation.length($0) : nil },
           artwork: SetPresentation.pageArtwork(set),
+          artworkStandIn: SetPresentation.row(set).artwork,
           failedToName: set.metadataState == "failed",
           dates: SetDetail.Dates(
             imported: SetPresentation.plainDate(set.createdAt),

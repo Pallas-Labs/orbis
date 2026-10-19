@@ -116,6 +116,8 @@ struct GroupLibrarySection: View {
   @Bindable var model: AppModel
   let people: PeopleModel
   @State private var library: GroupLibraryModel
+  /// The Group Library opens out of its card.
+  @Namespace private var cardZoom
   private static let railLimit = 10
 
   init(model: AppModel, people: PeopleModel) {
@@ -131,8 +133,10 @@ struct GroupLibrarySection: View {
       if !visible.isEmpty {
         NavigationLink {
           GroupLibraryScreen(model: model, people: people, library: library)
+            .zoomTransition(from: "group-library", in: cardZoom)
         } label: {
           card
+            .zoomSource("group-library", in: cardZoom, cornerRadius: Radius.hero)
         }
         .buttonStyle(.orbisPressable)
         .accessibilityIdentifier("group-library")

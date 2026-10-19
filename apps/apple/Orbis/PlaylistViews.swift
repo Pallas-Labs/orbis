@@ -13,18 +13,38 @@ struct PlaylistsDestination: View {
   @State private var renameDraft = ""
   @State private var deletingPlaylist: Playlist?
   @State private var playlistQuery = ""
+  /// A Playlist's page zooms out of the folder that opened it.
+  @Namespace private var playlistZoom
+
+  /// The Playlist shown in place of the grid. The Mac's sidebar picks a Playlist as a page of its
+  /// own, so the grid gives way to it; iOS pushes the page out of its folder instead.
+  private var inlinePlaylist: Playlist? {
+    #if os(iOS)
+      nil
+    #else
+      model.openedPlaylistId.flatMap(model.playlist)
+    #endif
+  }
 
   var body: some View {
     Group {
-      if let id = model.openedPlaylistId, let playlist = model.playlist(id) {
+      if let playlist = inlinePlaylist {
         PlaylistDetailView(model: model, playlist: playlist)
       } else {
         playlistList
       }
     }
-    .sidebarPageTitle(model.openedPlaylistId == nil ? "Playlists" : "")
+    #if os(iOS)
+      .navigationDestination(item: pushedPlaylist) { id in
+        if let playlist = model.playlist(id) {
+          PlaylistDetailView(model: model, playlist: playlist)
+            .zoomTransition(from: id, in: playlistZoom)
+        }
+      }
+    #endif
+    .sidebarPageTitle(inlinePlaylist == nil ? "Playlists" : "")
     .toolbar {
-      if model.openedPlaylistId == nil {
+      if inlinePlaylist == nil {
         ToolbarItem {
           Button("Import Playlist", systemImage: "square.and.arrow.down") { isImporting = true }
             .tint(Color.orbis.tint)
@@ -70,6 +90,14 @@ struct PlaylistsDestination: View {
         await model.loadLibrary()
       }
     }
+  }
+
+  /// Going back from the pushed page closes the Playlist, as the Mac's back button does.
+  private var pushedPlaylist: Binding<String?> {
+    Binding(
+      get: { model.openedPlaylistId },
+      set: { if $0 == nil { model.closePlaylist() } }
+    )
   }
 
   private var playlistList: some View {
@@ -130,6 +158,7 @@ struct PlaylistsDestination: View {
                   artwork: model.artwork(ofPlaylist: playlist.id),
                   category: SetPresentation.category(for: playlist.name)
                 )
+                .zoomSource(playlist.id, in: playlistZoom, cornerRadius: 20)
                 if model.playlistImport.importingPlaylistId == playlist.id,
                   let progress = model.playlistImport.progress
                 {
@@ -303,14 +332,16 @@ struct PlaylistDetailView: View {
       Text("This replaces what is playing now.")
     }
     .toolbar {
-      ToolbarItem(placement: .cancellationAction) {
-        Button {
-          model.closePlaylist()
-        } label: {
-          Label("Playlists", systemImage: "chevron.backward")
+      #if !os(iOS)
+        ToolbarItem(placement: .cancellationAction) {
+          Button {
+            model.closePlaylist()
+          } label: {
+            Label("Playlists", systemImage: "chevron.backward")
+          }
+          .accessibilityIdentifier("playlist-back")
         }
-        .accessibilityIdentifier("playlist-back")
-      }
+      #endif
       ToolbarItemGroup {
         #if os(iOS)
           EditButton()

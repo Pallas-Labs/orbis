@@ -8,12 +8,15 @@ import SwiftUI
 /// keeps a wash of it.
 public struct ArtworkGlow: View {
   public let url: URL?
+  /// A smaller copy of the same picture, drawn while `url` loads. Blurred, the two look alike.
+  public let standIn: URL?
   /// How much of the page the glow covers before it gives way to paper, from 0 to 1.
   public let reach: Double
   @Environment(\.colorScheme) private var colorScheme
 
-  public init(url: URL?, reach: Double = 1) {
+  public init(url: URL?, standIn: URL? = nil, reach: Double = 1) {
     self.url = url
+    self.standIn = standIn
     self.reach = reach
   }
 
@@ -21,20 +24,23 @@ public struct ArtworkGlow: View {
     GeometryReader { proxy in
       ZStack {
         Color.orbis.paper
-        AsyncImage(url: url) { phase in
-          if url == nil || phase.error != nil {
+        Group {
+          if let url {
+            CachedImage(url: url, standIn: standIn) { image in
+              image
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: proxy.size.width * 1.6, height: proxy.size.height * reach * 1.1)
+                .blur(radius: 70, opaque: true)
+                .saturation(1.5)
+                .opacity(colorScheme == .dark ? 0.85 : 0.5)
+                .frame(width: proxy.size.width, height: proxy.size.height * reach)
+                .clipped()
+            } placeholder: {
+              Color.clear
+            }
+          } else {
             TintGlow()
-          } else if let image = phase.image {
-            image
-              .resizable()
-              .aspectRatio(contentMode: .fill)
-              .frame(width: proxy.size.width * 1.6, height: proxy.size.height * reach * 1.1)
-              .blur(radius: 70, opaque: true)
-              .saturation(1.5)
-              .opacity(colorScheme == .dark ? 0.85 : 0.5)
-              .frame(width: proxy.size.width, height: proxy.size.height * reach)
-              .clipped()
-              .transition(.opacity)
           }
         }
         .frame(maxHeight: .infinity, alignment: .top)
