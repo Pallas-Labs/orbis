@@ -26,6 +26,10 @@ The E2E suites are the UI journeys in `apps/apple/OrbisUITests` (`node scripts/n
 
 The Effect source repository is available at `~/.local/share/effect-solutions/effect` for reference. Use it to explore APIs, find usage examples, and understand implementation details when the documentation is not enough.
 
+## Apple documentation
+
+On the Mac, read Xcode's bundled Apple docs first (the `axiom-apple-docs` skill). On Vanta, which has no Xcode, fetch Apple API docs, the Human Interface Guidelines, and WWDC transcripts as Markdown with `bunx @nshipster/sosumi fetch <developer.apple.com path or URL>`, or find a page with `bunx @nshipster/sosumi search "<query>"`.
+
 ## Agent skills
 
 ### Issue tracker
