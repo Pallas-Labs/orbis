@@ -121,7 +121,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
       let client = try await configure(status: status)
       let player = AudioPlayer(session: .init(start: { false }, end: {}))
       let sender = PlaybackDiagnosticsSender(player: player, client: client, pollInterval: .milliseconds(50))
-      player.stop()
+      player.skipToNextCue()
       _ = try await waitForRequests(1)
       try await Task.sleep(for: .milliseconds(500))
       let observed = try await state()
@@ -136,7 +136,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
       let player = AudioPlayer(session: .init(start: { false }, end: {}))
       let sender = PlaybackDiagnosticsSender(player: player, client: client, pollInterval: .milliseconds(50))
       defer { sender.cancel() }
-      player.stop()
+      player.skipToNextCue()
       let captured = try await waitForRequests(3)
       XCTAssertEqual(captured.bodies.map(\.throughSequence), Array(repeating: captured.bodies.first?.throughSequence ?? -1, count: 3))
       XCTAssertEqual(Set(captured.bodies.map(\.runId)).count, 1)
@@ -151,7 +151,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
     let player = AudioPlayer(session: .init(start: { false }, end: {}))
     let sender = PlaybackDiagnosticsSender(player: player, client: client, pollInterval: .milliseconds(50))
     defer { sender.cancel() }
-    player.stop()
+    player.skipToNextCue()
     let first = try await waitForRequests(1)
     player.pause()
     let second = try await waitForRequests(2)
@@ -159,7 +159,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
     XCTAssertGreaterThan(second.bodies.last?.throughSequence ?? 0, first.bodies.first?.throughSequence ?? 0)
     player.resetDiagnostics()
     try await Task.sleep(for: .milliseconds(150))
-    player.stop()
+    player.skipToNextCue()
     try await Task.sleep(for: .milliseconds(200))
     let observed = try await state()
     XCTAssertEqual(observed.requests, 2)
@@ -170,7 +170,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
     let player = AudioPlayer(session: .init(start: { false }, end: {}))
     var sender: PlaybackDiagnosticsSender? = PlaybackDiagnosticsSender(player: player, client: client, pollInterval: .milliseconds(50))
     weak var weakSender = sender
-    player.stop()
+    player.skipToNextCue()
     _ = try await waitForRequests(1)
     player.pause()
     try await Task.sleep(for: .milliseconds(300))
@@ -181,7 +181,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
 
     let blocked = try await configure(held: true)
     sender = PlaybackDiagnosticsSender(player: player, client: blocked, pollInterval: .milliseconds(50))
-    player.stop()
+    player.skipToNextCue()
     _ = try await waitForRequests(1)
     sender = nil
     try await Task.sleep(for: .milliseconds(300))
