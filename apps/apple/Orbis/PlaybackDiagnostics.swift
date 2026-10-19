@@ -311,7 +311,8 @@ final class PlaybackDiagnostics {
 
   func slice(after sequence: Int, limit: Int) -> Slice {
     let selected = Array(entries.lazy.filter { $0.sequence > sequence }.prefix(max(1, min(limit, 32))))
-    let through = selected.last?.sequence == entries.last?.sequence || selected.isEmpty
+    let through =
+      selected.last?.sequence == entries.last?.sequence || selected.isEmpty
       ? tail : selected.last?.sequence ?? sequence
     return Slice(entries: selected, throughSequence: through)
   }

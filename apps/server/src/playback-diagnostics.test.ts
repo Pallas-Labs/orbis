@@ -203,6 +203,10 @@ test("strict nested privacy schema rejects unknown fields and inconsistent seque
       { ...base, entries: [first, first] },
       {
         ...base,
+        entries: [{ ...first, wallTime: 18_446_744_073_710 }],
+      },
+      {
+        ...base,
         entries: [{ ...first, sequence: Number.MAX_SAFE_INTEGER + 1 }],
       },
       {

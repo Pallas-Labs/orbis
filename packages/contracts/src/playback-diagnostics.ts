@@ -209,7 +209,7 @@ export const PlaybackDiagnosticsBatch = Schema.Struct({
       snapshot: Snapshot,
       uptime: Finite,
       wallTime: Schema.Finite.check(
-        Schema.isBetween({ maximum: 8_640_000_000_000_000, minimum: 0 })
+        Schema.isBetween({ maximum: 18_446_744_073_709, minimum: 0 })
       ),
     })
   ).check(Schema.isMaxLength(32)),
