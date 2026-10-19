@@ -38,7 +38,7 @@ final class GroupLibraryModel {
     if case .loaded(let content) = state { content.entries } else { [] }
   }
 
-  /// Reads each visible Person's Library at once. A reload for the same People keeps what is
+  /// Reads each visible Person's Library. A reload for the same People keeps what is
   /// shown until the new answer arrives, so pulling to refresh does not blank the page.
   func load(_ people: [PersonFilters]) async {
     let visible = people.filter(\.see)
@@ -52,43 +52,34 @@ final class GroupLibraryModel {
       state = .loaded(Content(entries: [], missing: []))
       return
     }
-    let answers = await withTaskGroup(of: (PersonFilters, Result<[SavedSet], any Error>).self) { group in
-      for person in visible {
-        group.addTask {
-          do {
-            return (person, .success(try await client.friendSets(person.id)))
-          } catch {
-            return (person, .failure(error))
-          }
-        }
-      }
-      var answers: [(PersonFilters, Result<[SavedSet], any Error>)] = []
-      for await answer in group { answers.append(answer) }
-      return answers
-    }
-    guard !Task.isCancelled else { return }
+    // One Library after another, not a task group: on iOS 27 a group child here finished after
+    // its group was gone and aborted the app as People opened.
     var merged: [String: Entry] = [:]
     var missing: [PersonFilters] = []
     var firstFailure: (any Error)?
-    for (person, result) in answers {
-      switch result {
-      case .success(let sets):
-        for set in sets {
-          let savedAt = SetPresentation.date(from: set.createdAt)
-          if var entry = merged[set.id] {
-            entry.savers.append(person)
-            entry.savedAt = max(entry.savedAt, savedAt)
-            merged[set.id] = entry
-          } else {
-            merged[set.id] = Entry(set: set, savers: [person], savedAt: savedAt)
-          }
-        }
-      case .failure(let error):
-        if let known = error as? OrbisError, case .cancelled = known { return }
+    for person in visible {
+      let sets: [SavedSet]
+      do {
+        sets = try await client.friendSets(person.id)
+      } catch OrbisError.cancelled {
+        return
+      } catch {
         missing.append(person)
         firstFailure = firstFailure ?? error
+        continue
+      }
+      for set in sets {
+        let savedAt = SetPresentation.date(from: set.createdAt)
+        if var entry = merged[set.id] {
+          entry.savers.append(person)
+          entry.savedAt = max(entry.savedAt, savedAt)
+          merged[set.id] = entry
+        } else {
+          merged[set.id] = Entry(set: set, savers: [person], savedAt: savedAt)
+        }
       }
     }
+    guard !Task.isCancelled else { return }
     if missing.count == visible.count, let firstFailure {
       state = .failed(.explaining(firstFailure, at: client.address))
       return
