@@ -200,6 +200,35 @@ export const ChangeTopicSchema = Schema.Literals([
   "set",
 ]);
 export type ChangeTopic = typeof ChangeTopicSchema.Type;
+const Count = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
+/**
+ * Where a playlist import stands. `processed` counts the playlist's entries read so far, out of
+ * `total` when YouTube reported it. When it is done, `unavailable` counts tracks YouTube no longer
+ * serves and `overLimit` tracks past the Playlist maximum; neither was saved. `downloading` and
+ * `waiting` count the added Sets Auto Download queued and the ones a full download queue left.
+ */
+export const PlaylistImportStateSchema = Schema.Union([
+  Schema.Struct({
+    kind: Schema.Literal("running"),
+    processed: Count,
+    total: Schema.NullOr(Count),
+  }),
+  Schema.Struct({
+    added: Count,
+    downloading: Count,
+    kind: Schema.Literal("done"),
+    overLimit: Count,
+    unavailable: Count,
+    waiting: Count,
+  }),
+  Schema.Struct({ kind: Schema.Literal("failed"), message: Schema.String }),
+]);
+/** A YouTube or YouTube Music playlist being read into a new Playlist in the background. */
+export const PlaylistImportSchema = Schema.Struct({
+  id: Schema.String,
+  playlist: PlaylistSchema,
+  state: PlaylistImportStateSchema,
+});
 export const QueueEventSchema = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("queue"), queue: ListeningQueueSchema }),
   Schema.Struct({
@@ -209,6 +238,11 @@ export const QueueEventSchema = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("heartbeat") }),
   // Sent only to `/events?changes=1`: older decoders reject an unknown kind (ADR 0019).
   Schema.Struct({ kind: Schema.Literal("changed"), topic: ChangeTopicSchema }),
+  // Sent only to `/events?changes=1`, and only to the importing Person's own streams.
+  Schema.Struct({
+    kind: Schema.Literal("playlistImport"),
+    playlistImport: PlaylistImportSchema,
+  }),
 ]);
 
 const PresenceId = Schema.String.check(
@@ -329,17 +363,6 @@ export const SaveSetResultSchema = Schema.Struct({
 });
 export const ImportPlaylistPayload = Schema.Struct({
   url: Schema.String.check(Schema.isMaxLength(2048)),
-});
-/**
- * A YouTube or YouTube Music playlist read into a new Playlist. Every track is also saved to the
- * caller's Library, so each carries its Auto Download outcome. `unavailable` counts tracks YouTube
- * no longer serves, and `overLimit` counts tracks past the Playlist maximum; neither was saved.
- */
-export const ImportPlaylistResultSchema = Schema.Struct({
-  overLimit: Schema.Number,
-  playlist: PlaylistSchema,
-  sets: Schema.Array(SaveSetResultSchema),
-  unavailable: Schema.Number,
 });
 export const AdminPersonPayload = Schema.Struct({
   username: Schema.String.check(Schema.isMaxLength(40)),
@@ -504,10 +527,16 @@ const PlaylistApi = SetsApi.add(
         payload: PlaylistNamePayload,
         success: PlaylistSchema.pipe(HttpApiSchema.status(201)),
       }),
+      // A running import of the same playlist is answered again instead of starting another.
       HttpApiEndpoint.post("import", "/playlists/import", {
         error: [BadRequest, NotFound, ServiceUnavailable, InternalError],
         payload: ImportPlaylistPayload,
-        success: ImportPlaylistResultSchema.pipe(HttpApiSchema.status(201)),
+        success: PlaylistImportSchema.pipe(HttpApiSchema.status(202)),
+      }),
+      HttpApiEndpoint.get("importStatus", "/playlists/imports/:id", {
+        error: [NotFound, InternalError],
+        params: SetId,
+        success: PlaylistImportSchema,
       }),
       HttpApiEndpoint.patch("rename", "/playlists/:id", {
         error: [BadRequest, NotFound, Conflict, InternalError],

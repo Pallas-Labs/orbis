@@ -123,12 +123,23 @@ struct PlaylistsDestination: View {
               model.openPlaylist(playlist.id)
               Task { await model.loadPlaylistMembers(playlist.id) }
             } label: {
-              PlaylistSleeve(
-                name: playlist.name,
-                count: playlist.setCount,
-                artwork: model.artwork(ofPlaylist: playlist.id),
-                category: SetPresentation.category(for: playlist.name)
-              )
+              VStack(spacing: 6) {
+                PlaylistSleeve(
+                  name: playlist.name,
+                  count: playlist.setCount,
+                  artwork: model.artwork(ofPlaylist: playlist.id),
+                  category: SetPresentation.category(for: playlist.name)
+                )
+                if model.playlistImport.importingPlaylistId == playlist.id,
+                  let progress = model.playlistImport.progress
+                {
+                  Text(progress)
+                    .font(.orbis.detail)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .accessibilityIdentifier("playlist-import-progress")
+                }
+              }
             }
             .buttonStyle(.orbisPressable)
             .accessibilityIdentifier("playlist-row-\(playlist.name)")

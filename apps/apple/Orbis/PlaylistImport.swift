@@ -5,28 +5,68 @@ import OrbisDesign
 /// summary or a failure beside a running import.
 enum PlaylistImport: Equatable {
   case idle
-  case importing(link: String)
+  case requesting(link: String)
+  case importing(link: String, job: PlaylistImportJob)
   case imported(ImportedPlaylist)
-  case failed(link: String, OrbisError)
+  case failed(link: String, Failure)
+
+  enum Failure: Equatable {
+    case request(OrbisError)
+    /// Its Sets so far stay in the Playlist, and Try Again continues it.
+    case stopped(message: String)
+  }
 
   var isImporting: Bool {
-    if case .importing = self { true } else { false }
+    switch self {
+    case .requesting, .importing: true
+    case .idle, .imported, .failed: false
+    }
+  }
+
+  var importingPlaylistId: String? {
+    if case .importing(_, let job) = self { job.playlist.id } else { nil }
   }
 
   var importedPlaylistId: String? {
     if case .imported(let imported) = self { imported.playlist.id } else { nil }
   }
 
-  /// What the link field shows for the import, or nil when the import has nothing to say there.
-  var fieldState: LinkFieldState? {
+  /// "Importing 23 of 140…", or "Importing…" until the service says how long the playlist is.
+  var progress: String? {
     switch self {
-    case .importing: .checking
-    case .failed(_, let error): .invalid(message: Self.message(for: error))
-    case .idle, .imported: nil
+    case .importing(_, let job):
+      if case .running(let processed, let total?) = job.state, total > 0 {
+        return "Importing \(min(processed, total)) of \(total)…"
+      }
+      return "Importing…"
+    case .requesting:
+      return "Importing…"
+    case .idle, .imported, .failed:
+      return nil
     }
   }
 
-  /// The sentence a failed import shows. Only here are a 404 and a 503 known to mean a playlist,
+  /// What the link field shows for the import, or nil when the import has nothing to say there.
+  var fieldState: LinkFieldState? {
+    switch self {
+    case .requesting, .importing: .checking
+    case .failed(_, let failure): .invalid(message: failure.message)
+    case .idle, .imported: nil
+    }
+  }
+}
+
+extension PlaylistImport.Failure {
+  var message: String {
+    switch self {
+    case .request(let error): PlaylistImport.message(for: error)
+    case .stopped(let message): message
+    }
+  }
+}
+
+extension PlaylistImport {
+  /// The sentence a refused import shows. Only here are a 404 and a 503 known to mean a playlist,
   /// so the service's generic status line is replaced with what the person can do about it.
   static func message(for error: OrbisError) -> String {
     switch error {
