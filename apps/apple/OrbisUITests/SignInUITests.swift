@@ -111,7 +111,7 @@ final class SignInUITests: XCTestCase {
 
   /// A fresh install types a code another device showed, loosely: lowercase, with a space.
   func testACodeFromAnotherDeviceSignsIn() throws {
-    let friend = try friendService()
+    let friend = try LaneService.settingsPerson()
     let devicesBefore = Set(try friend.devices().map(\.id))
     let app = launchOrbis(address: friend.address)
 
@@ -280,7 +280,7 @@ final class SignInUITests: XCTestCase {
   /// relaunch, and their Settings has no Host sections. The journey starts from whatever the
   /// lane seeded and leaves it as it found it.
   func testAFriendsSettingsKeepAutoDownloadAndHaveNoHostSections() throws {
-    let friend = try friendService()
+    let friend = try LaneService.settingsPerson()
     let stored = try friend.autoDownload()
     let switchValue = { (enabled: Bool) in enabled ? "1" : "0" }
     let app = launchOrbis(address: friend.address, token: friend.token)
@@ -317,13 +317,6 @@ final class SignInUITests: XCTestCase {
   }
 
   // MARK: - Helpers
-
-  private func friendService() throws -> LaneService {
-    guard let token = ProcessInfo.processInfo.environment["ORBIS_UI_TEST_SETTINGS_TOKEN"],
-      !token.isEmpty
-    else { throw XCTSkip("The lane must supply the settings Person") }
-    return try LaneService(tokenOverride: token)
-  }
 
   private func openSettings(_ app: XCUIApplication) {
     let gear = app.buttons["settings-open"].firstMatch
