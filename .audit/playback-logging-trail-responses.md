@@ -1,0 +1,12 @@
+# Playback logging trail review dispositions
+
+The final Claude Opus 5.5 review checked the actual evidence and recent parent activity. It confirmed the native count, source matches, report sizes, initial UI result, clipboard timing and tvOS build. Its full report is [playback-logging-trail-review.md](playback-logging-trail-review.md).
+
+1. Accepted the withheld-Ogg coverage limit. The conditional waiting assertion did not execute in the final trace. The failed and successful traces differ in engine state and timing. The cause remains unresolved, including possible instrumentation timing effects. The test proves held position and post-release recovery in the observed paths. It does not prove loading during a true engine wait or throughout premature-end retry. This is recorded on issue #277.
+2. Accepted the missing discontinuity probe. No retained report contains an injected `discontinuity` event. The deliberate-seek report contains `timeJumped` and `seekResult`. The hook has source review only. The PR describes collection after a reported incident and keeps this coverage limit explicit.
+3. Clarified the two retention facts. The dense 256-command report proves final size. The separate passing sample-flood assertion proves that routine samples do not evict an incident. Neither substitutes for the other.
+4. Accepted the missing pre-run UI source hash. The first UI source-match statement is now an inference. The second four-journey run passed. All 120 Swift files matched the final manifest before and after. Its separate clipboard read returned valid 537-byte idle JSON generated inside the copy journey.
+5. Publication waits for commit and push. The PR and issue text remain local drafts until their linked files exist on the remote branch. Earlier source review is complete. No merge, deploy or issue closure is authorized by this follow-up.
+6. Accepted the weak evidence labels. The fresh Swift formatting log records exit 0. The native output digest identifies the compiled library after the run, not the loaded process. The final UI check found identical installed and compiled library hashes, also equal to the native output digest. This ties the UI-installed library to that compiled output, while the source manifest identifies the inputs.
+
+No production code changed in response to the trail review. Runtime coverage and physical audible-skip acceptance remain separate from the independent source verdict.

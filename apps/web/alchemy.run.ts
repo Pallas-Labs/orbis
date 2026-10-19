@@ -11,6 +11,8 @@ const SECRETS = [
   "IMPORT_NODE_KEY_DIGEST",
   "OPENROUTER_API_KEY",
   "STREAM_GRANT_SECRET",
+  "SIGNOZ_OTLP_ACCESS_CLIENT_ID",
+  "SIGNOZ_OTLP_ACCESS_CLIENT_SECRET",
   "VERSOS_API_KEY",
   "YOUTUBE_API_KEY",
 ] as const;
@@ -46,6 +48,9 @@ export default Alchemy.Stack(
       env: {
         AUDIO_NODE_URL: Config.String("AUDIO_NODE_URL"),
         GROUP: Cloudflare.DurableObject("Group", { className: "Group" }),
+        SIGNOZ_OTLP_URL: Config.String("SIGNOZ_OTLP_URL").pipe(
+          Config.withDefault("https://otlp.parthm.me/v1/logs")
+        ),
         VERSOS_URL: Config.String("VERSOS_URL").pipe(
           Config.withDefault("https://versos.studio")
         ),

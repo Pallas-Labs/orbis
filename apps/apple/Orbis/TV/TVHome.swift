@@ -45,7 +45,7 @@
             }
           }
           if !home.continueRail.isEmpty {
-            TVRail(title: "Continue listening", subtitle: "Pick up where you left off.") {
+            TVRail(title: "Continue listening") {
               ForEach(home.continueRail) { set in
                 TVSetTile(model: model, set: set, detail: SetPresentation.timeLeft(set))
                   .accessibilityIdentifier("continue-card-\(set.id)")
@@ -200,7 +200,7 @@
     var body: some View {
       HStack(alignment: .bottom, spacing: 80) {
         VStack(alignment: .leading, spacing: 18) {
-          Eyebrow(isResume ? "Continue listening" : "Fresh in your library")
+          Eyebrow(isResume ? "Last played" : "Fresh in your library")
           Text(set.title)
             .font(.orbis.largeTitle)
             .lineLimit(2)

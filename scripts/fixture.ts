@@ -172,6 +172,15 @@ const app = createApp({
   devicesPath,
   logging: { silent: true },
   metadata: Metadata.layer({ fetch: laneYouTube, youTubeApiKey: "lane" }),
+  playbackDiagnostics: {
+    accessClientId:
+      process.env.ORBIS_FIXTURE_SIGNOZ_OTLP_ACCESS_CLIENT_ID ?? "",
+    accessClientSecret:
+      process.env.ORBIS_FIXTURE_SIGNOZ_OTLP_ACCESS_CLIENT_SECRET ?? "",
+    url:
+      process.env.ORBIS_FIXTURE_SIGNOZ_OTLP_URL ??
+      "https://otlp.parthm.me/v1/logs",
+  },
 });
 const fixture = await startFixtureServer({
   allowedOrigin: process.env.ORBIS_FIXTURE_ORIGIN,

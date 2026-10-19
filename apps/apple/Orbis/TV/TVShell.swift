@@ -127,10 +127,10 @@
       .onPlayPauseCommand { model.togglePlayback() }
     }
 
-    /// Seven tabs overrun the bar once Now Playing joins it, so Settings is its gear alone,
-    /// the way a system app's trailing tab is.
+    /// Seven tabs overrun the bar once Now Playing joins it, so Search, Now Playing, and Settings
+    /// are their glyphs alone, the way the system apps draw them.
     @ViewBuilder private func tabLabel(_ tab: TVTab) -> some View {
-      if tab == .settings {
+      if tab == .settings || tab == .search || tab == .nowPlaying {
         Image(systemName: tab.label.systemImage)
           .accessibilityLabel(tab.label.0)
       } else {

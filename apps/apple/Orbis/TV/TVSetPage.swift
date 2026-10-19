@@ -147,16 +147,10 @@
     private func playButton(_ set: SavedSet) -> some View {
       let player = model.audioPlayer
       let isCurrent = player.currentSetId == set.id
-      let isPlaying = isCurrent && (player.state == .playing || player.state == .loading)
+      let isPlaying = model.playbackWantsSound(for: set.id)
       let resumes = !isCurrent && set.playbackPositionSeconds > 0
       return Button {
-        if !isCurrent {
-          Task { await model.playSet(set.id) }
-        } else if isPlaying {
-          player.pause()
-        } else {
-          player.resume()
-        }
+        model.togglePlayback(set.id)
       } label: {
         Label(
           isPlaying ? "Pause" : resumes ? "Resume" : "Play",
@@ -182,6 +176,7 @@
           .contentTransition(.numericText())
           .padding(.horizontal, 28)
           .padding(.vertical, 16)
+          .glassEffect(.regular, in: .capsule)
           .focusable()
           .accessibilityIdentifier("detail-download")
         Button {

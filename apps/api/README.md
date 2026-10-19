@@ -13,6 +13,7 @@ Alchemy enables `nodejs_compat` for the portable crypto APIs. The deploy reads t
 - `STREAM_GRANT_SECRET` is the 64-character hex encoding of the existing 32-byte `stream-grant.key`. Preserve that key so existing grants remain valid.
 - `AUDIO_NODE_URL` is the audio node's HTTPS origin.
 - `YOUTUBE_API_KEY` and `OPENROUTER_API_KEY` configure metadata and title revision.
+- `SIGNOZ_OTLP_URL` configures the playback collector and defaults to `https://otlp.parthm.me/v1/logs`. `SIGNOZ_OTLP_ACCESS_CLIENT_ID` and `SIGNOZ_OTLP_ACCESS_CLIENT_SECRET` are Worker secrets. Missing credentials make playback uploads return retryable 503. These bindings belong only to `Api`, never to the Website or Vite environment.
 - `VERSOS_URL` and `VERSOS_API_KEY` configure Tracklist discovery. `VERSOS_URL` defaults to `https://versos.studio`.
 
 Alchemy stores API keys and the stream secret as Worker secrets. A deploy sends only the secrets set in its environment. Each unset secret keeps the value already on the Worker, so a deploy needs only `AUDIO_NODE_URL` and the secrets it changes. A Worker with no stored value for a provider key disables that provider. A first deploy must set `STREAM_GRANT_SECRET`. SoundCloud uses its public metadata endpoint and requires no key. No credentials are embedded in the Worker bundle.
@@ -75,6 +76,8 @@ bun test
 ```
 
 The API test command also runs the audio node, grant, and recovery journeys against disposable Group storage. Their artifacts live under `.cache/audio-node`, `.cache/api-grants`, and `.cache/api-recovery`. Live rollout requires separate production checks.
+
+The focused playback journey runs with `bun run --filter @orbis/api test:playback`. It sends the committed native-shaped fixture through authenticated `/api/diagnostics/playback` and the production Group exporter into a real loopback HTTP collector. It also sends an open-ended body to prove the application stops after 64 KiB. Artifacts live under `.cache/api-playback/<run>`.
 
 ## Recover Host access
 
