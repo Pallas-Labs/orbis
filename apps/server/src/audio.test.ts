@@ -252,6 +252,25 @@ test("a stored mp3 downloads to ready and streams with ranges", async () => {
     );
     const partBytes = await part.arrayBuffer();
     expect(partBytes.byteLength).toBe(100);
+    await Promise.all(
+      [16, bytes.length + 16].map(async (suffix) => {
+        const tail = await rawRequest(app, "GET", `/sets/${id}/audio`, {
+          range: `bytes=-${suffix}`,
+        });
+        const offset = Math.max(0, bytes.length - suffix);
+        expect(tail.status).toBe(206);
+        expect(tail.headers.get("content-range")).toBe(
+          `bytes ${offset}-${bytes.length - 1}/${bytes.length}`
+        );
+        expect(new Uint8Array(await tail.arrayBuffer())).toEqual(
+          bytes.slice(offset)
+        );
+      })
+    );
+    const reversed = await rawRequest(app, "GET", `/sets/${id}/audio`, {
+      range: "bytes=99-16",
+    });
+    expect(reversed.status).toBe(416);
     const bad = await rawRequest(app, "GET", `/sets/${id}/audio`, {
       range: `bytes=${bytes.length}-`,
     });

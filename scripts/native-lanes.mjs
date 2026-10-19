@@ -53,14 +53,15 @@ const shots = path.resolve(
 );
 
 const only = [];
-// --only narrows a lane to one test, which is how a single journey is re-run after a failure
-// without running the remaining journeys.
-const onlyTest = argument("only");
+const onlyTests = process.argv.flatMap((value, index, args) =>
+  value === "--only" && args[index + 1] ? [args[index + 1]] : []
+);
+const [onlyTest] = onlyTests;
 const parallelJourneys =
   journeysOnly && !macos && !tvos && !unitOnly && !onlyTest;
 const workerCount = parallelJourneys ? 2 : 1;
 if (onlyTest) {
-  only.push(`-only-testing:${onlyTest}`);
+  only.push(...onlyTests.map((test) => `-only-testing:${test}`));
 } else if (macos || unitOnly) {
   only.push("-only-testing:OrbisTests");
 } else if (journeysOnly) {

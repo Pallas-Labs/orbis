@@ -120,20 +120,13 @@ struct SetDetailScreen: View {
   /// Play, the way an album page offers it: one wide button that starts the Set, resumes it, or
   /// pauses it when it is the one playing.
   private func playButton(_ set: SavedSet, isCurrent: Bool) -> some View {
-    let player = model.audioPlayer
-    let isPlaying = isCurrent && (player.state == .playing || player.state == .loading)
+    let isPlaying = model.playbackWantsSound(for: set.id)
     let resumes = !isCurrent && set.playbackPositionSeconds > 0
     let word = isPlaying ? "Pause" : resumes ? "Resume" : "Play"
     let left = resumes ? SetPresentation.timeLeft(set) : nil
     let progress = resumes ? SetPresentation.progress(set) : nil
     return Button {
-      if !isCurrent {
-        Task { await model.playSet(set.id) }
-      } else if isPlaying {
-        player.pause()
-      } else {
-        player.resume()
-      }
+      model.togglePlayback(set.id)
     } label: {
       // The time left rides in the button it describes; it gives way first when space is short.
       ViewThatFits(in: .horizontal) {
@@ -303,7 +296,9 @@ private struct TracklistSection: View {
         cueContent(cue, start: start, selected: selected)
       }
       .buttonStyle(.plain)
-      .accessibilityLabel("\(cue.title), \(cue.artist), starts at \(SetPresentation.timestamp(start))")
+      .accessibilityLabel(
+        "\(cue.title), \(cue.artist), starts at \(SetPresentation.timestamp(start))"
+      )
       .accessibilityAddTraits(selected ? .isSelected : [])
       .accessibilityIdentifier("cue-\(cue.position)")
     } else {
@@ -334,10 +329,13 @@ private struct TracklistSection: View {
       VStack(alignment: .leading, spacing: 1) {
         Text(cue.title)
           .font(.body.weight(selected ? .semibold : .regular))
-        Text([cue.artist, start.map(SetPresentation.timestamp)].compactMap { $0 }.joined(separator: " · "))
-          .font(.footnote)
-          .monospacedDigit()
-          .foregroundStyle(.secondary)
+        Text(
+          [cue.artist, start.map(SetPresentation.timestamp)].compactMap { $0 }.joined(
+            separator: " · ")
+        )
+        .font(.footnote)
+        .monospacedDigit()
+        .foregroundStyle(.secondary)
       }
       .lineLimit(1)
       Spacer(minLength: 0)
