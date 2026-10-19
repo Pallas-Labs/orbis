@@ -76,42 +76,72 @@
       }
     }
 
+    /// Skip back, the previous track, play, the next track, and skip ahead, with Up Next apart at
+    /// the trailing edge since it opens a list rather than moving the playhead.
     private var transport: some View {
       let player = model.audioPlayer
       let isPlaying = player.state == .playing || player.state == .loading
-      return GlassEffectContainer(spacing: 20) {
-        HStack(spacing: 20) {
-          Button("Back \(Int(AudioPlayer.skipBack)) seconds", systemImage: "gobackward.\(Int(AudioPlayer.skipBack))") {
+      return GlassEffectContainer {
+        HStack(spacing: 24) {
+          TVTransportButton(
+            "Back \(Int(AudioPlayer.skipBack)) seconds", systemImage: "gobackward.\(Int(AudioPlayer.skipBack))"
+          ) {
             player.skip(by: -AudioPlayer.skipBack)
           }
           .accessibilityIdentifier("now-playing-back")
-          Button("Previous track", systemImage: "backward.fill") { player.skipToPreviousCue() }
+          TVTransportButton("Previous track", systemImage: "backward.fill") { player.skipToPreviousCue() }
             .disabled(!player.canSkipCues)
             .accessibilityIdentifier("now-playing-previous-cue")
-          Button(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill") {
+          TVTransportButton(
+            isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill", isPrimary: true
+          ) {
             model.togglePlayback()
           }
-          .orbisSymbolReplace()
           .focused($focus, equals: .play)
           .accessibilityIdentifier("now-playing-play-toggle")
-          Button("Next track", systemImage: "forward.fill") { player.skipToNextCue() }
+          TVTransportButton("Next track", systemImage: "forward.fill") { player.skipToNextCue() }
             .disabled(player.nextCue == nil)
             .accessibilityIdentifier("now-playing-next-cue")
-          Button(
-            "Forward \(Int(AudioPlayer.skipAhead)) seconds",
-            systemImage: "goforward.\(Int(AudioPlayer.skipAhead))"
+          TVTransportButton(
+            "Forward \(Int(AudioPlayer.skipAhead)) seconds", systemImage: "goforward.\(Int(AudioPlayer.skipAhead))"
           ) {
             player.skip(by: AudioPlayer.skipAhead)
           }
           .accessibilityIdentifier("now-playing-forward")
-          Button("Up Next", systemImage: "list.bullet") { isShowingQueue = true }
+          Spacer(minLength: 0)
+          TVTransportButton("Up Next", systemImage: "list.bullet") { isShowingQueue = true }
             .accessibilityIdentifier("now-playing-queue")
         }
       }
-      .labelStyle(.iconOnly)
       .buttonStyle(.glass)
       .buttonBorderShape(.circle)
-      .font(.title2)
+    }
+  }
+
+  /// One round transport button. Its glyph sits in a fixed square, so a wide glyph such as
+  /// `forward.fill` gets the same circle as a round one; play and pause take the larger circle.
+  private struct TVTransportButton: View {
+    let title: String
+    let systemImage: String
+    let isPrimary: Bool
+    let action: () -> Void
+
+    init(_ title: String, systemImage: String, isPrimary: Bool = false, action: @escaping () -> Void) {
+      self.title = title
+      self.systemImage = systemImage
+      self.isPrimary = isPrimary
+      self.action = action
+    }
+
+    var body: some View {
+      Button(action: action) {
+        Image(systemName: systemImage)
+          .font(isPrimary ? .headline : .body)
+          .fontWeight(.semibold)
+          .frame(width: isPrimary ? 64 : 44, height: isPrimary ? 64 : 44)
+          .orbisSymbolReplace()
+      }
+      .accessibilityLabel(title)
     }
   }
 
@@ -209,45 +239,45 @@
     let set: SavedSet
     let cues: [Cue]
     @FocusState private var focusedCue: Int?
+    @State private var scrolledCue: Int?
 
     var body: some View {
       let player = model.audioPlayer
       let current = player.currentSetId == set.id ? player.currentCue?.position : nil
-      ScrollViewReader { proxy in
-        ScrollView {
-          LazyVStack(alignment: .leading, spacing: 8) {
-            ForEach(cues) { cue in
-              let isCurrent = cue.position == current
-              let isHeard = current.map { cue.position < $0 } ?? false
-              Button {
-                Task { await model.playCue(cue, in: set.id) }
-              } label: {
-                TVLyricLine(cue: cue, isCurrent: isCurrent, isHeard: isHeard)
-              }
-              // No system style: its focus lift would grow a focused line past the playing one,
-              // so the line draws its own focus instead.
-              .buttonStyle(TVLyricButtonStyle())
-              .focused($focusedCue, equals: cue.position)
-              .accessibilityLabel(
-                "\(cue.title), \(cue.artist)"
-                  + (cue.startSeconds.map { ", starts at \(SetPresentation.spoken($0))" } ?? "")
-              )
-              .accessibilityAddTraits(isCurrent ? .isSelected : [])
-              .accessibilityIdentifier("now-playing-cue-\(cue.position)")
-              .id(cue.position)
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 8) {
+          ForEach(cues) { cue in
+            let isCurrent = cue.position == current
+            let isHeard = current.map { cue.position < $0 } ?? false
+            Button {
+              Task { await model.playCue(cue, in: set.id) }
+            } label: {
+              TVLyricLine(cue: cue, isCurrent: isCurrent, isHeard: isHeard)
             }
+            // No system style: its focus lift would grow a focused line past the playing one,
+            // so the line draws its own focus instead.
+            .buttonStyle(TVLyricButtonStyle())
+            .focused($focusedCue, equals: cue.position)
+            .accessibilityLabel(
+              "\(cue.title), \(cue.artist)"
+                + (cue.startSeconds.map { ", starts at \(SetPresentation.spoken($0))" } ?? "")
+            )
+            .accessibilityAddTraits(isCurrent ? .isSelected : [])
+            .accessibilityIdentifier("now-playing-cue-\(cue.position)")
+            .id(cue.position)
           }
         }
-        // The margins keep a focused line out of the faded band.
-        .contentMargins(.vertical, 100, for: .scrollContent)
-        .scrollEdgeEffectStyle(.soft, for: .vertical)
-        .scrollClipDisabled()
-        .scrollIndicators(.hidden)
-        .onAppear { if let current { proxy.scrollTo(current, anchor: .center) } }
-        .onChange(of: current) { _, position in
-          guard let position, focusedCue == nil else { return }
-          proxy.scrollTo(position, anchor: .center)
-        }
+        .scrollTargetLayout()
+      }
+      // The margins keep a focused line out of the faded band.
+      .contentMargins(.vertical, 100, for: .scrollContent)
+      .scrollEdgeEffectStyle(.soft, for: .vertical)
+      .scrollClipDisabled()
+      .scrollIndicators(.hidden)
+      .scrollPosition(id: $scrolledCue, anchor: .center)
+      .task(id: current) {
+        guard let current, focusedCue == nil else { return }
+        withAnimation { scrolledCue = current }
       }
       .accessibilityElement(children: .contain)
       .accessibilityIdentifier("now-playing-tracklist")
@@ -263,8 +293,8 @@
   }
 
   /// One line of the Tracklist, the way lyrics are drawn: the playing one bright and large, the
-  /// ones already heard dimmed. The line under the remote sits on a translucent platter and
-  /// brightens, but never past the playing one.
+  /// ones already heard dimmed. The line under the remote sits on glass and brightens, but never
+  /// past the playing one.
   private struct TVLyricLine: View {
     let cue: Cue
     let isCurrent: Bool
@@ -290,7 +320,7 @@
       .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.horizontal, 24)
       .padding(.vertical, 12)
-      .background(.white.opacity(isFocused ? 0.14 : 0), in: .rect(cornerRadius: Radius.row))
+      .glassEffect(isFocused ? .regular : .identity, in: .rect(cornerRadius: Radius.row))
       .orbisAnimation(.pressed, value: isFocused)
     }
   }

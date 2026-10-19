@@ -176,6 +176,7 @@
           .contentTransition(.numericText())
           .padding(.horizontal, 28)
           .padding(.vertical, 16)
+          .glassEffect(.regular, in: .capsule)
           .focusable()
           .accessibilityIdentifier("detail-download")
         Button {
