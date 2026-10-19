@@ -48,6 +48,7 @@ I reviewed HEAD `3145cb426ca903cf5dcd036cba14f57b0591629a` against `dd1468f`. Th
 - **Configuration.** The secrets reach only the Api Worker and never `Website.Vite`. The production app targets the Worker (`OrbisClient.swift:126`), so no Vanta wiring is needed.
 
 **Open acceptance limits.** I did not verify any of these, and they are outside what source review can prove:
+
 - native compilation and runtime of the sender
 - replacement of the fixture with a real native upload
 - a Workerd relay to the protected live collector, with a SigNoz query by `runId`
