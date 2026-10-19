@@ -11,6 +11,8 @@ import { createServer } from "node:http";
 import path from "node:path";
 import { Readable } from "node:stream";
 
+import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playback-diagnostics.js";
+
 const [dataDirectory, fixture, port] = process.argv.slice(2);
 if (!dataDirectory || !fixture || !port) {
   throw new Error("Expected a lane data directory, audio fixture, and port");
@@ -240,10 +242,90 @@ const handleStream = (route, request, response) => {
   return false;
 };
 
+let diagnostics = {
+  bodies: [],
+  held: false,
+  requests: 0,
+  retryAfter: null,
+  status: 200,
+  waiting: new Set(),
+};
+
+const diagnosticsRequest = async (route, request, response) => {
+  if (route === "/diagnostics-state") {
+    respond(response, 200, {
+      bodies: diagnostics.bodies,
+      requests: diagnostics.requests,
+      waiting: diagnostics.waiting.size,
+    });
+    return true;
+  }
+  if (route === "/diagnostics-control" && request.method === "POST") {
+    const control = await new Response(Readable.toWeb(request)).json();
+    for (const pending of diagnostics.waiting) {
+      pending.end();
+    }
+    diagnostics = {
+      bodies: [],
+      held: control.held,
+      requests: 0,
+      retryAfter: control.retryAfter ?? null,
+      status: control.status,
+      waiting: new Set(),
+    };
+    respond(response, 204);
+    return true;
+  }
+  if (route !== "/diagnostics/playback" || request.method !== "POST") {
+    return false;
+  }
+  if (request.headers.authorization !== "Bearer native-probe-token") {
+    respond(response, 401);
+    return true;
+  }
+  const state = diagnostics;
+  const body = decodePlaybackDiagnosticsBatch(
+    await new Response(Readable.toWeb(request)).json()
+  );
+  state.requests += 1;
+  if (state.bodies.length < 32) {
+    state.bodies.push(body);
+  }
+  if (state.held) {
+    state.waiting.add(response);
+    response.once("close", () => state.waiting.delete(response));
+    return true;
+  }
+  if (state.retryAfter) {
+    response.setHeader("Retry-After", state.retryAfter);
+  }
+  respond(response, state.status, {
+    accepted: Math.max(0, body.entries.length - 1),
+    rejected: Math.min(1, body.entries.length),
+  });
+  return true;
+};
+
+const routeDiagnostics = async (route, request, response) => {
+  if (route === "/health") {
+    respond(response, 204);
+    return true;
+  }
+  if (!route.startsWith("/diagnostics")) {
+    return false;
+  }
+  try {
+    return await diagnosticsRequest(route, request, response);
+  } catch {
+    respond(response, 400);
+    return true;
+  }
+};
+
 createServer(async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
-  if (route === "/health") {
-    return respond(response, 204);
+  if (await routeDiagnostics(route, request, response)) {
+    return;
   }
   if (handleStream(route, request, response)) {
     return;

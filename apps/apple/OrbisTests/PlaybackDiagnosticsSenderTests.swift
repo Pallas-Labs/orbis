@@ -138,7 +138,9 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
       defer { sender.cancel() }
       player.skipToNextCue()
       let captured = try await waitForRequests(3)
-      XCTAssertEqual(captured.bodies.map(\.throughSequence), Array(repeating: captured.bodies.first?.throughSequence ?? -1, count: 3))
+      XCTAssertEqual(
+        captured.bodies.map(\.throughSequence),
+        Array(repeating: captured.bodies.first?.throughSequence ?? -1, count: 3))
       XCTAssertEqual(Set(captured.bodies.map(\.runId)).count, 1)
       try await Task.sleep(for: .milliseconds(300))
       let observed = try await state()
@@ -168,14 +170,15 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
   func testLongRetryAfterStopsAndDroppingOwnerCancelsBlockedRequest() async throws {
     let client = try await configure(status: 503, retryAfter: "301")
     let player = AudioPlayer(session: .init(start: { false }, end: {}))
-    var sender: PlaybackDiagnosticsSender? = PlaybackDiagnosticsSender(player: player, client: client, pollInterval: .milliseconds(50))
+    var sender: PlaybackDiagnosticsSender? = PlaybackDiagnosticsSender(
+      player: player, client: client, pollInterval: .milliseconds(50))
     weak var weakSender = sender
     player.skipToNextCue()
     _ = try await waitForRequests(1)
     player.pause()
     try await Task.sleep(for: .milliseconds(300))
     let observed = try await state()
-      XCTAssertEqual(observed.requests, 1)
+    XCTAssertEqual(observed.requests, 1)
     sender = nil
     XCTAssertNil(weakSender)
 
@@ -193,7 +196,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
     for held in [true, false] {
       let client = try await configure(status: 503, retryAfter: "30", held: held)
       let model = AppModel(client: client, settings: MemorySettings())
-      model.audioPlayer.stop()
+      model.audioPlayer.skipToNextCue()
       _ = try await waitForRequests(1)
       model.signOut()
       try await Task.sleep(for: .milliseconds(500))
@@ -218,7 +221,10 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
     XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 204)
     let player = AudioPlayer()
     let sender = PlaybackDiagnosticsSender(player: player, client: client, pollInterval: .milliseconds(50))
-    defer { sender.cancel(); player.stop() }
+    defer {
+      sender.cancel()
+      player.stop()
+    }
     player.play(set: set, baseURL: try seed().appending(path: "stream"), token: token)
     player.player?.volume = 0
     _ = try await waitForRequests(1)
@@ -229,7 +235,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
     let captured = try await state()
     XCTAssertEqual(captured.requests, 1)
     XCTAssertEqual(captured.waiting, 1)
-    XCTAssertNotEqual(player.state, .failed)
+    if case .failed = player.state { XCTFail("Upload failure must not fail playback") }
   }
 
   private final class MemorySettings: ClientSettingsStore {

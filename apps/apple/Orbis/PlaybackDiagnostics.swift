@@ -4,7 +4,7 @@ final class PlaybackDiagnostics {
   static let retainedEntryLimit = 256
   static let reportByteLimit = 256 * 1_024
 
-  struct Finite: Codable, Equatable {
+  struct Finite: Codable, Equatable, Sendable {
     let value: Double?
 
     init(_ value: Double?) {
@@ -30,31 +30,31 @@ final class PlaybackDiagnostics {
     }
   }
 
-  enum PlaybackState: String, Codable {
+  enum PlaybackState: String, Codable, Sendable {
     case idle, loading, playing, paused, interrupted, failed
   }
 
-  enum ItemState: String, Codable {
+  enum ItemState: String, Codable, Sendable {
     case none, unknown, ready, failed
   }
 
-  enum WaitingReason: String, Codable {
+  enum WaitingReason: String, Codable, Sendable {
     case none, minimizingStalls, evaluatingBufferingRate, noItem, interstitial, other
   }
 
-  enum Origin: String, Codable {
+  enum Origin: String, Codable, Sendable {
     case app, systemRemote, internalOperation, unknown
   }
 
-  enum CommandKind: String, Codable {
+  enum CommandKind: String, Codable, Sendable {
     case play, pause, toggle, seek, nextCue, previousCue, skipForward, skipBackward, stop
   }
 
-  enum ErrorDomain: String, Codable {
+  enum ErrorDomain: String, Codable, Sendable {
     case url, avFoundation, coreMedia, osStatus, other
   }
 
-  struct NormalizedError: Codable, Equatable {
+  struct NormalizedError: Codable, Equatable, Sendable {
     let domain: ErrorDomain
     let code: Int
 
@@ -82,12 +82,12 @@ final class PlaybackDiagnostics {
     }
   }
 
-  struct BufferRange: Codable, Equatable {
+  struct BufferRange: Codable, Equatable, Sendable {
     let start: Finite
     let duration: Finite
   }
 
-  struct AccessMetrics: Codable, Equatable {
+  struct AccessMetrics: Codable, Equatable, Sendable {
     let bytesTransferred: Int64
     let transferDuration: Finite
     let observedBitrate: Finite
@@ -96,7 +96,7 @@ final class PlaybackDiagnostics {
     let downloadedDuration: Finite
   }
 
-  struct Snapshot: Codable, Equatable {
+  struct Snapshot: Codable, Equatable, Sendable {
     var state: PlaybackState = .idle
     var itemState: ItemState = .none
     var waitingReason: WaitingReason = .none
@@ -116,7 +116,7 @@ final class PlaybackDiagnostics {
     var access: AccessMetrics?
   }
 
-  struct CommandEvent: Codable, Equatable {
+  struct CommandEvent: Codable, Equatable, Sendable {
     let kind: CommandKind
     let origin: Origin
     let target: Finite
@@ -128,12 +128,12 @@ final class PlaybackDiagnostics {
     }
   }
 
-  struct StateEvent: Codable, Equatable {
+  struct StateEvent: Codable, Equatable, Sendable {
     let from: PlaybackState
     let to: PlaybackState
   }
 
-  struct SeekEvent: Codable, Equatable {
+  struct SeekEvent: Codable, Equatable, Sendable {
     let seekID: Int
     let target: Finite
     let actual: Finite
@@ -141,63 +141,63 @@ final class PlaybackDiagnostics {
     let duration: Finite
   }
 
-  struct TimelineEvent: Codable, Equatable {
+  struct TimelineEvent: Codable, Equatable, Sendable {
     let mediaDelta: Finite
     let wallDelta: Finite
     let rate: Finite
     let gap: Finite
   }
 
-  struct TimeJumpEvent: Codable, Equatable {
+  struct TimeJumpEvent: Codable, Equatable, Sendable {
     let actual: Finite
     let seekID: Int?
   }
 
-  struct BufferEvent: Codable, Equatable {
-    enum Reason: String, Codable { case ready, waiting, stalled }
+  struct BufferEvent: Codable, Equatable, Sendable {
+    enum Reason: String, Codable, Sendable { case ready, waiting, stalled }
     let reason: Reason
   }
 
-  struct AccessEvent: Codable, Equatable {
+  struct AccessEvent: Codable, Equatable, Sendable {
     let metrics: AccessMetrics
   }
 
-  struct WaitingEvent: Codable, Equatable {
+  struct WaitingEvent: Codable, Equatable, Sendable {
     let reason: WaitingReason
   }
 
-  struct SessionEvent: Codable, Equatable {
-    enum Phase: String, Codable { case startRequested, ready, failed, endRequested, ended }
+  struct SessionEvent: Codable, Equatable, Sendable {
+    enum Phase: String, Codable, Sendable { case startRequested, ready, failed, endRequested, ended }
     let phase: Phase
     let requestID: Int
     let playbackGeneration: Int
   }
 
-  struct ItemEvent: Codable, Equatable {
-    enum Phase: String, Codable { case installed, ready, failed }
+  struct ItemEvent: Codable, Equatable, Sendable {
+    enum Phase: String, Codable, Sendable { case installed, ready, failed }
     let phase: Phase
     let error: NormalizedError?
   }
 
-  struct InterruptionEvent: Codable, Equatable {
-    enum Phase: String, Codable { case began, ended }
+  struct InterruptionEvent: Codable, Equatable, Sendable {
+    enum Phase: String, Codable, Sendable { case began, ended }
     let phase: Phase
     let shouldResume: Bool
   }
 
-  struct RouteEvent: Codable, Equatable {
-    enum Reason: String, Codable { case oldDeviceUnavailable, other }
+  struct RouteEvent: Codable, Equatable, Sendable {
+    enum Reason: String, Codable, Sendable { case oldDeviceUnavailable, other }
     let reason: Reason
   }
 
-  struct EndEvent: Codable, Equatable {
+  struct EndEvent: Codable, Equatable, Sendable {
     let actual: Finite
     let expected: Finite
     let premature: Bool
   }
 
-  struct ActivationEvent: Codable, Equatable {
-    enum Phase: String, Codable { case began, intentChanged, accepted, superseded, failed, cancelled }
+  struct ActivationEvent: Codable, Equatable, Sendable {
+    enum Phase: String, Codable, Sendable { case began, intentChanged, accepted, superseded, failed, cancelled }
     let phase: Phase
     let generation: Int
     let wantsSound: Bool
@@ -205,7 +205,7 @@ final class PlaybackDiagnostics {
     let requestDuration: Finite
   }
 
-  enum Event: Codable, Equatable {
+  enum Event: Codable, Equatable, Sendable {
     case command(CommandEvent)
     case state(StateEvent)
     case seekResult(SeekEvent)
@@ -226,7 +226,7 @@ final class PlaybackDiagnostics {
     case error(NormalizedError)
   }
 
-  struct Entry: Codable, Equatable {
+  struct Entry: Codable, Equatable, Sendable {
     let sequence: Int
     let wallTime: Date
     let uptime: Finite
@@ -234,7 +234,7 @@ final class PlaybackDiagnostics {
     let snapshot: Snapshot
   }
 
-  struct Metadata: Codable, Equatable {
+  struct Metadata: Codable, Equatable, Sendable {
     let appVersion: String
     let appBuild: String
     let osName: String
@@ -259,7 +259,7 @@ final class PlaybackDiagnostics {
     }
   }
 
-  struct Report: Codable, Equatable {
+  struct Report: Codable, Equatable, Sendable {
     let schemaVersion: Int
     let metadata: Metadata
     let generatedAt: Date
@@ -300,6 +300,20 @@ final class PlaybackDiagnostics {
       entries.remove(at: index)
       evictedCount += 1
     }
+  }
+
+  struct Slice: Sendable {
+    let entries: [Entry]
+    let throughSequence: Int
+  }
+
+  var tail: Int { nextSequence - 1 }
+
+  func slice(after sequence: Int, limit: Int) -> Slice {
+    let selected = Array(entries.lazy.filter { $0.sequence > sequence }.prefix(max(1, min(limit, 32))))
+    let through = selected.last?.sequence == entries.last?.sequence || selected.isEmpty
+      ? tail : selected.last?.sequence ?? sequence
+    return Slice(entries: selected, throughSequence: through)
   }
 
   func report(current: Snapshot) -> String {

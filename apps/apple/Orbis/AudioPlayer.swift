@@ -175,6 +175,12 @@ final class AudioPlayer {
     diagnostics.report(current: diagnosticSnapshot())
   }
 
+  func diagnosticsTail() -> Int { diagnostics.tail }
+
+  func diagnostics(after sequence: Int, limit: Int) -> PlaybackDiagnostics.Slice {
+    diagnostics.slice(after: sequence, limit: limit)
+  }
+
   func resetDiagnostics() {
     diagnosticsEpoch += 1
     diagnostics.reset()

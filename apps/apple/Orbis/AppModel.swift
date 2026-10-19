@@ -259,6 +259,7 @@ final class AppModel {
   /// Follows the player and reports where playback has reached. One of these exists at a time,
   /// because one Set plays at a time.
   private var positionReporter: Task<Void, Never>?
+  private var diagnosticsSender: PlaybackDiagnosticsSender?
 
   /// Every client this model makes uses this session, so a test injects one session and it
   /// covers signing in too.
@@ -290,6 +291,7 @@ final class AppModel {
     client = settings.configuredClient(address: serviceAddress, session: session)
     refreshDerivedState()
     wirePlayerToQueue()
+    startDiagnosticsSender()
   }
 
   /// A model already signed in to a service. The launch screen and the settings file are the real
@@ -302,6 +304,7 @@ final class AppModel {
     serviceAddress = client.address
     refreshDerivedState()
     wirePlayerToQueue()
+    startDiagnosticsSender()
   }
 
   /// Clears the store the model was given when the launch arguments ask for a fresh install.
@@ -442,9 +445,15 @@ final class AppModel {
     }
     welcomedUsername = joinedAs
     client = OrbisClient(address: serviceAddress, token: key, session: session)
+    startDiagnosticsSender()
     await loadLibrary()
     await loadPlaylists()
     await loadQueue()
+  }
+
+  private func startDiagnosticsSender() {
+    diagnosticsSender?.cancel()
+    diagnosticsSender = client.map { PlaybackDiagnosticsSender(player: audioPlayer, client: $0) }
   }
 
   /// The name this device has on the Person's Devices list.
@@ -469,6 +478,8 @@ final class AppModel {
     pendingActivation = nil
     // Audio still playing comes from a key this device no longer holds, and a download the
     // service is running is the same: nothing here may keep asking about it.
+    diagnosticsSender?.cancel()
+    diagnosticsSender = nil
     audioPlayer.stop()
     audioPlayer.resetDiagnostics()
     stopDownloadWatches()
