@@ -94,6 +94,19 @@ test("valid authenticated native fixture reaches playback endpoint and exports O
       path.join(artifact, "receipt.json"),
       JSON.stringify(receipt)
     );
+    const broadReplay = await s.send(
+      readFileSync(
+        new URL("fixtures/playback-report-upload.json", import.meta.url),
+        "utf-8"
+      )
+    );
+    expect(broadReplay.status).toBe(200);
+    expect(await broadReplay.json()).toEqual({ accepted: 20, rejected: 0 });
+    expect(s.requests).toHaveLength(2);
+    await writeFile(
+      path.join(artifact, "broad-replay-otlp.json"),
+      JSON.stringify(s.requests[1]?.body, null, 2)
+    );
   } finally {
     await s.close();
   }

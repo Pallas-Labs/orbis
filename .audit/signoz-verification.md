@@ -27,6 +27,7 @@ PATH="$PWD/serial-bin:$PATH" node scripts/native-lanes.mjs --udid 09C1B8C9-E33F-
 | Live Group relay | Local Workerd ran production Group/shared handler/exporter against protected public OTLP. Two records accepted, zero rejected, and both stored. `live-group-v2/result.json`, `stored-records.jsonl`. |
 | iOS journeys | All four passed. Copy report, both failed-item recovery paths and a cold Cue near the end retain screenshots. All 125 Swift inputs match root and pre/post manifests. Built and installed libraries match SHA256 `c7e500917976d13fea535500040bdbe66df496d7dab715b0714812c86dbe14b3`. `ui/`. |
 | tvOS and style | Shared source builds for generic tvOS Simulator, and strict Swift formatting exits 0. `tvos/console.log`, `tvos/swift-format.log`. |
+| Broad replay after review | All 19 focused HTTP/OpenAPI tests and the Workerd playback journey pass with both the native two-entry payload and the adapted 20-entry report. The adapted export retains ten event kinds. `broad-replay-http.log`, `broad-replay-workerd.log`, `broad-replay/`. |
 
 The original whole check failed because the new endpoint lacked a response sample and increased the endpoint count from 46 to 47. After updating that existing HTTP check, the whole check passed. The first timestamp command lacked rebuilt contracts and is not the red/green evidence. Both setup and assertion failures remain in the retained logs.
 
@@ -46,4 +47,4 @@ Memory-only buffering loses pending history on exit and may lose old records whi
 
 The earlier [playback limitations](playback-logging-verification.md) remain. In particular, physical audible-skip acceptance stays open on issue #277. The withheld-Ogg test does not prove its conditional engine-wait branch executed, discontinuity recording has no injected runtime probe, and media-reset position limits remain documented.
 
-Independent source review remains pending before publication. The independent [comment pass](signoz-comments-review.md) found no added or extended comments and required zero deletions.
+Independent source review found no blocking source defect. The [findings and responses](signoz-review-responses.md) retain an unmeasured energy concern and correct the lost broad-fixture coverage. The independent [comment pass](signoz-comments-review.md) found no added or extended comments and required zero deletions.

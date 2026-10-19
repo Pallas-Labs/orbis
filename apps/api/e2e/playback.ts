@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { Miniflare } from "miniflare";
 
+import broadFixture from "../../server/src/fixtures/playback-report-upload.json";
 import fixture from "../../server/src/fixtures/playback-upload.json";
 
 const artifact = path.resolve(
@@ -68,6 +69,12 @@ try {
     accepted: fixture.entries.length,
     rejected: 0,
   });
+  const broad = await send(JSON.stringify(broadFixture));
+  assert.equal(broad.status, 200, await broad.clone().text());
+  assert.deepEqual(await broad.json(), {
+    accepted: broadFixture.entries.length,
+    rejected: 0,
+  });
   const stream = new ReadableStream({
     pull(controller) {
       controller.enqueue(new Uint8Array(8192).fill(32));
@@ -75,7 +82,7 @@ try {
   });
   const oversized = await send(stream);
   assert.equal(oversized.status, 413, await oversized.clone().text());
-  assert.equal(requests.length, 1);
+  assert.equal(requests.length, 2);
   await writeFile(
     path.join(artifact, "otlp.json"),
     JSON.stringify(requests, null, 2)
