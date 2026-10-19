@@ -128,6 +128,35 @@ The existing half-second media-time observer adds a periodic snapshot at most on
 
 The schema accepts fixed enums, booleans, counts, and finite numbers. Unknown numbers encode as `null`. It excludes Set ids, titles, service addresses, tokens, device or account names, SDK error descriptions, error comments, and failure messages. Errors use a fixed domain category and numeric code. App version, build, OS name, and OS version are the only report metadata.
 
+While signed in, Orbis also sends playback diagnostics automatically through the authenticated `/api/diagnostics/playback` relay to SigNoz. It polls the existing ring every five seconds, sends at most 32 entries or 64 KiB, and holds one request at a time. Each session uses a new run UUID. Signing out cancels delivery before clearing the report. Delivery failure does not change playback or add a playback error. Pending data stays in memory, so app exit loses it; timeouts can cause duplicate records identified by run UUID and sequence.
+
+The relay validates the full fixed Codable shape, rejects unknown fields, and bounds the streamed body. Its exporter allows two active requests per app instance with no queue and gives the collector five seconds. SigNoz receives `service.name=orbis.apple.playback`, per-entry sequence and event attributes, and a fixed JSON body containing the decoded snapshot and event. A `playback.loss` record counts unacknowledged sequence history, which can include ambiguous delivery. Collector credentials stay on the server; [Worker configuration](../apps/api/README.md#worker-configuration) names its bindings.
+
+Run the focused native probes with:
+
+```sh
+node scripts/native-lanes.mjs --only OrbisTests/PlaybackDiagnosticsSenderTests --only OrbisTests/PlaybackDiagnosticsTests --out ~/.cache/orbis-playback-evidence/signoz-native-$(date +%Y%m%d-%H%M%S)
+```
+
+The sender probes use real URLSession HTTP, exercise cancellation and refusal behavior, and play the real Ogg fixture while an upload is blocked. They retain `native-http-playback-upload.json` and `playback-upload.json` as JSON attachments. Replace `apps/server/src/fixtures/playback-upload.json` with the actual HTTP attachment after the lane, update its provenance in `.audit/signoz-failures.md`, then run:
+
+```sh
+bun run --filter @orbis/contracts build
+bun test apps/server/src/playback-diagnostics.test.ts
+bun run --filter @orbis/api test:playback
+```
+
+For a protected live collector check without deployment, start `scripts/fixture.ts` with a fresh `ORBIS_FIXTURE_DATA_DIR` and the three server-only `ORBIS_FIXTURE_SIGNOZ_OTLP_*` values from a secure environment. POST the actual native attachment to that fixture's `/diagnostics/playback` route with its disposable bearer. Use the fixture address and disposable token from its ready record, then retain the numeric receipt and query SigNoz by the attachment's `runId`:
+
+```sh
+curl --fail-with-body "$FIXTURE_ADDRESS/diagnostics/playback" \
+  --header "Authorization: Bearer $FIXTURE_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data-binary "@$NATIVE_UPLOAD"
+```
+
+This checks the shared authenticated relay and exporter; deployed Worker and physical device checks require separate execution.
+
 The runner prints its screenshot directory, defaulting to `orbis-lane-shots` in the host's system temporary directory. Set `--out <unique-directory>` to choose it. Successful exports include `xcodebuild.log`, `lane.json`, attachments, and worker manifests. Follow [evidence retention](#retain-verification-evidence) before another run replaces the result bundle. For manual checks, read [UI verification](agents/ui-verification.md).
 
 ## Releases
