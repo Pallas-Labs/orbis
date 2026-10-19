@@ -49,3 +49,7 @@ The delayed [Claude round 5 review](axiom-review-r5.md) also found no high or me
 ## Playback report follow-up
 
 Settings now offers Copy Playback Report for recent in-memory playback evidence. The [logging verification record](playback-logging-verification.md) identifies the final 131-test pass, four iOS UI journeys, separately checked clipboard JSON, Swift style and tvOS build. It also retains the failed retention probe and narrowed withheld-Ogg test claim. [Independent review dispositions](playback-logging-responses.md) record the source verdict and remaining limits. Physical iPhone audible-skip acceptance remains open on issue #277.
+
+## SigNoz follow-up
+
+The [automatic delivery verification](signoz-verification.md) records the new native, HTTP, Workerd and actual collector evidence under `/home/parth/.cache/orbis-playback-evidence/2026-10-18/signoz`. It supersedes the earlier clipboard-only scope without changing the retained historical results.

@@ -52,3 +52,7 @@ The delayed Claude Opus 5.5 round 5 also found no high or medium source objectio
 ## Playback report follow-up
 
 Settings now offers Copy Playback Report for recent in-memory playback evidence. The [logging verification record](playback-logging-verification.md) identifies the final 131-test pass, four iOS UI journeys, separately checked clipboard JSON, Swift style and tvOS build. It also retains the failed retention probe and narrowed withheld-Ogg test claim. [Independent review dispositions](playback-logging-responses.md) record the source verdict and remaining limits. Physical iPhone audible-skip acceptance remains open on issue #277.
+
+## SigNoz follow-up
+
+The user subsequently requested automatic delivery to SigNoz. The [delivery verification record](signoz-verification.md) supersedes the earlier no-upload scope and records bounded native delivery, authenticated Group relay, actual collector ingestion and rollout limits. Physical audible-skip acceptance remains separate.
