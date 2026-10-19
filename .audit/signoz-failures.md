@@ -29,4 +29,8 @@ Written before production changes at dd1468f. One writer owns this worktree. No 
 
 The parent owns native runtime checks and authenticated relay-to-live-SigNoz verification. Linux checks retain results in `.cache/signoz`. The canonical `.audit/playback.tsv` stays untouched.
 
+Parent integration replaced the replay fixture with `native-http-playback-upload.json` from the focused native run. Its raw SHA256 is `b72453320cf3e792ef7c6b791d9a74827405efc6b648027ef17b6d7d4f4ac8cc`. The committed JSON differs only in whitespace. `fixture-provenance.json` in the durable SigNoz evidence root records both digests and parsed equality. The Swift test constructs two typed events, encodes them, and sends them over real URLSession HTTP. They are serialization and transport evidence, not captured audible skips.
+
+Parent HTTP validation reproduced acceptance of a timestamp beyond OTLP's unsigned 64-bit nanosecond range. The strict-schema probe expected 400 and received 200. Limiting milliseconds to 18,446,744,073,709 fixes that protocol mismatch. The whole-repository check also found that the new endpoint needed a response sample and an updated count in the existing OpenAPI HTTP test. That fixture now includes its numeric receipt.
+
 Baseline reproduction: `bun test apps/server/src/playback-diagnostics.test.ts -t 'valid authenticated native'` initialized the real database successfully and received HTTP 404 instead of 200. Output is `.cache/signoz/expected-404.log`. No missing module or import caused the failure.
