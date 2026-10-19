@@ -225,7 +225,7 @@ final class AudioPlayer {
       bufferEmpty: item?.isPlaybackBufferEmpty ?? false,
       bufferFull: item?.isPlaybackBufferFull ?? false,
       likelyToKeepUp: item?.isPlaybackLikelyToKeepUp ?? false,
-      bufferRanges: ranges, access: item.flatMap(diagnosticAccessMetrics))
+      bufferRanges: ranges, access: item?.accessLog()?.events.last.map(diagnosticAccessMetrics))
   }
 
   private func diagnosticState(_ state: PlaybackState) -> PlaybackDiagnostics.PlaybackState {
@@ -262,11 +262,10 @@ final class AudioPlayer {
     }
   }
 
-  private func diagnosticAccessMetrics(_ item: AVPlayerItem)
-    -> PlaybackDiagnostics.AccessMetrics?
+  private func diagnosticAccessMetrics(_ entry: AVPlayerItemAccessLogEvent)
+    -> PlaybackDiagnostics.AccessMetrics
   {
-    guard let entry = item.accessLog()?.events.last else { return nil }
-    return .init(
+    .init(
       bytesTransferred: entry.numberOfBytesTransferred,
       transferDuration: .init(entry.transferDuration),
       observedBitrate: .init(entry.observedBitrate),
@@ -837,7 +836,7 @@ final class AudioPlayer {
       )
       record(.item(.init(phase: .ready, error: nil)))
       durationChanged(reported)
-      logBuffer(item, reason: "ready")
+      logBuffer(item, reason: .ready)
       applyPendingSeek()
       playIfReady()
       publishNowPlaying(isPlaying: state == .playing)
@@ -1037,7 +1036,7 @@ final class AudioPlayer {
           self.timelineSample = nil
           self.record(.stalled)
           logger.notice("Playback stalled at \(clock(self.elapsed), privacy: .public)")
-          if let item = self.player?.currentItem { self.logBuffer(item, reason: "stall") }
+          if let item = self.player?.currentItem { self.logBuffer(item, reason: .stalled) }
         }
       }
     )
@@ -1136,31 +1135,29 @@ final class AudioPlayer {
     }
   }
 
-  private func logBuffer(_ item: AVPlayerItem, reason: String) {
+  private func logBuffer(_ item: AVPlayerItem, reason: PlaybackDiagnostics.BufferEvent.Reason) {
+    let label =
+      switch reason {
+      case .ready: "ready"
+      case .stalled: "stall"
+      case .waiting: "wait"
+      }
     let ranges = item.loadedTimeRanges.prefix(8).map { value in
       let range = value.timeRangeValue
       return "\(clock(range.start.seconds))+\(clock(range.duration.seconds))"
     }.joined(separator: ",")
     logger.debug(
-      "Buffer generation=\(self.playbackGeneration, privacy: .public) reason=\(reason, privacy: .public) empty=\(item.isPlaybackBufferEmpty, privacy: .public) full=\(item.isPlaybackBufferFull, privacy: .public) likely=\(item.isPlaybackLikelyToKeepUp, privacy: .public) rangeCount=\(item.loadedTimeRanges.count, privacy: .public) ranges=\(ranges, privacy: .public)"
+      "Buffer generation=\(self.playbackGeneration, privacy: .public) reason=\(label, privacy: .public) empty=\(item.isPlaybackBufferEmpty, privacy: .public) full=\(item.isPlaybackBufferFull, privacy: .public) likely=\(item.isPlaybackLikelyToKeepUp, privacy: .public) rangeCount=\(item.loadedTimeRanges.count, privacy: .public) ranges=\(ranges, privacy: .public)"
     )
-    let eventReason: PlaybackDiagnostics.BufferEvent.Reason =
-      switch reason {
-      case "ready": .ready
-      case "stall": .stalled
-      default: .waiting
-      }
-    record(.buffer(.init(reason: eventReason)))
+    record(.buffer(.init(reason: reason)))
   }
 
   private func logAccess(_ item: AVPlayerItem) {
-    guard let entry = item.accessLog()?.events.last,
-      let metrics = diagnosticAccessMetrics(item)
-    else { return }
+    guard let entry = item.accessLog()?.events.last else { return }
     logger.debug(
       "Access generation=\(self.playbackGeneration, privacy: .public) bytes=\(entry.numberOfBytesTransferred, privacy: .public) transferDuration=\(entry.transferDuration, privacy: .public) observedBitrate=\(entry.observedBitrate, privacy: .public) indicatedBitrate=\(entry.indicatedBitrate, privacy: .public) stalls=\(entry.numberOfStalls, privacy: .public) downloadedDuration=\(entry.segmentsDownloadedDuration, privacy: .public)"
     )
-    record(.access(.init(metrics: metrics)))
+    record(.access(.init(metrics: diagnosticAccessMetrics(entry))))
   }
 
   /// Why the player is waiting, when it is. The reason tells a slow network from a player that
@@ -1173,7 +1170,7 @@ final class AudioPlayer {
         "Waiting at \(clock(self.elapsed), privacy: .public): \(reason, privacy: .public)")
       timelineSample = nil
       record(.waiting(.init(reason: diagnosticWaitingReason(player.reasonForWaitingToPlay))))
-      if let item = player.currentItem { logBuffer(item, reason: "wait") }
+      if let item = player.currentItem { logBuffer(item, reason: .waiting) }
     case .playing:
       logger.debug("Playing at \(clock(self.elapsed), privacy: .public)")
     case .paused:

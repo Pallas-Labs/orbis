@@ -5,19 +5,17 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { connect } from "node:net";
 import path from "node:path";
 
-import { PlaybackDiagnosticsBatch } from "@orbis/contracts/http-api";
-import { Schema } from "effect";
+import { decodePlaybackDiagnosticsBatch } from "@orbis/contracts/http-api";
 
 import { createTestApp } from "./test-app.js";
 
-const fixture = Schema.decodeUnknownSync(PlaybackDiagnosticsBatch)(
+const fixture = decodePlaybackDiagnosticsBatch(
   JSON.parse(
     readFileSync(
       new URL("fixtures/playback-upload.json", import.meta.url),
       "utf-8"
     )
-  ),
-  { onExcessProperty: "error" }
+  )
 );
 
 const artifact = path.resolve(import.meta.dir, "../../../.cache/signoz");

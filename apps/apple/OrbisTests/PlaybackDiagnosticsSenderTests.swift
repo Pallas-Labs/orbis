@@ -195,7 +195,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
   func testAppModelSignOutCancelsBlockedUploadAndBackoff() async throws {
     for held in [true, false] {
       let client = try await configure(status: 503, retryAfter: "30", held: held)
-      let model = AppModel(client: client, settings: MemorySettings())
+      let model = AppModel(client: client, settings: MemoryClientSettings())
       model.audioPlayer.skipToNextCue()
       _ = try await waitForRequests(1)
       model.signOut()
@@ -238,8 +238,4 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
     if case .failed = player.state { XCTFail("Upload failure must not fail playback") }
   }
 
-  private final class MemorySettings: ClientSettingsStore {
-    var deviceToken: String? { nil }
-    func store(deviceToken: String?) -> Bool { true }
-  }
 }

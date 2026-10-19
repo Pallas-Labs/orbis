@@ -321,31 +321,4 @@ final class PlaybackUITests: LibraryJourney {
       ])
   }
 
-  /// Waits for the seek bar's elapsed time to satisfy `matches`. The bar speaks its position, as
-  /// "1 minute, 12 seconds of 2 minutes", so the elapsed part is read back into seconds.
-  private func elapsed(on seek: XCUIElement, _ matches: @escaping (Int) -> Bool)
-    -> XCTNSPredicateExpectation
-  {
-    XCTNSPredicateExpectation(
-      predicate: NSPredicate { _, _ in
-        Self.elapsedSeconds(seek.value as? String).map(matches) ?? false
-      },
-      object: nil)
-  }
-
-  private static func elapsedSeconds(_ value: String?) -> Int? {
-    guard let elapsed = value?.components(separatedBy: " of ").first else { return nil }
-    var seconds = 0
-    for part in elapsed.components(separatedBy: ", ") {
-      let words = part.split(separator: " ")
-      guard words.count == 2, let count = Int(words[0]) else { return nil }
-      switch words[1] {
-      case "hour", "hours": seconds += count * 3600
-      case "minute", "minutes": seconds += count * 60
-      case "second", "seconds": seconds += count
-      default: return nil
-      }
-    }
-    return seconds
-  }
 }
