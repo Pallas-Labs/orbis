@@ -62,6 +62,11 @@ export class Group extends DurableObject<Environment> {
         youTubeApiKey: env.YOUTUBE_API_KEY,
         ytDlp: { read: this.node.readDetails },
       }),
+      playbackDiagnostics: {
+        accessClientId: env.SIGNOZ_OTLP_ACCESS_CLIENT_ID ?? "",
+        accessClientSecret: env.SIGNOZ_OTLP_ACCESS_CLIENT_SECRET ?? "",
+        url: env.SIGNOZ_OTLP_URL ?? "https://otlp.parthm.me/v1/logs",
+      },
       presence: {
         alarm: {
           cancel: () => ctx.storage.deleteAlarm(),

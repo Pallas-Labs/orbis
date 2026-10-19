@@ -13,6 +13,7 @@ import { migrateTrustStore } from "./identity.js";
 import type { LoggingOptions } from "./logging.js";
 import { MediaStore } from "./media-store.js";
 import type { Metadata } from "./metadata.js";
+import type { PlaybackDiagnosticsOptions } from "./playback-diagnostics.js";
 import type { PresenceJournal } from "./presence-journal.js";
 import type { PresenceOptions } from "./presence.js";
 import { grantSecret } from "./stream-grant.js";
@@ -92,6 +93,7 @@ export const createApp = (
     database?: Layer.Layer<Database, unknown>;
     devicesPath?: string;
     logging?: LoggingOptions;
+    playbackDiagnostics?: PlaybackDiagnosticsOptions;
     recordKeyUse?: boolean;
     metadata?: Layer.Layer<Metadata>;
     /** How long after a Playback Position report a Person still counts as listening. */
