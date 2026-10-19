@@ -23,8 +23,7 @@ struct SetZoom {
     origin.wrappedValue = place
   }
 
-  @MainActor
-  func transition(_ setId: String, place: String?) -> ArtworkTransition {
+  @MainActor func transition(_ setId: String, place: String?) -> ArtworkTransition {
     ArtworkTransition(id: Self.sourceID(setId, place: place), namespace: namespace)
   }
 }

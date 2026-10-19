@@ -128,6 +128,9 @@ const sampleKeyFor = (operationId: string): keyof typeof samples => {
 };
 
 const sampleFor = (operationId: string) => {
+  if (operationId === "diagnostics.playback") {
+    return { accepted: 2, rejected: 0 };
+  }
   if (["sets.tracklist", "sets.retryTracklist"].includes(operationId)) {
     return {
       cues: [
@@ -285,7 +288,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(47);
+    expect(checked).toBe(48);
   } finally {
     await app.dispose();
   }

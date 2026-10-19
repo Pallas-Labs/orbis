@@ -41,6 +41,7 @@ struct LaneService {
     let title: String
     let tags: [String]
     let playbackPositionSeconds: Int
+    let finishCount: Int
   }
 
   struct AudioState: Codable {
@@ -85,12 +86,24 @@ struct LaneService {
     return saved
   }
 
+  func markAudioUnavailable(_ id: String) throws {
+    try seed("unavailable-audio/\(id)")
+  }
+
+  func restoreReadyAudio(_ id: String) throws {
+    try seed("ready-audio/\(id)")
+  }
+
   func finishSlowDownload(_ id: String) throws {
     try seed("finish-download/\(id)")
   }
 
   func seedTracklist(_ id: String) throws {
     try seed("tracklist/\(id)")
+  }
+
+  func seedLateTracklist(_ id: String) throws {
+    try seed("late-tracklist/\(id)")
   }
 
   func audioState(_ id: String) throws -> AudioState {

@@ -100,11 +100,62 @@ The `Orbis` scheme is iOS and macOS; the `OrbisTV` scheme builds the same app fo
 
 Full and unit lanes run `bun run native:format` first. Journeys-only and `--only` runs leave that check to unit lanes and CI. The style command checks Swift sources with the Xcode toolchain's swift-format against `apps/apple/.swift-format`. swift-format ships with Xcode, so the native style gate needs no install. The check writes nothing; to fix drift, run `xcrun swift-format format --in-place` on the changed files.
 
+Playback reliability checks use real AVPlayer instances, a real HTTP service, and a generated ten-minute Ogg file. They require ffmpeg. Repeat `--only` to select several suites in one run:
+
+```sh
+node scripts/native-lanes.mjs --only OrbisTests/PlaybackReliabilityTests --only OrbisTests/StreamingPlaybackTests --out ~/.cache/orbis-playback-evidence/run
+```
+
+The streaming fixture can withhold and release response bytes. Its tests retain raw player time, monotonic time, buffer ranges, and playback state as JSON attachments. They check actual seek landing and recovery in both directions on the media timeline. The recovery UI journeys also remove and restore Retained Audio before retrying Play from Set detail and Now Playing.
+
 The player writes what it does to the unified log under subsystem `app.orbis`, category `player`: each play with its start and the service's length, item readiness and failures with the stream's error log, waits with their reason, stalls, and every seek with where it landed. A Set's id is hashed and titles, addresses and the token are never written. Follow it on a Mac, or a device attached to one, with:
 
 ```sh
 log stream --level debug --predicate 'subsystem == "app.orbis" AND category == "player"'
 ```
+
+For a reported jump or repeat, compare `Command seek`, `Seek completed`, `Time jumped`, and `Timeline discontinuity` with the numeric buffer and access records. A generation identifies one player item and a seek number identifies an app-requested seek. A discontinuity compares actual media time with monotonic time during uninterrupted playback. These records can distinguish requested seeks from unexplained timeline movement; they cannot prove that the audio file contains no repeated sound.
+
+### Playback reports
+
+On iPhone or Mac, open Settings and choose Copy Playback Report after a playback problem. The action builds JSON at tap time, including a fresh player snapshot and recent typed playback events from the current app run. Closing Orbis loses the report. Signing out clears it.
+
+The report holds up to 256 entries in chronological order and states how many entries were evicted or omitted at export. Routine samples are evicted before command and incident records. If the complete UTF-8 output exceeds 256 KiB, export removes routine samples, then keeps the largest newest suffix of the other records that fits. There is no fixed time window. Each entry has wall time, monotonic uptime, player generation, seek number, normalized state and waiting reason, actual and displayed media time, audio-session readiness, pending seek state, up to eight finite buffer ranges, and the latest numeric access-log counters. The tap-time snapshot has its own wall and monotonic timestamps so it can be compared with server logs even when playback has been paused for a long time.
+
+Commands record `app`, `systemRemote`, or `internalOperation` only when the caller is known. `systemRemote` covers the system command center and does not identify the Lock Screen, Control Center, a headset, or a car. Activation entries show the model generation, desired sound, optional media target, outcome, and request duration without naming a Set. A seek command followed by a matching seek result shows an app-requested move. A time jump or timeline discontinuity without that seek evidence is a player or stream observation, not proof of an audible skip.
+
+The existing half-second media-time observer adds a periodic snapshot at most once every five seconds. AVPlayer may stop that observer while media time is paused or waiting, so these samples are best effort rather than a wall-clock heartbeat. Waiting and stall transitions are recorded when their callbacks arrive, and Copy always adds the current snapshot without a second timer.
+
+The schema accepts fixed enums, booleans, counts, and finite numbers. Unknown numbers encode as `null`. It excludes Set ids, titles, service addresses, tokens, device or account names, SDK error descriptions, error comments, and failure messages. Errors use a fixed domain category and numeric code. App version, build, OS name, and OS version are the only report metadata.
+
+While signed in, Orbis also sends playback diagnostics automatically through the authenticated `/api/diagnostics/playback` relay to SigNoz. It polls the existing ring every five seconds, sends at most 32 entries or 64 KiB, and holds one request at a time. Each session uses a new run UUID. Signing out cancels delivery before clearing the report. Delivery failure does not change playback or add a playback error. Pending data stays in memory, so app exit loses it; timeouts can cause duplicate records identified by run UUID and sequence.
+
+The relay validates the full fixed Codable shape, rejects unknown fields, and bounds the streamed body. Its exporter allows two active requests per app instance with no queue and gives the collector five seconds. SigNoz receives `service.name=orbis.apple.playback`, per-entry sequence and event attributes, and a fixed JSON body containing the decoded snapshot and event. A `playback.loss` record counts unacknowledged sequence history, which can include ambiguous delivery. Collector credentials stay on the server; [Worker configuration](../apps/api/README.md#worker-configuration) names its bindings.
+
+Run the focused native probes with:
+
+```sh
+node scripts/native-lanes.mjs --only OrbisTests/PlaybackDiagnosticsSenderTests --only OrbisTests/PlaybackDiagnosticsTests --out ~/.cache/orbis-playback-evidence/signoz-native-$(date +%Y%m%d-%H%M%S)
+```
+
+The sender probes use real URLSession HTTP, exercise cancellation and refusal behavior, and play the real Ogg fixture while an upload is blocked. They retain `native-http-playback-upload.json` and `playback-upload.json` as JSON attachments. Replace `apps/server/src/fixtures/playback-upload.json` with the actual HTTP attachment after the lane, update its provenance in `.audit/signoz-failures.md`, then run:
+
+```sh
+bun run --filter @orbis/contracts build
+bun test apps/server/src/playback-diagnostics.test.ts
+bun run --filter @orbis/api test:playback
+```
+
+For a protected live collector check without deployment, start `scripts/fixture.ts` with a fresh `ORBIS_FIXTURE_DATA_DIR` and the three server-only `ORBIS_FIXTURE_SIGNOZ_OTLP_*` values from a secure environment. POST the actual native attachment to that fixture's `/diagnostics/playback` route with its disposable bearer. Use the fixture address and disposable token from its ready record, then retain the numeric receipt and query SigNoz by the attachment's `runId`:
+
+```sh
+curl --fail-with-body "$FIXTURE_ADDRESS/diagnostics/playback" \
+  --header "Authorization: Bearer $FIXTURE_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data-binary "@$NATIVE_UPLOAD"
+```
+
+This checks the shared authenticated relay and exporter; deployed Worker and physical device checks require separate execution.
 
 The runner prints its screenshot directory, defaulting to `orbis-lane-shots` in the host's system temporary directory. Set `--out <unique-directory>` to choose it. Successful exports include `xcodebuild.log`, `lane.json`, attachments, and worker manifests. Follow [evidence retention](#retain-verification-evidence) before another run replaces the result bundle. For manual checks, read [UI verification](agents/ui-verification.md).
 

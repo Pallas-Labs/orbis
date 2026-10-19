@@ -5,6 +5,7 @@ import type {
   SaveSetResultSchema,
 } from "@orbis/contracts/http-api";
 import {
+  decodePlaybackDiagnosticsBatch,
   AdminKeyPayload,
   AdminPersonPayload,
   CollaborationPayload,
@@ -110,6 +111,12 @@ import {
 import type { MetadataError } from "./metadata-error.js";
 import { Metadata } from "./metadata.js";
 import type { EnrichedMetadata, PlaylistTrack } from "./metadata.js";
+import {
+  makePlaybackDiagnosticsRelay,
+  readBoundedBody,
+  PlaybackBodyLimitError,
+} from "./playback-diagnostics.js";
+import type { PlaybackDiagnosticsOptions } from "./playback-diagnostics.js";
 import { PresenceJournal } from "./presence-journal.js";
 import { Presence } from "./presence.js";
 import type { PresenceOptions } from "./presence.js";
@@ -381,6 +388,7 @@ export const createPortableApp = (options: {
   database: Layer.Layer<Database, unknown>;
   trustPath?: string | undefined;
   logging?: LoggingOptions;
+  playbackDiagnostics?: PlaybackDiagnosticsOptions;
   recordKeyUse?: boolean;
   metadata?: Layer.Layer<Metadata>;
   /** How long after a Playback Position report a Person still counts as listening. */
@@ -397,6 +405,9 @@ export const createPortableApp = (options: {
   const { trustPath } = options;
   const { streamSecret } = options;
   const attempts = makeAttemptLimiter();
+  const relayPlayback = makePlaybackDiagnosticsRelay(
+    options.playbackDiagnostics
+  );
   const signInCodeNow = options.signInCodeNow ?? Date.now;
   const { database } = options;
   const libraryOptions = {
@@ -2046,6 +2057,44 @@ export const createPortableApp = (options: {
             )
           )
       );
+      const diagnosticsGroup = HttpApiBuilder.group(
+        OrbisApi,
+        "diagnostics",
+        (handlers) =>
+          handlers.handleRaw("playback", ({ request }) =>
+            withFailureResponse(
+              Effect.gen(function* playbackDiagnostics() {
+                const caller = yield* SetCaller;
+                if (caller.keyId === null) {
+                  return HttpServerResponse.jsonUnsafe(
+                    { message: "A device key is required." },
+                    { status: 403 }
+                  );
+                }
+                const web = yield* HttpServerRequest.toWeb(request);
+                const body = yield* Effect.tryPromise({
+                  catch: (error) =>
+                    new LibraryError({
+                      message:
+                        error instanceof PlaybackBodyLimitError
+                          ? "Playback batch exceeds 64 KiB."
+                          : "Invalid playback batch.",
+                      statusCode:
+                        error instanceof PlaybackBodyLimitError ? 413 : 400,
+                    }),
+                  try: (signal) => readBoundedBody(web.body, 65_536, signal),
+                });
+                const batch = yield* Effect.try(() =>
+                  decodePlaybackDiagnosticsBatch(JSON.parse(body))
+                );
+                const response = yield* Effect.tryPromise((signal) =>
+                  relayPlayback(batch, signal)
+                );
+                return HttpServerResponse.fromWeb(response);
+              })
+            )
+          )
+      );
       const systemGroup = HttpApiBuilder.group(OrbisApi, "system", (handlers) =>
         handlers.handle("health", () =>
           Effect.succeed({ status: "ok" as const })
@@ -2058,6 +2107,7 @@ export const createPortableApp = (options: {
           Layer.provide(queueGroup),
           Layer.provide(libraryGroup),
           Layer.provide(systemGroup),
+          Layer.provide(diagnosticsGroup),
           Layer.provide(signInGroup),
           Layer.provide(eventsGroup),
           Layer.provide(presenceGroup),
