@@ -5,6 +5,7 @@ import path from "node:path";
 import { createApp } from "../apps/server/src/app.js";
 import { startFixtureServer } from "../apps/server/src/fixture-server.js";
 import { hashToken } from "../apps/server/src/identity.js";
+import { Metadata } from "../apps/server/src/metadata.js";
 
 const required = (name: string): string => {
   const value = process.env[name];
@@ -67,6 +68,69 @@ const cobaltUrl = audioFile
   ? "http://cobalt.fixture.test/"
   : process.env.ORBIS_COBALT_URL;
 const fixtureAudio = audioFile ? Bun.file(audioFile) : undefined;
+/**
+ * The Data API as the lane sees it: one public playlist, answered from memory the way Google
+ * would, so an import journey needs no network and no key. Every other read is refused, which
+ * leaves a single save without provider metadata, as it was before this fake.
+ */
+const LANE_PLAYLIST = {
+  entries: [
+    ["laneMix0001", "Sunrise on the Pier", "Avery Coast"],
+    ["laneMix0002", "Low Tide Dub", "Harbour Unit"],
+    ["laneMixGone", "", ""],
+    ["laneMix0003", "Night Ferry", "Avery Coast"],
+    ["laneMix0004", "Salt and Static", "Mira Holt"],
+    ["laneMix0005", "Last Light Session", "Harbour Unit"],
+  ],
+  id: "PLorbisLaneMix",
+  title: "Lane Mix",
+} as const;
+interface DataApiAnswer {
+  readonly items: readonly unknown[];
+}
+const answer = (body: DataApiAnswer) => Promise.resolve(Response.json(body));
+const laneYouTube = (url: string) => {
+  const parsed = new URL(url);
+  const resource = parsed.pathname.split("/").at(-1);
+  if (resource === "playlists") {
+    return answer({
+      items:
+        parsed.searchParams.get("id") === LANE_PLAYLIST.id
+          ? [
+              {
+                contentDetails: { itemCount: LANE_PLAYLIST.entries.length },
+                snippet: { title: LANE_PLAYLIST.title },
+              },
+            ]
+          : [],
+    });
+  }
+  if (resource === "playlistItems") {
+    return answer({
+      items: LANE_PLAYLIST.entries.map(([videoId]) => ({
+        contentDetails: { videoId },
+      })),
+    });
+  }
+  if (resource === "videos") {
+    const ids = new Set(parsed.searchParams.get("id")?.split(","));
+    return answer({
+      items: LANE_PLAYLIST.entries
+        .filter(([id, title]) => ids.has(id) && title)
+        .map(([id, title, channelTitle]) => ({
+          contentDetails: { duration: "PT58M12S" },
+          id,
+          snippet: {
+            channelTitle,
+            publishedAt: "2026-06-01T00:00:00Z",
+            thumbnails: {},
+            title,
+          },
+        })),
+    });
+  }
+  return Promise.resolve(new Response("not found", { status: 404 }));
+};
 const app = createApp({
   audio: {
     audioDir: path.join(dataDirectory, "audio"),
@@ -90,6 +154,7 @@ const app = createApp({
   databasePath,
   devicesPath,
   logging: { silent: true },
+  metadata: Metadata.layer({ fetch: laneYouTube, youTubeApiKey: "lane" }),
   playbackDiagnostics: {
     accessClientId:
       process.env.ORBIS_FIXTURE_SIGNOZ_OTLP_ACCESS_CLIENT_ID ?? "",

@@ -55,7 +55,9 @@ export {
   normalizeSourceUrl,
   SOURCE_URL_MESSAGE,
   UnsupportedSourceUrlError,
+  youTubePlaylistId,
   youTubeVideoId,
+  youTubeWatchUrl,
 } from "./source-url.js";
 export {
   formatSignInCode,

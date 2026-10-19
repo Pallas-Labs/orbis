@@ -327,6 +327,20 @@ export const SaveSetResultSchema = Schema.Struct({
     "unavailable",
   ]),
 });
+export const ImportPlaylistPayload = Schema.Struct({
+  url: Schema.String.check(Schema.isMaxLength(2048)),
+});
+/**
+ * A YouTube or YouTube Music playlist read into a new Playlist. Every track is also saved to the
+ * caller's Library, so each carries its Auto Download outcome. `unavailable` counts tracks YouTube
+ * no longer serves, and `overLimit` counts tracks past the Playlist maximum; neither was saved.
+ */
+export const ImportPlaylistResultSchema = Schema.Struct({
+  overLimit: Schema.Number,
+  playlist: PlaylistSchema,
+  sets: Schema.Array(SaveSetResultSchema),
+  unavailable: Schema.Number,
+});
 export const AdminPersonPayload = Schema.Struct({
   username: Schema.String.check(Schema.isMaxLength(40)),
 });
@@ -489,6 +503,11 @@ const PlaylistApi = SetsApi.add(
         error: [BadRequest, Conflict, InternalError],
         payload: PlaylistNamePayload,
         success: PlaylistSchema.pipe(HttpApiSchema.status(201)),
+      }),
+      HttpApiEndpoint.post("import", "/playlists/import", {
+        error: [BadRequest, NotFound, ServiceUnavailable, InternalError],
+        payload: ImportPlaylistPayload,
+        success: ImportPlaylistResultSchema.pipe(HttpApiSchema.status(201)),
       }),
       HttpApiEndpoint.patch("rename", "/playlists/:id", {
         error: [BadRequest, NotFound, Conflict, InternalError],

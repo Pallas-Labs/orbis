@@ -1,8 +1,8 @@
 import type { SetSource } from "@orbis/contracts";
-import { Context, Effect, Layer, Option, Schema } from "effect";
+import { Array as Arr, Context, Effect, Layer, Option, Schema } from "effect";
 
 import { MetadataError } from "./metadata-error.js";
-import { youTubeVideoId } from "./source-url.js";
+import { youTubeVideoId, youTubeWatchUrl } from "./source-url.js";
 import type { SourceDetails, YtDlpMetadataService } from "./ytdlp-metadata.js";
 
 /** What only yt-dlp reports. Absent when yt-dlp is not configured or could not read the link. */
@@ -26,6 +26,22 @@ export interface EnrichInput {
   readonly url: string;
 }
 
+/** One playable track of a YouTube playlist, read with the same fields a single save reads. */
+export interface PlaylistTrack {
+  readonly metadata: EnrichedMetadata;
+  readonly url: string;
+}
+
+export interface YouTubePlaylist {
+  /** Tracks past the caller's limit, which were not read. */
+  readonly overLimit: number;
+  readonly title: string;
+  /** In the playlist's order, each video once. */
+  readonly tracks: readonly PlaylistTrack[];
+  /** Entries YouTube lists but no longer serves: deleted, private, or blocked. */
+  readonly unavailable: number;
+}
+
 export interface MetadataService {
   readonly enrich: (
     input: EnrichInput
@@ -34,6 +50,11 @@ export interface MetadataService {
   readonly details: (
     input: EnrichInput
   ) => Effect.Effect<SourceDetails, MetadataError>;
+  /** Up to `limit` tracks of a public or unlisted YouTube playlist, from the Data API. */
+  readonly playlist: (
+    playlistId: string,
+    limit: number
+  ) => Effect.Effect<YouTubePlaylist, MetadataError>;
 }
 
 export interface MetadataOptions {
@@ -89,11 +110,28 @@ const parseDurationSeconds = (duration: string): number | null => {
   );
 };
 
-const youTubeRequest = (videoId: string, apiKey: string): string => {
-  const url = new URL("https://www.googleapis.com/youtube/v3/videos");
-  url.searchParams.set("id", videoId);
-  url.searchParams.set("key", apiKey);
-  url.searchParams.set("part", "snippet,contentDetails");
+interface YouTubeApiParams {
+  readonly id?: string;
+  readonly maxResults?: string;
+  /** Absent on the first page of a list. */
+  readonly pageToken?: string | undefined;
+  readonly part: string;
+  readonly playlistId?: string;
+}
+
+const youTubeApiRequest = (
+  resource: "playlistItems" | "playlists" | "videos",
+  apiKey: string,
+  params: YouTubeApiParams
+): string => {
+  const url = new URL(`https://www.googleapis.com/youtube/v3/${resource}`);
+  for (const [name, value] of Object.entries({ ...params, key: apiKey })) {
+    if (value !== undefined) {
+      url.searchParams.set(name, value);
+    }
+  }
+  // A fixed order keeps one video's request URL the same across reads.
+  url.searchParams.sort();
   return url.toString();
 };
 
@@ -142,30 +180,53 @@ const requestJson = <S extends Schema.ConstraintDecoder<unknown>>(
 
 const YouTubeThumbnail = Schema.Struct({ url: Schema.String });
 
+const YouTubeVideoSchema = Schema.Struct({
+  contentDetails: Schema.Struct({ duration: Schema.String }),
+  snippet: Schema.Struct({
+    channelTitle: Schema.String,
+    publishedAt: Schema.String,
+    thumbnails: Schema.Struct({
+      default: Schema.optionalKey(YouTubeThumbnail),
+      high: Schema.optionalKey(YouTubeThumbnail),
+      maxres: Schema.optionalKey(YouTubeThumbnail),
+      medium: Schema.optionalKey(YouTubeThumbnail),
+      standard: Schema.optionalKey(YouTubeThumbnail),
+    }),
+    title: Schema.String,
+  }),
+});
+
 const YouTubeResponse = Schema.Struct({
-  items: Schema.Array(
-    Schema.Struct({
-      contentDetails: Schema.Struct({ duration: Schema.String }),
-      snippet: Schema.Struct({
-        channelTitle: Schema.String,
-        publishedAt: Schema.String,
-        thumbnails: Schema.Struct({
-          default: Schema.optionalKey(YouTubeThumbnail),
-          high: Schema.optionalKey(YouTubeThumbnail),
-          maxres: Schema.optionalKey(YouTubeThumbnail),
-          medium: Schema.optionalKey(YouTubeThumbnail),
-          standard: Schema.optionalKey(YouTubeThumbnail),
-        }),
-        title: Schema.String,
-      }),
-    })
-  ),
+  items: Schema.Array(YouTubeVideoSchema),
 });
 
 const SoundCloudResponse = Schema.Struct({
   author_name: Schema.optionalKey(Schema.String),
   thumbnail_url: Schema.optionalKey(Schema.String),
   title: Schema.String,
+});
+
+/** A batch read names its videos, so each answer is matched to its playlist entry by `id`. */
+const YouTubeVideoBatch = Schema.Struct({
+  items: Schema.Array(
+    Schema.Struct({ id: Schema.String, ...YouTubeVideoSchema.fields })
+  ),
+});
+
+const YouTubePlaylistResponse = Schema.Struct({
+  items: Schema.Array(
+    Schema.Struct({
+      contentDetails: Schema.Struct({ itemCount: Schema.Number }),
+      snippet: Schema.Struct({ title: Schema.String }),
+    })
+  ),
+});
+
+const YouTubePlaylistItemsResponse = Schema.Struct({
+  items: Schema.Array(
+    Schema.Struct({ contentDetails: Schema.Struct({ videoId: Schema.String }) })
+  ),
+  nextPageToken: Schema.optionalKey(Schema.String),
 });
 
 type YouTubeVideo = (typeof YouTubeResponse.Type)["items"][number];
@@ -221,7 +282,10 @@ const youTubeProvider = (
         );
       }
       const response = yield* requestJson(
-        youTubeRequest(videoId, youTubeApiKey),
+        youTubeApiRequest("videos", youTubeApiKey, {
+          id: videoId,
+          part: "snippet,contentDetails",
+        }),
         YouTubeResponse,
         { label: "YouTube", request }
       );
@@ -240,6 +304,92 @@ const youTubeProvider = (
       return metadata;
     }),
 });
+
+/** The Data API's largest page, for both playlist entries and a batch of videos. */
+const YOUTUBE_PAGE = 50;
+
+/**
+ * Each read costs one quota unit: the playlist's name, its entries a page at a time, then its
+ * videos fifty at a time. The videos are the records a single save reads, so an imported track
+ * gets the same title, artwork, and length as a pasted one.
+ */
+const readYouTubePlaylist = (
+  playlistId: string,
+  limit: number,
+  youTubeApiKey: string,
+  request: RequestFetch
+): Effect.Effect<YouTubePlaylist, MetadataError> =>
+  Effect.gen(function* readPlaylist() {
+    const options = { label: "YouTube", request };
+    const found = yield* requestJson(
+      youTubeApiRequest("playlists", youTubeApiKey, {
+        id: playlistId,
+        part: "snippet,contentDetails",
+      }),
+      YouTubePlaylistResponse,
+      options
+    );
+    const [playlist] = found.items;
+    if (!playlist) {
+      return yield* Effect.fail(
+        rejected("YouTube does not have this playlist, or it is private.")
+      );
+    }
+    // A Set keeps first-seen order, so a video listed twice keeps its first place.
+    const ids = new Set<string>();
+    let entriesRead = 0;
+    let pageToken: string | undefined;
+    do {
+      const page = yield* requestJson(
+        youTubeApiRequest("playlistItems", youTubeApiKey, {
+          maxResults: String(YOUTUBE_PAGE),
+          pageToken,
+          part: "contentDetails",
+          playlistId,
+        }),
+        YouTubePlaylistItemsResponse,
+        options
+      );
+      entriesRead += page.items.length;
+      for (const { contentDetails } of page.items) {
+        ids.add(contentDetails.videoId);
+      }
+      pageToken = page.nextPageToken;
+    } while (pageToken && ids.size < limit);
+    const unread = pageToken
+      ? Math.max(0, playlist.contentDetails.itemCount - entriesRead)
+      : 0;
+    const kept = [...ids].slice(0, limit);
+    const batches = yield* Effect.forEach(
+      Arr.chunksOf(kept, YOUTUBE_PAGE),
+      (batch) =>
+        requestJson(
+          youTubeApiRequest("videos", youTubeApiKey, {
+            id: batch.join(","),
+            part: "snippet,contentDetails",
+          }),
+          YouTubeVideoBatch,
+          options
+        ),
+      { concurrency: 4 }
+    );
+    const videos = new Map(
+      batches
+        .flatMap((batch) => batch.items)
+        .map((video) => [video.id, youTubeMetadata(video)] as const)
+        .filter(([, metadata]) => metadata.title)
+    );
+    const tracks = kept.flatMap((id) => {
+      const metadata = videos.get(id);
+      return metadata ? [{ metadata, url: youTubeWatchUrl(id) }] : [];
+    });
+    return {
+      overLimit: ids.size - kept.length + unread,
+      title: playlist.snippet.title.trim(),
+      tracks,
+      unavailable: kept.length - tracks.length,
+    };
+  });
 
 const soundCloudProvider = (request: RequestFetch): Provider => ({
   enrich: (url) =>
@@ -310,6 +460,10 @@ const noProviders: MetadataService = {
         `${input.source} enrichment is not configured on this server.`
       )
     ),
+  playlist: () =>
+    Effect.fail(
+      notConfigured("YouTube playlists are not configured on this server.")
+    ),
 };
 
 export class Metadata extends Context.Service<Metadata, MetadataService>()(
@@ -323,7 +477,7 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
     if (options.youTubeApiKey) {
       providers.youtube = youTubeProvider(options.youTubeApiKey, request);
     }
-    const { ytDlp } = options;
+    const { ytDlp, youTubeApiKey } = options;
     return Layer.succeed(
       Metadata,
       Metadata.of({
@@ -336,6 +490,12 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
             noProviders.enrich(input);
           return ytDlp ? orYtDlp(provider, ytDlp, input.url) : provider;
         }),
+        playlist: Effect.fn("Metadata.playlist")(
+          (playlistId: string, limit: number) =>
+            youTubeApiKey
+              ? readYouTubePlaylist(playlistId, limit, youTubeApiKey, request)
+              : noProviders.playlist(playlistId, limit)
+        ),
       })
     );
   }
@@ -350,11 +510,15 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
 
   static layerOf(
     metadata: Pick<MetadataService, "enrich"> &
-      Partial<Pick<MetadataService, "details">>
+      Partial<Pick<MetadataService, "details" | "playlist">>
   ): Layer.Layer<Metadata> {
     return Layer.succeed(
       Metadata,
-      Metadata.of({ details: noProviders.details, ...metadata })
+      Metadata.of({
+        details: noProviders.details,
+        playlist: noProviders.playlist,
+        ...metadata,
+      })
     );
   }
 }

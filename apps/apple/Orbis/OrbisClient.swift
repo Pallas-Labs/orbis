@@ -490,6 +490,21 @@ struct OrbisClient: Sendable {
     return try Self.decode(Playlist.self, from: response)
   }
 
+  /// The service saves every track before it answers, so a long playlist takes more than a minute.
+  static let importTimeout: TimeInterval = 120
+
+  func importPlaylist(url: String) async throws -> ImportedPlaylist {
+    let body = try Self.encoder.encode(ImportPlaylistRequest(url: url))
+    // The shared session ends any request after a minute in all, which a long import outlasts.
+    let configuration = session.configuration
+    configuration.timeoutIntervalForResource = Self.importTimeout
+    let importSession = URLSession(configuration: configuration)
+    defer { importSession.finishTasksAndInvalidate() }
+    let response = try await send(
+      path: "playlists/import", method: "POST", body: body, timeout: Self.importTimeout, session: importSession)
+    return try Self.decode(ImportedPlaylist.self, from: response)
+  }
+
   /// States the ordered Sets a Playlist holds. Removing a Set here leaves it in the Library.
   func setPlaylistMembers(_ id: String, setIds: [String]) async throws -> [SavedSet] {
     let body = try Self.encoder.encode(PlaylistMembersRequest(setIds: setIds))
@@ -649,7 +664,9 @@ struct OrbisClient: Sendable {
     "\(method) \(url.host() ?? "") \(url.path())"
   }
 
-  private func send(path: String, method: String, body: Data?) async throws -> Data {
+  private func send(
+    path: String, method: String, body: Data?, timeout: TimeInterval = 15, session: URLSession? = nil
+  ) async throws -> Data {
     // Resolving against the address would drop its last path segment, so an address such as
     // the Funnel address with `/api` would lose `/api`. Join the strings instead.
     let root = address.absoluteString
@@ -663,7 +680,7 @@ struct OrbisClient: Sendable {
       request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
     request.setValue("application/json", forHTTPHeaderField: "Accept")
-    request.timeoutInterval = 15
+    request.timeoutInterval = timeout
     if let body {
       request.httpBody = body
       request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -672,7 +689,7 @@ struct OrbisClient: Sendable {
     let data: Data
     let response: URLResponse
     do {
-      (data, response) = try await session.data(for: request)
+      (data, response) = try await (session ?? self.session).data(for: request)
     } catch let error as URLError where error.code == .cancelled {
       throw OrbisError.cancelled
     } catch {

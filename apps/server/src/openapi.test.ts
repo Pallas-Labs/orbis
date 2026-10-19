@@ -167,6 +167,15 @@ const sampleFor = (operationId: string) => {
       sets: [samples.savedSet],
     };
   }
+  // The Swift client has no playlist import yet, so this sample lives here.
+  if (operationId === "playlists.import") {
+    return {
+      overLimit: 0,
+      playlist: samples.playlist,
+      sets: [samples.saveResult],
+      unavailable: 1,
+    };
+  }
   if (operationId === "people.friendPlaylists") {
     return { playlists: [{ ...samples.playlist, sets: [samples.savedSet] }] };
   }
@@ -279,7 +288,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(47);
+    expect(checked).toBe(48);
   } finally {
     await app.dispose();
   }

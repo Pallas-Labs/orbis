@@ -1,3 +1,4 @@
+import { youTubePlaylistId } from "@orbis/contracts";
 import type { SavedSet } from "@orbis/contracts";
 import type {
   ChangeTopic,
@@ -8,6 +9,7 @@ import {
   AdminKeyPayload,
   AdminPersonPayload,
   CollaborationPayload,
+  ImportPlaylistPayload,
   JoinPayload,
   RedeemSignInCodePayload,
   SaveSetPayload,
@@ -92,6 +94,7 @@ import {
   updatePerson,
   updatePersonFilters,
 } from "./identity.js";
+import { MAX_SETS_PER_PLAYLIST } from "./library-limits.js";
 import { Library } from "./library.js";
 import type { LoggedRecord, LoggingOptions } from "./logging.js";
 import {
@@ -107,7 +110,7 @@ import {
 } from "./logging.js";
 import type { MetadataError } from "./metadata-error.js";
 import { Metadata } from "./metadata.js";
-import type { EnrichedMetadata } from "./metadata.js";
+import type { EnrichedMetadata, PlaylistTrack } from "./metadata.js";
 import {
   makePlaybackDiagnosticsRelay,
   readBoundedBody,
@@ -325,6 +328,43 @@ const trustUnavailable = () =>
     statusCode: 500,
   });
 
+const importFailure = (error: MetadataError) => {
+  switch (error.reason) {
+    case "provider-rejected": {
+      return new LibraryError({
+        message:
+          "YouTube can't share this playlist. Only public and unlisted playlists can be imported.",
+        statusCode: 404,
+      });
+    }
+    case "not-configured": {
+      return new LibraryError({
+        message: "Playlist import is not set up on this server.",
+        statusCode: 503,
+      });
+    }
+    default: {
+      return new LibraryError({
+        message: "YouTube is not answering. Try the import again.",
+        statusCode: 503,
+      });
+    }
+  }
+};
+
+/**
+ * A re-import keeps the earlier Playlist, so the new one takes the next free name. Names are
+ * unique without regard to case, so `taken` holds them lowercased.
+ */
+const freePlaylistName = (title: string, taken: ReadonlySet<string>) => {
+  const base = title.slice(0, 90).trim() || "YouTube playlist";
+  let name = base;
+  for (let n = 2; taken.has(name.toLowerCase()); n += 1) {
+    name = `${base} (${n})`;
+  }
+  return name;
+};
+
 const missingPlaylist = () =>
   new LibraryError({ message: "Playlist not found.", statusCode: 404 });
 
@@ -539,6 +579,18 @@ export const createPortableApp = (options: {
           Effect.asVoid
         )
       );
+      // Stores provider metadata, then reads details unless the yt-dlp fallback already did.
+      const recordMetadata = (
+        set: SavedSet,
+        personal: typeof Library.Service,
+        enriched: EnrichedMetadata
+      ) =>
+        library.recordEnrichment(set.id, enriched).pipe(
+          Effect.tap(() =>
+            enriched.extras ? startTracklist(set.id) : fillDetails(set)
+          ),
+          Effect.flatMap(() => personal.find(set.id))
+        );
       // Enrichment failure is swallowed so the save still succeeds, so it is the
       // one outcome a client cannot see. The log records which set and which reason.
       const enrichSavedSet = Effect.fn("SaveSet.enrich")((
@@ -548,24 +600,14 @@ export const createPortableApp = (options: {
         const onMetadataFailure = (error: MetadataError) =>
           Effect.logWarning("set metadata enrichment failed").pipe(
             Effect.annotateLogs({ reason: error.reason, set: set.id }),
-            Effect.andThen(library.recordEnrichmentFailure(set.id))
+            Effect.andThen(library.recordEnrichmentFailure(set.id)),
+            Effect.tap(() => fillDetails(set)),
+            Effect.flatMap(() => personal.find(set.id))
           );
         return metadata.enrich({ source: set.source, url: set.url }).pipe(
           Effect.flatMap((enriched) => reviseTitle(set, enriched)),
-          Effect.flatMap((enriched) =>
-            library
-              .recordEnrichment(set.id, enriched)
-              // The yt-dlp fallback already stored the details, so a second read is skipped.
-              .pipe(
-                Effect.tap(() =>
-                  enriched.extras ? startTracklist(set.id) : fillDetails(set)
-                )
-              )
-          ),
-          Effect.catchTag("MetadataError", (failure) =>
-            onMetadataFailure(failure).pipe(Effect.tap(() => fillDetails(set)))
-          ),
-          Effect.flatMap(() => personal.find(set.id))
+          Effect.flatMap((enriched) => recordMetadata(set, personal, enriched)),
+          Effect.catchTag("MetadataError", onMetadataFailure)
         );
       });
       const autoDownloadSaved = Effect.fn("AutoDownload.onSave")(
@@ -1042,6 +1084,94 @@ export const createPortableApp = (options: {
                   const personal = yield* Library;
                   return yield* personal.createPlaylist(input.name);
                 }).pipe(
+                  Effect.tap(() => announceForCaller("playlist", seesPerson))
+                )
+              )
+            )
+            .handleRaw("import", () =>
+              withFailureResponse(
+                Effect.gen(function* importPlaylist() {
+                  const input = yield* HttpServerRequest.schemaBodyJson(
+                    ImportPlaylistPayload
+                  );
+                  const playlistId = youTubePlaylistId(input.url);
+                  if (!playlistId) {
+                    return yield* Effect.fail(
+                      new LibraryError({
+                        message:
+                          "Use a YouTube or YouTube Music playlist link.",
+                        statusCode: 400,
+                      })
+                    );
+                  }
+                  const read = yield* metadata
+                    .playlist(playlistId, MAX_SETS_PER_PLAYLIST)
+                    .pipe(Effect.mapError(importFailure));
+                  if (read.tracks.length === 0) {
+                    return yield* Effect.fail(
+                      new LibraryError({
+                        message: "This playlist has no tracks Orbis can play.",
+                        statusCode: 404,
+                      })
+                    );
+                  }
+                  const personal = yield* Library;
+                  const taken = new Set(
+                    (yield* personal.playlists()).map(({ name }) =>
+                      name.toLowerCase()
+                    )
+                  );
+                  const playlist = yield* personal.createPlaylist(
+                    freePlaylistName(read.title, taken)
+                  );
+                  // Titles skip revision here: it is one model call per track, inside the request.
+                  const saveTrack = Effect.fn("ImportPlaylist.saveTrack")(
+                    function* saveTrack(track: PlaylistTrack) {
+                      const saved = yield* personal
+                        .save({ tags: [], title: "", url: track.url })
+                        .pipe(
+                          Effect.catchIf(
+                            (error) => error.statusCode === 409,
+                            () => personal.findByUrl(track.url)
+                          )
+                        );
+                      const known =
+                        saved.titleEditedByUser ||
+                        saved.metadataState === "enriched";
+                      return yield* autoDownloadSaved(
+                        known
+                          ? saved
+                          : yield* recordMetadata(
+                              saved,
+                              personal,
+                              track.metadata
+                            )
+                      );
+                    }
+                  );
+                  const imported = yield* Effect.forEach(saveTrack)(
+                    read.tracks
+                  );
+                  yield* personal.setPlaylistMembers(
+                    playlist.id,
+                    imported.map((set) => set.id)
+                  );
+                  yield* Effect.logInfo("playlist imported").pipe(
+                    Effect.annotateLogs({
+                      overLimit: read.overLimit,
+                      playlist: playlist.id,
+                      tracks: imported.length,
+                      unavailable: read.unavailable,
+                    })
+                  );
+                  return {
+                    overLimit: read.overLimit,
+                    playlist: { ...playlist, setCount: imported.length },
+                    sets: imported,
+                    unavailable: read.unavailable,
+                  };
+                }).pipe(
+                  Effect.tap(() => announceForCaller("library", ownDevices)),
                   Effect.tap(() => announceForCaller("playlist", seesPerson))
                 )
               )

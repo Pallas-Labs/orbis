@@ -364,6 +364,9 @@ struct DestinationView: View {
       .onChange(of: model.reveal != nil) { _, hasReveal in
         if hasReveal { isFilingSheetShown = true }
       }
+      .onChange(of: model.playlistImport.isImporting) { _, importing in
+        if importing, model.destination == destination { isFilingSheetShown = true }
+      }
       .safeAreaBar(edge: .bottom) {
         if let selectedIds { selectionBar(count: selectedIds.count) }
       }
@@ -490,6 +493,10 @@ struct DestinationView: View {
     .onChange(of: model.reveal != nil) { _, hasReveal in
       if hasReveal { isFilingSheetShown = true }
     }
+    .onChange(of: model.playlistImport.isImporting) { _, importing in
+      // The clipboard banner imports without the sheet open. Only the screen on show opens it.
+      if importing, model.destination == destination { isFilingSheetShown = true }
+    }
     .navigationDestination(item: openedSet) { id in setPage(id) }
   }
 
@@ -513,12 +520,19 @@ struct DestinationView: View {
     isFilingSheetShown = true
     #if os(iOS)
       Task {
-        if model.reveal == nil, !model.isFiling, let link = await ClipboardLink.read(),
-          !ClipboardLink.isFiled(link, in: filedSets)
-        {
-          await model.pasteAndFile(link)
-        } else {
+        guard model.reveal == nil, !model.isFiling, !model.playlistImport.isImporting,
+          let link = await ClipboardLink.read(), !ClipboardLink.isFiled(link, in: filedSets)
+        else {
           focusLink = true
+          return
+        }
+        // A playlist stays on the clipboard after its import, and no Set ever matches its link,
+        // so filing it on every open would import it again each time. It waits for Import.
+        if PlaylistLink.kind(of: link) == .playlist {
+          model.linkToFile = link
+          focusLink = true
+        } else {
+          await model.pasteAndFile(link)
         }
       }
     #else
