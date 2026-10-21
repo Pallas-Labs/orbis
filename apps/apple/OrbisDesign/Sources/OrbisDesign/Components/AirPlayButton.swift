@@ -2,10 +2,15 @@ import AVKit
 import SwiftUI
 
 public struct AirPlayButton: View {
-  public init() {}
+  /// The icon's colour while the sound plays here.
+  let color: Color
+
+  public init(color: Color = .primary) {
+    self.color = color
+  }
 
   public var body: some View {
-    RoutePicker()
+    RoutePicker(color: color)
       .frame(width: 44, height: 44)
       .accessibilityLabel("AirPlay")
       .accessibilityIdentifier("airplay")
@@ -14,9 +19,12 @@ public struct AirPlayButton: View {
 
 #if os(macOS)
   private struct RoutePicker: NSViewRepresentable {
+    let color: Color
+
     func makeNSView(context: Context) -> AVRoutePickerView {
       let picker = AVRoutePickerView()
       picker.isRoutePickerButtonBordered = false
+      picker.setRoutePickerButtonColor(NSColor(color), for: .normal)
       picker.setRoutePickerButtonColor(NSColor(Color.orbis.tint), for: .activeHighlighted)
       picker.setRoutePickerButtonColor(NSColor(Color.orbis.tint), for: .active)
       return picker
@@ -26,11 +34,13 @@ public struct AirPlayButton: View {
   }
 #else
   private struct RoutePicker: UIViewRepresentable {
+    let color: Color
+
     func makeUIView(context: Context) -> AVRoutePickerView {
       let picker = AVRoutePickerView()
       picker.prioritizesVideoDevices = false
       picker.activeTintColor = UIColor(Color.orbis.tint)
-      picker.tintColor = .label
+      picker.tintColor = UIColor(color)
       return picker
     }
 

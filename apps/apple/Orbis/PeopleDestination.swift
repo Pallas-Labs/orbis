@@ -284,14 +284,18 @@ private struct ArtworkBackdrop: View {
   var body: some View {
     ZStack {
       Color.black
-      AsyncImage(url: url) { image in
-        image
-          .resizable()
-          .aspectRatio(contentMode: .fill)
-          .blur(radius: 40, opaque: true)
-          .saturation(1.6)
-          .scaleEffect(1.4)
-      } placeholder: {
+      if let url {
+        CachedImage(url: url) { image in
+          image
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .blur(radius: 40, opaque: true)
+            .saturation(1.6)
+            .scaleEffect(1.4)
+        } placeholder: {
+          Color.orbis.tint.opacity(0.5)
+        }
+      } else {
         Color.orbis.tint.opacity(0.5)
       }
       LinearGradient(
@@ -324,7 +328,8 @@ struct PersonScreen: View {
   @Bindable var model: AppModel
   let people: PeopleModel
   let personId: String
-  @State private var friend: FriendModel?
+  /// Kept by `PeopleModel`, so a page opened again draws what it showed last while it refreshes.
+  private var friend: FriendModel { people.friend(personId) }
   @State private var openedPlaylist: FriendPlaylist?
   /// A Playlist's sheet zooms out of its folder.
   @Namespace private var playlistZoom
@@ -361,7 +366,7 @@ struct PersonScreen: View {
           description: Text("They stopped sharing with the Group, or left it."))
       }
     }
-    .refreshable { await friend?.load() }
+    .refreshable { await friend.load() }
     .background {
       ArtworkGlow(
         url: people.presence(of: personId).flatMap { SetPresentation.pageArtwork($0.set) }, reach: 0.6)
@@ -371,9 +376,7 @@ struct PersonScreen: View {
     .toolbarTitleDisplayMode(.inline)
     .task(id: person?.see) {
       guard person?.see == true else { return }
-      let loaded = friend ?? FriendModel(app: model, personId: personId)
-      friend = loaded
-      await loaded.load()
+      await friend.load()
     }
     .sheet(item: $openedPlaylist) { playlist in
       FriendPlaylistSheet(model: model, playlist: playlist)
@@ -407,7 +410,7 @@ struct PersonScreen: View {
   /// (the card below says so) are left out.
   private func stats(_ person: PersonFilters) -> some View {
     let content: FriendModel.Content? =
-      if person.see, case .loaded(let content) = friend?.state { content } else { nil }
+      if person.see, case .loaded(let content) = friend.state { content } else { nil }
     let lastPlayed: String? =
       if people.presence(of: personId) == nil, let last = content?.recent.first {
         SetPresentation.date(from: last.startedAt)
@@ -505,7 +508,7 @@ struct PersonScreen: View {
   /// place of a button that could only look disabled.
   @ViewBuilder
   private func saveButton(_ set: SavedSet) -> some View {
-    if model.savedSet(set.id) != nil || friend?.savedIds.contains(set.id) == true {
+    if model.savedSet(set.id) != nil || friend.savedIds.contains(set.id) {
       Label("In Library", systemImage: "checkmark")
         .font(.subheadline.weight(.semibold))
         .foregroundStyle(.secondary)
@@ -513,7 +516,7 @@ struct PersonScreen: View {
         .accessibilityIdentifier("person-save-now")
     } else {
       Button {
-        Task { await friend?.save(set) }
+        Task { await friend.save(set) }
       } label: {
         Label("Save", systemImage: "plus")
           .font(.headline)
@@ -527,12 +530,12 @@ struct PersonScreen: View {
 
   @ViewBuilder
   private func libraryContent(_ person: PersonFilters) -> some View {
-    switch friend?.state ?? .loading {
+    switch friend.state {
     case .idle, .loading:
       ProgressView().frame(maxWidth: .infinity)
     case .failed(let failure):
       UnavailableState(failure: failure, context: "loading \(person.username)’s Library") {
-        Task { await friend?.load() }
+        Task { await friend.load() }
       }
     case .loaded(let content):
       // Each Set shows once: the one playing now leaves Recently played, and Sets in Recently
@@ -660,7 +663,7 @@ struct PersonScreen: View {
       Button("Play", systemImage: "play.fill") { play(set) }
     }
     if model.savedSet(set.id) == nil {
-      Button("Save to Library", systemImage: "plus") { Task { await friend?.save(set) } }
+      Button("Save to Library", systemImage: "plus") { Task { await friend.save(set) } }
     }
   }
 

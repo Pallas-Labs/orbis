@@ -56,7 +56,7 @@ extension Image {
 /// An image from the network that draws at once when it was drawn before. Until `url` arrives
 /// it shows `standIn` if that is in memory, such as the small artwork a card showed before its
 /// page asked for the large one, and otherwise `placeholder`.
-struct CachedImage<Content: View, Placeholder: View>: View {
+public struct CachedImage<Content: View, Placeholder: View>: View {
   let url: URL
   var standIn: URL?
   @ViewBuilder let content: (Image) -> Content
@@ -64,7 +64,17 @@ struct CachedImage<Content: View, Placeholder: View>: View {
   /// The last URL that finished loading, so the view draws again when it lands in the cache.
   @State private var loaded: URL?
 
-  var body: some View {
+  public init(
+    url: URL, standIn: URL? = nil, @ViewBuilder content: @escaping (Image) -> Content,
+    @ViewBuilder placeholder: @escaping () -> Placeholder
+  ) {
+    self.url = url
+    self.standIn = standIn
+    self.content = content
+    self.placeholder = placeholder
+  }
+
+  public var body: some View {
     let images = ArtworkImages.shared
     let _ = loaded
     Group {

@@ -149,7 +149,6 @@ struct PlaylistsDestination: View {
           ForEach(items) { playlist in
             Button {
               model.openPlaylist(playlist.id)
-              Task { await model.loadPlaylistMembers(playlist.id) }
             } label: {
               VStack(spacing: 6) {
                 PlaylistSleeve(

@@ -89,6 +89,10 @@ struct SetDetailScreen: View {
           playButton(set, isCurrent: isCurrent)
           if model.canPlayFromBeginning(set) { playFromBeginningButton(set) }
           queueActions(set)
+          // Where the sound goes, chosen here rather than only from Now Playing.
+          AirPlayButton(color: Color.orbis.tint)
+            .frame(width: 48, height: 48)
+            .background(Color.orbis.paperRaised, in: .rect(cornerRadius: Radius.row))
         }
         .orbisAnimation(.playbackToggled, value: model.canPlayFromBeginning(set))
         if isCurrent {

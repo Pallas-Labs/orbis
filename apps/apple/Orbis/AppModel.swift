@@ -508,6 +508,7 @@ final class AppModel {
     selectedPlaylistId = nil
     openedPlaylistId = nil
     playlistMembers = .idle
+    lastPlaylistMembers = [:]
     playlistFailure = nil
     activeTags = []
     activeCreator = nil
@@ -1199,7 +1200,8 @@ final class AppModel {
   }
 
   func loadTracklist(_ id: String) async {
-    guard let client else { return }
+    // A ready Tracklist does not change, and the page asks again each time it appears.
+    guard let client, tracklists[id]?.state != .ready else { return }
     let generation = tracklistGeneration
     do {
       for _ in 0..<60 {
@@ -1570,6 +1572,11 @@ final class AppModel {
   func openSet(_ id: String) {
     setFailure = nil
     openedSetId = id
+    // Asked for at the tap rather than when the page appears, so the Tracklist is usually in
+    // before the page finishes zooming open, instead of pushing the page down once it lands.
+    if let set = savedSet(id), set.tracklistState != .none {
+      Task { [weak self] in await self?.loadTracklist(id) }
+    }
   }
 
   func closeSet() {
@@ -1749,7 +1756,16 @@ final class AppModel {
 
   /// The ordered Sets in the opened Playlist, loaded apart from the Library filter so a tab
   /// change does not disturb what another screen is showing.
-  var playlistMembers: Loadable<[SavedSet]> = .idle
+  var playlistMembers: Loadable<[SavedSet]> = .idle {
+    didSet {
+      if case .loaded(let sets) = playlistMembers, let id = openedPlaylistId {
+        lastPlaylistMembers[id] = sets
+      }
+    }
+  }
+  /// The members each Playlist had when last loaded, so a page opens on them while it refreshes
+  /// rather than zooming open on a placeholder.
+  @ObservationIgnored private var lastPlaylistMembers: [String: [SavedSet]] = [:]
 
   /// What the last Playlist change refused, kept where the action was taken.
   var playlistFailure: OrbisFailure?
@@ -1763,15 +1779,14 @@ final class AppModel {
     playlistFailure = nil
     // A page left open from the last Playlist must not be the first thing this one shows.
     openedSets[.playlists] = nil
-    playlistMembers = .idle
     openedPlaylistId = id
+    playlistMembers = lastPlaylistMembers[id].map(Loadable.loaded) ?? .idle
   }
 
   /// Goes to a Playlist's own page from anywhere: Home's folders, the sidebar, or Search.
   func showPlaylist(_ id: String) {
     destination = .playlists
     openPlaylist(id)
-    Task { [weak self] in await self?.loadPlaylistMembers(id) }
   }
 
   func closePlaylist() {
@@ -1782,7 +1797,7 @@ final class AppModel {
 
   func loadPlaylistMembers(_ id: String) async {
     guard let client else { return }
-    playlistMembers = .loading
+    if case .loaded = playlistMembers {} else { playlistMembers = .loading }
     do {
       let sets = try await client.library(playlistId: id)
       guard openedPlaylistId == id, !Task.isCancelled else { return }
