@@ -195,8 +195,11 @@ struct SetDetailScreen: View {
       }
       .accessibilityIdentifier("detail-add-to-queue")
     } label: {
-      Label("Play Next", systemImage: "text.badge.plus")
-        .albumButton()
+      ViewThatFits(in: .horizontal) {
+        Label("Play Next", systemImage: "text.badge.plus").fixedSize()
+        Label("Play Next", systemImage: "text.badge.plus").labelStyle(.iconOnly)
+      }
+      .albumButton(fills: false)
     } primaryAction: {
       Task { await model.playNext(set.id) }
     }
