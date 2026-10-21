@@ -418,7 +418,11 @@ try {
     ),
     JSON.stringify(waiting)
   );
-  assert.equal(Math.max(...waiting.map((event) => event.queued ?? 0)), 20);
+  assert.equal(
+    Math.max(...waiting.map((event) => event.queued ?? 0)),
+    21,
+    "the client's 20 waiting Downloads and the peer's one"
+  );
   fair.send({ ...finished, requestId: first.requestId, setId: first.setId });
   const following = await until(
     () => fair.commands.filter((command) => command.kind === "start")[1],

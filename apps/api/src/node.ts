@@ -16,6 +16,8 @@ import {
   readTrustRegistry,
 } from "../../server/src/identity.js";
 import { Library } from "../../server/src/library.js";
+import { logEvent } from "../../server/src/logging.js";
+import type { LoggingOptions } from "../../server/src/logging.js";
 import { MetadataError } from "../../server/src/metadata-error.js";
 
 /** The node-key check `/node` and `/recovery` share: the key's id, or a refusal. */
@@ -76,15 +78,18 @@ export class GroupAudioNode {
     unknown
   >;
   private readonly trustPath: string;
+  private readonly logging: LoggingOptions;
 
   constructor(
     ctx: DurableObjectState,
     runtime: ManagedRuntime.ManagedRuntime<Library | Database, unknown>,
-    trustPath: string
+    trustPath: string,
+    logging: LoggingOptions = {}
   ) {
     this.ctx = ctx;
     this.runtime = runtime;
     this.trustPath = trustPath;
+    this.logging = logging;
   }
 
   private serial<T>(operation: () => Promise<T>): Promise<T> {
@@ -142,8 +147,9 @@ export class GroupAudioNode {
     if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
       return new Response("WebSocket required", { status: 426 });
     }
-    for (const previous of this.ctx.getWebSockets("node")) {
-      previous.close(1000, "Node replaced");
+    const previous = this.ctx.getWebSockets("node");
+    for (const replaced of previous) {
+      replaced.close(1000, "Node replaced");
     }
     const pair = new WebSocketPair();
     const { 0: client, 1: server } = pair;
@@ -155,6 +161,11 @@ export class GroupAudioNode {
       progress: null,
       ready: false,
     } satisfies Attachment);
+    logEvent(
+      "info",
+      { event: "group-node-accepted", replaced: previous.length },
+      this.logging
+    );
     return new Response(null, { status: 101, webSocket: client });
   }
 
@@ -173,13 +184,46 @@ export class GroupAudioNode {
 
   wake = () => this.serial(() => this.schedule());
 
+  /**
+   * Warns when Downloads wait while no node can take them, the state that kept
+   * imports queued for a day unnoticed. Called once per schedule, so once per wake.
+   */
+  private warnIfWaiting(node: "connecting" | "missing") {
+    const [waiting] = this.ctx.storage.sql
+      .exec<{ queued: number; oldest: string | null }>(
+        "SELECT COUNT(*) AS queued, MIN(download_jobs.queued_at) AS oldest FROM download_jobs JOIN sets ON sets.id = download_jobs.set_id WHERE sets.download_state = 'queued'"
+      )
+      .toArray();
+    if (!waiting?.queued) {
+      return;
+    }
+    logEvent(
+      "warn",
+      {
+        event: "group-downloads-waiting",
+        node,
+        oldestQueuedMs:
+          waiting.oldest === null
+            ? null
+            : Date.now() - Date.parse(waiting.oldest),
+        queued: waiting.queued,
+      },
+      this.logging
+    );
+  }
+
   private async schedule() {
     const socket = this.socket();
     if (!socket) {
+      this.warnIfWaiting("missing");
       return;
     }
     const attached = GroupAudioNode.attachment(socket);
-    if (!attached.ready || attached.active) {
+    if (!attached.ready) {
+      this.warnIfWaiting("connecting");
+      return;
+    }
+    if (attached.active) {
       return;
     }
     const next = await this.runtime.runPromise(
@@ -201,6 +245,16 @@ export class GroupAudioNode {
       source: next.source,
       url: next.url,
     });
+    logEvent(
+      "info",
+      {
+        event: "group-download-started",
+        requestId,
+        set: next.id,
+        source: next.source,
+      },
+      this.logging
+    );
   }
 
   cancel = (id: string) =>
@@ -368,7 +422,12 @@ export class GroupAudioNode {
     return false;
   }
 
-  disconnected(socket: WebSocket, code: number) {
+  disconnected(socket: WebSocket, code: number, reason = "") {
+    logEvent(
+      code === 1000 ? "info" : "warn",
+      { code, event: "group-node-disconnected", reason },
+      this.logging
+    );
     // 1005, 1006 and 1015 describe a close and cannot be sent, so close() throws on them.
     socket.close([1005, 1006, 1015].includes(code) ? 1011 : code);
     for (const request of GroupAudioNode.attachment(socket).detailRequests) {
@@ -462,6 +521,17 @@ export class GroupAudioNode {
             })
           );
         })
+      );
+      // The node logs the failure as an error; here it is the Group's view of it.
+      logEvent(
+        message.kind === "failed" ? "warn" : "info",
+        {
+          event: "group-download-settled",
+          outcome: message.kind,
+          requestId: message.requestId,
+          set: message.setId,
+        },
+        this.logging
       );
       socket.serializeAttachment({
         ...GroupAudioNode.attachment(socket),

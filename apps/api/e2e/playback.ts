@@ -17,6 +17,10 @@ await mkdir(artifact, { recursive: true });
 const requests: unknown[] = [];
 const collector = Bun.serve({
   fetch: async (request) => {
+    // The Group's own log events share this collector.
+    if (new URL(request.url).pathname === "/v1/logs") {
+      return Response.json({});
+    }
     assert.equal(request.headers.get("user-agent"), "Orbis-Playback-Relay/1");
     assert.equal(request.headers.get("cf-access-client-id"), "fixture-id");
     assert.equal(

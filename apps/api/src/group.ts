@@ -6,6 +6,12 @@ import { makeAlarmScheduler } from "../../server/src/alarm-scheduler.js";
 import { createPortableApp } from "../../server/src/app-core.js";
 import { releaseAudio } from "../../server/src/audio-release.js";
 import { Library } from "../../server/src/library.js";
+import {
+  finishRequestLog,
+  outcomeForStatus,
+  startRequestLog,
+} from "../../server/src/logging.js";
+import type { LoggingOptions } from "../../server/src/logging.js";
 import { Metadata } from "../../server/src/metadata.js";
 import { issueStreamGrant } from "../../server/src/stream-grant-core.js";
 import { TitleReviser } from "../../server/src/title-reviser.js";
@@ -18,9 +24,37 @@ import { GroupAudioNode } from "./node.js";
 import { recoverHost } from "./recovery.js";
 import { registerTrustStorage } from "./trust-storage.js";
 
+/**
+ * The Group's events go to Workers Logs and, with Access credentials, to SigNoz
+ * through the endpoint the playback relay already uses.
+ */
+const groupLogging = (
+  ctx: DurableObjectState,
+  env: Environment
+): LoggingOptions => {
+  const id = env.SIGNOZ_OTLP_ACCESS_CLIENT_ID;
+  const secret = env.SIGNOZ_OTLP_ACCESS_CLIENT_SECRET;
+  const otlp =
+    id && secret
+      ? {
+          component: "group" as const,
+          headers: {
+            "CF-Access-Client-Id": id,
+            "CF-Access-Client-Secret": secret,
+          },
+          url: env.SIGNOZ_OTLP_URL ?? "https://otlp.parthm.me/v1/logs",
+          waitUntil: (promise: Promise<unknown>) => {
+            ctx.waitUntil(promise);
+          },
+        }
+      : undefined;
+  return { otlp, pretty: false, silent: false };
+};
+
 export class Group extends DurableObject<Environment> {
   private readonly alarms;
   private readonly app;
+  private readonly logging: LoggingOptions;
   private readonly node: GroupAudioNode;
   constructor(ctx: DurableObjectState, env: Environment) {
     super(ctx, env);
@@ -44,7 +78,8 @@ export class Group extends DurableObject<Environment> {
         Layer.provideMerge(database)
       )
     );
-    this.node = new GroupAudioNode(ctx, runtime, trustPath);
+    this.logging = groupLogging(ctx, env);
+    this.node = new GroupAudioNode(ctx, runtime, trustPath, this.logging);
     // Answered without waking the Group; the node reconnects when a ping goes unanswered.
     ctx.setWebSocketAutoResponse(
       new WebSocketRequestResponsePair("ping", "pong")
@@ -67,7 +102,7 @@ export class Group extends DurableObject<Environment> {
         return HttpServerResponse.redirect(url.toString(), { status: 302 });
       },
       database,
-      logging: { pretty: false, silent: false },
+      logging: this.logging,
       metadata: Metadata.layer({
         youTubeApiKey: env.YOUTUBE_API_KEY,
         ytDlp: { read: this.node.readDetails },
@@ -109,8 +144,12 @@ export class Group extends DurableObject<Environment> {
     }
   }
 
-  override webSocketClose(socket: WebSocket, code: number): void {
-    this.node.disconnected(socket, code);
+  override webSocketClose(
+    socket: WebSocket,
+    code: number,
+    reason: string
+  ): void {
+    this.node.disconnected(socket, code, reason);
   }
 
   override webSocketError(socket: WebSocket): void {
@@ -134,7 +173,18 @@ export class Group extends DurableObject<Environment> {
 
   override fetch(request: Request): Promise<Response> {
     if (new URL(request.url).pathname === "/recovery") {
-      return Promise.resolve(recoverHost(request, this.ctx.id.toString()));
+      const logger = startRequestLog({
+        method: request.method,
+        path: "/api/recovery",
+        requestId: crypto.randomUUID(),
+      });
+      const response = recoverHost(request, this.ctx.id.toString());
+      finishRequestLog(
+        logger,
+        { outcome: outcomeForStatus(response.status), status: response.status },
+        this.logging
+      );
+      return Promise.resolve(response);
     }
     if (new URL(request.url).pathname === "/node") {
       return Promise.resolve(this.node.accept(request));
