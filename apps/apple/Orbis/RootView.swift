@@ -300,6 +300,7 @@ struct DestinationView: View {
   var body: some View {
     page
       .environment(\.setZoom, SetZoom(namespace: setZoomNamespace, origin: $setZoomOrigin))
+      .levelsArtworkTilt(model.openedSets[destination] != nil || isPlaylistOpenHere)
   }
 
   @ViewBuilder private var page: some View {
@@ -391,6 +392,9 @@ struct DestinationView: View {
       .navigationDestination(item: openedSet) { id in setPage(id) }
     case .playlists:
       PlaylistsDestination(model: model)
+        #if os(iOS)
+          .playlistPage(model, in: .playlists, zoom: setZoomNamespace) { id in setPage(id) }
+        #endif
         .navigationDestination(item: openedSet) { id in setPage(id) }
     case .people:
       PeopleDestination(model: model)
@@ -499,6 +503,9 @@ struct DestinationView: View {
       // The clipboard banner imports without the sheet open. Only the screen on show opens it.
       if importing, model.destination == destination { isFilingSheetShown = true }
     }
+    #if os(iOS)
+      .playlistPage(model, in: .home, zoom: setZoomNamespace) { id in setPage(id) }
+    #endif
     .navigationDestination(item: openedSet) { id in setPage(id) }
   }
 
@@ -507,11 +514,21 @@ struct DestinationView: View {
       .zoomTransition(from: SetZoom.sourceID(id, place: setZoomOrigin), in: setZoomNamespace)
   }
 
+  /// The Set pushed from this stack's root. While a Playlist is pushed here, its page pushes
+  /// the Set instead.
   private var openedSet: Binding<String?> {
     Binding(
-      get: { model.openedSets[destination] },
+      get: { isPlaylistOpenHere ? nil : model.openedSets[destination] },
       set: { model.openedSets[destination] = $0 }
     )
+  }
+
+  private var isPlaylistOpenHere: Bool {
+    #if os(iOS)
+      model.playlistPlace == destination && model.openedPlaylistId != nil
+    #else
+      false
+    #endif
   }
 
   private var filedSets: [SavedSet] {
@@ -730,6 +747,15 @@ struct HomeRails: View {
     // Full width even with nothing in it. A new Person's Home is empty, and an empty column
     // narrowed the page to its padding, which drew the glow as a strip down the middle.
     .frame(maxWidth: .infinity, alignment: .leading)
+    // A Set's page opens with its Tracklist in place, rather than pushing its facts down once
+    // the Tracklist arrives mid-zoom.
+    .task(id: shown.map(\.id)) { await model.loadTracklists(shown) }
+  }
+
+  /// The Sets Home shows, whose pages are a tap away.
+  private var shown: [SavedSet] {
+    let home = home
+    return home.continueListening.prefix(HomeSelection.recentLimit) + home.recentlyFiled
   }
 
   /// The Set Home leads with: the one most recently left part-way, or else the newest filed.
@@ -883,7 +909,12 @@ struct HomeRails: View {
       LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 14)], spacing: 18) {
         ForEach(model.playlistItems) { playlist in
           Button {
-            model.showPlaylist(playlist.id)
+            #if os(iOS)
+              // A phone pushes the Playlist on Home's own stack, so Back returns to Home.
+              model.openPlaylist(playlist.id, in: .home)
+            #else
+              model.showPlaylist(playlist.id)
+            #endif
           } label: {
             PlaylistSleeve(
               name: playlist.name,
@@ -891,12 +922,14 @@ struct HomeRails: View {
               artwork: model.artwork(ofPlaylist: playlist.id),
               category: SetPresentation.category(for: playlist.name)
             )
+            .playlistZoomSource(playlist.id, in: zoom)
           }
           .buttonStyle(.orbisPressable)
           .accessibilityIdentifier("playlist-card-\(playlist.id)")
         }
       }
     }
+    .task(id: model.playlistItems.map(\.id)) { await model.prefetchPlaylistMembers() }
   }
 
   private func rail<Cards: View>(

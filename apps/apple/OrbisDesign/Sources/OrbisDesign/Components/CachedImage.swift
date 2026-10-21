@@ -43,6 +43,16 @@ final class ArtworkImages {
   }
 }
 
+/// Loads artwork into memory before it is shown, so a page opened next draws it on its first
+/// frame.
+public enum ArtworkPrefetch {
+  public static func load(_ urls: [URL]) async {
+    for url in urls {
+      _ = await ArtworkImages.shared.load(url)
+    }
+  }
+}
+
 extension Image {
   fileprivate init(_ image: PlatformImage) {
     #if canImport(UIKit)

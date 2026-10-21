@@ -36,7 +36,10 @@ struct SetDetailScreen: View {
         ) {
           audioSection(set)
         } tracklist: {
+          // A Tracklist that arrives after the page opened eases the facts below it down,
+          // rather than pushing them in one frame.
           TracklistSection(model: model, set: set)
+            .orbisAnimation(.tracklistArrived, value: model.tracklists[set.id]?.cues.count)
         } management: {
           SetManagementSection(model: model, set: set, isRenaming: $isRenaming)
         }

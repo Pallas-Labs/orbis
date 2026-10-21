@@ -14,7 +14,7 @@ struct PlaylistsDestination: View {
   @State private var deletingPlaylist: Playlist?
   @State private var playlistQuery = ""
   /// A Playlist's page zooms out of the folder that opened it.
-  @Namespace private var playlistZoom
+  @Environment(\.setZoom) private var zoom
 
   /// The Playlist shown in place of the grid. The Mac's sidebar picks a Playlist as a page of its
   /// own, so the grid gives way to it; iOS pushes the page out of its folder instead.
@@ -34,14 +34,6 @@ struct PlaylistsDestination: View {
         playlistList
       }
     }
-    #if os(iOS)
-      .navigationDestination(item: pushedPlaylist) { id in
-        if let playlist = model.playlist(id) {
-          PlaylistDetailView(model: model, playlist: playlist)
-          .zoomTransition(from: id, in: playlistZoom)
-        }
-      }
-    #endif
     .sidebarPageTitle(inlinePlaylist == nil ? "Playlists" : "")
     .toolbar {
       if inlinePlaylist == nil {
@@ -92,14 +84,6 @@ struct PlaylistsDestination: View {
     }
   }
 
-  /// Going back from the pushed page closes the Playlist, as the Mac's back button does.
-  private var pushedPlaylist: Binding<String?> {
-    Binding(
-      get: { model.openedPlaylistId },
-      set: { if $0 == nil { model.closePlaylist() } }
-    )
-  }
-
   private var playlistList: some View {
     Group {
       switch model.playlists {
@@ -123,6 +107,7 @@ struct PlaylistsDestination: View {
           }
         } else {
           playlistGrid(matchingPlaylists(items))
+            .task(id: items.map(\.id)) { await model.prefetchPlaylistMembers() }
         }
       }
     }
@@ -157,7 +142,7 @@ struct PlaylistsDestination: View {
                   artwork: model.artwork(ofPlaylist: playlist.id),
                   category: SetPresentation.category(for: playlist.name)
                 )
-                .zoomSource(playlist.id, in: playlistZoom, cornerRadius: 20)
+                .playlistZoomSource(playlist.id, in: zoom)
                 if model.playlistImport.importingPlaylistId == playlist.id,
                   let progress = model.playlistImport.progress
                 {
@@ -277,6 +262,53 @@ struct PlaylistsDestination: View {
   }
 }
 
+enum PlaylistZoom {
+  /// Apart from a Set's id, so a Playlist's folder and a Set's artwork can share a namespace.
+  static func sourceID(_ playlistId: String) -> String { "playlist/\(playlistId)" }
+}
+
+extension View {
+  /// A Playlist's folder on a page whose Sets zoom in `zoom`'s namespace, which its page zooms
+  /// out of too.
+  @ViewBuilder func playlistZoomSource(_ playlistId: String, in zoom: SetZoom?) -> some View {
+    if let zoom {
+      zoomSource(PlaylistZoom.sourceID(playlistId), in: zoom.namespace, cornerRadius: 20)
+    } else {
+      self
+    }
+  }
+
+  #if os(iOS)
+    /// Pushes the open Playlist's page on this stack when `place` opened it, zooming out of its
+    /// folder in `namespace`. Going back closes the Playlist, as the Mac's back button does.
+    ///
+    /// The page pushes the Sets opened from it with `setPage`. Pushed from the stack's root
+    /// instead, a Set and the Playlist under it are two pages of the root, and Back from the
+    /// Set pops both.
+    func playlistPage<SetPage: View>(
+      _ model: AppModel, in place: Destination, zoom namespace: Namespace.ID,
+      @ViewBuilder setPage: @escaping (String) -> SetPage
+    ) -> some View {
+      let pushed = Binding<String?>(
+        get: { model.playlistPlace == place ? model.openedPlaylistId : nil },
+        // Another stack opening a Playlist pops this one, which must not close the new one.
+        set: { if $0 == nil, model.playlistPlace == place { model.closePlaylist() } }
+      )
+      let openedSet = Binding<String?>(
+        get: { model.openedSets[place] },
+        set: { model.openedSets[place] = $0 }
+      )
+      return navigationDestination(item: pushed) { id in
+        if let playlist = model.playlist(id) {
+          PlaylistDetailView(model: model, playlist: playlist)
+            .zoomTransition(from: PlaylistZoom.sourceID(id), in: namespace)
+            .navigationDestination(item: openedSet, destination: setPage)
+        }
+      }
+    }
+  #endif
+}
+
 /// One Playlist's ordered members. Reorder uses the platform list, add opens the library's
 /// Sets, and remove drops membership without deleting the Set.
 struct PlaylistDetailView: View {
@@ -385,6 +417,8 @@ struct PlaylistDetailView: View {
     }
     .task(id: playlist.id) {
       await model.loadPlaylistMembers(playlist.id)
+      // So a member's page opens with its Tracklist in place.
+      await model.loadTracklists(members)
     }
   }
 

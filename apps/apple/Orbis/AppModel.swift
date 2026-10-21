@@ -1588,11 +1588,8 @@ final class AppModel {
   /// it closes.
   func returnToRoot() {
     closeSet()
-    switch destination {
-    case .playlists: closePlaylist()
-    case .people: peopleRootRequests += 1
-    case .home, .library, .search: break
-    }
+    if playlistPlace == destination { closePlaylist() }
+    if destination == .people { peopleRootRequests += 1 }
   }
 
   /// Runs one change from the page. Every path reports through `setError`, so a refusal is
@@ -1775,10 +1772,15 @@ final class AppModel {
     playlistItems.first { $0.id == id }
   }
 
-  func openPlaylist(_ id: String) {
+  /// The destination whose stack the open Playlist's page is pushed on. Home pushes a Playlist on
+  /// its own stack on a phone, so Back returns to Home.
+  var playlistPlace: Destination = .playlists
+
+  func openPlaylist(_ id: String, in place: Destination = .playlists) {
     playlistFailure = nil
     // A page left open from the last Playlist must not be the first thing this one shows.
-    openedSets[.playlists] = nil
+    openedSets[place] = nil
+    playlistPlace = place
     openedPlaylistId = id
     playlistMembers = lastPlaylistMembers[id].map(Loadable.loaded) ?? .idle
   }
@@ -1787,6 +1789,18 @@ final class AppModel {
   func showPlaylist(_ id: String) {
     destination = .playlists
     openPlaylist(id)
+  }
+
+  /// Loads every Playlist's members that are not yet in memory, one Playlist after another, so
+  /// a folder opens on its Sets and their artwork rather than on a placeholder.
+  func prefetchPlaylistMembers() async {
+    guard let client else { return }
+    for playlist in playlistItems where lastPlaylistMembers[playlist.id] == nil {
+      guard !Task.isCancelled else { return }
+      guard let sets = try? await client.library(playlistId: playlist.id) else { continue }
+      lastPlaylistMembers[playlist.id] = sets
+      await ArtworkPrefetch.load(sets.prefix(6).compactMap { SetPresentation.row($0).artwork })
+    }
   }
 
   func closePlaylist() {
@@ -2010,7 +2024,14 @@ final class AppModel {
   /// Reads every ready Tracklist the device has not loaded yet, a few at a time, so Search can
   /// look inside them. One read per Set and no polling: a pending Tracklist has nothing to match.
   func loadTracklistsForSearch() async {
-    guard let client, case .loaded(let sets) = library else { return }
+    guard case .loaded(let sets) = library else { return }
+    await loadTracklists(sets)
+  }
+
+  /// Fetches the ready Tracklists of `sets` not yet in memory, four at a time, so a page opened
+  /// from them shows its Tracklist from the first frame.
+  func loadTracklists(_ sets: [SavedSet]) async {
+    guard let client else { return }
     let missing = sets.filter { $0.tracklistState == .ready && tracklists[$0.id] == nil }.map(\.id)
     await withTaskGroup(of: (String, Tracklist?).self) { group in
       var pending = missing[...]

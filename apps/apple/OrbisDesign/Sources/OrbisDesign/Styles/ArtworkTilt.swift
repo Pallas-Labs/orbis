@@ -208,6 +208,12 @@ extension View {
   public func artworkTilt(fixed tilt: Tilt) -> some View {
     environment(\.artworkTiltOverride, tilt)
   }
+
+  /// Holds every leaning piece of artwork inside level while `isLevel`. A page zooms out of a
+  /// card and back into it, and a card caught mid-lean would start and end the zoom tilted.
+  public func levelsArtworkTilt(_ isLevel: Bool) -> some View {
+    transformEnvironment(\.artworkTiltOverride) { if isLevel { $0 = .level } }
+  }
 }
 
 #Preview("Artwork tilt") {
