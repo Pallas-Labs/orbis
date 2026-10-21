@@ -8,11 +8,10 @@ import { Ytdlp } from "./ytdlp.js";
 
 export type BackendName = "cobalt" | "ytdlp";
 
-// Each source goes first to the backend proven on it; the other is the safety net.
-export const backendOrder = (source: SavedSet["source"]) =>
-  source === "youtube"
-    ? (["ytdlp", "cobalt"] as const)
-    : (["cobalt", "ytdlp"] as const);
+// yt-dlp is proven on both sources; Cobalt is the safety net. Cobalt cannot fetch
+// SoundCloud's AAC-only streams (imputnet/cobalt#1605), so it no longer goes first there.
+export const backendOrder = (_source: SavedSet["source"]) =>
+  ["ytdlp", "cobalt"] as const;
 
 /**
  * The download backends behind one interface: which to try for a source, in order,

@@ -241,10 +241,10 @@ const orderFor = async (url: string) => {
   }
 };
 
-test("YouTube tries yt-dlp first and SoundCloud tries Cobalt first", async () => {
+test("YouTube and SoundCloud both try yt-dlp first", async () => {
   // The YouTube yt-dlp attempt retries with the alternate client before Cobalt.
   expect(await orderFor(youTubeUrl)).toEqual(["ytdlp", "ytdlp", "cobalt"]);
-  expect(await orderFor(soundCloudUrl)).toEqual(["cobalt", "ytdlp"]);
+  expect(await orderFor(soundCloudUrl)).toEqual(["ytdlp", "cobalt"]);
 });
 
 testFfmpeg(
