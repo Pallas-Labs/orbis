@@ -6,6 +6,7 @@ import { Miniflare } from "miniflare";
 
 import broadFixture from "../../server/src/fixtures/playback-report-upload.json";
 import fixture from "../../server/src/fixtures/playback-upload.json";
+import { workerModules } from "./worker-modules.js";
 
 const artifact = path.resolve(
   import.meta.dir,
@@ -16,6 +17,10 @@ await mkdir(artifact, { recursive: true });
 const requests: unknown[] = [];
 const collector = Bun.serve({
   fetch: async (request) => {
+    // The Group's own log events share this collector.
+    if (new URL(request.url).pathname === "/v1/logs") {
+      return Response.json({});
+    }
     assert.equal(request.headers.get("user-agent"), "Orbis-Playback-Relay/1");
     assert.equal(request.headers.get("cf-access-client-id"), "fixture-id");
     assert.equal(
@@ -48,8 +53,7 @@ const runtime = new Miniflare({
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 });
 try {
   const seeded = await runtime.dispatchFetch("http://orbis/api/__seed");

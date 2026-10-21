@@ -17,6 +17,7 @@ import {
   tableChecksums,
 } from "../../server/src/sql-transfer.js";
 import { audioLayer } from "../src/audio.js";
+import { workerModules } from "./worker-modules.js";
 
 const sourcePath = process.env.ORBIS_TRANSFER_SOURCE;
 const token = process.env.ORBIS_NODE_KEY;
@@ -67,8 +68,7 @@ const options = {
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 };
 let runtime = new Miniflare(options);
 const send = (route: string, body?: string, key = token) => {

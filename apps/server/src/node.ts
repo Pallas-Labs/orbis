@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 
 import { startAudioNode } from "./audio-node.js";
-import { configureLogging } from "./logging.js";
+import { configureLogging, flushLogs, otlpFromEnvironment } from "./logging.js";
 import { makeNodeHttpHandler } from "./node-http.js";
 
 const required = (name: string) => {
@@ -19,7 +19,11 @@ const streamSecret = readFileSync(required("ORBIS_STREAM_SECRET_FILE"));
 if (streamSecret.length !== 32) {
   throw new Error("Invalid stream grant secret");
 }
-configureLogging({ environment: process.env.NODE_ENV ?? "development" });
+const logging = {
+  environment: process.env.NODE_ENV ?? "development",
+  otlp: otlpFromEnvironment("node"),
+};
+configureLogging(logging);
 const audio = Bun.serve({
   fetch: makeNodeHttpHandler({
     apiUrl: new URL(required("ORBIS_API_FORWARD_URL")),
@@ -34,6 +38,7 @@ const node = await startAudioNode({
   cobaltApiKey: process.env.ORBIS_COBALT_API_KEY,
   cobaltUrl: process.env.ORBIS_COBALT_URL,
   groupUrl: url.toString(),
+  logging,
   nodeKey: required("ORBIS_NODE_KEY"),
   ytdlpBin: process.env.ORBIS_YTDLP_BIN,
   ytdlpCookies: process.env.ORBIS_YTDLP_COOKIES,
@@ -41,6 +46,7 @@ const node = await startAudioNode({
 const close = async () => {
   await node.close();
   await audio.stop(true);
+  await flushLogs();
   process.exit(0);
 };
 process.once("SIGINT", () => {

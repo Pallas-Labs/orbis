@@ -14,6 +14,7 @@ import { Schema } from "effect";
 import { Miniflare } from "miniflare";
 
 import { issueStreamGrant } from "../../server/src/stream-grant-core.js";
+import { workerModules } from "./worker-modules.js";
 
 const artifact = path.resolve(
   import.meta.dir,
@@ -33,9 +34,24 @@ const probe = Bun.serve({ fetch: () => new Response(), port: 0 });
 const nodePort = probe.port;
 await probe.stop(true);
 const groupLog: string[] = [];
+const collected: { body: string; accessId: string | null }[] = [];
+const collector = Bun.serve({
+  fetch: async (incoming) => {
+    collected.push({
+      accessId: incoming.headers.get("cf-access-client-id"),
+      body: await incoming.text(),
+    });
+    return Response.json({});
+  },
+  hostname: "127.0.0.1",
+  port: 0,
+});
 const runtimeOptions = {
   bindings: {
     AUDIO_NODE_URL: `http://127.0.0.1:${nodePort}`,
+    SIGNOZ_OTLP_ACCESS_CLIENT_ID: "fixture-id",
+    SIGNOZ_OTLP_ACCESS_CLIENT_SECRET: "fixture-secret",
+    SIGNOZ_OTLP_URL: `http://127.0.0.1:${collector.port}/v1/logs`,
     STREAM_GRANT_SECRET: "11".repeat(32),
   },
   compatibilityDate: "2026-07-30",
@@ -45,8 +61,7 @@ const runtimeOptions = {
   handleStructuredLogs: ({ message }: { message: string }) => {
     groupLog.push(message);
   },
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 };
 let runtime = new Miniflare(runtimeOptions);
 const transcript: unknown[] = [];
@@ -75,6 +90,23 @@ const audioEvents = (lines: readonly string[]) =>
     .flatMap((text) => text.split("\n"))
     .filter((line) => line.includes('"audio":'))
     .map((line) => Schema.decodeUnknownSync(AudioEvent)(JSON.parse(line)));
+const GroupEvent = Schema.Struct({
+  code: Schema.optional(Schema.Number),
+  event: Schema.String,
+  level: Schema.String,
+  node: Schema.optional(Schema.String),
+  oldestQueuedMs: Schema.optional(Schema.NullOr(Schema.Number)),
+  outcome: Schema.optional(Schema.String),
+  queued: Schema.optional(Schema.Number),
+  requestId: Schema.optional(Schema.String),
+  set: Schema.optional(Schema.String),
+});
+/** The Group's standalone events with this name, from its captured output. */
+const groupEvents = (name: string) =>
+  groupLog
+    .flatMap((text) => text.split("\n"))
+    .filter((line) => line.includes(`"event":"${name}"`))
+    .map((line) => Schema.decodeUnknownSync(GroupEvent)(JSON.parse(line)));
 const until = async <T>(
   read: () => Promise<T> | T,
   matches: (value: T) => boolean
@@ -158,6 +190,19 @@ try {
     (value) => value !== undefined
   );
   assert.ok(start);
+  await until(
+    () => groupEvents("group-node-accepted"),
+    (events) => events.length === 1
+  );
+  assert.deepEqual(
+    groupEvents("group-download-started").map((event) => [
+      event.level,
+      event.set,
+      event.requestId,
+    ]),
+    [["info", set.id, start.requestId]],
+    "the Group logs the start with the request id the node logs"
+  );
   node.send({
     kind: "progress",
     received: 125,
@@ -242,6 +287,17 @@ try {
     () => state(second.id),
     (value) => value.state === "failed"
   );
+  assert.deepEqual(
+    groupEvents("group-download-settled").map((event) => [
+      event.level,
+      event.outcome,
+      event.requestId,
+    ]),
+    [
+      ["info", "finished", start.requestId],
+      ["warn", "failed", failed.requestId],
+    ]
+  );
   await request(`/sets/${second.id}/audio/download`, "POST");
   const retry = await until(
     () =>
@@ -268,7 +324,18 @@ try {
   node.send({ ...finished, requestId: retry.requestId, setId: second.id });
   await Bun.sleep(50);
   assert.equal((await state(second.id)).state, "none");
-  node.socket.close();
+  node.socket.close(4001, "fixture link lost");
+  await until(
+    () => groupEvents("group-node-disconnected"),
+    (events) => events.length === 1
+  );
+  assert.deepEqual(
+    groupEvents("group-node-disconnected").map((event) => [
+      event.level,
+      event.code,
+    ]),
+    [["warn", 4001]]
+  );
   const reconnected = await connect([
     { bytes: 25, durationSeconds: 1, format: "mp3", setId: "orphan" },
   ]);
@@ -336,6 +403,26 @@ try {
   );
   assert.ok(first);
   assert.equal(first.setId, peerSet.id);
+  const waiting = groupEvents("group-downloads-waiting");
+  assert.ok(
+    waiting.length > 0 && waiting.length <= queued.length + 2,
+    "queued work with no node warns once per wake at most"
+  );
+  assert.ok(
+    waiting.every(
+      (event) =>
+        event.level === "warn" &&
+        event.node === "missing" &&
+        (event.queued ?? 0) > 0 &&
+        (event.oldestQueuedMs ?? -1) >= 0
+    ),
+    JSON.stringify(waiting)
+  );
+  assert.equal(
+    Math.max(...waiting.map((event) => event.queued ?? 0)),
+    21,
+    "the client's 20 waiting Downloads and the peer's one"
+  );
   fair.send({ ...finished, requestId: first.requestId, setId: first.setId });
   const following = await until(
     () => fair.commands.filter((command) => command.kind === "start")[1],
@@ -547,6 +634,27 @@ try {
     false
   );
   transcript.push({ groupAudio, nodeAudio });
+  await until(
+    () => collected,
+    (requests) =>
+      requests.some((entry) => entry.body.includes("group-node-accepted"))
+  );
+  assert.ok(
+    collected.every((entry) => entry.accessId === "fixture-id"),
+    "the Group sends its events through the Access-authenticated endpoint"
+  );
+  assert.ok(
+    collected.some((entry) => entry.body.includes('"orbis.component"')),
+    "the Group marks its events as its own"
+  );
+  await writeFile(
+    path.join(artifact, "otlp.json"),
+    JSON.stringify(
+      collected.map((entry) => JSON.parse(entry.body)),
+      null,
+      2
+    )
+  );
   const misconfigured = new Miniflare({
     ...runtimeOptions,
     bindings: { ...runtimeOptions.bindings, AUDIO_NODE_URL: "vanta:10000" },
@@ -573,4 +681,5 @@ try {
   console.log(`Audio node E2E passed. ${artifact}/result.json`);
 } finally {
   await runtime.dispose();
+  await collector.stop(true);
 }

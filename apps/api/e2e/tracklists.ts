@@ -6,6 +6,8 @@ import path from "node:path";
 import { Schema } from "effect";
 import { Miniflare } from "miniflare";
 
+import { workerModules } from "./worker-modules.js";
+
 // Versos answers a Tracklist request in seconds, long after the Group has answered the retry
 // that started it. A run that only lives as long as that request never stores its Cues.
 const READY_AFTER_MS = 3000;
@@ -78,8 +80,7 @@ const runtime = new Miniflare({
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 });
 const call = async (route: string, method = "GET") => {
   const response = await runtime.dispatchFetch(`http://orbis/api${route}`, {

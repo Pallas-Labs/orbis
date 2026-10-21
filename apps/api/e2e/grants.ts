@@ -6,6 +6,7 @@ import { Miniflare } from "miniflare";
 
 import { makeNodeHttpHandler } from "../../server/src/node-http.js";
 import { issueStreamGrant } from "../../server/src/stream-grant-core.js";
+import { workerModules } from "./worker-modules.js";
 
 const artifact = path.resolve(
   import.meta.dir,
@@ -42,8 +43,7 @@ const runtime = new Miniflare({
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 });
 const upstream = Bun.serve({
   fetch: (request) =>

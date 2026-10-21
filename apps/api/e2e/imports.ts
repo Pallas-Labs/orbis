@@ -7,6 +7,8 @@ import { PlaylistImportSchema } from "@orbis/contracts/http-api";
 import { Schema } from "effect";
 import { Miniflare } from "miniflare";
 
+import { workerModules } from "./worker-modules.js";
+
 const artifact = path.resolve(
   import.meta.dir,
   "../../../.cache/api-imports",
@@ -94,9 +96,8 @@ const options = (outbound: (request: Request) => Promise<Response>) => ({
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
+  modules: workerModules(script),
   outboundService: outbound,
-  script,
 });
 
 const Snapshot = Schema.Struct({

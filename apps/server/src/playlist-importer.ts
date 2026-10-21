@@ -634,7 +634,7 @@ export class PlaylistImporter extends Context.Service<
               return yield* Effect.interrupt;
             }
             const message = failureMessage(outcome.cause);
-            yield* Effect.logWarning("playlist import failed").pipe(
+            yield* Effect.logError("playlist import failed").pipe(
               Effect.annotateLogs({ import: job.id, reason: message })
             );
             yield* store.fail(job, message);

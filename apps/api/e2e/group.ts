@@ -14,6 +14,7 @@ import { releaseAudio } from "../../server/src/audio-release.js";
 import { layer } from "../../server/src/db/database.js";
 import { hashToken } from "../../server/src/identity.js";
 import { audioLayer } from "../src/audio.js";
+import { workerModules } from "./worker-modules.js";
 
 const artifact = path.resolve(
   import.meta.dir,
@@ -44,8 +45,7 @@ const options = {
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script,
+  modules: workerModules(script),
 };
 let runtime = new Miniflare(options);
 try {
