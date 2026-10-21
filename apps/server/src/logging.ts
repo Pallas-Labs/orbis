@@ -13,6 +13,8 @@ import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
 import { createLogger, createRequestLogger, initLogger } from "evlog";
 import type { DrainContext, RequestLogger, WideEvent } from "evlog";
 import { createOTLPDrain } from "evlog/otlp";
+import { createDrainPipeline } from "evlog/pipeline";
+import type { PipelineDrainFn } from "evlog/pipeline";
 
 /**
  * Server logging is one wide event per request, emitted once when the request
@@ -69,7 +71,7 @@ export interface OtlpOptions {
   /** The `orbis.component` resource attribute that tells processes apart. */
   readonly component: "canary" | "group" | "node";
   readonly headers?: Readonly<Record<string, string>>;
-  /** Keeps the runtime alive until a send settles, as a Durable Object's `ctx.waitUntil` does. */
+  /** Keeps the runtime alive until queued events are sent, as a Durable Object's `ctx.waitUntil` does. */
   readonly waitUntil?: (promise: Promise<unknown>) => void;
 }
 
@@ -113,35 +115,38 @@ const discardEvent = (context: DrainContext): void => {
   void context;
 };
 
-/** Sends still in flight, so a process can wait for them before it exits. */
-const pendingSends = new Set<Promise<void>>();
+/** Events queued for the collector, sent in batches of up to 50 or every 5 seconds. */
+let otlpBatches: PipelineDrainFn<DrainContext> | undefined;
 
 const otlpDrain = (otlp: OtlpOptions) => {
-  const send = createOTLPDrain({
-    // evlog appends the signal path itself.
-    endpoint: otlp.url.replace(/\/v1\/logs\/?$/u, ""),
-    headers: { ...otlp.headers },
-    // Flat dotted attributes, such as `audio.set`, are what SigNoz filters on.
-    // oxlint-disable-next-line anti-slop/no-shape-in-symbol-names -- evlog names this option.
-    recordShape: "compact",
-    resourceAttributes: { "orbis.component": otlp.component },
-    serviceName: "orbis",
-  });
-  return async (context: DrainContext): Promise<void> => {
-    const sent = Promise.resolve(send(context));
-    pendingSends.add(sent);
-    otlp.waitUntil?.(sent);
-    try {
-      await sent;
-    } finally {
-      pendingSends.delete(sent);
-    }
+  const batches = createDrainPipeline<DrainContext>({
+    onDropped: (events, error) => {
+      console.warn(
+        `[orbis/logging] Dropped ${events.length} event(s) for the collector: ${error?.message ?? "queue full"}`
+      );
+    },
+  })(
+    createOTLPDrain({
+      // evlog appends the signal path itself.
+      endpoint: otlp.url.replace(/\/v1\/logs\/?$/u, ""),
+      headers: { ...otlp.headers },
+      // Flat dotted attributes, such as `audio.set`, are what SigNoz filters on.
+      // oxlint-disable-next-line anti-slop/no-shape-in-symbol-names -- evlog names this option.
+      recordShape: "compact",
+      resourceAttributes: { "orbis.component": otlp.component },
+      serviceName: "orbis",
+    })
+  );
+  otlpBatches = batches;
+  return (context: DrainContext): void => {
+    batches(context);
+    otlp.waitUntil?.(batches.settled());
   };
 };
 
-/** Waits for every event sent so far to reach the collector or fail. */
+/** Sends every queued event and waits for the collector to accept or refuse it. */
 export const flushLogs = async (): Promise<void> => {
-  await Promise.allSettled(pendingSends);
+  await otlpBatches?.flush();
 };
 
 /**

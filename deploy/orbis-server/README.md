@@ -87,7 +87,7 @@ Add this line to the environment of both `orbis-server` and `orbis-canary`, for 
 ORBIS_OTLP_LOGS_URL=http://127.0.0.1:4318/v1/logs
 ```
 
-The Group on Cloudflare sends its events through the Access-protected endpoint that the playback relay uses, with the same `SIGNOZ_OTLP_*` bindings. [Worker configuration](../../apps/api/README.md#worker-configuration) names them. A send that fails is written to the console and does not change the request or the download.
+The Group on Cloudflare sends its events through the Access-protected endpoint that the playback relay uses, with the same `SIGNOZ_OTLP_*` bindings. [Worker configuration](../../apps/api/README.md#worker-configuration) names them. Each process sends events in batches of up to 50, at least every 5 seconds. A batch that fails three tries is dropped with one console warning and does not change the request or the download.
 
 ## Where to look when a download fails
 
