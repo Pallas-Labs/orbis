@@ -101,8 +101,13 @@ const connect = async (
   const socket = response.webSocket;
   assert.ok(socket);
   const commands: NodeCommand[] = [];
+  let pongs = 0;
   socket.accept();
   socket.addEventListener("message", (event) => {
+    if (event.data === "pong") {
+      pongs += 1;
+      return;
+    }
     const command = Schema.decodeUnknownSync(NodeCommandSchema)(
       JSON.parse(String(event.data))
     );
@@ -114,7 +119,7 @@ const connect = async (
     socket.send(JSON.stringify(message));
   };
   send({ files, kind: "inventory" });
-  return { commands, send, socket };
+  return { commands, pongs: () => pongs, send, socket };
 };
 const save = async (suffix: string, token = "client-token") => {
   const response = await request(
@@ -142,6 +147,8 @@ try {
   );
   assert.equal((await request("/node")).status, 403);
   const node = await connect();
+  node.socket.send("ping");
+  await until(node.pongs, (count) => count === 1);
   const set = await save("first");
   const start = await until(
     () =>

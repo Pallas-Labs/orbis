@@ -369,7 +369,8 @@ export class GroupAudioNode {
   }
 
   disconnected(socket: WebSocket, code: number) {
-    socket.close(code);
+    // 1005, 1006 and 1015 describe a close and cannot be sent, so close() throws on them.
+    socket.close([1005, 1006, 1015].includes(code) ? 1011 : code);
     for (const request of GroupAudioNode.attachment(socket).detailRequests) {
       this.details
         .get(request.requestId)
