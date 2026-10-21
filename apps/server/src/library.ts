@@ -792,7 +792,11 @@ export class Library extends Context.Service<
                 yield* tx
                   .delete(downloadJobs)
                   .where(eq(downloadJobs.setId, id));
-                yield* tx.insert(downloadJobs).values({ personId, setId: id });
+                yield* tx.insert(downloadJobs).values({
+                  personId,
+                  queuedAt: new Date().toISOString(),
+                  setId: id,
+                });
                 const [queued] = yield* tx
                   .update(sets)
                   .set({ downloadState: "queued" })

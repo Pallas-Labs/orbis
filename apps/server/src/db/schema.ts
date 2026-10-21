@@ -114,6 +114,8 @@ export const downloadJobs = sqliteTable("download_jobs", {
   personId: text("person_id")
     .notNull()
     .references(() => downloadRequesters.personId),
+  /** When the Download was queued; null for rows queued before the column existed. */
+  queuedAt: text("queued_at"),
   sequence: integer("sequence").primaryKey({ autoIncrement: true }),
   setId: text("set_id")
     .notNull()
