@@ -605,7 +605,6 @@ export const makeRequestLogMiddleware =
 
 /** One background job's wide event, for code that settles the job itself. */
 export interface JobLog {
-  /** Adds fields to the event. */
   readonly annotate: (fields: LoggedRecord) => void;
   /** Runs an effect with its logs folded into this event. */
   readonly within: <A, E, R>(

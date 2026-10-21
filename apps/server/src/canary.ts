@@ -185,7 +185,7 @@ const program = Effect.gen(function* runCanary() {
       new Error(
         results.length === 0
           ? "No download backend is configured."
-          : `${sourcesWithoutBackend.join(" and ")} has no working backend.`
+          : `No working backend for ${sourcesWithoutBackend.join(", ")}.`
       )
     );
   }

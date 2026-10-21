@@ -8,7 +8,12 @@ import { Effect, Layer, ManagedRuntime, Schema } from "effect";
 import { Cobalt } from "./cobalt.js";
 import type { CobaltOptions } from "./cobalt.js";
 import { DownloadBackends } from "./download-backends.js";
-import { describeCause, logEvent, startJobLog } from "./logging.js";
+import {
+  describeCause,
+  logEvent,
+  loggingLayer,
+  startJobLog,
+} from "./logging.js";
 import type { LoggedRecord, LoggingOptions } from "./logging.js";
 import { MediaStore } from "./media-store.js";
 import type { MediaStoreOptions } from "./media-store.js";
@@ -37,7 +42,9 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
     DownloadBackends.layer.pipe(
       Layer.provide(Cobalt.layer(options)),
       Layer.provide(Ytdlp.layer(options)),
-      Layer.provideMerge(mediaLayer)
+      Layer.provideMerge(mediaLayer),
+      // Startup lines, such as a source with one backend, go out as events too.
+      Layer.provideMerge(loggingLayer)
     )
   );
   const media = await runtime.runPromise(MediaStore);
