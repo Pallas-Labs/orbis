@@ -22,7 +22,9 @@ interface OtlpRecord {
 interface OtlpBody {
   readonly resourceLogs: readonly {
     readonly resource: { readonly attributes: readonly OtlpAttribute[] };
-    readonly scopeLogs: readonly { readonly logRecords: readonly OtlpRecord[] }[];
+    readonly scopeLogs: readonly {
+      readonly logRecords: readonly OtlpRecord[];
+    }[];
   }[];
 }
 
@@ -31,7 +33,7 @@ const startCollector = () => {
   const server = Bun.serve({
     fetch: async (incoming) => {
       received.push({
-        body: (await incoming.json()) as OtlpBody,
+        body: await incoming.json(),
         headers: incoming.headers,
         path: new URL(incoming.url).pathname,
       });
@@ -87,20 +89,26 @@ test("drains events, request events, and plain Effect logs to the OTLP collector
     await server.stop(true);
   }
   expect(received.map((entry) => entry.path)).toContain("/v1/logs");
-  expect(received.every((entry) => entry.headers.get("x-probe") === "fixture")).toBe(true);
+  expect(
+    received.every((entry) => entry.headers.get("x-probe") === "fixture")
+  ).toBe(true);
   const all = records(received.map((entry) => entry.body));
   for (const record of all) {
     expect(attribute(record.resource, "service.name")).toBe("orbis");
     expect(attribute(record.resource, "orbis.component")).toBe("node");
   }
-  const probe = all.find((record) => attribute(record.attributes, "event") === "probe");
+  const probe = all.find(
+    (record) => attribute(record.attributes, "event") === "probe"
+  );
   expect(probe?.severityText).toBe("ERROR");
   const plain = all.find(
     (record) => attribute(record.attributes, "message") === "plain line"
   );
   expect(plain?.severityText).toBe("WARN");
   expect(attribute(plain?.attributes ?? [], "set")).toBe("set-1");
-  const health = all.find((record) => attribute(record.attributes, "path") === "/health");
+  const health = all.find(
+    (record) => attribute(record.attributes, "path") === "/health"
+  );
   expect(health?.severityText).toBe("INFO");
   const serialized = JSON.stringify(received.map((entry) => entry.body));
   expect(serialized).not.toContain("do-not-send");
