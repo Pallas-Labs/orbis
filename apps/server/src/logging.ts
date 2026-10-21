@@ -204,8 +204,9 @@ const levelFor = (completion: RequestCompletion): EventLevel => {
   if (completion.outcome === "failure") {
     return "error";
   }
+  // A client that left, or a person who canceled, is expected.
   if (completion.outcome === "cancelled") {
-    return "warn";
+    return "info";
   }
   if (completion.status !== undefined && completion.status >= 500) {
     return "error";

@@ -147,6 +147,9 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
           break;
         } catch (error) {
           lastError = error instanceof Error ? error : new Error(String(error));
+          if (signal.aborted) {
+            break;
+          }
           attempts.push({
             backend,
             ok: false,
