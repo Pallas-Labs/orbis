@@ -124,3 +124,55 @@ test("real node reconnects and handles duplicate download, details and release c
   const names = await readdir(directory);
   expect(names.some((name) => /sqlite|devices/u.test(name))).toBe(false);
 });
+
+test("node reconnects when the Group stops answering heartbeats", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "orbis-node-"));
+  cleanups.push(() => rm(directory, { force: true, recursive: true }));
+  const messages: NodeMessage[] = [];
+  let answering = true;
+  const server = Bun.serve({
+    fetch(request, listener) {
+      if (listener.upgrade(request)) {
+        return;
+      }
+      return new Response(null, { status: 400 });
+    },
+    port: 0,
+    websocket: {
+      message(ws, message) {
+        if (message === "ping") {
+          if (answering) {
+            ws.send("pong");
+          }
+          return;
+        }
+        messages.push(
+          Schema.decodeUnknownSync(NodeMessageSchema)(
+            JSON.parse(String(message))
+          )
+        );
+      },
+    },
+  });
+  cleanups.push(async () => {
+    await server.stop(true);
+  });
+  const node = await startAudioNode({
+    audioDir: path.join(directory, "audio"),
+    groupUrl: `ws://localhost:${server.port}/api/node`,
+    heartbeatMs: 50,
+    nodeKey: "node-secret",
+    reconnectDelayMs: 10,
+  });
+  cleanups.push(() => node.close());
+  await until(() => messages.some((message) => message.kind === "inventory"));
+  await Bun.sleep(300);
+  expect(
+    messages.filter((message) => message.kind === "inventory")
+  ).toHaveLength(1);
+  answering = false;
+  await until(
+    () =>
+      messages.filter((message) => message.kind === "inventory").length === 2
+  );
+});
