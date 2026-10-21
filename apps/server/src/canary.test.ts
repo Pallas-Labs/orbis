@@ -122,14 +122,17 @@ const runCanary = async () => {
   const exitCode = await child.exited;
   const last = Schema.decodeUnknownSync(LastRun)(
     JSON.parse(
-      await readFile(path.join(directory, "canary", "last.json"), "utf8")
+      await readFile(path.join(directory, "canary", "last.json"), "utf-8")
     )
   );
   const canaryEvents = bodies
     .flatMap((body) => body.resourceLogs)
     .flatMap((resource) =>
       resource.scopeLogs.flatMap((scope) =>
-        scope.logRecords.map((record) => ({ record, resource }))
+        scope.logRecords.map((record) => ({
+          record,
+          resource: resource.resource,
+        }))
       )
     )
     .filter(({ record }) =>
