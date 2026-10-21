@@ -38,7 +38,7 @@ struct PlaylistsDestination: View {
       .navigationDestination(item: pushedPlaylist) { id in
         if let playlist = model.playlist(id) {
           PlaylistDetailView(model: model, playlist: playlist)
-            .zoomTransition(from: id, in: playlistZoom)
+          .zoomTransition(from: id, in: playlistZoom)
         }
       }
     #endif

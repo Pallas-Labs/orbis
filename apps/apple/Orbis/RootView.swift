@@ -44,7 +44,9 @@ import SwiftUI
       // accessory, and the only way round it there is to rebuild the tab view.
       .tabViewBottomAccessory(isEnabled: model.showsMiniPlayer) {
         NowPlayingBar(model: model) { isNowPlayingShown = true }
-          .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+          .onGeometryChange(for: CGRect.self) {
+            $0.frame(in: .global)
+          } action: {
             miniPlayerFrame = $0
           }
       }
