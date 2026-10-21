@@ -13,6 +13,20 @@ struct NowPlayingScreen: View {
   @State private var isRenaming = false
   @State private var isShowingQueue = false
   @State private var showsTracklist = false
+  /// Closes the screen when something other than a sheet presents it, such as the player that
+  /// grows out of the mini player. Nil dismisses the sheet.
+  var close: (() -> Void)?
+  /// Marks the artwork's frame, for a copy that flies in from the mini player's thumb.
+  var artworkAnchor: Namespace.ID?
+  /// True while that copy is in flight, so the picture shows once.
+  var hidesArtwork = false
+  /// False when the view that presents the screen draws `NowPlayingBackground` itself, so it can
+  /// grow the background separately from the page.
+  var drawsBackground = true
+
+  private func closeScreen() {
+    if let close { close() } else { dismiss() }
+  }
 
   var body: some View {
     let player = model.audioPlayer
@@ -33,9 +47,7 @@ struct NowPlayingScreen: View {
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background {
-      ArtworkGlow(url: set.flatMap(SetPresentation.pageArtwork))
-        .overlay(LinearGradient(colors: [.clear, .black.opacity(0.4)], startPoint: .center, endPoint: .bottom))
-        .ignoresSafeArea()
+      if drawsBackground { NowPlayingBackground(set: set) }
     }
     .environment(\.colorScheme, .dark)
     .setChangeStatus(model)
@@ -49,9 +61,9 @@ struct NowPlayingScreen: View {
       // and from Escape.
       .overlay(alignment: .topLeading) { closeButton(systemImage: "xmark").padding(12) }
     #endif
-    .accessibilityAction(.escape) { dismiss() }
+    .accessibilityAction(.escape) { closeScreen() }
     .onChange(of: player.currentSetId) { _, id in
-      if id == nil { dismiss() }
+      if id == nil { closeScreen() }
     }
   }
 
@@ -59,7 +71,7 @@ struct NowPlayingScreen: View {
   private static let closeClearance: CGFloat = 44
 
   private func closeButton(systemImage: String) -> some View {
-    Button("Close", systemImage: systemImage, action: dismiss.callAsFunction)
+    Button("Close", systemImage: systemImage, action: closeScreen)
       .labelStyle(.iconOnly)
       .buttonStyle(.orbisIcon)
       .font(.title3)
@@ -122,6 +134,8 @@ struct NowPlayingScreen: View {
         // The artwork sits back while the Set is paused and steps forward when it plays, the way
         // Apple Music's does: the state of the player, read from across the room.
         Artwork(url: SetPresentation.pageArtwork(set), seed: set.title, size: .header)
+          .nowPlayingArtworkAnchor(artworkAnchor)
+          .opacity(hidesArtwork ? 0 : 1)
           .shadow(color: .black.opacity(0.45), radius: isPlaying ? 28 : 12, y: isPlaying ? 18 : 6)
           .scaleEffect(isPlaying ? 1 : 0.86)
           .orbisAnimation(.playbackToggled, value: isPlaying)
@@ -171,6 +185,28 @@ struct NowPlayingScreen: View {
     .task(id: set.id) {
       if set.tracklistState != .none { await model.loadTracklist(set.id) }
     }
+  }
+}
+
+extension View {
+  @ViewBuilder fileprivate func nowPlayingArtworkAnchor(_ namespace: Namespace.ID?) -> some View {
+    if let namespace {
+      matchedGeometryEffect(id: MiniPlayer.transitionID, in: namespace)
+    } else {
+      self
+    }
+  }
+}
+
+/// Now Playing's backdrop: the artwork's glow, darkened toward the controls.
+struct NowPlayingBackground: View {
+  let set: SavedSet?
+
+  var body: some View {
+    ArtworkGlow(url: set.flatMap(SetPresentation.pageArtwork))
+      .overlay(LinearGradient(colors: [.clear, .black.opacity(0.4)], startPoint: .center, endPoint: .bottom))
+      .environment(\.colorScheme, .dark)
+      .ignoresSafeArea()
   }
 }
 

@@ -22,10 +22,10 @@ import SwiftUI
           model.destination = next
         })
     }
-    /// Now Playing is a sheet over the whole shell, so it opens the same from any tab.
+    /// Now Playing covers the whole shell, so it opens the same from any tab.
     @State private var isNowPlayingShown = false
-    /// Now Playing grows out of the mini player's artwork and shrinks back into it.
-    @Namespace private var nowPlaying
+    /// Where the mini player sits in the window, which Now Playing grows out of.
+    @State private var miniPlayerFrame: CGRect = .zero
 
     var body: some View {
       TabView(selection: tabSelection) {
@@ -43,12 +43,12 @@ import SwiftUI
       // `isEnabled` is why the target is iOS 26.1: 26.0 reserves an empty pill for an empty
       // accessory, and the only way round it there is to rebuild the tab view.
       .tabViewBottomAccessory(isEnabled: model.showsMiniPlayer) {
-        NowPlayingBar(model: model, transition: nowPlaying) { isNowPlayingShown = true }
+        NowPlayingBar(model: model) { isNowPlayingShown = true }
+          .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: {
+            miniPlayerFrame = $0
+          }
       }
-      .nowPlayingCover(isPresented: $isNowPlayingShown) {
-        NowPlayingScreen(model: model)
-          .zoomsFromMiniPlayer(nowPlaying)
-      }
+      .nowPlayingExpansion(model: model, isPresented: $isNowPlayingShown, from: miniPlayerFrame)
     }
   }
 

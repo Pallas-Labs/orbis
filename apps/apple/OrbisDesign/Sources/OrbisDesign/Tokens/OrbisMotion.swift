@@ -62,6 +62,8 @@ public enum OrbisMotion: String, CaseIterable, Sendable {
   case playbackToggled
   /// The mix moved on to its next Cue.
   case cueChanged
+  /// Now Playing grew out of the mini player, or shrank back into it.
+  case playerExpanded
 
   public var purpose: String {
     switch self {
@@ -74,6 +76,7 @@ public enum OrbisMotion: String, CaseIterable, Sendable {
     case .pressed: "A card or row is under a finger."
     case .playbackToggled: "A Set started or paused."
     case .cueChanged: "The mix moved on to its next Cue."
+    case .playerExpanded: "Now Playing grew out of the mini player, or shrank back into it."
     }
   }
 
@@ -84,7 +87,7 @@ public enum OrbisMotion: String, CaseIterable, Sendable {
     case .filingSucceeded: .bounce
     case .filingFailed: .wiggle
     case .tagToggled, .playlistReordered, .pageTinted, .downloadProgressed, .pressed,
-      .playbackToggled, .cueChanged:
+      .playbackToggled, .cueChanged, .playerExpanded:
       nil
     }
   }
@@ -101,7 +104,8 @@ public enum OrbisMotion: String, CaseIterable, Sendable {
   public var curve: OrbisCurve {
     switch self {
     case .filingSucceeded, .filingFailed, .tagToggled: .snappy
-    case .playlistReordered, .pageTinted, .downloadProgressed, .cueChanged: .smooth
+    case .playlistReordered, .pageTinted, .downloadProgressed, .cueChanged, .playerExpanded:
+      .smooth
     case .pressed: .press
     case .playbackToggled: .lively
     }

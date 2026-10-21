@@ -23,9 +23,8 @@ public struct MiniPlayer: View {
   /// How far listening got, from 0 to 1, for the hairline along the bottom edge.
   public let progress: Double?
   public let surface: Surface
-  /// Where Now Playing zooms out of: the whole player, marked in this namespace. Inside the tab
-  /// view's accessory the zoom finds only a source on the accessory's root view; one on the
-  /// artwork alone falls back to the plain cover.
+  /// Where Now Playing zooms out of: the whole player, marked in this namespace. Nil where
+  /// something other than the system's zoom opens Now Playing.
   public let transition: Namespace.ID?
   public let toggle: () -> Void
   /// Moves to the next track in the Set's Tracklist. Nil when there is no next track.

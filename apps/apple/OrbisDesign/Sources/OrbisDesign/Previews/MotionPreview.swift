@@ -51,6 +51,7 @@ enum MotionPreview {
     case .pressed: "hand.tap"
     case .playbackToggled: "play.circle"
     case .cueChanged: "music.note.list"
+    case .playerExpanded: "rectangle.expand.vertical"
     }
   }
 
@@ -65,6 +66,7 @@ enum MotionPreview {
     case .pressed: "Press"
     case .playbackToggled: "Play"
     case .cueChanged: "Next Cue"
+    case .playerExpanded: "Open Now Playing"
     }
   }
 }
