@@ -5,6 +5,8 @@ import path from "node:path";
 import { Schema } from "effect";
 import { Miniflare } from "miniflare";
 
+import { workerModules } from "./worker-modules.js";
+
 // The Group's SQLite binds at most 100 values in one statement. 40 Sets is more than one
 // insert can hold for a playlist (3 values a row) or a queue (4 values a row).
 const SET_COUNT = 40;
@@ -37,8 +39,7 @@ const runtime = new Miniflare({
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 });
 const call = async (route: string, method = "GET", body?: string) => {
   const response = await runtime.dispatchFetch(`http://orbis/api${route}`, {

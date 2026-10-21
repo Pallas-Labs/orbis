@@ -17,6 +17,8 @@ import path from "node:path";
 import { Miniflare } from "miniflare";
 import type { MiniflareOptions } from "miniflare";
 
+import { workerModules } from "./worker-modules.js";
+
 const NODE_KEY = "vanta-node-token";
 const FRIEND_KEY = "friend-daily-token";
 const CODE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/u;
@@ -45,8 +47,7 @@ const miniflareOptions = {
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 } satisfies MiniflareOptions;
 let runtime = new Miniflare(miniflareOptions);
 const call = (

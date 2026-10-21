@@ -5,6 +5,7 @@ import path from "node:path";
 import { Miniflare } from "miniflare";
 
 import { makeNodeAudioHandler } from "../../server/src/node-audio-http.js";
+import { workerModules } from "./worker-modules.js";
 
 const directory = process.env.ORBIS_DATA_DIR;
 assert.ok(directory, "ORBIS_DATA_DIR is required");
@@ -37,8 +38,7 @@ const runtime = new Miniflare({
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(directory, "group"),
-  modules: true,
-  script: await bundle.outputs[0].text(),
+  modules: workerModules(await bundle.outputs[0].text()),
 });
 const seeded = await runtime.dispatchFetch("http://group/api/__seed");
 assert.equal(seeded.status, 200);

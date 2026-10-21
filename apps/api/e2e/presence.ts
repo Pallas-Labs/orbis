@@ -8,6 +8,8 @@ import { PresenceActionResultSchema } from "@orbis/contracts/http-api";
 import { Schema } from "effect";
 import { Miniflare } from "miniflare";
 
+import { workerModules } from "./worker-modules.js";
+
 const LEASE_MS = 30_000;
 const artifact = path.resolve(
   import.meta.dir,
@@ -32,8 +34,7 @@ const options = {
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 };
 let runtime = new Miniflare(options);
 const transcript: unknown[] = [];

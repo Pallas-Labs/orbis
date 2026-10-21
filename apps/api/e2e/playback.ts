@@ -6,6 +6,7 @@ import { Miniflare } from "miniflare";
 
 import broadFixture from "../../server/src/fixtures/playback-report-upload.json";
 import fixture from "../../server/src/fixtures/playback-upload.json";
+import { workerModules } from "./worker-modules.js";
 
 const artifact = path.resolve(
   import.meta.dir,
@@ -48,8 +49,7 @@ const runtime = new Miniflare({
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 });
 try {
   const seeded = await runtime.dispatchFetch("http://orbis/api/__seed");
