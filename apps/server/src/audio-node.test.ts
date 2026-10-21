@@ -10,7 +10,10 @@ import { Schema } from "effect";
 import type { WideEvent } from "evlog";
 
 import { startAudioNode } from "./audio-node.js";
+import { configureLogging } from "./logging.js";
 import type { LoggingOptions } from "./logging.js";
+
+configureLogging({ silent: true });
 
 const collect = () => {
   const events: WideEvent[] = [];
@@ -251,8 +254,7 @@ test("node reconnects when the Group stops answering heartbeats", async () => {
   await until(() =>
     named("node-link-reconnecting").some((event) => event.level === "error")
   );
-  const failing = named("node-link-reconnecting").filter(
-    (event) => event.level === "error"
-  );
-  expect(failing[0]).toMatchObject({ attempt: 5 });
+  expect(
+    named("node-link-reconnecting").find((event) => event.level === "error")
+  ).toMatchObject({ attempt: 5, connectFailed: "1006 Failed to connect" });
 });

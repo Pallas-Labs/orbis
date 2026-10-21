@@ -90,8 +90,16 @@ export interface LoggingOptions {
   /** Suppress evlog's own console output. Used by tests. */
   readonly silent?: boolean;
   /** Also send every event to this collector. Unset, events stay on the console. */
-  readonly otlp?: OtlpOptions;
+  readonly otlp?: OtlpOptions | undefined;
 }
+
+/** The collector a Bun process sends to: `ORBIS_OTLP_LOGS_URL`, or none when it is unset. */
+export const otlpFromEnvironment = (
+  component: OtlpOptions["component"]
+): OtlpOptions | undefined => {
+  const url = process.env.ORBIS_OTLP_LOGS_URL;
+  return url ? { component, url } : undefined;
+};
 
 export type RequestOutcome = "success" | "rejected" | "failure" | "cancelled";
 
