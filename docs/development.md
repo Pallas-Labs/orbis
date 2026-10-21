@@ -36,11 +36,23 @@ bun run dev
 
 The server writes one structured event per request when the request settles: request id, method, path with the query string removed, status, outcome, and elapsed time. An `Effect.log*` call made while handling a request is folded into that event instead of a second line.
 
+Background work writes one event per job, named by its `job` field, such as `audio-download`, `download-canary`, or `tracklist`. A standalone event, such as a node link change, has an `event` field instead. An `Effect.log*` call made outside a request or a job becomes its own event. The [operation guide](../deploy/orbis-server/README.md#where-to-look-when-a-download-fails) lists the node, Group, and canary events.
+
+The level tells a person whether to look:
+
+- `error` marks a failed download, a failed playlist import, a canary source with no working backend, a node that failed to reconnect five times in a row, and a request that failed with a 5xx status.
+- `warn` marks work that degraded but was handled, such as a lost backend or a lost node link, and a request refused with a 4xx status.
+- `info` marks everything else, including a cancelled request or download.
+
+An alert on any `error` from service `orbis` stays useful only while new code follows these levels.
+
 A request that dies records `cause`: the error name and its message with query strings, bearer tokens, and credential-named pairs removed. A typed failure records its name only. Audio requests add an `audio` record; [the operation guide](../deploy/orbis-server/README.md#where-to-look-when-a-set-does-not-play) lists its fields.
 
 Authorization headers, cookies, request bodies, source links, stream grants, and raw error stacks are never recorded, and credential-shaped values are redacted before output. Redaction follows key names, so a credential written as free text can still reach a line: treat logged free text as public.
 
 `NODE_ENV` sets the event `environment`, which defaults to `development`. In production each event is one JSON line, where `info` goes to standard output and `warn` and `error` go to standard error; development prints readable lines. The wiring lives in `apps/server/src/logging.ts`. `createApp({ logging })` overrides the environment, quiets output (`silent`), or receives every event (`onEvent`), which the tests use.
+
+`logging.otlp` also sends every event, after redaction, to an OTLP/HTTP collector such as SigNoz. Its `url` is the full logs URL, `component` sets the `orbis.component` resource attribute to `node`, `group`, or `canary`, and `headers` adds request headers. Every event has `service.name=orbis`. The node and the canary read the collector URL from `ORBIS_OTLP_LOGS_URL`, and the Group builds it from its SigNoz bindings. When no collector is set, events go only to the console, as in tests. A process that exits on its own calls `flushLogs()` first, so its last events reach the collector.
 
 ## Checks
 
