@@ -95,7 +95,8 @@ shutil.copyfile(os.path.join(here, name), sys.argv[sys.argv.index('-o') + 1])
     hostname: "127.0.0.1",
     port: 0,
   });
-});
+  // ffmpeg writes two hours of silence; a CI runner needs longer than Bun's 5 s default.
+}, 60_000);
 
 afterAll(async () => {
   await collector?.stop(true);
