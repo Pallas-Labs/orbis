@@ -114,3 +114,47 @@ test("drains events, request events, and plain Effect logs to the OTLP collector
   expect(serialized).not.toContain("do-not-send");
   expect(serialized).not.toContain("hidden");
 });
+
+const collectorOptions = (port: number | undefined) =>
+  ({
+    component: "node",
+    url: `http://127.0.0.1:${port}/v1/logs`,
+  }) as const;
+
+const sequences = (bodies: readonly OtlpBody[]) =>
+  records(bodies).map((record) =>
+    Number(attribute(record.attributes, "sequence"))
+  );
+
+test("sends many events in fewer collector requests than events", async () => {
+  const { received, server } = startCollector();
+  configureLogging({ otlp: collectorOptions(server.port), silent: true });
+  const count = 120;
+  try {
+    for (let sequence = 0; sequence < count; sequence += 1) {
+      logEvent("info", { event: "batch-probe", sequence });
+    }
+    await flushLogs();
+  } finally {
+    await server.stop(true);
+  }
+  expect(sequences(received.map((entry) => entry.body))).toEqual(
+    Array.from({ length: count }, (_, sequence) => sequence)
+  );
+  expect(received.length).toBeLessThan(count);
+});
+
+test("flushLogs sends a partial batch at once", async () => {
+  const { received, server } = startCollector();
+  configureLogging({ otlp: collectorOptions(server.port), silent: true });
+  try {
+    for (let sequence = 0; sequence < 3; sequence += 1) {
+      logEvent("info", { event: "partial-probe", sequence });
+    }
+    await flushLogs();
+  } finally {
+    await server.stop(true);
+  }
+  expect(received).toHaveLength(1);
+  expect(sequences(received.map((entry) => entry.body))).toEqual([0, 1, 2]);
+});
