@@ -17,6 +17,7 @@ import type { YtdlpOptions } from "./ytdlp.js";
 export interface AudioNodeOptions
   extends CobaltOptions, MediaStoreOptions, YtdlpOptions {
   readonly groupUrl: string;
+  readonly heartbeatMs?: number;
   readonly nodeKey: string;
   readonly reconnectDelayMs?: number;
 }
@@ -233,7 +234,19 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       headers: { authorization: `Bearer ${options.nodeKey}` },
     });
     socket = current;
+    // The Group can lose this socket without a close ever reaching the node, so
+    // an unanswered ping is the only sign the link is gone.
+    let awaitingPong = false;
+    let heartbeat: ReturnType<typeof setInterval> | undefined;
     current.addEventListener("open", async () => {
+      heartbeat = setInterval(() => {
+        if (awaitingPong) {
+          current.close();
+          return;
+        }
+        awaitingPong = true;
+        current.send("ping");
+      }, options.heartbeatMs ?? 30_000);
       try {
         const files = await runtime.runPromise(media.inventory());
         if (socket !== current || closed) {
@@ -251,6 +264,10 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       }
     });
     current.addEventListener("message", (event) => {
+      if (event.data === "pong") {
+        awaitingPong = false;
+        return;
+      }
       try {
         const command = Schema.decodeUnknownSync(NodeCommandSchema)(
           JSON.parse(String(event.data))
@@ -282,6 +299,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
     });
     current.addEventListener("error", () => current.close());
     current.addEventListener("close", async () => {
+      clearInterval(heartbeat);
       await stopDownload();
       await Promise.allSettled(pending.values());
       if (closed) {

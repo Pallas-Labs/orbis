@@ -45,6 +45,10 @@ export class Group extends DurableObject<Environment> {
       )
     );
     this.node = new GroupAudioNode(ctx, runtime, trustPath);
+    // Answered without waking the Group; the node reconnects when a ping goes unanswered.
+    ctx.setWebSocketAutoResponse(
+      new WebSocketRequestResponsePair("ping", "pong")
+    );
     this.alarms = makeAlarmScheduler({
       deleteAlarm: () => ctx.storage.deleteAlarm(),
       setAlarm: (at) => ctx.storage.setAlarm(at),
