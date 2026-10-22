@@ -15,11 +15,17 @@ const Saved = Schema.Struct({
   downloadState: Schema.String,
   id: Schema.String,
 });
+const decodeSaved = Schema.decodeUnknownSync(Saved);
+
 const Person = Schema.Struct({
   autoDownload: Schema.Boolean,
   id: Schema.String,
 });
+const decodePerson = Schema.decodeUnknownSync(Person);
+
 const AudioState = Schema.Struct({ state: Schema.String });
+const decodeAudioState = Schema.decodeUnknownSync(AudioState);
+
 const evidence = path.resolve(import.meta.dir, "../../../.cache/auto-download");
 const failures = [
   "new Person defaults off",
@@ -120,7 +126,7 @@ const fixture = async (startWorker: boolean, hold = false) => {
     const response = await send(key, "/me");
     expect(response.status).toBe(200);
     const body: unknown = await response.json();
-    return Schema.decodeUnknownSync(Person)(body);
+    return decodePerson(body);
   };
   const save = async (key: string, number: number, userAgent?: string) => {
     const response = await send(
@@ -135,13 +141,13 @@ const fixture = async (startWorker: boolean, hold = false) => {
     );
     expect(response.status).toBe(201);
     const body: unknown = await response.json();
-    return Schema.decodeUnknownSync(Saved)(body);
+    return decodeSaved(body);
   };
   const state = async (key: string, id: string) => {
     const response = await send(key, `/sets/${id}/audio/state`);
     expect(response.status).toBe(200);
     const body: unknown = await response.json();
-    return Schema.decodeUnknownSync(AudioState)(body).state;
+    return decodeAudioState(body).state;
   };
   const ready = async (key: string, id: string) => {
     for (let attempt = 0; (await state(key, id)) !== "ready"; attempt += 1) {

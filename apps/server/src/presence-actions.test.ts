@@ -21,6 +21,20 @@ import type { PresenceTransition } from "./presence-journal.js";
 import { Presence } from "./presence.js";
 import { createTestApp as createApp } from "./test-app.js";
 
+const decodeQueueEntries = Schema.decodeUnknownSync(
+  Schema.Struct({
+    queue: Schema.Struct({
+      entries: Schema.Array(
+        Schema.Struct({
+          finishCount: Schema.Number,
+          id: Schema.String,
+          listenCount: Schema.Number,
+        })
+      ),
+    }),
+  })
+);
+
 const LEASE_MS = 1500;
 const RETENTION_MS = 1500;
 const LEGACY_WINDOW_MS = 1500;
@@ -358,19 +372,7 @@ const listenCount = async (
   setId: string
 ) => {
   const queue = await call(key, "/queue");
-  const decoded = Schema.decodeUnknownSync(
-    Schema.Struct({
-      queue: Schema.Struct({
-        entries: Schema.Array(
-          Schema.Struct({
-            finishCount: Schema.Number,
-            id: Schema.String,
-            listenCount: Schema.Number,
-          })
-        ),
-      }),
-    })
-  )(queue.body);
+  const decoded = decodeQueueEntries(queue.body);
   return decoded.queue.entries.find((entry) => entry.id === setId);
 };
 

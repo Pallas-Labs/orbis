@@ -60,6 +60,7 @@ const extrasColumns = (extras: SourceExtras) => ({
 const JsonStringArray = Schema.fromJsonString(
   Schema.mutable(Schema.Array(Schema.String))
 );
+const decodeJsonStringArrayEffect = Schema.decodeUnknownEffect(JsonStringArray);
 
 const TEMPORARY_TITLES: Record<SetSource, string> = {
   soundcloud: "SoundCloud track",
@@ -101,8 +102,7 @@ const toLibraryError = <E>(error: E) =>
 
 const execute = asLibraryError("Could not complete the library request.");
 
-const decodeJsonArray = (value: string) =>
-  Schema.decodeUnknownEffect(JsonStringArray)(value);
+const decodeJsonArray = (value: string) => decodeJsonStringArrayEffect(value);
 
 const normalizeUrl = (value: string) =>
   Effect.try({

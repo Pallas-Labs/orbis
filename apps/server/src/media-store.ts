@@ -36,6 +36,7 @@ const ProbeFormat = Schema.Struct({
 });
 
 const ProbeOutput = Schema.fromJsonString(ProbeFormat);
+const decodeProbeOutputEffect = Schema.decodeUnknownEffect(ProbeOutput);
 
 const contentTypeFor = (format: string): string | undefined => {
   if (format === "mp3") {
@@ -162,9 +163,7 @@ export class MediaStore extends Context.Service<
         "json",
         filePath,
       ]);
-      const probed = yield* Schema.decodeUnknownEffect(ProbeOutput)(
-        output
-      ).pipe(
+      const probed = yield* decodeProbeOutputEffect(output).pipe(
         Effect.tapError(() =>
           Effect.logWarning("ffprobe output did not parse").pipe(
             Effect.annotateLogs({ output: outputTail(output) })

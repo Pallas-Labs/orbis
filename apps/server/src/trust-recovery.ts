@@ -1,6 +1,8 @@
 import { SignInCodeSchema } from "@orbis/contracts/http-api";
 import { Schema } from "effect";
 
+const decodeSignInCode = Schema.decodeUnknownSync(SignInCodeSchema);
+
 export const DEFAULT_API_URL = "https://orbis.p11a.xyz/api";
 
 const recoveryUrl = (base: string): URL => {
@@ -36,9 +38,7 @@ export const recoverHost = async (input: {
       `Recovery failed (${response.status}). Check ORBIS_NODE_KEY and the API URL.`
     );
   }
-  const issued = Schema.decodeUnknownSync(SignInCodeSchema)(
-    await response.json()
-  );
+  const issued = decodeSignInCode(await response.json());
   console.log(`Sign-in Code for the Host: ${issued.code}`);
   console.log(`Expires at ${issued.expiresAt}.`);
 };

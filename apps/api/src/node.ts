@@ -20,6 +20,8 @@ import { logEvent } from "../../server/src/logging.js";
 import type { LoggingOptions } from "../../server/src/logging.js";
 import { MetadataError } from "../../server/src/metadata-error.js";
 
+const decodeNodeMessage = Schema.decodeUnknownSync(NodeMessageSchema);
+
 /** The node-key check `/node` and `/recovery` share: the key's id, or a refusal. */
 export const nodeKeyId = (
   request: Request,
@@ -57,6 +59,8 @@ const AttachmentSchema = Schema.Struct({
   ),
   ready: Schema.Boolean,
 });
+const decodeAttachment = Schema.decodeUnknownSync(AttachmentSchema);
+
 type Attachment = typeof AttachmentSchema.Type;
 type Details = typeof SourceDetails.Type;
 
@@ -109,9 +113,7 @@ export class GroupAudioNode {
   }
 
   private static attachment(socket: WebSocket): Attachment {
-    return Schema.decodeUnknownSync(AttachmentSchema)(
-      socket.deserializeAttachment()
-    );
+    return decodeAttachment(socket.deserializeAttachment());
   }
 
   private socket() {
@@ -444,7 +446,7 @@ export class GroupAudioNode {
       }
       let message: NodeMessage;
       try {
-        message = Schema.decodeUnknownSync(NodeMessageSchema)(
+        message = decodeNodeMessage(
           JSON.parse(
             data instanceof ArrayBuffer ? new TextDecoder().decode(data) : data
           )

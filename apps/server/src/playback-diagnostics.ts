@@ -124,6 +124,7 @@ const CollectorReceipt = Schema.Struct({
     })
   ),
 });
+const decodeCollectorReceipt = Schema.decodeUnknownSync(CollectorReceipt);
 
 export class PlaybackBodyLimitError extends Error {
   override readonly name = "PlaybackBodyLimitError";
@@ -251,7 +252,7 @@ export const makePlaybackDiagnosticsRelay = (
       const receiptText = await readBoundedBody(response.body, 65_536, abort);
       let rejected: number;
       try {
-        const receipt = Schema.decodeUnknownSync(CollectorReceipt)(
+        const receipt = decodeCollectorReceipt(
           JSON.parse(receiptText || "{}"),
           { onExcessProperty: "error" }
         );

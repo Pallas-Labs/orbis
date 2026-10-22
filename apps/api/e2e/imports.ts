@@ -119,6 +119,7 @@ const Snapshot = Schema.Struct({
   members: Schema.Array(Schema.String),
   sets: Schema.Number,
 });
+const decodeSnapshot = Schema.decodeUnknownSync(Snapshot);
 
 const transcript: unknown[] = [];
 const call = async (
@@ -149,7 +150,7 @@ const call = async (
 const snapshot = async (runtime: Miniflare) => {
   const response = await call(runtime, "/__imports");
   assert.equal(response.status, 200, response.text);
-  return Schema.decodeUnknownSync(Snapshot)(JSON.parse(response.text));
+  return decodeSnapshot(JSON.parse(response.text));
 };
 
 const secondPageAsked = Promise.withResolvers<boolean>();

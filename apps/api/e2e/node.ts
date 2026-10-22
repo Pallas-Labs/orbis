@@ -16,6 +16,16 @@ import { Miniflare } from "miniflare";
 import { issueStreamGrant } from "../../server/src/stream-grant-core.js";
 import { workerModules } from "./worker-modules.js";
 
+const decodeDetailsState = Schema.decodeUnknownSync(
+  Schema.Struct({ details_state: Schema.String })
+);
+
+const decodeAudioState = Schema.decodeUnknownSync(AudioStateSchema);
+
+const decodeSavedSet = Schema.decodeUnknownSync(SavedSetSchema);
+
+const decodeNodeCommand = Schema.decodeUnknownSync(NodeCommandSchema);
+
 const artifact = path.resolve(
   import.meta.dir,
   "../../../.cache/audio-node",
@@ -84,12 +94,14 @@ const AudioEvent = Schema.Struct({
   ingress: Schema.optional(Schema.String),
   status: Schema.Number,
 });
+const decodeAudioEvent = Schema.decodeUnknownSync(AudioEvent);
+
 /** The wide events, from captured process output, that record an audio request. */
 const audioEvents = (lines: readonly string[]) =>
   lines
     .flatMap((text) => text.split("\n"))
     .filter((line) => line.includes('"audio":'))
-    .map((line) => Schema.decodeUnknownSync(AudioEvent)(JSON.parse(line)));
+    .map((line) => decodeAudioEvent(JSON.parse(line)));
 const GroupEvent = Schema.Struct({
   code: Schema.optional(Schema.Number),
   event: Schema.String,
@@ -101,12 +113,14 @@ const GroupEvent = Schema.Struct({
   requestId: Schema.optional(Schema.String),
   set: Schema.optional(Schema.String),
 });
+const decodeGroupEvent = Schema.decodeUnknownSync(GroupEvent);
+
 /** The Group's standalone events with this name, from its captured output. */
 const groupEvents = (name: string) =>
   groupLog
     .flatMap((text) => text.split("\n"))
     .filter((line) => line.includes(`"event":"${name}"`))
-    .map((line) => Schema.decodeUnknownSync(GroupEvent)(JSON.parse(line)));
+    .map((line) => decodeGroupEvent(JSON.parse(line)));
 const until = async <T>(
   read: () => Promise<T> | T,
   matches: (value: T) => boolean
@@ -140,9 +154,7 @@ const connect = async (
       pongs += 1;
       return;
     }
-    const command = Schema.decodeUnknownSync(NodeCommandSchema)(
-      JSON.parse(String(event.data))
-    );
+    const command = decodeNodeCommand(JSON.parse(String(event.data)));
     commands.push(command);
     transcript.push(command);
   });
@@ -165,12 +177,10 @@ const save = async (suffix: string, token = "client-token") => {
     token
   );
   assert.equal(response.status, 201, await response.clone().text());
-  return Schema.decodeUnknownSync(SavedSetSchema)(await response.json());
+  return decodeSavedSet(await response.json());
 };
 const state = async (id: string) =>
-  Schema.decodeUnknownSync(AudioStateSchema)(
-    await (await request(`/sets/${id}/audio/state`)).json()
-  );
+  decodeAudioState(await (await request(`/sets/${id}/audio/state`)).json());
 try {
   assert.equal((await request("/__seed-node")).status, 200);
   assert.equal(
@@ -259,7 +269,7 @@ try {
   });
   await until(
     async () =>
-      Schema.decodeUnknownSync(Schema.Struct({ details_state: Schema.String }))(
+      decodeDetailsState(
         await (await request(`/__node-set?id=${set.id}`)).json()
       ),
     (value) => value.details_state === "filled"

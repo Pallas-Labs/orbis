@@ -33,6 +33,7 @@ export default defineConfig({
     },
   ],
   rules: {
+    "t3code/no-inline-schema-compile": "error",
     "t3code/require-suppression-reason": "error",
   },
 });

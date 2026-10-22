@@ -102,6 +102,7 @@ afterAll(async () => {
 
 type Body = { name: string } | { setId: string } | { tags: string[] };
 const Created = Schema.Struct({ id: Schema.String });
+const decodeCreated = Schema.decodeUnknownSync(Created);
 
 const call = async (key: Key, route: string, method = "GET", body?: Body) => {
   const init: RequestInit = {
@@ -191,7 +192,7 @@ test("a Playlist edit reaches a reader but not a Person who cannot read it", asy
   const b1 = await open("b1");
   const c1 = await open("c1");
   try {
-    const playlist = Schema.decodeUnknownSync(Created)(
+    const playlist = decodeCreated(
       await call("a2", "/playlists", "POST", { name: "Mix" })
     );
     expect(await b1.nextTopic()).toBe("playlist");

@@ -30,10 +30,13 @@ const OtlpBody = Schema.Struct({
     })
   ),
 });
+const decodeOtlpBody = Schema.decodeUnknownSync(OtlpBody);
+
 const LastRun = Schema.Struct({
   ok: Schema.Boolean,
   sourcesWithoutBackend: Schema.Array(Schema.String),
 });
+const decodeLastRun = Schema.decodeUnknownSync(LastRun);
 
 let directory = "";
 const bodies: (typeof OtlpBody.Type)[] = [];
@@ -79,7 +82,7 @@ shutil.copyfile(os.path.join(here, name), sys.argv[sys.argv.index('-o') + 1])
   );
   collector = Bun.serve({
     fetch: async (request) => {
-      bodies.push(Schema.decodeUnknownSync(OtlpBody)(await request.json()));
+      bodies.push(decodeOtlpBody(await request.json()));
       return Response.json({});
     },
     hostname: "127.0.0.1",
@@ -121,7 +124,7 @@ const runCanary = async () => {
     stdout: "pipe",
   });
   const exitCode = await child.exited;
-  const last = Schema.decodeUnknownSync(LastRun)(
+  const last = decodeLastRun(
     JSON.parse(
       await readFile(path.join(directory, "canary", "last.json"), "utf-8")
     )

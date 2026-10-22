@@ -18,7 +18,11 @@ const statusOf = async (response: Promise<Response>) => {
 };
 
 const Saved = Schema.Struct({ id: Schema.String });
+const decodeSaved = Schema.decodeUnknownSync(Saved);
+
 const Source = Schema.Struct({ url: Schema.String });
+const decodeSource = Schema.decodeUnknownSync(Source);
+
 const failureCases = [
   "one Person's backlog starves another Person",
   "the active job counts against the waiting limit",
@@ -70,7 +74,7 @@ const fixture = async (startWorker: boolean) => {
   const cobalt = Bun.serve({
     async fetch(request) {
       const body: unknown = await request.json();
-      order.push(Schema.decodeUnknownSync(Source)(body).url);
+      order.push(decodeSource(body).url);
       if (holdFirst) {
         holdFirst = false;
         return held.promise;
@@ -124,7 +128,7 @@ const fixture = async (startWorker: boolean) => {
     });
     expect(response.status).toBe(201);
     const body: unknown = await response.json();
-    return { id: Schema.decodeUnknownSync(Saved)(body).id, url };
+    return { id: decodeSaved(body).id, url };
   };
   return {
     order,

@@ -292,6 +292,8 @@ const Filters = Schema.Struct({
   source: Schema.optionalKey(Schema.Literals(["youtube", "soundcloud"])),
   tags: Tags,
 });
+const decodeFiltersEffect = Schema.decodeUnknownEffect(Filters);
+
 const logDetailsFailure = (set: SavedSet, reason: string) =>
   Effect.logWarning("set details fill failed").pipe(
     Effect.annotateLogs({ reason, set: set.id })
@@ -906,8 +908,7 @@ export const createPortableApp = (options: {
                 if (params.has("source")) {
                   rawFilters.source = params.get("source");
                 }
-                const filters =
-                  yield* Schema.decodeUnknownEffect(Filters)(rawFilters);
+                const filters = yield* decodeFiltersEffect(rawFilters);
                 const personal = yield* Library;
                 const sets = yield* personal.list({
                   ...filters,

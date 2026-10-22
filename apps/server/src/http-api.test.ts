@@ -11,6 +11,28 @@ import { Schema } from "effect";
 import { createTestApp as createApp } from "./test-app.js";
 import { ready, withSeededApp } from "./test-library.js";
 
+const decodeTagList = Schema.decodeUnknownSync(
+  Schema.Struct({ tags: Schema.Array(Schema.String) })
+);
+
+const decodeQueueResponse = Schema.decodeUnknownSync(
+  Schema.Struct({ queue: ListeningQueueSchema })
+);
+
+const decodePlaylistList = Schema.decodeUnknownSync(
+  Schema.Struct({ playlists: Schema.Array(PlaylistSchema) })
+);
+
+const decodePlaylist = Schema.decodeUnknownSync(PlaylistSchema);
+
+const decodeAudioState = Schema.decodeUnknownSync(AudioStateSchema);
+
+const decodeSetList = Schema.decodeUnknownSync(
+  Schema.Struct({ sets: Schema.Array(SavedSetSchema) })
+);
+
+const decodeSavedSet = Schema.decodeUnknownSync(SavedSetSchema);
+
 type PlaylistRequestBody =
   | { name: string }
   | { setIds: string[] }
@@ -50,15 +72,11 @@ test("the Sets contract decodes live HTTP responses", async () => {
       method: "POST",
     });
     expect(savedResponse.status).toBe(201);
-    const saved = Schema.decodeUnknownSync(SavedSetSchema)(
-      await savedResponse.json()
-    );
+    const saved = decodeSavedSet(await savedResponse.json());
 
     const listedResponse = await send("/sets?tag=house");
     expect(listedResponse.status).toBe(200);
-    const listed = Schema.decodeUnknownSync(
-      Schema.Struct({ sets: Schema.Array(SavedSetSchema) })
-    )(await listedResponse.json());
+    const listed = decodeSetList(await listedResponse.json());
     expect(listed.sets.map((set) => set.id)).toEqual([saved.id]);
 
     const repeatedFilters = await send(
@@ -66,9 +84,7 @@ test("the Sets contract decodes live HTTP responses", async () => {
     );
     expect(repeatedFilters.status).toBe(200);
     expect(
-      Schema.decodeUnknownSync(
-        Schema.Struct({ sets: Schema.Array(SavedSetSchema) })
-      )(await repeatedFilters.json()).sets.map((set) => set.id)
+      decodeSetList(await repeatedFilters.json()).sets.map((set) => set.id)
     ).toEqual([saved.id]);
 
     const titleResponse = await send(`/sets/${saved.id}/title`, {
@@ -77,24 +93,19 @@ test("the Sets contract decodes live HTTP responses", async () => {
       method: "PATCH",
     });
     expect(titleResponse.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(SavedSetSchema)(await titleResponse.json()).title
-    ).toBe("Renamed set");
+    expect(decodeSavedSet(await titleResponse.json()).title).toBe(
+      "Renamed set"
+    );
 
     const stateResponse = await send(`/sets/${saved.id}/audio/state`);
     expect(stateResponse.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(AudioStateSchema)(await stateResponse.json())
-        .state
-    ).toBe("none");
+    expect(decodeAudioState(await stateResponse.json()).state).toBe("none");
 
     const removedResponse = await send(`/sets/${saved.id}`, {
       method: "DELETE",
     });
     expect(removedResponse.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(SavedSetSchema)(await removedResponse.json()).id
-    ).toBe(saved.id);
+    expect(decodeSavedSet(await removedResponse.json()).id).toBe(saved.id);
   } finally {
     await app.dispose();
   }
@@ -118,25 +129,21 @@ test("the Playlist contract decodes live HTTP responses", async () => {
         url: "https://youtu.be/abcdefghijk",
       })
     );
-    const set = Schema.decodeUnknownSync(SavedSetSchema)(
-      await setResponse.json()
-    );
+    const set = decodeSavedSet(await setResponse.json());
 
     const createdResponse = await send(
       "/playlists",
       json("POST", { name: "First" })
     );
     expect(createdResponse.status).toBe(201);
-    const playlist = Schema.decodeUnknownSync(PlaylistSchema)(
-      await createdResponse.json()
-    );
+    const playlist = decodePlaylist(await createdResponse.json());
 
     const listedResponse = await send("/playlists");
     expect(listedResponse.status).toBe(200);
     expect(
-      Schema.decodeUnknownSync(
-        Schema.Struct({ playlists: Schema.Array(PlaylistSchema) })
-      )(await listedResponse.json()).playlists.map((item) => item.id)
+      decodePlaylistList(await listedResponse.json()).playlists.map(
+        (item) => item.id
+      )
     ).toEqual([playlist.id]);
 
     const membersResponse = await send(
@@ -145,9 +152,7 @@ test("the Playlist contract decodes live HTTP responses", async () => {
     );
     expect(membersResponse.status).toBe(200);
     expect(
-      Schema.decodeUnknownSync(
-        Schema.Struct({ sets: Schema.Array(SavedSetSchema) })
-      )(await membersResponse.json()).sets.map((item) => item.id)
+      decodeSetList(await membersResponse.json()).sets.map((item) => item.id)
     ).toEqual([set.id]);
 
     const membershipResponse = await send(
@@ -155,28 +160,22 @@ test("the Playlist contract decodes live HTTP responses", async () => {
       json("PUT", { playlistIds: [playlist.id] })
     );
     expect(membershipResponse.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(SavedSetSchema)(await membershipResponse.json())
-        .playlistIds
-    ).toEqual([playlist.id]);
+    expect(decodeSavedSet(await membershipResponse.json()).playlistIds).toEqual(
+      [playlist.id]
+    );
 
     const renamedResponse = await send(
       `/playlists/${playlist.id}`,
       json("PATCH", { name: "Renamed" })
     );
     expect(renamedResponse.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(PlaylistSchema)(await renamedResponse.json())
-        .name
-    ).toBe("Renamed");
+    expect(decodePlaylist(await renamedResponse.json()).name).toBe("Renamed");
 
     const removedResponse = await send(`/playlists/${playlist.id}`, {
       method: "DELETE",
     });
     expect(removedResponse.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(PlaylistSchema)(await removedResponse.json()).id
-    ).toBe(playlist.id);
+    expect(decodePlaylist(await removedResponse.json()).id).toBe(playlist.id);
   } finally {
     await app.dispose();
   }
@@ -194,9 +193,7 @@ test("the queue, position, and Tag contract decodes live HTTP responses", async 
       );
     const queue = async (path: string, init?: RequestInit) => {
       const response = await send(path, init);
-      const body = Schema.decodeUnknownSync(
-        Schema.Struct({ queue: ListeningQueueSchema })
-      )(await response.json());
+      const body = decodeQueueResponse(await response.json());
       return { body, status: response.status };
     };
 
@@ -224,25 +221,18 @@ test("the queue, position, and Tag contract decodes live HTTP responses", async 
       json("PUT", { seconds: 30 })
     );
     expect(position.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(SavedSetSchema)(await position.json())
-        .playbackPositionSeconds
-    ).toBe(30);
+    expect(decodeSavedSet(await position.json()).playbackPositionSeconds).toBe(
+      30
+    );
     const tagged = await send(
       "/sets/b/tags",
       json("PATCH", { tags: ["house"] })
     );
     expect(tagged.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(SavedSetSchema)(await tagged.json()).tags
-    ).toEqual(["house"]);
+    expect(decodeSavedSet(await tagged.json()).tags).toEqual(["house"]);
     const tags = await send("/tags");
     expect(tags.status).toBe(200);
-    expect(
-      Schema.decodeUnknownSync(
-        Schema.Struct({ tags: Schema.Array(Schema.String) })
-      )(await tags.json()).tags
-    ).toEqual(["house"]);
+    expect(decodeTagList(await tags.json()).tags).toEqual(["house"]);
     const health = await send("/health");
     expect(health.status).toBe(200);
     expect(await health.json()).toEqual({ status: "ok" });

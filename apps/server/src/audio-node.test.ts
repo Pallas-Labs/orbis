@@ -13,6 +13,8 @@ import { startAudioNode } from "./audio-node.js";
 import { configureLogging } from "./logging.js";
 import type { LoggingOptions } from "./logging.js";
 
+const decodeNodeMessage = Schema.decodeUnknownSync(NodeMessageSchema);
+
 configureLogging({ silent: true });
 
 const collect = () => {
@@ -82,11 +84,7 @@ test("real node reconnects and handles duplicate download, details and release c
     port: 0,
     websocket: {
       message(_ws, message) {
-        messages.push(
-          Schema.decodeUnknownSync(NodeMessageSchema)(
-            JSON.parse(String(message))
-          )
-        );
+        messages.push(decodeNodeMessage(JSON.parse(String(message))));
       },
       open(ws) {
         socket = ws;
@@ -216,11 +214,7 @@ test("node reconnects when the Group stops answering heartbeats", async () => {
           }
           return;
         }
-        messages.push(
-          Schema.decodeUnknownSync(NodeMessageSchema)(
-            JSON.parse(String(message))
-          )
-        );
+        messages.push(decodeNodeMessage(JSON.parse(String(message))));
       },
     },
   });

@@ -13,6 +13,10 @@ import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
 
+const decodeIdOnly = Schema.decodeUnknownSync(
+  Schema.Struct({ id: Schema.String })
+);
+
 // Presence has its own test; these frames are about the Queue.
 const Event = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("queue"), queue: ListeningQueueSchema }),
@@ -22,6 +26,8 @@ const Event = Schema.Union([
     presence: Schema.Array(Schema.Unknown),
   }),
 ]);
+const decodeEventJson = Schema.decodeUnknownSync(Schema.fromJsonString(Event));
+
 const frames = (response: Response) => {
   const reader = response.body?.getReader();
   if (!reader) {
@@ -45,7 +51,7 @@ const frames = (response: Response) => {
       .filter((line) => line.startsWith("data:"))
       .map((line) => line.slice(5).trimStart())
       .join("\n");
-    return Schema.decodeUnknownSync(Schema.fromJsonString(Event))(data);
+    return decodeEventJson(data);
   };
   return {
     close: () => reader.cancel(),
@@ -138,9 +144,7 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
       url: "https://www.youtube.com/watch?v=abcdefghijk",
     });
     expect(saved.status).toBe(201);
-    const set = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(
-      await saved.json()
-    );
+    const set = decodeIdOnly(await saved.json());
     const db = new Database(databasePath);
     db.run(
       "UPDATE sets SET download_state = 'ready', retained_audio_format = 'm4a', retained_audio_bytes = 100 WHERE id = ?",
@@ -150,9 +154,7 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
     const playlistResponse = await call("a2", "/playlists", "POST", {
       name: "Remote picks",
     });
-    const playlist = Schema.decodeUnknownSync(
-      Schema.Struct({ id: Schema.String })
-    )(await playlistResponse.json());
+    const playlist = decodeIdOnly(await playlistResponse.json());
     const members = await call("a2", `/playlists/${playlist.id}/sets`, "PUT", {
       setIds: [set.id],
     });

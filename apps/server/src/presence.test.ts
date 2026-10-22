@@ -12,6 +12,10 @@ import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
 
+const decodeIdOnly = Schema.decodeUnknownSync(
+  Schema.Struct({ id: Schema.String })
+);
+
 const decode = Schema.decodeUnknownSync(
   Schema.fromJsonString(QueueEventSchema)
 );
@@ -139,9 +143,7 @@ test("Presence reaches only viewers who pass the gate and lapses when reports st
       title: "Presence Set",
       url: "https://www.youtube.com/watch?v=abcdefghijk",
     });
-    const set = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(
-      await saved.json()
-    );
+    const set = decodeIdOnly(await saved.json());
     const sqlite = new Database(databasePath);
     sqlite.run("UPDATE sets SET download_state = 'ready' WHERE id = ?", [
       set.id,

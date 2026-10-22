@@ -29,10 +29,14 @@ const artifact = path.resolve(
 );
 await mkdir(artifact, { recursive: true });
 const TracklistRequest = Schema.Struct({ url: Schema.String });
+const decodeTracklistRequest = Schema.decodeUnknownSync(TracklistRequest);
+
 const Tracklist = Schema.Struct({
   cues: Schema.Array(Schema.Unknown),
   state: Schema.String,
 });
+const decodeTracklist = Schema.decodeUnknownSync(Tracklist);
+
 const requestedAt = new Map<string, number>();
 const calls: string[] = [];
 const versos = Bun.serve({
@@ -40,9 +44,7 @@ const versos = Bun.serve({
     const url = new URL(request.url);
     calls.push(`${Date.now()} ${request.method} ${url.pathname}`);
     if (request.method === "POST" && url.pathname === "/orbis/tracklists") {
-      const body = Schema.decodeUnknownSync(TracklistRequest)(
-        await request.json()
-      );
+      const body = decodeTracklistRequest(await request.json());
       requestedAt.set(body.url, Date.now());
       return Response.json({ requestId: body.url });
     }
@@ -99,7 +101,7 @@ const waitForReady = async (id: string) => {
     const tracklist = await call(`/sets/${id}/tracklist`);
     assert.equal(tracklist.status, 200, tracklist.text);
     last = tracklist.text;
-    const answer = Schema.decodeUnknownSync(Tracklist)(JSON.parse(last));
+    const answer = decodeTracklist(JSON.parse(last));
     if (answer.state === "ready") {
       return answer;
     }
