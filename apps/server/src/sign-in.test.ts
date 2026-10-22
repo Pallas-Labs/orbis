@@ -67,7 +67,7 @@ const setup = async (passcode: string | null = null) => {
       version: 2,
     })
   );
-  const clock = { now: Date.now() };
+  const clock = { now: Date.UTC(2026, 0, 1) };
   const open = () =>
     createApp({
       databasePath: path.join(directory, "library.sqlite"),
@@ -274,14 +274,12 @@ test("only the Host opens or closes joining, and the passcode survives a restart
 });
 
 test("a Sign-in Code adds a device for its Person, once", async () => {
-  const { cleanup, open, store } = await setup();
+  const { cleanup, clock, open, store } = await setup();
   const app = open();
   try {
     const issued = await issueOwn(app, FRIEND_DAILY);
     expect(issued.code).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/u);
-    expect(Date.parse(issued.expiresAt) - Date.now()).toBeGreaterThan(
-      TEN_MINUTES - 5000
-    );
+    expect(Date.parse(issued.expiresAt) - clock.now).toBe(TEN_MINUTES);
     expect(store().keys).toHaveLength(4);
 
     const typed = `${issued.code.slice(0, 4).toLowerCase()}-${issued.code.slice(4)}`;

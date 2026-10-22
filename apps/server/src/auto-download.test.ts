@@ -37,7 +37,7 @@ const fixture = async (startWorker: boolean, hold = false) => {
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["a1", "a2", "b1"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -144,9 +144,8 @@ const fixture = async (startWorker: boolean, hold = false) => {
     return Schema.decodeUnknownSync(AudioState)(body).state;
   };
   const ready = async (key: string, id: string) => {
-    const deadline = Date.now() + 10_000;
-    while ((await state(key, id)) !== "ready") {
-      if (Date.now() > deadline) {
+    for (let attempt = 0; (await state(key, id)) !== "ready"; attempt += 1) {
+      if (attempt >= 500) {
         throw new Error("Auto Download did not become playable");
       }
       await Bun.sleep(20);

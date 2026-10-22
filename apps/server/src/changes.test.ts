@@ -43,7 +43,7 @@ beforeAll(async () => {
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: Object.entries(KEYS).map(([id, personId]) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -258,13 +258,15 @@ test("an old client decoder reads the plain stream, and would reject a changed f
 test("revoking a key closes its open stream", async () => {
   const a2 = await open("a2", "/events");
   await a2.data();
-  const startedAt = Date.now();
-  await call("a1", "/me/devices/a2", "DELETE");
-  for (;;) {
-    const raw = await a2.data();
-    if (raw === null) {
-      break;
+  const closed = (async () => {
+    for (;;) {
+      if ((await a2.data()) === null) {
+        return true;
+      }
     }
-  }
-  expect(Date.now() - startedAt).toBeLessThan(1500);
+  })();
+  await call("a1", "/me/devices/a2", "DELETE");
+  expect(await Promise.race([closed, Bun.sleep(1500).then(() => false)])).toBe(
+    true
+  );
 });

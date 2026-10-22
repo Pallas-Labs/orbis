@@ -22,7 +22,14 @@ export default defineConfig({
       rules: {
         "t3code/no-test-in-loop": "error",
         "t3code/no-test-timeout-or-unreasoned-skip": "error",
+        "t3code/no-wall-clock-in-tests": "error",
       },
+    },
+    {
+      // Presence leases and alarms run on the real clock inside the service, so this suite
+      // waits out real lease windows and cannot swap in a fake clock.
+      files: ["apps/server/src/presence-actions.test.ts"],
+      rules: { "t3code/no-wall-clock-in-tests": "off" },
     },
   ],
   rules: {

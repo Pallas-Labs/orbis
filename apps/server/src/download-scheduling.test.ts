@@ -33,9 +33,8 @@ const artifactDirectory = path.resolve(
 );
 
 const waitUntil = async (condition: () => boolean) => {
-  const deadline = Date.now() + 10_000;
-  while (!condition()) {
-    if (Date.now() >= deadline) {
+  for (let attempt = 0; !condition(); attempt += 1) {
+    if (attempt >= 1000) {
       throw new Error("The worker did not reach the expected job");
     }
     await Bun.sleep(10);
@@ -48,7 +47,7 @@ const fixture = async (startWorker: boolean) => {
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["host", "a", "b"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,

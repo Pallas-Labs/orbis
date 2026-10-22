@@ -45,13 +45,13 @@ const stream = (response: Response) => {
     close: () => reader.cancel(),
     /** Reads frames until a presence event satisfies `accept`; fails after `ms`. */
     presence: async (accept: (usernames: string[]) => boolean, ms = 6000) => {
-      const deadline = Date.now() + ms;
-      while (Date.now() < deadline) {
-        const event = await Promise.race([
-          read(),
-          Bun.sleep(deadline - Date.now()).then(() => null),
-        ]);
-        if (event?.kind === "presence") {
+      const timer = Bun.sleep(ms).then(() => null);
+      for (;;) {
+        const event = await Promise.race([read(), timer]);
+        if (event === null) {
+          break;
+        }
+        if (event.kind === "presence") {
           const names = event.presence.map((entry) => entry.username);
           if (accept(names)) {
             return event.presence;
@@ -70,7 +70,7 @@ test("Presence reaches only viewers who pass the gate and lapses when reports st
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["a", "b", "c"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,

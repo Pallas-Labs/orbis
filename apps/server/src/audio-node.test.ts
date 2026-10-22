@@ -39,9 +39,8 @@ afterEach(async () => {
   }
 });
 const until = async (predicate: () => boolean) => {
-  const deadline = Date.now() + 10_000;
-  while (!predicate()) {
-    if (Date.now() >= deadline) {
+  for (let attempt = 0; !predicate(); attempt += 1) {
+    if (attempt >= 1000) {
       throw new Error("Timed out waiting for node");
     }
     await Bun.sleep(10);

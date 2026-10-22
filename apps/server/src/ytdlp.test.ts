@@ -22,18 +22,18 @@ const testFfmpeg = test.skipIf(!haveFfmpeg);
 const waitForState = async (
   app: ReturnType<typeof createApp>,
   id: string,
-  deadline: number = Date.now() + 10_000
+  attemptsLeft = 400
 ): Promise<string> => {
   const state = await request(app, {
     method: "GET",
     url: `/sets/${id}/audio/state`,
   });
   const current: string = state.json().state;
-  if (current === "ready" || current === "failed" || Date.now() > deadline) {
+  if (current === "ready" || current === "failed" || attemptsLeft <= 0) {
     return current;
   }
   await Bun.sleep(25);
-  return waitForState(app, id, deadline);
+  return waitForState(app, id, attemptsLeft - 1);
 };
 
 const outputOf = (argv: readonly string[]) => {

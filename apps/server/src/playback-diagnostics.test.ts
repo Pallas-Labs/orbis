@@ -381,13 +381,12 @@ test("two active exports have no queue and deadline releases both slots", async 
   try {
     const first = s.send();
     const second = s.send();
-    const deadline = Date.now() + 2000;
-    const waitForExports = async (): Promise<void> => {
-      if (s.requests.length >= 2 || Date.now() >= deadline) {
+    const waitForExports = async (attemptsLeft = 200): Promise<void> => {
+      if (s.requests.length >= 2 || attemptsLeft <= 0) {
         return;
       }
       await Bun.sleep(10);
-      return waitForExports();
+      return waitForExports(attemptsLeft - 1);
     };
     await waitForExports();
     expect(s.requests).toHaveLength(2);

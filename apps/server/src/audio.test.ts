@@ -120,7 +120,7 @@ const waitForState = async (
   app: ReturnType<typeof createApp>,
   id: string,
   wanted: readonly string[],
-  deadline: number = Date.now() + 10_000
+  attemptsLeft = 400
 ): Promise<AudioStateResponse> => {
   const state = await request(app, {
     method: "GET",
@@ -131,13 +131,13 @@ const waitForState = async (
   if (wanted.includes(body.state)) {
     return body;
   }
-  if (Date.now() > deadline) {
+  if (attemptsLeft <= 0) {
     throw new Error(
       `state never reached ${wanted.join("/")} (last: ${body.state})`
     );
   }
   await Bun.sleep(25);
-  return waitForState(app, id, wanted, deadline);
+  return waitForState(app, id, wanted, attemptsLeft - 1);
 };
 
 // Response needs an exact ArrayBuffer; a Uint8Array view over a pool would over-read.

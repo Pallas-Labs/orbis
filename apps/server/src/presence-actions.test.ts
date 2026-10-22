@@ -76,7 +76,7 @@ const seed = async (root: string) => {
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: Object.entries(KEYS).map(([id, key]) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,

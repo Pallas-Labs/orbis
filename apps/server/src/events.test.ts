@@ -67,7 +67,7 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["a1", "a2", "b1"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -157,19 +157,20 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
       setIds: [set.id],
     });
     expect(members.status).toBe(200);
-    const startedAt = Date.now();
     const start = await call("a2", "/queue/playlist", "PUT", {
       playlistId: playlist.id,
     });
     expect(start.status).toBe(200);
-    const changed = await a.next();
+    const changed = await Promise.race([a.next(), Bun.sleep(3000)]);
+    if (changed === undefined) {
+      throw new Error("The Queue snapshot did not arrive within 3 seconds");
+    }
     expect(changed.kind).toBe("queue");
     if (changed.kind !== "queue") {
       throw new Error("Expected Queue snapshot");
     }
     expect(changed.queue.activeSetId).toBe(set.id);
     expect(changed.queue.entries.map((entry) => entry.id)).toEqual([set.id]);
-    expect(Date.now() - startedAt).toBeLessThan(3000);
     const peer = frames(await call("a2", "/events"));
     opened.push(peer);
     expect(await peer.next()).toEqual(changed);

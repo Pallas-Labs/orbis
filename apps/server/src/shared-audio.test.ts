@@ -40,7 +40,7 @@ test("visible Sets share audio and storage releases only the last reference over
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["a", "b", "hidden"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -133,8 +133,7 @@ test("visible Sets share audio and storage releases only the last reference over
   };
   const download = async (key: string, id: string) => {
     expect(await status(key, `/sets/${id}/audio/download`, "POST")).toBe(202);
-    const deadline = Date.now() + 10_000;
-    while (Date.now() < deadline) {
+    for (let attempt = 0; attempt < 500; attempt += 1) {
       const response = await send(key, `/sets/${id}/audio/state`);
       expect(response.status).toBe(200);
       const body: unknown = await response.json();

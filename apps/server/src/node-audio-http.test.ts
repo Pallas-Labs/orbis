@@ -8,7 +8,8 @@ import type { WideEvent } from "evlog";
 import { makeNodeAudioHandler } from "./node-audio-http.js";
 import { grantSecret, issueStreamGrant } from "./stream-grant.js";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const LONG_AGO_MS = Date.UTC(2020, 0, 1);
+const FAR_FUTURE_MS = Date.UTC(2100, 0, 1);
 
 /** A grant signed with the right secret but issued at another time. */
 const grantIssuedAt = (secret: Buffer, setId: string, at: number) => {
@@ -30,12 +31,8 @@ test("the audio node records one wide event per request, with the grant verdict 
   const { size } = Bun.file(fixture);
   const streamSecret = grantSecret(path.join(audioDir, "stream-grant.key"));
   const grant = issueStreamGrant(streamSecret, "fixture", "host");
-  const expired = grantIssuedAt(
-    streamSecret,
-    "fixture",
-    Date.now() - 2 * DAY_MS
-  );
-  const ahead = grantIssuedAt(streamSecret, "fixture", Date.now() + DAY_MS);
+  const expired = grantIssuedAt(streamSecret, "fixture", LONG_AGO_MS);
+  const ahead = grantIssuedAt(streamSecret, "fixture", FAR_FUTURE_MS);
   const events: WideEvent[] = [];
   const audio = makeNodeAudioHandler({
     audioDir,
