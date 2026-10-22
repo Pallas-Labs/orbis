@@ -25,6 +25,9 @@ public enum OrbisCurve: String, CaseIterable, Sendable {
   case press
   /// Something with weight landing: overshoots a little, the way a record settles.
   case lively
+  /// A screen growing out of a control, or folding back into it: quick, and settled with barely a
+  /// bounce, so a full screen of content never wobbles.
+  case expand
 
   public var animation: Animation? {
     switch self {
@@ -33,6 +36,7 @@ public enum OrbisCurve: String, CaseIterable, Sendable {
     case .immediate: nil
     case .press: .snappy(duration: 0.15)
     case .lively: .spring(response: 0.55, dampingFraction: 0.62)
+    case .expand: .spring(duration: 0.42, bounce: 0.06)
     }
   }
 }
@@ -107,9 +111,9 @@ public enum OrbisMotion: String, CaseIterable, Sendable {
   public var curve: OrbisCurve {
     switch self {
     case .filingSucceeded, .filingFailed, .tagToggled: .snappy
-    case .playlistReordered, .pageTinted, .downloadProgressed, .cueChanged, .playerExpanded,
-      .tracklistArrived:
+    case .playlistReordered, .pageTinted, .downloadProgressed, .cueChanged, .tracklistArrived:
       .smooth
+    case .playerExpanded: .expand
     case .pressed: .press
     case .playbackToggled: .lively
     }

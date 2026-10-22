@@ -69,6 +69,9 @@ struct NowPlayingScreen: View {
 
   /// The height the close button takes at the top, which the column starts below.
   private static let closeClearance: CGFloat = 44
+  /// The artwork's widest: about three quarters of a phone's width. At the column's full width a
+  /// 16:9 picture crowds the page.
+  private static let artworkWidth: CGFloat = 296
 
   private func closeButton(systemImage: String) -> some View {
     Button("Close", systemImage: systemImage, action: closeScreen)
@@ -134,6 +137,7 @@ struct NowPlayingScreen: View {
         // The artwork sits back while the Set is paused and steps forward when it plays, the way
         // Apple Music's does: the state of the player, read from across the room.
         Artwork(url: SetPresentation.pageArtwork(set), seed: set.title, size: .header)
+          .frame(maxWidth: Self.artworkWidth)
           .nowPlayingArtworkAnchor(artworkAnchor)
           .opacity(hidesArtwork ? 0 : 1)
           .shadow(color: .black.opacity(0.45), radius: isPlaying ? 28 : 12, y: isPlaying ? 18 : 6)

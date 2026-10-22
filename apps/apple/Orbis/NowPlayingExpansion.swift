@@ -18,8 +18,10 @@ import SwiftUI
 
     func body(content: Content) -> some View {
       content.overlay {
-        if isPresented {
-          ExpandingPlayer(model: model, barFrame: barFrame) { isPresented = false }
+        // Built while a Set is in the player, not on the tap, so the move starts on the next
+        // frame instead of after the page is first laid out.
+        if model.audioPlayer.currentSetId != nil {
+          ExpandingPlayer(model: model, barFrame: barFrame, isPresented: $isPresented)
         }
       }
     }
@@ -36,21 +38,23 @@ import SwiftUI
   private struct ExpandingPlayer: View {
     @Bindable var model: AppModel
     let barFrame: CGRect
-    /// Takes the player off screen once it is back in the bar.
-    let dismiss: () -> Void
+    /// Grows the player when it turns true. The player sets it false once it is back in the bar.
+    @Binding var isPresented: Bool
 
     @State private var isExpanded = false
     /// True while the player grows or shrinks. The artwork then flies as one copy over both ends.
     @State private var isMoving = false
     /// How far a drag has pulled the open player down.
     @State private var pull: CGFloat = 0
+    /// The window's bounds, which the player fills when open.
+    @State private var screen = CGRect.zero
     @Namespace private var namespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// A drag past this, or a flick that would carry past twice it, closes the player.
     private static let closingPull: CGFloat = 140
-    /// The corners the player takes while a drag pulls it away from the screen's edges.
-    private static let pulledRadius: CGFloat = 44
+    /// The player's corners while it moves or is pulled, close to the display's own.
+    private static let screenRadius: CGFloat = 55
     private static let thumbID = "mini-player-thumb"
 
     private var animation: Animation? {
@@ -66,11 +70,9 @@ import SwiftUI
       let set = model.audioPlayer.currentSetId.flatMap { model.savedSet($0) }
       ZStack {
         GeometryReader { proxy in
-          let screen = CGRect(origin: .zero, size: proxy.size)
           ZStack(alignment: .topLeading) {
             Color.black
-              .opacity(isExpanded ? 0.35 * (1 - min(pull / screen.height, 1)) : 0)
-            surface(set, in: isExpanded ? screen : barFrame)
+              .opacity(isExpanded ? 0.35 * (1 - min(pull / max(proxy.size.height, 1), 1)) : 0)
             Color.clear
               .frame(width: thumbFrame.width, height: thumbFrame.height)
               .matchedGeometryEffect(id: Self.thumbID, in: namespace)
@@ -78,15 +80,14 @@ import SwiftUI
               // leaves at the corner.
               .position(x: thumbFrame.midX, y: thumbFrame.midY)
           }
+          .onGeometryChange(for: CGRect.self) {
+            $0.frame(in: .global)
+          } action: {
+            screen = $0
+          }
         }
         .ignoresSafeArea()
-        if isExpanded {
-          NowPlayingScreen(
-            model: model, close: collapse, artworkAnchor: namespace, hidesArtwork: isMoving,
-            drawsBackground: false
-          )
-          .transition(.opacity)
-        }
+        player(set)
         // Always present, so the copy is already at one end when a move starts.
         if let set {
           flyingArtwork(set)
@@ -95,22 +96,50 @@ import SwiftUI
       }
       .offset(y: pull)
       .gesture(pullDown, isEnabled: isExpanded && !isMoving)
-      .accessibilityAddTraits(.isModal)
-      .task { expand() }
+      .allowsHitTesting(isExpanded || isMoving)
+      .accessibilityHidden(!isExpanded)
+      .accessibilityAddTraits(isExpanded ? .isModal : [])
+      .onChange(of: isPresented, initial: true) { _, isPresented in
+        if isPresented, !isExpanded { expand() }
+        if !isPresented, isExpanded { collapse() }
+      }
     }
 
-    /// The bar's glass, stretched to `frame`, darkening into Now Playing's backdrop as it grows.
-    /// Folded back into the bar it is clear, so the real bar shows through.
-    private func surface(_ set: SavedSet?, in frame: CGRect) -> some View {
-      let radius = isExpanded ? min(pull / 3, Self.pulledRadius) : barFrame.height / 2
-      return ZStack {
-        Rectangle().fill(.bar)
+    /// Square at rest, where the display rounds the corners itself.
+    private var radius: CGFloat {
+      guard isExpanded else { return barFrame.height / 2 }
+      return isMoving || pull > 0 ? Self.screenRadius : 0
+    }
+
+    /// Now Playing, laid out once at full size and only moved and clipped while it grows, so no
+    /// frame of the move lays the page out again. Folded, it is a window the size of the bar onto
+    /// the top of the page, lowered to the bar; open, the window is the screen. The page's content
+    /// fades in quicker than the window grows, so it is in place before the move ends.
+    private func player(_ set: SavedSet?) -> some View {
+      ZStack {
         NowPlayingBackground(set: set)
+        NowPlayingScreen(
+          model: model, close: collapse, artworkAnchor: namespace, hidesArtwork: isMoving,
+          drawsBackground: false
+        )
+        .opacity(isExpanded ? 1 : 0)
+        .animation(isExpanded ? .easeOut(duration: 0.22).delay(0.06) : .easeIn(duration: 0.12), value: isExpanded)
       }
+      // The bar's own glass shows until the dark page has covered it, on the way out as well.
       .opacity(isExpanded ? 1 : 0)
-      .frame(width: frame.width, height: frame.height)
-      .clipShape(.rect(cornerRadius: radius))
-      .offset(x: frame.minX, y: frame.minY)
+      .animation(
+        isExpanded ? .easeOut(duration: 0.14) : .easeIn(duration: 0.12).delay(0.26), value: isExpanded
+      )
+      .offset(y: isExpanded ? 0 : barFrame.minY - screen.minY)
+      .mask {
+        GeometryReader { proxy in
+          let origin = proxy.frame(in: .global).origin
+          let window = isExpanded ? screen : barFrame
+          RoundedRectangle(cornerRadius: radius)
+            .frame(width: window.width, height: window.height)
+            .offset(x: window.minX - origin.x, y: window.minY - origin.y)
+        }
+      }
     }
 
     /// The artwork in flight, from the bar's thumb to Now Playing's artwork or back. It takes the
@@ -153,7 +182,7 @@ import SwiftUI
     }
 
     private func collapse() {
-      move(expanded: false, then: dismiss)
+      move(expanded: false) { isPresented = false }
     }
 
     private func move(expanded: Bool, then finish: @escaping () -> Void) {
