@@ -96,7 +96,7 @@ shutil.copyfile(os.path.join(here, name), sys.argv[sys.argv.index('-o') + 1])
     port: 0,
   });
   // ffmpeg writes two hours of silence; a CI runner needs longer than Bun's 5 s default.
-}, 60_000);
+});
 
 afterAll(async () => {
   await collector?.stop(true);
@@ -172,4 +172,4 @@ test("a canary with one failing backend per source warns, and one with a dead so
   const [failed] = broken.canaryEvents;
   expect(failed?.record.severityText).toBe("ERROR");
   expect(JSON.stringify(failed?.record.attributes)).toContain("soundcloud");
-}, 120_000);
+});

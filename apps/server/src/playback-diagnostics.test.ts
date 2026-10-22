@@ -402,7 +402,7 @@ test("two active exports have no queue and deadline releases both slots", async 
   } finally {
     await s.close();
   }
-}, 15_000);
+});
 
 test.each([
   () => new Response("x".repeat(65_537)),

@@ -167,4 +167,4 @@ test("Presence reaches only viewers who pass the gate and lapses when reports st
     await listeners.stop();
     await rm(root, { force: true, recursive: true });
   }
-}, 20_000);
+});

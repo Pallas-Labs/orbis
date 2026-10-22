@@ -730,7 +730,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
     await saveTranscript("lifecycle.json", transcript);
     await rm(root, { force: true, recursive: true });
   }
-}, 90_000);
+});
 
 test("Queue changes, lease expiry, revocation, the session cap, and removal clear ownership", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-presence-queue-"));
@@ -1025,7 +1025,7 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
     await saveTranscript("queue-expiry-revocation.json", transcript);
     await rm(root, { force: true, recursive: true });
   }
-}, 90_000);
+});
 
 test("an action whose key row is gone is refused before it writes", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-presence-revoked-"));

@@ -16,7 +16,7 @@ const youTubeUrl = hostileUrl;
 const soundCloudUrl = "https://soundcloud.com/artist/track";
 const haveFfmpeg =
   Bun.which("ffmpeg") !== null && Bun.which("ffprobe") !== null;
-const testFfmpeg = haveFfmpeg ? test : test.skip;
+const testFfmpeg = test.skipIf(!haveFfmpeg);
 
 // The worker runs on its own fiber, so the tests poll for a terminal state.
 const waitForState = async (

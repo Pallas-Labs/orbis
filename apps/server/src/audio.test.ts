@@ -10,7 +10,7 @@ import { request } from "./test-http.js";
 const youTubeUrl = "https://www.youtube.com/watch?v=aqzKEbpKQAA";
 const haveFfmpeg =
   Bun.which("ffmpeg") !== null && Bun.which("ffprobe") !== null;
-const testFfmpeg = haveFfmpeg ? test : test.skip;
+const testFfmpeg = test.skipIf(!haveFfmpeg);
 
 // The stub only routes on the URL; Cobalt's full request shape is asserted by the
 // worker's Schema decode, so the stub names just the field it reads.

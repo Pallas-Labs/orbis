@@ -185,7 +185,7 @@ test("a Library change on one device reaches the Person's other device only", as
     await a1.close();
     await b1.close();
   }
-}, 10_000);
+});
 
 test("a Playlist edit reaches a reader but not a Person who cannot read it", async () => {
   const b1 = await open("b1");
@@ -203,7 +203,7 @@ test("a Playlist edit reaches a reader but not a Person who cannot read it", asy
     await b1.close();
     await c1.close();
   }
-}, 10_000);
+});
 
 test("a hidden Person's Listen reaches who can see them and nobody else", async () => {
   const a1 = await open("a1");
@@ -223,7 +223,7 @@ test("a hidden Person's Listen reaches who can see them and nobody else", async 
     await b1.close();
     await c1.close();
   }
-}, 10_000);
+});
 
 test("an old client decoder reads the plain stream, and would reject a changed frame", async () => {
   const plain = await open("a1", "/events");
@@ -253,7 +253,7 @@ test("an old client decoder reads the plain stream, and would reject a changed f
     await plain.close();
     await opted.close();
   }
-}, 10_000);
+});
 
 test("revoking a key closes its open stream", async () => {
   const a2 = await open("a2", "/events");
@@ -267,4 +267,4 @@ test("revoking a key closes its open stream", async () => {
     }
   }
   expect(Date.now() - startedAt).toBeLessThan(1500);
-}, 10_000);
+});

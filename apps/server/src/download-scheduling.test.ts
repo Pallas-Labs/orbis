@@ -187,7 +187,7 @@ test("downloads preserve Person turns and queued order across a restart", async 
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
 
 test("only twenty waiting Downloads per Person, with duplicates and cancellation", async () => {
   const lane = await fixture(true);
@@ -261,7 +261,7 @@ test("only twenty waiting Downloads per Person, with duplicates and cancellation
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
 
 test("a legacy backlog of thirty jobs stays fair and keeps its order", async () => {
   const lane = await fixture(false);
@@ -317,4 +317,4 @@ test("a legacy backlog of thirty jobs stays fair and keeps its order", async () 
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});

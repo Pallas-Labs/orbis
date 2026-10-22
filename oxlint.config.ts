@@ -21,6 +21,7 @@ export default defineConfig({
       files: TEST_FILES,
       rules: {
         "t3code/no-test-in-loop": "error",
+        "t3code/no-test-timeout-or-unreasoned-skip": "error",
       },
     },
   ],

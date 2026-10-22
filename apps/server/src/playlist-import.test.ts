@@ -447,7 +447,7 @@ test("the import answers 202 before any track is saved, then fills an ordered Pl
   } finally {
     await app.dispose();
   }
-}, 30_000);
+});
 
 test("links and playlists that can't be imported say why at once and create nothing", async () => {
   const root = await laneRoot();
@@ -636,7 +636,7 @@ test("a restart between pages resumes at the next page with no Set or member twi
   } finally {
     await app.dispose();
   }
-}, 30_000);
+});
 
 test("YouTube failing past the retries fails the import with a message, keeps its Sets, and Try Again finishes it", async () => {
   let youTubeDown = true;
@@ -688,7 +688,7 @@ test("YouTube failing past the retries fails the import with a message, keeps it
   } finally {
     await app.dispose();
   }
-}, 30_000);
+});
 
 test("a playlist over the Playlist maximum keeps its first 500 tracks", async () => {
   const youTube = fakeYouTube({
@@ -722,4 +722,4 @@ test("a playlist over the Playlist maximum keeps its first 500 tracks", async ()
   } finally {
     await app.dispose();
   }
-}, 60_000);
+});

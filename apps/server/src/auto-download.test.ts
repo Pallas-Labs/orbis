@@ -229,7 +229,7 @@ test("Auto Download defaults on and follows the Person across clients and restar
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
 
 test("saving shared ready or running audio starts no second Download", async () => {
   const lane = await fixture(true, true);
@@ -258,7 +258,7 @@ test("saving shared ready or running audio starts no second Download", async () 
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
 
 test("the 20-job cap preserves a successful save with an explicit outcome", async () => {
   const lane = await fixture(false);
@@ -279,4 +279,4 @@ test("the 20-job cap preserves a successful save with an explicit outcome", asyn
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
