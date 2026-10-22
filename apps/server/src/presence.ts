@@ -288,19 +288,21 @@ const orphanSessions = (tx: DatabaseClient, personId?: string) =>
           : eq(presenceSessions.personId, personId)
       )
     );
-const clearKeyRows = (tx: DatabaseClient, keyIds: readonly string[]) =>
-  Effect.gen(function* deleteKeyRows() {
-    yield* tx
-      .delete(presenceActionResults)
-      .where(inArray(presenceActionResults.keyId, keyIds));
-    yield* tx
-      .delete(presenceSessions)
-      .where(inArray(presenceSessions.keyId, keyIds));
-    yield* tx.delete(presenceKeys).where(inArray(presenceKeys.keyId, keyIds));
-    yield* tx
-      .delete(presenceLegacyReports)
-      .where(inArray(presenceLegacyReports.keyId, keyIds));
-  });
+const clearKeyRows = Effect.fn("Presence.clearKeyRows")(function* deleteKeyRows(
+  tx: DatabaseClient,
+  keyIds: readonly string[]
+) {
+  yield* tx
+    .delete(presenceActionResults)
+    .where(inArray(presenceActionResults.keyId, keyIds));
+  yield* tx
+    .delete(presenceSessions)
+    .where(inArray(presenceSessions.keyId, keyIds));
+  yield* tx.delete(presenceKeys).where(inArray(presenceKeys.keyId, keyIds));
+  yield* tx
+    .delete(presenceLegacyReports)
+    .where(inArray(presenceLegacyReports.keyId, keyIds));
+});
 const requireLiveKey = (tx: DatabaseClient, caller: PresenceCaller) =>
   tx
     .select({ id: apiKeys.id })
@@ -317,25 +319,27 @@ const requireLiveKey = (tx: DatabaseClient, caller: PresenceCaller) =>
       Effect.flatMap(([key]) => (key ? Effect.void : Effect.fail(revokedKey())))
     );
 
-const personOf = (tx: DatabaseClient, keyId: string) =>
-  Effect.gen(function* findKeyPerson() {
-    const [session] = yield* tx
-      .select({ personId: presenceSessions.personId })
-      .from(presenceSessions)
-      .where(eq(presenceSessions.keyId, keyId))
-      .limit(1);
-    const [key] = yield* tx
-      .select({ personId: presenceKeys.personId })
-      .from(presenceKeys)
-      .where(eq(presenceKeys.keyId, keyId))
-      .limit(1);
-    const [report] = yield* tx
-      .select({ personId: presenceLegacyReports.personId })
-      .from(presenceLegacyReports)
-      .where(eq(presenceLegacyReports.keyId, keyId))
-      .limit(1);
-    return (session ?? key ?? report)?.personId ?? null;
-  });
+const personOf = Effect.fn("Presence.personOf")(function* findKeyPerson(
+  tx: DatabaseClient,
+  keyId: string
+) {
+  const [session] = yield* tx
+    .select({ personId: presenceSessions.personId })
+    .from(presenceSessions)
+    .where(eq(presenceSessions.keyId, keyId))
+    .limit(1);
+  const [key] = yield* tx
+    .select({ personId: presenceKeys.personId })
+    .from(presenceKeys)
+    .where(eq(presenceKeys.keyId, keyId))
+    .limit(1);
+  const [report] = yield* tx
+    .select({ personId: presenceLegacyReports.personId })
+    .from(presenceLegacyReports)
+    .where(eq(presenceLegacyReports.keyId, keyId))
+    .limit(1);
+  return (session ?? key ?? report)?.personId ?? null;
+});
 
 /** Every write to the four presence tables goes through here. */
 export class Presence extends Context.Service<
@@ -383,54 +387,53 @@ export class Presence extends Context.Service<
         const legacyWindowMs = options.legacyReportWindowMs ?? LEGACY_WINDOW_MS;
 
         // Without `now` the rows are trusted because every transaction settles them first.
-        const visible = (
+        const visible = Effect.fn("Presence.visible")(function* resolveVisible(
           tx: DatabaseClient,
           personId: string,
           view: { now?: number; activeSetId?: string | null } = {}
-        ) =>
-          Effect.gen(function* resolveVisible() {
-            const [owner] = yield* tx
-              .select({ setId: presenceSessions.setId })
-              .from(presenceSessions)
-              .where(
-                and(
-                  eq(presenceSessions.personId, personId),
-                  eq(presenceSessions.state, "playing"),
-                  view.now === undefined
-                    ? undefined
-                    : gt(presenceSessions.leaseExpiresAt, view.now)
-                )
+        ) {
+          const [owner] = yield* tx
+            .select({ setId: presenceSessions.setId })
+            .from(presenceSessions)
+            .where(
+              and(
+                eq(presenceSessions.personId, personId),
+                eq(presenceSessions.state, "playing"),
+                view.now === undefined
+                  ? undefined
+                  : gt(presenceSessions.leaseExpiresAt, view.now)
               )
-              .limit(1);
-            if (owner) {
-              return owner.setId;
-            }
-            const activeSetId =
-              view.activeSetId === undefined
-                ? yield* activeSetFor(tx, personId)
-                : view.activeSetId;
-            if (activeSetId === null) {
-              return null;
-            }
-            const [report] = yield* tx
-              .select({ setId: presenceLegacyReports.setId })
-              .from(presenceLegacyReports)
-              .where(
-                and(
-                  eq(presenceLegacyReports.personId, personId),
-                  eq(presenceLegacyReports.setId, activeSetId),
-                  view.now === undefined
-                    ? undefined
-                    : gt(
-                        presenceLegacyReports.reportedAt,
-                        view.now - legacyWindowMs
-                      )
-                )
+            )
+            .limit(1);
+          if (owner) {
+            return owner.setId;
+          }
+          const activeSetId =
+            view.activeSetId === undefined
+              ? yield* activeSetFor(tx, personId)
+              : view.activeSetId;
+          if (activeSetId === null) {
+            return null;
+          }
+          const [report] = yield* tx
+            .select({ setId: presenceLegacyReports.setId })
+            .from(presenceLegacyReports)
+            .where(
+              and(
+                eq(presenceLegacyReports.personId, personId),
+                eq(presenceLegacyReports.setId, activeSetId),
+                view.now === undefined
+                  ? undefined
+                  : gt(
+                      presenceLegacyReports.reportedAt,
+                      view.now - legacyWindowMs
+                    )
               )
-              .orderBy(desc(presenceLegacyReports.reportedAt))
-              .limit(1);
-            return report?.setId ?? null;
-          });
+            )
+            .orderBy(desc(presenceLegacyReports.reportedAt))
+            .limit(1);
+          return report?.setId ?? null;
+        });
 
         const journalIfChanged = (
           tx: DatabaseClient,
@@ -440,53 +443,56 @@ export class Presence extends Context.Service<
             ? Effect.void
             : journal.record(tx, transition);
 
-        const settle = (tx: DatabaseClient, now: number, personId?: string) =>
-          Effect.gen(function* settleDeadlines() {
-            const orphans = yield* orphanSessions(tx, personId);
-            if (orphans.length > 0) {
-              yield* clearKeyRows(tx, [
-                ...new Set(orphans.map((row) => row.keyId)),
-              ]);
-            }
-            const lapsedLease = and(
-              eq(presenceSessions.state, "playing"),
-              lte(presenceSessions.leaseExpiresAt, now),
-              personId === undefined
-                ? undefined
-                : eq(presenceSessions.personId, personId)
-            );
-            const lapsedReport = and(
-              lte(presenceLegacyReports.reportedAt, now - legacyWindowMs),
-              personId === undefined
-                ? undefined
-                : eq(presenceLegacyReports.personId, personId)
-            );
-            const lapsedSessions = yield* tx
-              .select({ personId: presenceSessions.personId })
-              .from(presenceSessions)
+        const settle = Effect.fn("Presence.settle")(function* settleDeadlines(
+          tx: DatabaseClient,
+          now: number,
+          personId?: string
+        ) {
+          const orphans = yield* orphanSessions(tx, personId);
+          if (orphans.length > 0) {
+            yield* clearKeyRows(tx, [
+              ...new Set(orphans.map((row) => row.keyId)),
+            ]);
+          }
+          const lapsedLease = and(
+            eq(presenceSessions.state, "playing"),
+            lte(presenceSessions.leaseExpiresAt, now),
+            personId === undefined
+              ? undefined
+              : eq(presenceSessions.personId, personId)
+          );
+          const lapsedReport = and(
+            lte(presenceLegacyReports.reportedAt, now - legacyWindowMs),
+            personId === undefined
+              ? undefined
+              : eq(presenceLegacyReports.personId, personId)
+          );
+          const lapsedSessions = yield* tx
+            .select({ personId: presenceSessions.personId })
+            .from(presenceSessions)
+            .where(lapsedLease);
+          if (lapsedSessions.length > 0) {
+            yield* tx
+              .update(presenceSessions)
+              .set({ leaseExpiresAt: null, state: "paused", updatedAt: now })
               .where(lapsedLease);
-            if (lapsedSessions.length > 0) {
-              yield* tx
-                .update(presenceSessions)
-                .set({ leaseExpiresAt: null, state: "paused", updatedAt: now })
-                .where(lapsedLease);
-            }
-            const lapsedReports = yield* tx
-              .select({ personId: presenceLegacyReports.personId })
-              .from(presenceLegacyReports)
-              .where(lapsedReport);
-            if (lapsedReports.length > 0) {
-              yield* tx.delete(presenceLegacyReports).where(lapsedReport);
-            }
-            return {
-              leases: new Set(lapsedSessions.map((row) => row.personId)),
-              orphans: new Set(orphans.map((row) => row.personId)),
-              reports: new Set(lapsedReports.map((row) => row.personId)),
-            };
-          });
+          }
+          const lapsedReports = yield* tx
+            .select({ personId: presenceLegacyReports.personId })
+            .from(presenceLegacyReports)
+            .where(lapsedReport);
+          if (lapsedReports.length > 0) {
+            yield* tx.delete(presenceLegacyReports).where(lapsedReport);
+          }
+          return {
+            leases: new Set(lapsedSessions.map((row) => row.personId)),
+            orphans: new Set(orphans.map((row) => row.personId)),
+            reports: new Set(lapsedReports.map((row) => row.personId)),
+          };
+        });
 
-        const nearestDeadline = () =>
-          Effect.gen(function* readNearestDeadline() {
+        const nearestDeadline = Effect.fn("Presence.nearestDeadline")(
+          function* readNearestDeadline() {
             const [lease] = yield* db
               .select({
                 at: sql<number | null>`min(${presenceSessions.leaseExpiresAt})`,
@@ -507,33 +513,35 @@ export class Presence extends Context.Service<
                 : report.at + legacyWindowMs,
             ].filter((at): at is number => at !== null);
             return deadlines.length === 0 ? null : Math.min(...deadlines);
-          });
+          }
+        );
 
         let timer: Fiber.Fiber<void> | null = null;
         let wake: Effect.Effect<void> = Effect.void;
         let armedAt: number | null = null;
-        const bunAlarm = (at: number | null): Effect.Effect<void> =>
-          Effect.gen(function* armTimer() {
-            if (timer) {
-              yield* Fiber.interrupt(timer);
-              timer = null;
-            }
-            if (at === null) {
-              return;
-            }
-            timer = yield* Effect.sleep(
-              Duration.millis(Math.max(at - Date.now(), 0))
-            ).pipe(
-              Effect.andThen(
-                Effect.sync(() => {
-                  timer = null;
-                  armedAt = null;
-                })
-              ),
-              Effect.andThen(Effect.suspend(() => wake)),
-              Effect.forkIn(scope)
-            );
-          });
+        const bunAlarm = Effect.fn("Presence.bunAlarm")(function* armTimer(
+          at: number | null
+        ): Effect.fn.Return<void> {
+          if (timer) {
+            yield* Fiber.interrupt(timer);
+            timer = null;
+          }
+          if (at === null) {
+            return;
+          }
+          timer = yield* Effect.sleep(
+            Duration.millis(Math.max(at - Date.now(), 0))
+          ).pipe(
+            Effect.andThen(
+              Effect.sync(() => {
+                timer = null;
+                armedAt = null;
+              })
+            ),
+            Effect.andThen(Effect.suspend(() => wake)),
+            Effect.forkIn(scope)
+          );
+        });
         const { alarm } = options;
         // The port is written only when the deadline moves, and never fails the commit
         // that moved it: a failed write is retried by the next commit, and a missed wake
@@ -604,12 +612,12 @@ export class Presence extends Context.Service<
             });
         };
 
-        const gatherFacts = (
-          tx: DatabaseClient,
-          caller: PresenceCaller,
-          now: number
-        ) =>
-          Effect.gen(function* readFacts() {
+        const gatherFacts = Effect.fn("Presence.gatherFacts")(
+          function* readFacts(
+            tx: DatabaseClient,
+            caller: PresenceCaller,
+            now: number
+          ) {
             const activeSetId = yield* activeSetFor(tx, caller.personId);
             const [sessions] = yield* tx
               .select({ total: count() })
@@ -625,7 +633,8 @@ export class Presence extends Context.Service<
               leaseExpiresAt: now + leaseMs,
               nextGeneration: (generation?.latest ?? 0) + 1,
             } satisfies Facts;
-          });
+          }
+        );
 
         const act = Effect.fn("Presence.act")(
           (caller: PresenceCaller, action: PresenceAction) =>
@@ -819,13 +828,13 @@ export class Presence extends Context.Service<
             )
         );
 
-        const clearKeys = (
-          tx: DatabaseClient,
-          keyIds: readonly string[],
-          personId: string,
-          cause: "revocation" | "removal"
-        ) =>
-          Effect.gen(function* deleteKeyRows() {
+        const clearKeys = Effect.fn("Presence.clearKeys")(
+          function* deleteKeyRows(
+            tx: DatabaseClient,
+            keyIds: readonly string[],
+            personId: string,
+            cause: "revocation" | "removal"
+          ) {
             if (keyIds.length === 0) {
               return;
             }
@@ -838,7 +847,8 @@ export class Presence extends Context.Service<
               visibleSetAfter: after,
               visibleSetBefore: before,
             });
-          });
+          }
+        );
 
         const revokeKey = Effect.fn("Presence.revokeKey")((keyId: string) =>
           execute(

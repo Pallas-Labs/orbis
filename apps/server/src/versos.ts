@@ -70,12 +70,12 @@ export class Versos extends Context.Service<Versos, VersosService>()(
   }): Layer.Layer<Versos> {
     const base = new URL(options.url);
     const requestFetch = options.fetch ?? fetch;
-    const read = <S extends Schema.ConstraintDecoder<unknown>>(
-      endpoint: URL,
-      schema: S,
-      init: RequestInit
-    ): Effect.Effect<S["Type"], VersosError> =>
-      Effect.gen(function* readVersos() {
+    const read = Effect.fn("Versos.read")(
+      function* readVersos<S extends Schema.ConstraintDecoder<unknown>>(
+        endpoint: URL,
+        schema: S,
+        init: RequestInit
+      ): Effect.fn.Return<S["Type"], VersosError> {
         const response = yield* Effect.tryPromise({
           catch: () => new VersosError({ reason: "unavailable" }),
           try: (signal) => requestFetch(endpoint, { ...init, signal }),
@@ -98,12 +98,12 @@ export class Versos extends Context.Service<Versos, VersosService>()(
           );
         }
         return parsed.value;
-      }).pipe(
-        Effect.timeoutOrElse({
-          duration: options.requestTimeoutMs ?? 10_000,
-          orElse: () => Effect.fail(new VersosError({ reason: "unavailable" })),
-        })
-      );
+      },
+      Effect.timeoutOrElse({
+        duration: options.requestTimeoutMs ?? 10_000,
+        orElse: () => Effect.fail(new VersosError({ reason: "unavailable" })),
+      })
+    );
     const headers = {
       authorization: `Bearer ${Redacted.value(options.key)}`,
       "content-type": "application/json",

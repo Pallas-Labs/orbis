@@ -461,16 +461,17 @@ export const createPortableApp = (options: {
           Effect.as(true),
           Effect.orElseSucceed(() => false)
         );
-      const announceForCaller = (
-        topic: ChangeTopic,
-        reaches: (
-          personId: string
-        ) => (viewerId: string) => Effect.Effect<boolean>
-      ) =>
-        Effect.gen(function* announceCallerChange() {
+      const announceForCaller = Effect.fn("App.announceForCaller")(
+        function* announceCallerChange(
+          topic: ChangeTopic,
+          reaches: (
+            personId: string
+          ) => (viewerId: string) => Effect.Effect<boolean>
+        ) {
           const caller = yield* SetCaller;
           yield* announce(topic, reaches(caller.person.id));
-        });
+        }
+      );
       const runningTracklists = new Set<string>();
       const startTracklist = Effect.fn("SaveSet.startTracklist")(
         (id: string, retry = false) =>
@@ -919,8 +920,8 @@ export const createPortableApp = (options: {
             )
           )
       );
-      const visibleFriend = (id: string) =>
-        Effect.gen(function* resolveFriend() {
+      const visibleFriend = Effect.fn("App.visibleFriend")(
+        function* resolveFriend(id: string) {
           const caller = yield* SetCaller;
           const { people } = readTrustRegistry(trustPath).store;
           return yield* Effect.try({
@@ -933,9 +934,10 @@ export const createPortableApp = (options: {
                   }),
             try: () => resolveVisiblePerson(people, caller.person.id, id),
           });
-        });
-      const mutuallyVisibleFriend = (id: string) =>
-        Effect.gen(function* resolveMutualVisibility() {
+        }
+      );
+      const mutuallyVisibleFriend = Effect.fn("App.mutuallyVisibleFriend")(
+        function* resolveMutualVisibility(id: string) {
           const caller = yield* SetCaller;
           const target = yield* visibleFriend(id);
           const { people } = readTrustRegistry(trustPath).store;
@@ -946,9 +948,10 @@ export const createPortableApp = (options: {
               resolveVisiblePerson(people, target.id, caller.person.id),
           });
           return target;
-        });
-      const ownedPlaylist = (id: string, personId: string) =>
-        Effect.gen(function* findOwnedPlaylist() {
+        }
+      );
+      const ownedPlaylist = Effect.fn("App.ownedPlaylist")(
+        function* findOwnedPlaylist(id: string, personId: string) {
           const [row] = yield* db
             .select({
               collaborative: playlists.collaborative,
@@ -961,9 +964,10 @@ export const createPortableApp = (options: {
             return yield* Effect.fail(missingPlaylist());
           }
           return row;
-        });
-      const collaborationFor = (id: string, personId: string) =>
-        Effect.gen(function* readCollaboration() {
+        }
+      );
+      const collaborationFor = Effect.fn("App.collaborationFor")(
+        function* readCollaboration(id: string, personId: string) {
           const playlist = yield* ownedPlaylist(id, personId);
           const editors = yield* db
             .select({ editorId: playlistEditors.editorId })
@@ -973,9 +977,10 @@ export const createPortableApp = (options: {
             collaborative: playlist.collaborative,
             editorIds: editors.map((row) => row.editorId),
           };
-        });
-      const editablePlaylistOwner = (id: string, personId: string) =>
-        Effect.gen(function* resolveEditablePlaylist() {
+        }
+      );
+      const editablePlaylistOwner = Effect.fn("App.editablePlaylistOwner")(
+        function* resolveEditablePlaylist(id: string, personId: string) {
           const [owned] = yield* db
             .select({ id: playlists.id })
             .from(playlists)
@@ -1012,7 +1017,8 @@ export const createPortableApp = (options: {
             return yield* Effect.fail(missingPlaylist());
           }
           return editor.creatorId;
-        });
+        }
+      );
       const personSummary = (id: string) => {
         const { people } = readTrustRegistry(trustPath).store;
         const person = people.find((candidate) => candidate.id === id);
@@ -1473,41 +1479,42 @@ export const createPortableApp = (options: {
         Library.forPersonLayer(personId).pipe(
           Layer.provide(Layer.succeed(Database, db))
         );
-      const presenceFor = (viewerId: string) =>
-        Effect.gen(function* readPresence() {
-          const { people } = readTrustRegistry(trustPath).store;
-          const now = Date.now();
-          const found = [];
-          for (const person of people) {
-            let target;
-            try {
-              target = resolveVisiblePerson(people, viewerId, person.id);
-            } catch {
-              continue;
-            }
-            const setId = yield* presence
-              .currentSetFor(target.id, now)
-              .pipe(Effect.orElseSucceed(() => null));
-            if (setId === null) {
-              continue;
-            }
-            const [set] = yield* Effect.provide(
-              Effect.gen(function* hydratePresence() {
-                const personal = yield* Library;
-                return yield* personal.byIds([setId]);
-              }),
-              friendLibraryLayer(target.id)
-            ).pipe(Effect.orElseSucceed(() => []));
-            if (set) {
-              found.push({
-                personId: target.id,
-                set,
-                username: target.username,
-              });
-            }
+      const presenceFor = Effect.fn("App.presenceFor")(function* readPresence(
+        viewerId: string
+      ) {
+        const { people } = readTrustRegistry(trustPath).store;
+        const now = Date.now();
+        const found = [];
+        for (const person of people) {
+          let target;
+          try {
+            target = resolveVisiblePerson(people, viewerId, person.id);
+          } catch {
+            continue;
           }
-          return found;
-        });
+          const setId = yield* presence
+            .currentSetFor(target.id, now)
+            .pipe(Effect.orElseSucceed(() => null));
+          if (setId === null) {
+            continue;
+          }
+          const [set] = yield* Effect.provide(
+            Effect.gen(function* hydratePresence() {
+              const personal = yield* Library;
+              return yield* personal.byIds([setId]);
+            }),
+            friendLibraryLayer(target.id)
+          ).pipe(Effect.orElseSucceed(() => []));
+          if (set) {
+            found.push({
+              personId: target.id,
+              set,
+              username: target.username,
+            });
+          }
+        }
+        return found;
+      });
       const peopleGroup = HttpApiBuilder.group(OrbisApi, "people", (handlers) =>
         handlers
           .handle("me", () =>
@@ -1723,10 +1730,10 @@ export const createPortableApp = (options: {
         );
       // Devices act for the Person behind a key. A stream grant has no key, so
       // it is refused.
-      const deviceCall = <A>(
-        action: (storePath: string, personId: string, keyId: string) => A
-      ) =>
-        Effect.gen(function* authorizedDeviceAction() {
+      const deviceCall = Effect.fn("App.deviceCall")(
+        function* authorizedDeviceAction<A>(
+          action: (storePath: string, personId: string, keyId: string) => A
+        ) {
           const caller = yield* SetCaller;
           const { keyId } = caller;
           if (keyId === null) {
@@ -1738,7 +1745,8 @@ export const createPortableApp = (options: {
           return yield* trustCall((storePath) =>
             action(storePath, caller.person.id, keyId)
           );
-        });
+        }
+      );
       // The key is already gone, so a failed clear is logged: the next settle sweeps the
       // rows and the lease bounds how long the stale Presence can show.
       const clearRevokedPresence = (keyId: string) =>

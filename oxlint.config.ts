@@ -23,6 +23,8 @@ export default defineConfig({
         "t3code/no-test-in-loop": "error",
         "t3code/no-test-timeout-or-unreasoned-skip": "error",
         "t3code/no-wall-clock-in-tests": "error",
+        // Tests may build one-off Effect functions; Effect.fn names spans for production code.
+        "t3code/prefer-effect-fn": "off",
       },
     },
     {
@@ -34,6 +36,7 @@ export default defineConfig({
   ],
   rules: {
     "t3code/no-inline-schema-compile": "error",
+    "t3code/prefer-effect-fn": "error",
     "t3code/require-suppression-reason": "error",
   },
 });

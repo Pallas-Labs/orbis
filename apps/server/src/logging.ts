@@ -288,15 +288,16 @@ const CurrentWideEvent = Context.Reference<RequestLogger | null>(
 );
 
 /** Adds fields to the active request's wide event; outside one it does nothing. */
-export const annotateWideEvent = (fields: LoggedRecord) =>
-  Effect.gen(function* wideEventAnnotation() {
+export const annotateWideEvent = Effect.fn("Logging.annotateWideEvent")(
+  function* wideEventAnnotation(fields: LoggedRecord) {
     const logger = yield* CurrentWideEvent;
     logger?.set(fields);
-  });
+  }
+);
 
 /** Raises the active wide event to at least `level`, whatever its outcome. */
-export const raiseWideEventLevel = (level: EventLevel) =>
-  Effect.gen(function* wideEventLevel() {
+export const raiseWideEventLevel = Effect.fn("Logging.raiseWideEventLevel")(
+  function* wideEventLevel(level: EventLevel) {
     const logger = yield* CurrentWideEvent;
     if (logger !== null) {
       const current = raisedLevels.get(logger) ?? "info";
@@ -304,7 +305,8 @@ export const raiseWideEventLevel = (level: EventLevel) =>
         raisedLevels.set(logger, level);
       }
     }
-  });
+  }
+);
 
 /**
  * Emits one standalone event, such as a node link change, at a chosen level. Fields

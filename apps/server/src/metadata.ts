@@ -154,12 +154,12 @@ const soundCloudRequest = (url: string): string => {
   return endpoint.toString();
 };
 
-const requestJson = <S extends Schema.ConstraintDecoder<unknown>>(
-  url: string,
-  schema: S,
-  options: ProviderOptions
-): Effect.Effect<S["Type"], MetadataError> =>
-  Effect.gen(function* readProvider() {
+const requestJson = Effect.fn("Metadata.requestJson")(
+  function* readProvider<S extends Schema.ConstraintDecoder<unknown>>(
+    url: string,
+    schema: S,
+    options: ProviderOptions
+  ): Effect.fn.Return<S["Type"], MetadataError> {
     const response = yield* Effect.tryPromise({
       catch: () => unavailable(`${options.label} is unreachable.`),
       try: (signal) => options.request(url, signal),
@@ -182,13 +182,16 @@ const requestJson = <S extends Schema.ConstraintDecoder<unknown>>(
       );
     }
     return decoded.value;
-  }).pipe(
-    Effect.timeoutOrElse({
-      duration: PROVIDER_TIMEOUT,
-      orElse: () =>
-        Effect.fail(unavailable(`${options.label} did not answer in time.`)),
-    })
-  );
+  },
+  (effect, _url, _schema, options) =>
+    effect.pipe(
+      Effect.timeoutOrElse({
+        duration: PROVIDER_TIMEOUT,
+        orElse: () =>
+          Effect.fail(unavailable(`${options.label} did not answer in time.`)),
+      })
+    )
+);
 
 const YouTubeThumbnail = Schema.Struct({ url: Schema.String });
 
@@ -285,47 +288,44 @@ const youTubeProvider = (
   youTubeApiKey: string,
   request: RequestFetch
 ): Provider => ({
-  enrich: (url) =>
-    Effect.gen(function* enrichYouTube() {
-      const videoId = youTubeVideoId(url);
-      if (!videoId) {
-        return yield* Effect.fail(
-          unsupported("This URL does not name a YouTube video.")
-        );
-      }
-      const response = yield* requestJson(
-        youTubeApiRequest("videos", youTubeApiKey, {
-          id: videoId,
-          part: "snippet,contentDetails",
-        }),
-        YouTubeResponse,
-        { label: "YouTube", request }
+  enrich: Effect.fn("Metadata.enrich")(function* enrichYouTube(url) {
+    const videoId = youTubeVideoId(url);
+    if (!videoId) {
+      return yield* Effect.fail(
+        unsupported("This URL does not name a YouTube video.")
       );
-      const [video] = response.items;
-      if (!video) {
-        return yield* Effect.fail(
-          rejected("YouTube does not have this video.")
-        );
-      }
-      const metadata = youTubeMetadata(video);
-      if (!metadata.title) {
-        return yield* Effect.fail(
-          unexpected("YouTube returned a video without a title.")
-        );
-      }
-      return metadata;
-    }),
+    }
+    const response = yield* requestJson(
+      youTubeApiRequest("videos", youTubeApiKey, {
+        id: videoId,
+        part: "snippet,contentDetails",
+      }),
+      YouTubeResponse,
+      { label: "YouTube", request }
+    );
+    const [video] = response.items;
+    if (!video) {
+      return yield* Effect.fail(rejected("YouTube does not have this video."));
+    }
+    const metadata = youTubeMetadata(video);
+    if (!metadata.title) {
+      return yield* Effect.fail(
+        unexpected("YouTube returned a video without a title.")
+      );
+    }
+    return metadata;
+  }),
 });
 
 /** The Data API's largest page, for both playlist entries and a batch of videos. */
 const YOUTUBE_PAGE = 50;
 
-const readYouTubePlaylist = (
-  playlistId: string,
-  youTubeApiKey: string,
-  request: RequestFetch
-): Effect.Effect<YouTubePlaylist, MetadataError> =>
-  Effect.gen(function* readPlaylist() {
+const readYouTubePlaylist = Effect.fn("Metadata.readYouTubePlaylist")(
+  function* readPlaylist(
+    playlistId: string,
+    youTubeApiKey: string,
+    request: RequestFetch
+  ): Effect.fn.Return<YouTubePlaylist, MetadataError> {
     const found = yield* requestJson(
       youTubeApiRequest("playlists", youTubeApiKey, {
         id: playlistId,
@@ -344,20 +344,21 @@ const readYouTubePlaylist = (
       itemCount: playlist.contentDetails.itemCount,
       title: playlist.snippet.title.trim(),
     };
-  });
+  }
+);
 
 /**
  * Two quota units: one page of entries, then its videos in one batch. The videos are the
  * records a single save reads, so an imported track gets the same title, artwork, and length
  * as a pasted one.
  */
-const readYouTubePlaylistPage = (
-  playlistId: string,
-  pageToken: string | null,
-  youTubeApiKey: string,
-  request: RequestFetch
-): Effect.Effect<YouTubePlaylistPage, MetadataError> =>
-  Effect.gen(function* readPlaylistPage() {
+const readYouTubePlaylistPage = Effect.fn("Metadata.readYouTubePlaylistPage")(
+  function* readPlaylistPage(
+    playlistId: string,
+    pageToken: string | null,
+    youTubeApiKey: string,
+    request: RequestFetch
+  ): Effect.fn.Return<YouTubePlaylistPage, MetadataError> {
     const options = { label: "YouTube", request };
     const page = yield* requestJson(
       youTubeApiRequest("playlistItems", youTubeApiKey, {
@@ -401,24 +402,24 @@ const readYouTubePlaylistPage = (
       tracks,
       unavailable: ids.length - tracks.length,
     };
-  });
+  }
+);
 
 const soundCloudProvider = (request: RequestFetch): Provider => ({
-  enrich: (url) =>
-    Effect.gen(function* enrichSoundCloud() {
-      const response = yield* requestJson(
-        soundCloudRequest(url),
-        SoundCloudResponse,
-        { label: "SoundCloud", request }
+  enrich: Effect.fn("Metadata.enrich")(function* enrichSoundCloud(url) {
+    const response = yield* requestJson(
+      soundCloudRequest(url),
+      SoundCloudResponse,
+      { label: "SoundCloud", request }
+    );
+    const metadata = soundCloudMetadata(response);
+    if (!metadata.title) {
+      return yield* Effect.fail(
+        unexpected("SoundCloud returned a track without a title.")
       );
-      const metadata = soundCloudMetadata(response);
-      if (!metadata.title) {
-        return yield* Effect.fail(
-          unexpected("SoundCloud returned a track without a title.")
-        );
-      }
-      return metadata;
-    }),
+    }
+    return metadata;
+  }),
 });
 
 const enrichedFromDetails = (details: SourceDetails): EnrichedMetadata => ({
@@ -443,21 +444,20 @@ const enrichedFromDetails = (details: SourceDetails): EnrichedMetadata => ({
  * API configured, or one that failed. Otherwise the save returns on the provider alone and
  * `details` fills the rest afterwards.
  */
-const orYtDlp = (
+const orYtDlp = Effect.fn("Metadata.orYtDlp")(function* answerOrFallBack(
   provider: Effect.Effect<EnrichedMetadata, MetadataError>,
   ytDlp: YtDlpMetadataService,
   url: string
-): Effect.Effect<EnrichedMetadata, MetadataError> =>
-  Effect.gen(function* answerOrFallBack() {
-    const answer = yield* Effect.result(provider);
-    if (answer._tag === "Success") {
-      return answer.success;
-    }
-    const details = yield* Effect.result(ytDlp.read(url));
-    return yield* details._tag === "Success"
-      ? Effect.succeed(enrichedFromDetails(details.success))
-      : Effect.fail(answer.failure);
-  });
+): Effect.fn.Return<EnrichedMetadata, MetadataError> {
+  const answer = yield* Effect.result(provider);
+  if (answer._tag === "Success") {
+    return answer.success;
+  }
+  const details = yield* Effect.result(ytDlp.read(url));
+  return yield* details._tag === "Success"
+    ? Effect.succeed(enrichedFromDetails(details.success))
+    : Effect.fail(answer.failure);
+});
 
 const noProviders: MetadataService = {
   details: (input) =>

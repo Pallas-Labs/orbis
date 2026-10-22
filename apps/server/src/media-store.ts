@@ -202,38 +202,37 @@ export class MediaStore extends Context.Service<
         const totalHeader = response.headers.get("content-length");
         const total = totalHeader ? Number(totalHeader) : null;
         const writer = Bun.file(destination).writer();
-        const drain = (
+        const drain = Effect.fn("MediaStore.drain")(function* drainChunk(
           reader: ReadableStreamDefaultReader<Uint8Array>,
           received: number
-        ): Effect.Effect<number, LibraryError> =>
-          Effect.gen(function* drainChunk() {
-            if (signal.aborted) {
-              return yield* Effect.fail(
-                downloadFailed("The download was canceled.")
-              );
-            }
-            const { done, value } = yield* Effect.tryPromise({
-              catch: () =>
-                downloadFailed(
-                  signal.aborted
-                    ? "The download was canceled."
-                    : "The audio stream broke off."
-                ),
-              try: () => reader.read(),
-            });
-            if (done) {
-              return received;
-            }
-            const next = received + value.byteLength;
-            if (next > MAX_AUDIO_BYTES) {
-              return yield* Effect.fail(
-                downloadFailed("The audio exceeded the size bound.")
-              );
-            }
-            writer.write(value);
-            onProgress(next, Number.isFinite(total) ? total : null);
-            return yield* drain(reader, next);
+        ): Effect.fn.Return<number, LibraryError> {
+          if (signal.aborted) {
+            return yield* Effect.fail(
+              downloadFailed("The download was canceled.")
+            );
+          }
+          const { done, value } = yield* Effect.tryPromise({
+            catch: () =>
+              downloadFailed(
+                signal.aborted
+                  ? "The download was canceled."
+                  : "The audio stream broke off."
+              ),
+            try: () => reader.read(),
           });
+          if (done) {
+            return received;
+          }
+          const next = received + value.byteLength;
+          if (next > MAX_AUDIO_BYTES) {
+            return yield* Effect.fail(
+              downloadFailed("The audio exceeded the size bound.")
+            );
+          }
+          writer.write(value);
+          onProgress(next, Number.isFinite(total) ? total : null);
+          return yield* drain(reader, next);
+        });
         yield* drain(response.body.getReader(), 0).pipe(
           Effect.ensuring(Effect.sync(() => writer.end()))
         );
