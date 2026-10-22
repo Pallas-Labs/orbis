@@ -33,8 +33,9 @@ beforeEach(() => {
 
 // The cases are the server's own, shared through @orbis/contracts, so a change to the
 // canonical rule that a command does not follow fails here.
-for (const testCase of ACCEPTED_SOURCE_URL_CASES) {
-  test(`Save Clipboard submits the canonical link for ${testCase.input}`, async () => {
+test.each([...ACCEPTED_SOURCE_URL_CASES])(
+  "Save Clipboard submits the canonical link for $input",
+  async (testCase) => {
     raycast.clipboard = `saved from chat: ${testCase.input}`;
 
     await saveClipboard();
@@ -43,9 +44,12 @@ for (const testCase of ACCEPTED_SOURCE_URL_CASES) {
       JSON.stringify({ tags: [], url: testCase.url })
     );
     expect(finalToast()).toMatchObject({ style: "success" });
-  });
+  }
+);
 
-  test(`Save Current Tab submits the canonical link for ${testCase.input}`, async () => {
+test.each([...ACCEPTED_SOURCE_URL_CASES])(
+  "Save Current Tab submits the canonical link for $input",
+  async (testCase) => {
     raycast.tabs = [{ active: true, url: testCase.input }];
 
     await saveCurrentTab();
@@ -54,11 +58,12 @@ for (const testCase of ACCEPTED_SOURCE_URL_CASES) {
       JSON.stringify({ tags: [], url: testCase.url })
     );
     expect(finalToast()).toMatchObject({ style: "success" });
-  });
-}
+  }
+);
 
-for (const url of REJECTED_SOURCE_URLS) {
-  test(`Save Clipboard rejects ${url} before any request`, async () => {
+test.each([...REJECTED_SOURCE_URLS])(
+  "Save Clipboard rejects %s before any request",
+  async (url) => {
     raycast.clipboard = url;
 
     await saveClipboard();
@@ -69,9 +74,12 @@ for (const url of REJECTED_SOURCE_URLS) {
       style: "failure",
       title: "Unsupported link",
     });
-  });
+  }
+);
 
-  test(`Save Current Tab rejects ${url} before any request`, async () => {
+test.each([...REJECTED_SOURCE_URLS])(
+  "Save Current Tab rejects %s before any request",
+  async (url) => {
     raycast.tabs = [{ active: true, url }];
     mockFetch(() => {
       throw new Error("the command must not call Orbis for a rejected link");
@@ -85,5 +93,5 @@ for (const url of REJECTED_SOURCE_URLS) {
       style: "failure",
       title: "Unsupported link",
     });
-  });
-}
+  }
+);

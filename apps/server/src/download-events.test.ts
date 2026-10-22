@@ -170,8 +170,9 @@ const cobaltFailures = [
   },
 ];
 
-for (const scenario of cobaltFailures) {
-  test(`Cobalt ${scenario.name} failure keeps its cause in the download event`, async () => {
+test.each(cobaltFailures)(
+  "Cobalt $name failure keeps its cause in the download event",
+  async (scenario) => {
     const root = await mkdtemp(path.join(tmpdir(), "orbis-cobalt-errors-"));
     const events: WideEvent[] = [];
     const app = createApp({
@@ -223,5 +224,5 @@ for (const scenario of cobaltFailures) {
       await app.dispose();
       await rm(root, { force: true, recursive: true });
     }
-  });
-}
+  }
+);
