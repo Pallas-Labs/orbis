@@ -1,15 +1,37 @@
-# Issue tracker: GitHub
+# Issue tracker: Linear
 
-Specs and tickets live in [ParthMmm/orbis](https://github.com/ParthMmm/orbis). Use the `gh` CLI.
+Specs and tickets live in Linear, team `Pallas`, project `Orbis`.
 
-- Create: `gh issue create --repo ParthMmm/orbis --title "..." --body-file <file>`
-- Read: `gh issue view <number> --repo ParthMmm/orbis --json number,title,body,comments`
-- List: `gh issue list --repo ParthMmm/orbis --state open --json number,title,labels,assignees`
-- Comment: `gh issue comment <number> --repo ParthMmm/orbis --body-file <file>`
-- Label: `gh issue edit <number> --repo ParthMmm/orbis --add-label <label>`; use `--remove-label` to remove.
-- Close: `gh issue close <number> --repo ParthMmm/orbis`
+## Access through Executor
 
-Publish specs as issues. Refer to issues by linked title.
+Agents reach Linear through the Executor MCP.
+
+1. Find a tool with `search`, for example `linear save_issue`. Take the exact path and input type from the result, and never guess argument names.
+2. Run it with `call`, or with `execute` when one result feeds the next call.
+3. If Executor tools are absent from the session, say so and ask for access. Do not write local `.scratch/` issue files.
+
+A missing standalone Linear connector does not mean Linear is unreachable. Credentials stay out of chat and repository files.
+
+## Operations
+
+All operations use team `Pallas` (key `PAL`) and project `Orbis`. Pass `team: "Pallas"` and `project: "Orbis"` when you create an issue.
+
+- Create: `tools.linear.mutations.save_issue` with `team`, `project`, `title`, `description`, and `labels`.
+- Read: `tools.linear.queries.get_issue` with the issue key (`PAL-123`). Request `includeRelations` for blockers. Comments are not in the issue; request them separately when you need the discussion.
+- List: `tools.linear.queries.list_issues` with `project: "Orbis"`. Filter by `state`, `label`, `assignee`, or `parentId`.
+- Comment: `tools.linear.mutations.save_comment` with `issueId` and `body`.
+- Label: `save_issue` with `id`, `addLabels`, and `removeLabels`.
+- Close: `save_issue` with `id` and a closing `state` (`Done` or `Canceled`), then a comment with the resolution.
+
+"Publish to the issue tracker" means create a Linear issue in this project. "Fetch the relevant ticket" means read the issue and its comments.
+
+The project is at https://linear.app/parthm/project/orbis-4cbc2f5c043a.
+
+## Moved GitHub issues
+
+This repo used GitHub Issues until 2026-10-22. Every open GitHub issue was copied to Linear and closed on GitHub with a link. Each moved Linear issue links its GitHub original. A `#N` in Linear issue text, ADRs, or older docs refers to a closed GitHub issue, not a Linear issue. Use the Linear issue for current scope and status.
+
+Publish specs as Linear issues. Refer to issues by linked title.
 
 **PRs as a request surface: no.**
 
@@ -21,24 +43,13 @@ Keep implementation and live acceptance as separate checks on parent issues. Rec
 
 Link the [verification record](../development.md#retain-verification-evidence) from the resolution comment. Retain failed-run artifacts before retrying.
 
-## Read issues when the CLI fails
-
-Explicit JSON fields avoid the deprecated Projects query used by some `gh issue view` versions. If that read still fails, fetch the body and comments separately:
-
-```sh
-	gh api repos/ParthMmm/orbis/issues/<number>
-	gh api --paginate repos/ParthMmm/orbis/issues/<number>/comments
-```
+Apply `ready-for-agent` only after these checks pass, because it starts an agent run (see `triage-labels.md`).
 
 ## Wayfinding operations
 
-Maps use `wayfinder:map`. Tickets are native GitHub sub-issues labelled `wayfinder:research`, `wayfinder:prototype`, `wayfinder:grilling`, or `wayfinder:task`.
-
-- Link a child: `gh api --method POST repos/ParthMmm/orbis/issues/<map-number>/sub_issues -F sub_issue_id=<child-database-id>`.
-- Add a blocker: `gh api --method POST repos/ParthMmm/orbis/issues/<child-number>/dependencies/blocked_by -F issue_id=<blocker-database-id>`.
-- Look up a database ID: `gh api repos/ParthMmm/orbis/issues/<number> --jq .id`. Database IDs are not issue numbers or node IDs.
-- Find the frontier: query the map's sub-issues with `gh api --paginate repos/ParthMmm/orbis/issues/<map-number>/sub_issues`. Select open, unassigned children with no open blockers; inspect `issue_dependencies_summary.blocked_by` on each child. Take the first in map order.
-- Claim before work: `gh issue edit <number> --repo ParthMmm/orbis --add-assignee @me`.
-- Resolve: post a resolution comment, close the ticket, then add a linked summary to the map's Decisions so far.
-
-Use native dependencies and sub-issues when available. If unavailable, use a child task list in the map, `Part of #<map>` in each child, and `Blocked by: #<number>` lines for dependencies. Resolve referenced blocker states when finding the frontier.
+- Map: one Linear issue labelled `wayfinder:map`, with Notes, Decisions-so-far, and Fog sections.
+- Child: one Linear sub-issue per ticket (`parentId` is the map's key), labelled `wayfinder:<type>` with type research, prototype, grilling, or task.
+- Blocking: Linear `blockedBy` relations. Set them with `save_issue` and `blockedBy: ["PAL-n"]`, and read them with `get_issue` and `includeRelations`.
+- Frontier: list the map's children with `list_issues` and `parentId`. Choose the first open child in map order with no assignee and no open blocker.
+- Claim: `save_issue` with `assignee: "me"` before work.
+- Resolve: comment with the answer, close the child, and append a summary and link to the map's Decisions-so-far.
