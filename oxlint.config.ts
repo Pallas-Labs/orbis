@@ -28,6 +28,12 @@ export default defineConfig({
       },
     },
     {
+      // Product copy that users read: the web app and the Raycast extension.
+      excludeFiles: [...TEST_FILES, "apps/web/src/routeTree.gen.ts"],
+      files: ["apps/web/src/**", "apps/raycast/src/**"],
+      rules: { "t3code/no-em-dash-copy": "error" },
+    },
+    {
       // Presence leases and alarms run on the real clock inside the service, so this suite
       // waits out real lease windows and cannot swap in a fake clock.
       files: ["apps/server/src/presence-actions.test.ts"],
