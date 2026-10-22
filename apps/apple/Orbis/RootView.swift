@@ -300,7 +300,6 @@ struct DestinationView: View {
   var body: some View {
     page
       .environment(\.setZoom, SetZoom(namespace: setZoomNamespace, origin: $setZoomOrigin))
-      .levelsArtworkTilt(model.openedSets[destination] != nil || isPlaylistOpenHere)
   }
 
   @ViewBuilder private var page: some View {
