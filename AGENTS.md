@@ -56,6 +56,14 @@ Before driving a real build by hand, read `docs/agents/ui-verification.md`. It r
 
 - If using XcodeBuildMCP, use the installed XcodeBuildMCP skill before calling XcodeBuildMCP tools.
 
+## Gardening
+
+The scheduled gardening run measures the repo with `bun run garden`, which prints one schema-1 JSON record and needs no network or secrets. Add `--with-gate` to also run and time each `bun run check` task, `--out <file>` to save the JSON, and `--compare <previous.json>` to print a Markdown summary of metric changes and new, repeated, and resolved findings. [Gardening sensor](docs/development.md#gardening-sensor) lists what it counts.
+
+- Gardening PRs carry the GitHub label `gardening` and wait for Parth's review. Never merge one yourself.
+- Only one gardening PR may be open at a time.
+- Linear issue PAL-875 ("Gardening buffer") is the loop's memory. Its "Standing feedback" section wins over a run's own judgment.
+
 ## Diagnosing the service on Vanta
 
 Before diagnosing a failed download or a service fault on Vanta, read "Where to look when a download fails" in `deploy/orbis-server/README.md`. On Vanta the checkout is `~/Developer/orbis-service` and the data is `~/Developer/orbis-service-data`, so the nightly download canary's latest result is `~/Developer/orbis-service-data/canary/last.json`.
