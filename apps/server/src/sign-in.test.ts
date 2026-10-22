@@ -171,7 +171,7 @@ test("a friend joins with the Group Passcode and gets one daily key", async () =
     ).toBe(403);
     for (const username of ["", "   ", "x".repeat(41)]) {
       expect(
-        // oxlint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
         await statusOf(join(app, { passcode, username }))
       ).toBe(400);
     }
@@ -235,13 +235,13 @@ test("only the Host opens or closes joining, and the passcode survives a restart
   let passcode = "";
   try {
     for (const key of [FRIEND_DAILY, NODE]) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       expect(await statusOf(call(first, "GET", "/admin/passcode", { key })))
-        // oxlint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
         .toBe(403);
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       expect(await statusOf(newPasscode(first, key))).toBe(403);
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       expect(await statusOf(closeJoining(first, key))).toBe(403);
     }
     expect(
@@ -286,7 +286,7 @@ test("a Sign-in Code adds a device for its Person, once", async () => {
 
     const typed = `${issued.code.slice(0, 4).toLowerCase()}-${issued.code.slice(4)}`;
     for (const label of ["", "   "]) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       expect(await statusOf(redeem(app, typed, { label }))).toBe(400);
     }
     const redeemed = await redeem(app, typed, { label: " Friend's iPad " });
@@ -358,7 +358,7 @@ test("the Host issues a Sign-in Code for any current Person", async () => {
     expect(await statusOf(call(app, "POST", url))).toBe(403);
     for (const id of ["nobody", "gone"]) {
       expect(
-        // oxlint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
         await statusOf(
           call(app, "POST", `/admin/people/${id}/sign-in-codes`, {
             key: HOST_DAILY,
@@ -394,11 +394,11 @@ test("Host powers follow the Host Person, and node keys stay off client routes",
   const app = open();
   try {
     for (const key of [HOST_DAILY, HOST_LAPTOP]) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       const me = await call(app, "GET", "/me", { key });
       expect(me.json()).toMatchObject({ host: true, id: "host" });
       expect(
-        // oxlint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
         await statusOf(call(app, "GET", "/admin/people", { key }))
       ).toBe(200);
     }
@@ -423,7 +423,7 @@ test("Host powers follow the Host Person, and node keys stay off client routes",
 
     for (const url of ["/me", "/me/devices", "/sets"]) {
       expect(
-        // oxlint-disable-next-line no-await-in-loop
+        // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
         await statusOf(call(app, "GET", url, { key: NODE }))
       ).toBe(403);
     }
@@ -446,9 +446,9 @@ test("wrong codes and passcodes count toward the failed-key limit", async () => 
     for (let attempt = 0; attempt < 21; attempt += 1) {
       const guess =
         attempt % 2 === 0
-          ? // oxlint-disable-next-line no-await-in-loop
+          ? // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
             await redeem(app, `GUESS${attempt}`, { client: "100.64.0.3" })
-          : // oxlint-disable-next-line no-await-in-loop
+          : // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
             await join(
               app,
               { passcode: `guess-${attempt}`, username: `guess${attempt}` },
@@ -470,7 +470,7 @@ test("wrong codes and passcodes count toward the failed-key limit", async () => 
 
     // A key on the request does not skip the limit.
     for (let attempt = 0; attempt < 21; attempt += 1) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
       await redeem(app, `KEYED${attempt}`, {
         client: "100.64.0.4",
         key: FRIEND_DAILY,
@@ -484,7 +484,7 @@ test("wrong codes and passcodes count toward the failed-key limit", async () => 
 
     // Bad keys and code guesses share one count per client.
     for (let attempt = 0; attempt < 20; attempt += 1) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
       await call(app, "GET", "/me", { client: "100.64.0.5", key: "bad" });
     }
     expect(await statusOf(redeem(app, "GUESS", { client: "100.64.0.5" }))).toBe(
@@ -506,7 +506,7 @@ test("each generated passcode is new, and the Host cannot choose one", async () 
   try {
     const seen = new Set<string>();
     for (let attempt = 0; attempt < 20; attempt += 1) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       seen.add(await openJoining(app));
     }
     expect(seen.size).toBe(20);
@@ -561,7 +561,7 @@ test("another spelling of the sign-in path still counts toward the limit", async
     const spellings = ["/sign-in/code/", "//sign-in//code", "/SIGN-IN/CODE"];
     const statuses: number[] = [];
     for (let attempt = 0; attempt < 21; attempt += 1) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
       const response = await call(
         app,
         "POST",
@@ -614,7 +614,7 @@ test("IPv6 guesses share one count per /64 block", async () => {
   try {
     const statuses: number[] = [];
     for (let attempt = 0; attempt < 21; attempt += 1) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
       const response = await redeem(app, `GUESS${attempt}`, {
         client: `2001:db8:1:2::${(attempt + 1).toString(16)}`,
       });
@@ -639,7 +639,7 @@ test("guesses spread over many addresses meet one limit for the whole Group", as
     const issued = await issueOwn(app, FRIEND_DAILY);
     const statuses: number[] = [];
     for (let attempt = 0; attempt < 101; attempt += 1) {
-      // oxlint-disable-next-line no-await-in-loop
+      // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
       const response = await redeem(app, `GUESS${attempt}`, {
         client: `10.${Math.floor(attempt / 256)}.${attempt % 256}.1`,
       });

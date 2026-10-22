@@ -26,13 +26,13 @@ const soundCloudLink = "https://soundcloud.com/artist/track";
 const waitFor = async (url) => {
   for (let attempt = 0; attempt < 150; attempt += 1) {
     try {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
       await fetch(url);
       return;
     } catch {
       // Not listening yet.
     }
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     await setTimeout(100);
   }
   throw new Error(`${url} did not start`);

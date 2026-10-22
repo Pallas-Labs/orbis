@@ -138,7 +138,7 @@ try {
   let ended = false;
   const revocationDeadline = Date.now() + 35_000;
   while (Date.now() < revocationDeadline) {
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- stream chunks must be read in order
     const chunk = await reader.read();
     if (chunk.done) {
       ended = true;
