@@ -11,7 +11,7 @@
     "build": "bun build src/node.ts --target=bun --packages=external --outdir=dist",
     "start": "bun dist/node.js",
     "typecheck": "tsc --noEmit --tsBuildInfoFile .cache/typecheck.tsbuildinfo",
-    "test": "bun test",
+    "test": "bun test --timeout 60000",
     "trust": "bun src/trust.ts",
     "diagnostics": "effect-tsgo diagnostics --project tsconfig.json --format text",
     "eval": "evalite run",

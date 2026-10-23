@@ -52,6 +52,8 @@ const Snapshot = Schema.Struct({
     })
   ),
 });
+const decodeSnapshot = Schema.decodeUnknownSync(Snapshot);
+
 type Body = { setId: string } | PresenceAction;
 const call = async (route: string, method = "GET", body?: Body) => {
   const response = await runtime.dispatchFetch(`http://orbis/api${route}`, {
@@ -77,7 +79,7 @@ const call = async (route: string, method = "GET", body?: Body) => {
 const snapshot = async () => {
   const response = await call("/__presence");
   assert.equal(response.status, 200, response.text);
-  return Schema.decodeUnknownSync(Snapshot)(JSON.parse(response.text));
+  return decodeSnapshot(JSON.parse(response.text));
 };
 try {
   const seeded = await call("/__seed-presence");

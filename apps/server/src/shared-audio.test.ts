@@ -12,6 +12,8 @@ import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
 
+const decodeSavedSet = Schema.decodeUnknownSync(SavedSetSchema);
+
 type Payload =
   | { url: string; title?: string; tags?: string[] }
   | { setId: string }
@@ -21,7 +23,11 @@ type Payload =
   | { playlistId: string };
 
 const Id = Schema.Struct({ id: Schema.String });
+const decodeId = Schema.decodeUnknownSync(Id);
+
 const Audio = Schema.Struct({ state: Schema.String });
+const decodeAudio = Schema.decodeUnknownSync(Audio);
+
 const failures = [
   "visible Set requires saving before playback or download",
   "hidden Set can be played, downloaded or queued by guessed ID",
@@ -40,7 +46,7 @@ test("visible Sets share audio and storage releases only the last reference over
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["a", "b", "hidden"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -125,7 +131,7 @@ test("visible Sets share audio and storage releases only the last reference over
     });
     expect(response.status).toBe(201);
     const body: unknown = await response.json();
-    const set = Schema.decodeUnknownSync(SavedSetSchema)(body);
+    const set = decodeSavedSet(body);
     db.query(
       "UPDATE sets SET title = 'Provider title', metadata_state = 'enriched' WHERE id = ?"
     ).run(set.id);
@@ -133,12 +139,11 @@ test("visible Sets share audio and storage releases only the last reference over
   };
   const download = async (key: string, id: string) => {
     expect(await status(key, `/sets/${id}/audio/download`, "POST")).toBe(202);
-    const deadline = Date.now() + 10_000;
-    while (Date.now() < deadline) {
+    for (let attempt = 0; attempt < 500; attempt += 1) {
       const response = await send(key, `/sets/${id}/audio/state`);
       expect(response.status).toBe(200);
       const body: unknown = await response.json();
-      if (Schema.decodeUnknownSync(Audio)(body).state === "ready") {
+      if (decodeAudio(body).state === "ready") {
         return;
       }
       await Bun.sleep(20);
@@ -151,7 +156,7 @@ test("visible Sets share audio and storage releases only the last reference over
     const response = await send("a", "/playlists", "POST", { name });
     expect(response.status).toBe(201);
     const body: unknown = await response.json();
-    return Schema.decodeUnknownSync(Id)(body).id;
+    return decodeId(body).id;
   };
   try {
     const set = await save("b", "shared00001");
@@ -181,7 +186,7 @@ test("visible Sets share audio and storage releases only the last reference over
     const savedResponse = await send("a", "/sets", "POST", { url: set.url });
     expect(savedResponse.status).toBe(201);
     const savedBody: unknown = await savedResponse.json();
-    const saved = Schema.decodeUnknownSync(SavedSetSchema)(savedBody);
+    const saved = decodeSavedSet(savedBody);
     expect(saved.title).toBe("Provider title");
     expect(saved.tags).toEqual([]);
     expect(saved.id).toBe(set.id);
@@ -277,4 +282,4 @@ test("visible Sets share audio and storage releases only the last reference over
     backend.stop(true);
     await rm(root, { force: true, recursive: true });
   }
-}, 30_000);
+});

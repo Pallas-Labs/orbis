@@ -38,23 +38,24 @@ const LEGACY_MIGRATIONS: readonly (readonly string[])[] = [
   [CREATE_MEMBERSHIP_INDEX],
 ];
 
-const runLegacyMigration = (
-  db: DatabaseClient,
-  statements: readonly string[]
-) =>
-  Effect.gen(function* runLegacyMigrationEffect() {
+const runLegacyMigration = Effect.fn("Database.runLegacyMigration")(
+  function* runLegacyMigrationEffect(
+    db: DatabaseClient,
+    statements: readonly string[]
+  ) {
     for (const statement of statements) {
       yield* db.run(sql.raw(statement));
     }
-  });
+  }
+);
 
 const hasTable = (db: DatabaseClient, name: string) =>
   db.get<{ readonly name: string }>(
     sql`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ${name}`
   );
 
-const ensureLegacySchema = (db: DatabaseClient) =>
-  Effect.gen(function* ensureLegacySchemaEffect() {
+const ensureLegacySchema = Effect.fn("Database.ensureLegacySchema")(
+  function* ensureLegacySchemaEffect(db: DatabaseClient) {
     yield* db.run(sql.raw("PRAGMA foreign_keys = ON"));
     const setsTable = yield* hasTable(db, "sets");
     if (!setsTable) {
@@ -85,14 +86,15 @@ const ensureLegacySchema = (db: DatabaseClient) =>
       );
     }
     return true;
-  });
+  }
+);
 
-const migrateDatabase = (
-  db: DatabaseClient,
-  migrationsFolder: string,
-  legacyDatabase: boolean
-) =>
-  Effect.gen(function* migrateDatabaseEffect() {
+const migrateDatabase = Effect.fn("Database.migrateDatabase")(
+  function* migrateDatabaseEffect(
+    db: DatabaseClient,
+    migrationsFolder: string,
+    legacyDatabase: boolean
+  ) {
     const migrationTable = yield* hasTable(db, "__drizzle_migrations");
     if (!migrationTable && legacyDatabase) {
       // Existing Orbis databases were migrated with PRAGMA user_version before Drizzle was
@@ -129,7 +131,8 @@ const migrateDatabase = (
     }
     yield* migrate(db, { migrationsFolder });
     yield* db.run(sql.raw(`PRAGMA user_version = ${CURRENT_SCHEMA_VERSION}`));
-  });
+  }
+);
 
 export interface DatabaseLayerOptions {
   readonly databasePath: string;

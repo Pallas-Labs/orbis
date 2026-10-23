@@ -21,6 +21,20 @@ import type { PresenceTransition } from "./presence-journal.js";
 import { Presence } from "./presence.js";
 import { createTestApp as createApp } from "./test-app.js";
 
+const decodeQueueEntries = Schema.decodeUnknownSync(
+  Schema.Struct({
+    queue: Schema.Struct({
+      entries: Schema.Array(
+        Schema.Struct({
+          finishCount: Schema.Number,
+          id: Schema.String,
+          listenCount: Schema.Number,
+        })
+      ),
+    }),
+  })
+);
+
 const LEASE_MS = 1500;
 const RETENTION_MS = 1500;
 const LEGACY_WINDOW_MS = 1500;
@@ -76,7 +90,7 @@ const seed = async (root: string) => {
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: Object.entries(KEYS).map(([id, key]) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -358,19 +372,7 @@ const listenCount = async (
   setId: string
 ) => {
   const queue = await call(key, "/queue");
-  const decoded = Schema.decodeUnknownSync(
-    Schema.Struct({
-      queue: Schema.Struct({
-        entries: Schema.Array(
-          Schema.Struct({
-            finishCount: Schema.Number,
-            id: Schema.String,
-            listenCount: Schema.Number,
-          })
-        ),
-      }),
-    })
-  )(queue.body);
+  const decoded = decodeQueueEntries(queue.body);
   return decoded.queue.entries.find((entry) => entry.id === setId);
 };
 
@@ -730,7 +732,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
     await saveTranscript("lifecycle.json", transcript);
     await rm(root, { force: true, recursive: true });
   }
-}, 90_000);
+});
 
 test("Queue changes, lease expiry, revocation, the session cap, and removal clear ownership", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-presence-queue-"));
@@ -1025,7 +1027,7 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
     await saveTranscript("queue-expiry-revocation.json", transcript);
     await rm(root, { force: true, recursive: true });
   }
-}, 90_000);
+});
 
 test("an action whose key row is gone is refused before it writes", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-presence-revoked-"));

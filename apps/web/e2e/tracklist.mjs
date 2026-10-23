@@ -25,13 +25,13 @@ const steps = [];
 const waitFor = async (url) => {
   for (let attempt = 0; attempt < 150; attempt += 1) {
     try {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
       await fetch(url);
       return;
     } catch {
       // The server has not bound its port yet.
     }
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     await setTimeout(100);
   }
   throw new Error(`${url} did not start`);
@@ -110,13 +110,13 @@ try {
   await call("POST", `/sets/${saved.id}/audio/download`);
   let audioReady = false;
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     const state = await call("GET", `/sets/${saved.id}/audio/state`);
     if (state.state === "ready") {
       audioReady = true;
       break;
     }
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     await setTimeout(200);
   }
   assert.ok(audioReady, "audio Download did not finish");

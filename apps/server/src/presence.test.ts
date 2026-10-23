@@ -12,6 +12,10 @@ import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
 
+const decodeIdOnly = Schema.decodeUnknownSync(
+  Schema.Struct({ id: Schema.String })
+);
+
 const decode = Schema.decodeUnknownSync(
   Schema.fromJsonString(QueueEventSchema)
 );
@@ -45,13 +49,13 @@ const stream = (response: Response) => {
     close: () => reader.cancel(),
     /** Reads frames until a presence event satisfies `accept`; fails after `ms`. */
     presence: async (accept: (usernames: string[]) => boolean, ms = 6000) => {
-      const deadline = Date.now() + ms;
-      while (Date.now() < deadline) {
-        const event = await Promise.race([
-          read(),
-          Bun.sleep(deadline - Date.now()).then(() => null),
-        ]);
-        if (event?.kind === "presence") {
+      const timer = Bun.sleep(ms).then(() => null);
+      for (;;) {
+        const event = await Promise.race([read(), timer]);
+        if (event === null) {
+          break;
+        }
+        if (event.kind === "presence") {
           const names = event.presence.map((entry) => entry.username);
           if (accept(names)) {
             return event.presence;
@@ -70,7 +74,7 @@ test("Presence reaches only viewers who pass the gate and lapses when reports st
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["a", "b", "c"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -139,9 +143,7 @@ test("Presence reaches only viewers who pass the gate and lapses when reports st
       title: "Presence Set",
       url: "https://www.youtube.com/watch?v=abcdefghijk",
     });
-    const set = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(
-      await saved.json()
-    );
+    const set = decodeIdOnly(await saved.json());
     const sqlite = new Database(databasePath);
     sqlite.run("UPDATE sets SET download_state = 'ready' WHERE id = ?", [
       set.id,
@@ -167,4 +169,4 @@ test("Presence reaches only viewers who pass the gate and lapses when reports st
     await listeners.stop();
     await rm(root, { force: true, recursive: true });
   }
-}, 20_000);
+});

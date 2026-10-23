@@ -14,10 +14,15 @@ const CobaltTunnel = Schema.Struct({
   status: Schema.Literal("tunnel"),
   url: Schema.String,
 });
+const decodeCobaltTunnelEffect = Schema.decodeUnknownEffect(CobaltTunnel);
+
 const CobaltErrorStatus = Schema.Struct({ status: Schema.Literal("error") });
+const isCobaltErrorStatus = Schema.is(CobaltErrorStatus);
+
 const CobaltProviderCode = Schema.Struct({
   error: Schema.Struct({ code: Schema.String }),
 });
+const isCobaltProviderCode = Schema.is(CobaltProviderCode);
 
 type CobaltRequestFailure =
   | { readonly kind: "timeout" | "transport" }
@@ -142,7 +147,7 @@ export class Cobalt extends Context.Service<
             const cobaltResponse: unknown = yield* Effect.promise(() =>
               response.json().catch(() => null)
             );
-            const code = Schema.is(CobaltProviderCode)(cobaltResponse)
+            const code = isCobaltProviderCode(cobaltResponse)
               ? safeProviderCode(cobaltResponse.error.code)
               : "cobalt_error_unknown";
             if (!response.ok) {
@@ -152,14 +157,14 @@ export class Cobalt extends Context.Service<
                 status: response.status,
               });
             }
-            if (Schema.is(CobaltErrorStatus)(cobaltResponse)) {
+            if (isCobaltErrorStatus(cobaltResponse)) {
               return yield* failRequest({
                 code,
                 kind: "provider",
                 status: response.status,
               });
             }
-            const tunneled = yield* Schema.decodeUnknownEffect(CobaltTunnel)(
+            const tunneled = yield* decodeCobaltTunnelEffect(
               cobaltResponse
             ).pipe(
               Effect.catch(() =>

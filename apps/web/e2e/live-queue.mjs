@@ -25,13 +25,13 @@ const otherKey = randomBytes(24).toString("base64url");
 const waitFor = async (url) => {
   for (let attempt = 0; attempt < 150; attempt += 1) {
     try {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
       await fetch(url);
       return;
     } catch {
       // Not listening yet.
     }
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     await setTimeout(100);
   }
   throw new Error(`${url} did not start`);
@@ -56,11 +56,11 @@ const api = async (method, route, body, token = key) => {
 
 const waitUntil = async (check, message) => {
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     if (await check()) {
       return;
     }
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     await setTimeout(200);
   }
   throw new Error(message);
@@ -140,11 +140,11 @@ try {
     ["First set", "https://www.youtube.com/watch?v=aaaaaaaaaaa"],
     ["Second set", "https://www.youtube.com/watch?v=bbbbbbbbbbb"],
   ]) {
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
     const saved = await api("POST", "/sets", { url: link });
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
     await api("PATCH", `/sets/${saved.id}/title`, { title: name });
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
     await api("POST", `/sets/${saved.id}/audio/download`);
     sets[name] = saved.id;
   }

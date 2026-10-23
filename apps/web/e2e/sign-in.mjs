@@ -234,7 +234,7 @@ try {
     await page.getByRole("button", { name: "Sign out" }).click();
     await page.getByRole("heading", { name: "Sign in to Orbis" }).waitFor();
     for (let attempt = 0; attempt < 25; attempt += 1) {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
       await guessCode();
     }
     const limited = await redeem("zzzzzzzz");

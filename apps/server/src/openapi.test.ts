@@ -72,6 +72,7 @@ const OpenApiDocument = Schema.Struct({
     )
   ),
 });
+const decodeOpenApiDocument = Schema.decodeUnknownSync(OpenApiDocument);
 
 const sampleKeyFor = (operationId: string): keyof typeof samples => {
   if (operationId === "sets.save") {
@@ -238,9 +239,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
       "device"
     );
     expect(response.status).toBe(200);
-    const document = Schema.decodeUnknownSync(OpenApiDocument)(
-      await response.json()
-    );
+    const document = decodeOpenApiDocument(await response.json());
     expect(document.openapi).toBe("3.1.0");
     const ajv = new Ajv({ strict: false, validateFormats: false });
     let checked = 0;

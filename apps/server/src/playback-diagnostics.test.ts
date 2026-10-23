@@ -267,7 +267,7 @@ test("strict nested privacy schema rejects unknown fields and inconsistent seque
   }
 });
 
-for (const { collectorStatus, relayStatus } of [
+test.each([
   { collectorStatus: 429, relayStatus: 503 },
   { collectorStatus: 502, relayStatus: 503 },
   { collectorStatus: 503, relayStatus: 503 },
@@ -277,8 +277,9 @@ for (const { collectorStatus, relayStatus } of [
   { collectorStatus: 403, relayStatus: 500 },
   { collectorStatus: 500, relayStatus: 500 },
   { collectorStatus: 302, relayStatus: 500 },
-]) {
-  test(`collector ${collectorStatus} maps to terminal relay ${relayStatus} without server retry`, async () => {
+])(
+  "collector $collectorStatus maps to terminal relay $relayStatus without server retry",
+  async ({ collectorStatus, relayStatus }) => {
     const s = setup(
       () =>
         new Response("private collector error", {
@@ -300,8 +301,8 @@ for (const { collectorStatus, relayStatus } of [
     } finally {
       await s.close();
     }
-  });
-}
+  }
+);
 
 test("partial receipt and sequence holes produce bounded searchable records without retry", async () => {
   const s = setup(() =>
@@ -380,13 +381,12 @@ test("two active exports have no queue and deadline releases both slots", async 
   try {
     const first = s.send();
     const second = s.send();
-    const deadline = Date.now() + 2000;
-    const waitForExports = async (): Promise<void> => {
-      if (s.requests.length >= 2 || Date.now() >= deadline) {
+    const waitForExports = async (attemptsLeft = 200): Promise<void> => {
+      if (s.requests.length >= 2 || attemptsLeft <= 0) {
         return;
       }
       await Bun.sleep(10);
-      return waitForExports();
+      return waitForExports(attemptsLeft - 1);
     };
     await waitForExports();
     expect(s.requests).toHaveLength(2);
@@ -401,17 +401,18 @@ test("two active exports have no queue and deadline releases both slots", async 
   } finally {
     await s.close();
   }
-}, 15_000);
+});
 
-for (const response of [
+test.each([
   () => new Response("x".repeat(65_537)),
   () =>
     Response.json({
       partialSuccess: { rejectedLogRecords: "999999999999999999999" },
     }),
   () => Response.json({ partialSuccess: { rejectedLogRecords: "-1" } }),
-]) {
-  test("invalid collector receipt is bounded and never echoed", async () => {
+])(
+  "invalid collector receipt is bounded and never echoed",
+  async (response) => {
     const s = setup(response);
     try {
       const relayResponse = await s.send();
@@ -420,8 +421,8 @@ for (const response of [
     } finally {
       await s.close();
     }
-  });
-}
+  }
+);
 
 test("missing exporter configuration is retryable", async () => {
   const app = createTestApp({ logging: { silent: true } });

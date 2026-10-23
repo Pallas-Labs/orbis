@@ -62,6 +62,8 @@ GitHub Actions cancels superseded runs and runs React Doctor alongside the quali
 
 The quality workflow also runs the Swift style check and `swift test` for `OrbisDesign` on a macOS runner, so the Swift package is verified even when no Mac is present.
 
+Lint also runs seven rules from the t3code oxlint plugin, vendored in [`lint-plugins/t3code`](../lint-plugins/t3code) and scoped in [`oxlint.config.ts`](../oxlint.config.ts). A suppression comment needs a reason, a test registers cases with `test.each`, and a test sets no per-test timeout (the server test script sets one ceiling).
+
 Individual checks and packaging remain available:
 
 ```sh
@@ -154,7 +156,7 @@ The sender probes use real URLSession HTTP, exercise cancellation and refusal be
 
 ```sh
 bun run --filter @orbis/contracts build
-bun test apps/server/src/playback-diagnostics.test.ts
+bun test --timeout 60000 apps/server/src/playback-diagnostics.test.ts
 bun run --filter @orbis/api test:playback
 ```
 

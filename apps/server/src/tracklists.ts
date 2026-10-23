@@ -108,11 +108,11 @@ export const claimTracklist = Effect.fn("Tracklists.claim")(
     })
 );
 
-const finishTracklist = (
-  claim: TracklistClaim,
-  result: { state: "none" } | { state: "ready"; cues: readonly Cue[] }
-) =>
-  Effect.gen(function* finishTracklistEffect() {
+const finishTracklist = Effect.fn("Tracklists.finishTracklist")(
+  function* finishTracklistEffect(
+    claim: TracklistClaim,
+    result: { state: "none" } | { state: "ready"; cues: readonly Cue[] }
+  ) {
     const db = yield* Database;
     return yield* db.transaction((tx) =>
       Effect.gen(function* finish() {
@@ -148,10 +148,14 @@ const finishTracklist = (
         return true;
       })
     );
-  });
+  }
+);
 
-const releaseClaim = (claim: TracklistClaim, state: "pending" | "failed") =>
-  Effect.gen(function* releaseTracklistClaim() {
+const releaseClaim = Effect.fn("Tracklists.releaseClaim")(
+  function* releaseTracklistClaim(
+    claim: TracklistClaim,
+    state: "pending" | "failed"
+  ) {
     const db = yield* Database;
     yield* db
       .update(sets)
@@ -161,7 +165,8 @@ const releaseClaim = (claim: TracklistClaim, state: "pending" | "failed") =>
         tracklistState: state,
       })
       .where(and(eq(sets.id, claim.id), eq(sets.tracklistRunId, claim.token)));
-  });
+  }
+);
 
 export const runClaimedTracklist = Effect.fn("Tracklists.runClaimed")(
   (claim: TracklistClaim) =>

@@ -10,7 +10,7 @@ import { request } from "./test-http.js";
 const youTubeUrl = "https://www.youtube.com/watch?v=aqzKEbpKQAA";
 const haveFfmpeg =
   Bun.which("ffmpeg") !== null && Bun.which("ffprobe") !== null;
-const testFfmpeg = haveFfmpeg ? test : test.skip;
+const testFfmpeg = test.skipIf(!haveFfmpeg);
 
 // The stub only routes on the URL; Cobalt's full request shape is asserted by the
 // worker's Schema decode, so the stub names just the field it reads.
@@ -120,7 +120,7 @@ const waitForState = async (
   app: ReturnType<typeof createApp>,
   id: string,
   wanted: readonly string[],
-  deadline: number = Date.now() + 10_000
+  attemptsLeft = 400
 ): Promise<AudioStateResponse> => {
   const state = await request(app, {
     method: "GET",
@@ -131,13 +131,13 @@ const waitForState = async (
   if (wanted.includes(body.state)) {
     return body;
   }
-  if (Date.now() > deadline) {
+  if (attemptsLeft <= 0) {
     throw new Error(
       `state never reached ${wanted.join("/")} (last: ${body.state})`
     );
   }
   await Bun.sleep(25);
-  return waitForState(app, id, wanted, deadline);
+  return waitForState(app, id, wanted, attemptsLeft - 1);
 };
 
 // Response needs an exact ArrayBuffer; a Uint8Array view over a pool would over-read.
@@ -360,7 +360,7 @@ test("canceling mid-flight returns to none with no files", async () => {
       const stream = new ReadableStream({
         async start(controller) {
           for (let index = 0; index < 40; index += 1) {
-            // eslint-disable-next-line no-await-in-loop
+            // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
             await Bun.sleep(50);
             controller.enqueue(new Uint8Array(1024));
           }
@@ -404,7 +404,7 @@ test("a download requested again after a cancel is still worked on", async () =>
             controller.error(new DOMException("aborted", "AbortError"));
           });
           for (let index = 0; index < 40 && !signal.aborted; index += 1) {
-            // eslint-disable-next-line no-await-in-loop
+            // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
             await Bun.sleep(50);
             if (!signal.aborted) {
               controller.enqueue(new Uint8Array(1024));
@@ -506,7 +506,7 @@ test("device ingress without a token is rejected on every audio route", async ()
       ["DELETE", `/sets/${id}/audio/download`],
     ] as const;
     for (const [method, url] of routes) {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       const response = await rawRequest(app, method, url, {}, "device", false);
       expect(response.status).toBe(403);
     }

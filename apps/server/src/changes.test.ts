@@ -43,7 +43,7 @@ beforeAll(async () => {
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: Object.entries(KEYS).map(([id, personId]) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -102,6 +102,7 @@ afterAll(async () => {
 
 type Body = { name: string } | { setId: string } | { tags: string[] };
 const Created = Schema.Struct({ id: Schema.String });
+const decodeCreated = Schema.decodeUnknownSync(Created);
 
 const call = async (key: Key, route: string, method = "GET", body?: Body) => {
   const init: RequestInit = {
@@ -185,13 +186,13 @@ test("a Library change on one device reaches the Person's other device only", as
     await a1.close();
     await b1.close();
   }
-}, 10_000);
+});
 
 test("a Playlist edit reaches a reader but not a Person who cannot read it", async () => {
   const b1 = await open("b1");
   const c1 = await open("c1");
   try {
-    const playlist = Schema.decodeUnknownSync(Created)(
+    const playlist = decodeCreated(
       await call("a2", "/playlists", "POST", { name: "Mix" })
     );
     expect(await b1.nextTopic()).toBe("playlist");
@@ -203,7 +204,7 @@ test("a Playlist edit reaches a reader but not a Person who cannot read it", asy
     await b1.close();
     await c1.close();
   }
-}, 10_000);
+});
 
 test("a hidden Person's Listen reaches who can see them and nobody else", async () => {
   const a1 = await open("a1");
@@ -223,7 +224,7 @@ test("a hidden Person's Listen reaches who can see them and nobody else", async 
     await b1.close();
     await c1.close();
   }
-}, 10_000);
+});
 
 test("an old client decoder reads the plain stream, and would reject a changed frame", async () => {
   const plain = await open("a1", "/events");
@@ -253,18 +254,20 @@ test("an old client decoder reads the plain stream, and would reject a changed f
     await plain.close();
     await opted.close();
   }
-}, 10_000);
+});
 
 test("revoking a key closes its open stream", async () => {
   const a2 = await open("a2", "/events");
   await a2.data();
-  const startedAt = Date.now();
-  await call("a1", "/me/devices/a2", "DELETE");
-  for (;;) {
-    const raw = await a2.data();
-    if (raw === null) {
-      break;
+  const closed = (async () => {
+    for (;;) {
+      if ((await a2.data()) === null) {
+        return true;
+      }
     }
-  }
-  expect(Date.now() - startedAt).toBeLessThan(1500);
-}, 10_000);
+  })();
+  await call("a1", "/me/devices/a2", "DELETE");
+  expect(await Promise.race([closed, Bun.sleep(1500).then(() => false)])).toBe(
+    true
+  );
+});

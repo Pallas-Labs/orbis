@@ -120,48 +120,51 @@ export class Queue extends Context.Service<
       // Every change states the whole queue. One person's queue is small, the write is one
       // transaction, and positions stay consecutive instead of drifting into gaps that need
       // renumbering later.
-      const writeQueue = (ids: readonly string[], activeSetId: string | null) =>
-        Effect.gen(function* replaceEntries() {
-          const previous = yield* order();
-          yield* db.transaction((tx) =>
-            Effect.gen(function* writeQueueTransaction() {
-              yield* presence.queueActivated(tx, personId, activeSetId);
-              yield* tx
-                .delete(queueEntries)
-                .where(eq(queueEntries.personId, personId));
-              const rows = ids.map((setId, position) => ({
-                isActive: setId === activeSetId,
-                personId,
-                position,
-                setId,
-              }));
-              for (const batch of insertBatches(queueEntries, rows)) {
-                yield* tx.insert(queueEntries).values(batch);
-              }
-            })
-          );
-          yield* presence.afterCommit();
-          yield* Effect.forEach(
-            previous.filter((row) => !ids.includes(row.setId)),
-            (row) => library.release(row.setId)
-          );
-        });
+      const writeQueue = Effect.fn("Queue.writeQueue")(function* replaceEntries(
+        ids: readonly string[],
+        activeSetId: string | null
+      ) {
+        const previous = yield* order();
+        yield* db.transaction((tx) =>
+          Effect.gen(function* writeQueueTransaction() {
+            yield* presence.queueActivated(tx, personId, activeSetId);
+            yield* tx
+              .delete(queueEntries)
+              .where(eq(queueEntries.personId, personId));
+            const rows = ids.map((setId, position) => ({
+              isActive: setId === activeSetId,
+              personId,
+              position,
+              setId,
+            }));
+            for (const batch of insertBatches(queueEntries, rows)) {
+              yield* tx.insert(queueEntries).values(batch);
+            }
+          })
+        );
+        yield* presence.afterCommit();
+        yield* Effect.forEach(
+          previous.filter((row) => !ids.includes(row.setId)),
+          (row) => library.release(row.setId)
+        );
+      });
 
       // The one check that keeps an unplayable Set out of the queue. A Playlist is filtered
       // instead, because a Playlist is not wrong to play just because one member has no audio.
-      const playable = (id: string) =>
-        Effect.gen(function* requirePlayable() {
-          const [set] = yield* library.byIds([id]);
-          if (!set) {
-            return yield* Effect.fail(
-              new LibraryError({ message: "Set not found.", statusCode: 404 })
-            );
-          }
-          if (set.downloadState !== "ready") {
-            return yield* Effect.fail(notPlayable());
-          }
-          return set;
-        });
+      const playable = Effect.fn("Queue.playable")(function* requirePlayable(
+        id: string
+      ) {
+        const [set] = yield* library.byIds([id]);
+        if (!set) {
+          return yield* Effect.fail(
+            new LibraryError({ message: "Set not found.", statusCode: 404 })
+          );
+        }
+        if (set.downloadState !== "ready") {
+          return yield* Effect.fail(notPlayable());
+        }
+        return set;
+      });
 
       const play = Effect.fn("Queue.play")((id: string) =>
         Effect.gen(function* playSet() {

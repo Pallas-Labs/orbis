@@ -21,6 +21,10 @@ import { ytDlpMetadata } from "./ytdlp-metadata.js";
 import { Ytdlp } from "./ytdlp.js";
 import type { YtdlpOptions } from "./ytdlp.js";
 
+const decodeNodeCommand = Schema.decodeUnknownSync(NodeCommandSchema);
+
+const decodeNodeMessage = Schema.decodeUnknownSync(NodeMessageSchema);
+
 export interface AudioNodeOptions
   extends CobaltOptions, MediaStoreOptions, YtdlpOptions {
   readonly groupUrl: string;
@@ -109,7 +113,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       const inventory = await runtime.runPromise(media.inventory(setId));
       const existing = inventory.find((file) => file.setId === setId);
       if (existing) {
-        const message = Schema.decodeUnknownSync(NodeMessageSchema)({
+        const message = decodeNodeMessage({
           ...existing,
           kind: "finished",
           requestId,
@@ -180,7 +184,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       outcome = "success";
       finish(
         command,
-        Schema.decodeUnknownSync(NodeMessageSchema)({
+        decodeNodeMessage({
           kind: "finished",
           requestId,
           setId,
@@ -306,7 +310,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
           return;
         }
         send(
-          Schema.decodeUnknownSync(NodeMessageSchema)({
+          decodeNodeMessage({
             files,
             kind: "inventory",
           })
@@ -327,9 +331,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
         return;
       }
       try {
-        const command = Schema.decodeUnknownSync(NodeCommandSchema)(
-          JSON.parse(String(event.data))
-        );
+        const command = decodeNodeCommand(JSON.parse(String(event.data)));
         const key = `${command.kind}:${command.requestId}`;
         if (pending.has(key)) {
           return;

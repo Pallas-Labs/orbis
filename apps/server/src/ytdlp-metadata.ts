@@ -76,6 +76,7 @@ const DumpedJson = Schema.Struct({
   uploader_id: NullableString,
   uploader_url: NullableString,
 });
+const decodeDumpedJsonOption = Schema.decodeUnknownOption(DumpedJson);
 
 type Dumped = typeof DumpedJson.Type;
 
@@ -206,7 +207,7 @@ export const ytDlpMetadata = (
         failure("yt-dlp did not answer with JSON.", "unexpected-response"),
       try: () => JSON.parse(output),
     });
-    const decoded = Schema.decodeUnknownOption(DumpedJson)(body);
+    const decoded = decodeDumpedJsonOption(body);
     if (Option.isNone(decoded)) {
       return yield* Effect.fail(
         failure("yt-dlp omitted the fields Orbis reads.", "unexpected-response")

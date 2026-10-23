@@ -16,24 +16,24 @@ const youTubeUrl = hostileUrl;
 const soundCloudUrl = "https://soundcloud.com/artist/track";
 const haveFfmpeg =
   Bun.which("ffmpeg") !== null && Bun.which("ffprobe") !== null;
-const testFfmpeg = haveFfmpeg ? test : test.skip;
+const testFfmpeg = test.skipIf(!haveFfmpeg);
 
 // The worker runs on its own fiber, so the tests poll for a terminal state.
 const waitForState = async (
   app: ReturnType<typeof createApp>,
   id: string,
-  deadline: number = Date.now() + 10_000
+  attemptsLeft = 400
 ): Promise<string> => {
   const state = await request(app, {
     method: "GET",
     url: `/sets/${id}/audio/state`,
   });
   const current: string = state.json().state;
-  if (current === "ready" || current === "failed" || Date.now() > deadline) {
+  if (current === "ready" || current === "failed" || attemptsLeft <= 0) {
     return current;
   }
   await Bun.sleep(25);
-  return waitForState(app, id, deadline);
+  return waitForState(app, id, attemptsLeft - 1);
 };
 
 const outputOf = (argv: readonly string[]) => {

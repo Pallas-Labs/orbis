@@ -60,6 +60,7 @@ const extrasColumns = (extras: SourceExtras) => ({
 const JsonStringArray = Schema.fromJsonString(
   Schema.mutable(Schema.Array(Schema.String))
 );
+const decodeJsonStringArrayEffect = Schema.decodeUnknownEffect(JsonStringArray);
 
 const TEMPORARY_TITLES: Record<SetSource, string> = {
   soundcloud: "SoundCloud track",
@@ -101,8 +102,7 @@ const toLibraryError = <E>(error: E) =>
 
 const execute = asLibraryError("Could not complete the library request.");
 
-const decodeJsonArray = (value: string) =>
-  Schema.decodeUnknownEffect(JsonStringArray)(value);
+const decodeJsonArray = (value: string) => decodeJsonStringArrayEffect(value);
 
 const normalizeUrl = (value: string) =>
   Effect.try({
@@ -303,8 +303,8 @@ export class Library extends Context.Service<
       const findRow = (id: string) =>
         db.select().from(sets).where(eq(sets.id, id)).limit(1);
 
-      const ensureEntry = (id: string) =>
-        Effect.gen(function* ensureEntryEffect() {
+      const ensureEntry = Effect.fn("Library.ensureEntry")(
+        function* ensureEntryEffect(id: string) {
           const [existing] = yield* entryFor(id);
           if (existing) {
             return existing;
@@ -339,17 +339,19 @@ export class Library extends Context.Service<
             return yield* Effect.fail(databaseError());
           }
           return entry;
-        });
+        }
+      );
 
-      const findSavedSet = (id: string) =>
-        Effect.gen(function* findSavedSetEffect() {
+      const findSavedSet = Effect.fn("Library.findSavedSet")(
+        function* findSavedSetEffect(id: string) {
           yield* ensureEntry(id);
           const [row] = yield* findRow(id);
           if (!row) {
             return yield* Effect.fail(setNotFound());
           }
           return yield* hydrateSet(row);
-        });
+        }
+      );
 
       const save = Effect.fn("Library.save")((input: SaveSetInput) =>
         execute(

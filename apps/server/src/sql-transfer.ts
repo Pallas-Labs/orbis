@@ -1,5 +1,17 @@
 import { Schema } from "effect";
 
+const decodeNumber = Schema.decodeUnknownSync(Schema.Number);
+
+const decodeNullableString = Schema.decodeUnknownSync(
+  Schema.NullOr(Schema.String)
+);
+
+const decodeString = Schema.decodeUnknownSync(Schema.String);
+
+const decodeSqlValue = Schema.decodeUnknownSync(
+  Schema.Union([Schema.Null, Schema.String, Schema.Number])
+);
+
 const Value = Schema.Union([
   Schema.Null,
   Schema.String,
@@ -21,6 +33,8 @@ const Dump = Schema.Struct({
   ),
   version: Schema.Literal(1),
 });
+const decodeDump = Schema.decodeUnknownSync(Dump);
+
 export type DatabaseDump = typeof Dump.Type;
 export interface SqlDatabase {
   readonly query: (
@@ -35,8 +49,9 @@ export interface SqlDatabase {
 export const identifier = (name: string): string =>
   `"${name.replaceAll('"', '""')}"`;
 const Row = Schema.Record(Schema.String, Schema.Unknown);
-const rows = (db: SqlDatabase, sql: string) =>
-  Schema.decodeUnknownSync(Schema.Array(Row))(db.query(sql));
+const decodeRows = Schema.decodeUnknownSync(Schema.Array(Row));
+
+const rows = (db: SqlDatabase, sql: string) => decodeRows(db.query(sql));
 // oxlint-disable-next-line anti-slop/no-unknown-parameters -- SQLite driver values enter the dump schema here.
 const encodeValue = (value: unknown): typeof Value.Type => {
   if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
@@ -47,9 +62,7 @@ const encodeValue = (value: unknown): typeof Value.Type => {
         .join(""),
     };
   }
-  return Schema.decodeUnknownSync(
-    Schema.Union([Schema.Null, Schema.String, Schema.Number])
-  )(value);
+  return decodeSqlValue(value);
 };
 // oxlint-disable anti-slop/no-runtime-typeof -- These values already passed the SQL value schema.
 const literal = (value: typeof Value.Type): string => {
@@ -84,12 +97,10 @@ export const inspectDatabase = (db: SqlDatabase): DatabaseDump => {
     db,
     "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT GLOB '_cf_*' AND name NOT GLOB '__cf_*' AND (name NOT LIKE 'sqlite_%' OR name = 'sqlite_sequence') ORDER BY name"
   ).map((table) => {
-    const name = Schema.decodeUnknownSync(Schema.String)(table.name);
-    const sql = Schema.decodeUnknownSync(Schema.NullOr(Schema.String))(
-      table.sql
-    );
+    const name = decodeString(table.name);
+    const sql = decodeNullableString(table.sql);
     const columns = rows(db, `PRAGMA table_info(${identifier(name)})`).map(
-      (column) => Schema.decodeUnknownSync(Schema.String)(column.name)
+      (column) => decodeString(column.name)
     );
     const withoutRowid = /WITHOUT\s+ROWID/iu.test(sql ?? "");
     const fields = withoutRowid ? columns : ["rowid", ...columns];
@@ -111,12 +122,12 @@ export const inspectDatabase = (db: SqlDatabase): DatabaseDump => {
   const indexes = rows(
     db,
     "SELECT sql FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL ORDER BY name"
-  ).map((index) => Schema.decodeUnknownSync(Schema.String)(index.sql));
+  ).map((index) => decodeString(index.sql));
   const [version] = rows(db, "PRAGMA user_version");
   return {
     indexes,
     tables,
-    userVersion: Schema.decodeUnknownSync(Schema.Number)(version?.user_version),
+    userVersion: decodeNumber(version?.user_version),
     version: 1,
   };
 };
@@ -183,7 +194,7 @@ export const parseDump = (sql: string): DatabaseDump => {
   if (!line?.startsWith("-- orbis-sql-v1 ")) {
     throw new Error("Unsupported SQL export format.");
   }
-  const dump = Schema.decodeUnknownSync(Dump)(JSON.parse(line.slice(16)));
+  const dump = decodeDump(JSON.parse(line.slice(16)));
   if (renderDump(dump) !== sql) {
     throw new Error("The SQL does not match its manifest.");
   }

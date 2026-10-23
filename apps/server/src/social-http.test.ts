@@ -95,7 +95,7 @@ test("People see a friend's full Library only while both sides allow it", async 
       )
       .run(playlistId, outside.json().id);
     // Newer than the Listens this test records below, whenever it runs.
-    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const tomorrow = "2100-01-01T00:00:00.000Z";
     sqlite
       .query(
         "INSERT INTO listens (person_id, set_id, started_at, finished_at) VALUES ('b', ?, ?, NULL)"

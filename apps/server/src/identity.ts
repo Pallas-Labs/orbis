@@ -53,6 +53,9 @@ const TrustFile = Schema.Struct({
   signInCodes: Schema.optionalKey(Schema.Array(SignInCode)),
   version: Schema.Literal(2),
 });
+const decodeStoredTrustFile = Schema.decodeUnknownSync(
+  Schema.Union([LegacyTrustFile, TrustFile])
+);
 
 export type PersonRecord = typeof Person.Type;
 export type SignInCodeRecord = typeof SignInCode.Type;
@@ -109,9 +112,7 @@ const fromLegacy = (legacy: typeof LegacyTrustFile.Type): TrustStore => ({
 });
 
 export const decodeTrust = (raw: typeof Schema.Unknown.Type): TrustStore => {
-  const parsed = Schema.decodeUnknownSync(
-    Schema.Union([LegacyTrustFile, TrustFile])
-  )(raw);
+  const parsed = decodeStoredTrustFile(raw);
   if (parsed.version === 1) {
     return fromLegacy(parsed);
   }

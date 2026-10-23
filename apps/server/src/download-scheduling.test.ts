@@ -18,7 +18,11 @@ const statusOf = async (response: Promise<Response>) => {
 };
 
 const Saved = Schema.Struct({ id: Schema.String });
+const decodeSaved = Schema.decodeUnknownSync(Saved);
+
 const Source = Schema.Struct({ url: Schema.String });
+const decodeSource = Schema.decodeUnknownSync(Source);
+
 const failureCases = [
   "one Person's backlog starves another Person",
   "the active job counts against the waiting limit",
@@ -33,9 +37,8 @@ const artifactDirectory = path.resolve(
 );
 
 const waitUntil = async (condition: () => boolean) => {
-  const deadline = Date.now() + 10_000;
-  while (!condition()) {
-    if (Date.now() >= deadline) {
+  for (let attempt = 0; !condition(); attempt += 1) {
+    if (attempt >= 1000) {
       throw new Error("The worker did not reach the expected job");
     }
     await Bun.sleep(10);
@@ -48,7 +51,7 @@ const fixture = async (startWorker: boolean) => {
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["host", "a", "b"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -71,7 +74,7 @@ const fixture = async (startWorker: boolean) => {
   const cobalt = Bun.serve({
     async fetch(request) {
       const body: unknown = await request.json();
-      order.push(Schema.decodeUnknownSync(Source)(body).url);
+      order.push(decodeSource(body).url);
       if (holdFirst) {
         holdFirst = false;
         return held.promise;
@@ -125,7 +128,7 @@ const fixture = async (startWorker: boolean) => {
     });
     expect(response.status).toBe(201);
     const body: unknown = await response.json();
-    return { id: Schema.decodeUnknownSync(Saved)(body).id, url };
+    return { id: decodeSaved(body).id, url };
   };
   return {
     order,
@@ -187,7 +190,7 @@ test("downloads preserve Person turns and queued order across a restart", async 
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
 
 test("only twenty waiting Downloads per Person, with duplicates and cancellation", async () => {
   const lane = await fixture(true);
@@ -261,7 +264,7 @@ test("only twenty waiting Downloads per Person, with duplicates and cancellation
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
 
 test("a legacy backlog of thirty jobs stays fair and keeps its order", async () => {
   const lane = await fixture(false);
@@ -317,4 +320,4 @@ test("a legacy backlog of thirty jobs stays fair and keeps its order", async () 
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});

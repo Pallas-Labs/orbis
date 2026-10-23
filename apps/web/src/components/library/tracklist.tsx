@@ -88,7 +88,7 @@ export const Tracklist = ({
           const details = (
             <>
               <span className="text-muted-foreground w-12 shrink-0 text-end text-sm tabular-nums">
-                {startSeconds === null ? "—" : timeLabel(startSeconds)}
+                {startSeconds === null ? "--:--" : timeLabel(startSeconds)}
               </span>
               {artwork}
               <span className="min-w-0 flex-1">
