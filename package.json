@@ -10,7 +10,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test && node --test scripts/smoke-cobalt.test.mjs scripts/design-tokens.test.mjs",
+    "test": "turbo run test && node --test scripts/smoke-cobalt.test.mjs scripts/design-tokens.test.mjs scripts/garden.test.mjs",
     "smoke:cobalt": "node scripts/smoke-cobalt.mjs",
     "test:cobalt": "node --test scripts/smoke-cobalt.test.mjs",
     "prepare": "effect-tsgo patch --typescript --no-oxlint --skip-missing",
@@ -24,7 +24,8 @@
     "check:force": "turbo run lint format:check tokens:check typecheck test diagnostics --concurrency=100% --continue=dependencies-successful --force",
     "native:format": "xcrun swift-format lint --strict --recursive apps/apple/Orbis apps/apple/OrbisTests apps/apple/OrbisUITests apps/apple/OrbisTVUITests apps/apple/OrbisDesign/Sources apps/apple/OrbisDesign/Tests apps/apple/OrbisDesign/Package.swift",
     "native:lanes": "node scripts/native-lanes.mjs",
-    "native:perf": "node scripts/native-perf.mjs"
+    "native:perf": "node scripts/native-perf.mjs",
+    "garden": "node scripts/garden.mjs"
   },
   "devDependencies": {
     "@effect/tsgo": "0.41.0",
