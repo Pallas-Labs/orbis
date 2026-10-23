@@ -80,13 +80,13 @@ bun run format:check
 | `lint.errors`, `lint.warnings` | oxlint diagnostics with the repo's configuration |
 | `deadcode.unused` | oxlint unused-code diagnostics (`no-unused-vars` and its kin); TypeScript's `noUnusedLocals` runs in the gate |
 | `suppressions` | `eslint-disable`, `oxlint-disable`, `biome-ignore`, `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`, `@effect-diagnostics`, `oxfmt-ignore`, `prettier-ignore`, `swiftlint:disable`, `swift-format-ignore`, `periphery:ignore`, and `shellcheck disable` comments |
-| `typescript.assertions` | `as` casts other than `as const`, and `!` non-null assertions, in TypeScript code |
-| `swift.force-operations` | `try!`, `as!`, and force unwraps in Swift code |
+| `typescript.assertions` | each `as` cast other than `as const`, and each `!` non-null assertion, in TypeScript code |
+| `swift.force-operations` | each `try!`, `as!`, and force unwrap in Swift code |
 | `tests.skipped`, `tests.focused` | `.skip`, `.todo`, and `.only` tests, `XCTSkip`, and `.disabled` traits in test files |
 | `docs.stale-refs` | backticked repository paths and `bun run` scripts in Markdown that no longer exist; gitignored build output is not stale, and the repo has no Makefile |
 | `markers` | `TODO`, `FIXME`, `HACK`, and `XXX` markers followed by a colon or a parenthesis |
 | `history.reverts`, `history.workarounds` | commits in the 14 days before `HEAD` whose subject starts with "Revert" or names a workaround or a flaky test |
-| `swift.format` | swift-format lint warnings; macOS only |
+| `swift.format` | swift-format lint warnings; macOS only, and skipped when swift-format exits nonzero with no diagnostics |
 | `gate.<task>.seconds`, `gate.failures` | with `--with-gate`, the wall time of each `bun run check` task run alone with `--force`, and the tasks that failed |
 
 `swift.unused` is always skipped, because the repo configures no Swift dead-code tool. The source scans are line patterns, so they can miss or misread unusual code; the counts are for comparing runs, not proof. The scans skip `.audit`, `docs/plans`, `docs/audits`, `docs/research`, generated route trees and shadcn components, and the sensor and its test.

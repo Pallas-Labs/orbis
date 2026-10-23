@@ -12,6 +12,8 @@ import path from "node:path";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { measure as measureRoot } from "./garden.mjs";
+
 const sensor = fileURLToPath(new URL("garden.mjs", import.meta.url));
 
 const gitEnv = {
@@ -36,10 +38,12 @@ const reader = [
 const fixture = {
   "README.md":
     "Run `bun run check` or `bun run missing`. Read `src/lib.ts` and `src/gone.ts`.\n",
-  "Sources/App.swift": 'let url = URL(string: "https://example.com")!\n',
+  "Sources/App.swift":
+    'let url = URL(string: "https://example.com")!\nlet values = [a!, b!, c!, d!]\n',
   "package.json": `${JSON.stringify({ name: "garden-fixture", scripts: { check: "turbo run lint --continue" } })}\n`,
   "src/lib.test.ts": 'test.skip("waits for the service", () => {});\n',
   "src/lib.ts": reader,
+  "src/pair.ts": "export const pair = (a?: string, b?: string) => [a!, b!];\n",
 };
 
 let root = "";
@@ -47,8 +51,10 @@ let scratch = "";
 // The first run on the initial commit, shared by the tests that only read it.
 let initial = null;
 
-const git = (...args) =>
-  execFileSync("git", args, { cwd: root, encoding: "utf-8", env: gitEnv });
+const gitIn = (cwd, ...args) =>
+  execFileSync("git", args, { cwd, encoding: "utf-8", env: gitEnv });
+
+const git = (...args) => gitIn(root, ...args);
 
 const write = (file, content) => {
   mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
@@ -117,9 +123,9 @@ test("a run prints schema-1 JSON with a metric for each scanned kind", () => {
       "history.workarounds": 1,
       markers: 1,
       suppressions: 1,
-      "swift.force-operations": 1,
+      "swift.force-operations": 5,
       "tests.skipped": 1,
-      "typescript.assertions": 1,
+      "typescript.assertions": 3,
     }
   );
   const stale = run.findings.filter((item) => item.kind === "stale-doc-ref");
@@ -196,5 +202,72 @@ test("a moved finding keeps its id, and --compare lists new, repeated, and resol
   assert.match(
     summary,
     /`lint\.errors` \(oxlint is not installed; run bun install\)/u
+  );
+});
+
+test("each force operation and assertion on a line counts once", () => {
+  const ids = (kind, file) =>
+    initial.findings
+      .filter((item) => item.kind === kind && item.location === file)
+      .map((item) => item.id);
+  const swift = ids("force-operation", "Sources/App.swift");
+  const typescript = ids("type-assertion", "src/pair.ts");
+  assert.equal(swift.length, 5);
+  assert.equal(new Set(swift).size, 5);
+  assert.equal(typescript.length, 2);
+  assert.equal(new Set(typescript).size, 2);
+});
+
+// Measures a repository whose native:format script runs `wrapper`, as if on macOS.
+const measureSwiftFormat = (name, wrapper) => {
+  const repo = path.join(scratch, name);
+  const xcrun = path.join(repo, "xcrun");
+  mkdirSync(path.join(repo, "Sources"), { recursive: true });
+  gitIn(repo, "init", "--quiet", "--initial-branch=main");
+  writeFileSync(xcrun, `#!/bin/sh\n${wrapper}`, { mode: 0o755 });
+  writeFileSync(
+    path.join(repo, "package.json"),
+    JSON.stringify({
+      name,
+      scripts: { "native:format": `${xcrun} swift-format lint Sources` },
+    })
+  );
+  writeFileSync(path.join(repo, "Sources/App.swift"), "let a = 1\n");
+  gitIn(repo, "add", "--all");
+  gitIn(repo, "commit", "--quiet", "--message", "Swift fixture");
+  const platform = Object.getOwnPropertyDescriptor(process, "platform");
+  Object.defineProperty(process, "platform", { value: "darwin" });
+  try {
+    return measureRoot(repo);
+  } finally {
+    Object.defineProperty(process, "platform", platform);
+  }
+};
+
+test("swift.format is skipped when swift-format fails without diagnostics", () => {
+  const run = measureSwiftFormat(
+    "swift-missing",
+    'echo "xcrun: error: unable to find utility swift-format" >&2\nexit 1\n'
+  );
+  assert.equal(metricValue(run, "swift.format"), undefined);
+  assert.equal(
+    run.skipped.find((item) => item.id === "swift.format")?.reason,
+    "swift-format exited with status 1 and no diagnostics: xcrun: error: unable to find utility swift-format"
+  );
+});
+
+test("swift.format counts real diagnostics when swift-format exits nonzero", () => {
+  const run = measureSwiftFormat(
+    "swift-drift",
+    'echo "Sources/App.swift:1:5: warning: [Spacing] remove the space" >&2\nexit 1\n'
+  );
+  assert.equal(metricValue(run, "swift.format"), 1);
+  assert.equal(
+    run.skipped.find((item) => item.id === "swift.format"),
+    undefined
+  );
+  assert.equal(
+    findingOf(run, "lint")?.detail,
+    "swift-format: [Spacing] remove the space"
   );
 });

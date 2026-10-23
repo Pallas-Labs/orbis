@@ -70,11 +70,11 @@ const SUPPRESSION =
   /(?:\/\/|\/\*|^\s*\*|#|\{\/\*|<!--)\s*(?:(?:eslint|oxlint)-disable(?:-next-line|-line)?|oxlint-ignore|biome-ignore|@ts-(?:ignore|expect-error|nocheck)|@effect-diagnostics(?:-next-line)?|(?:oxfmt|prettier)-ignore|swiftlint:disable(?::next|:this)?|swift-format-ignore(?:-file)?|periphery:ignore|shellcheck\s+disable)\b/u;
 const MARKER = /\b(?:TODO|FIXME|HACK|XXX)\b(?=\s*[:(])/u;
 const TS_ASSERTION =
-  /\bas\s+(?!const\b)(?:[A-Z_$]|unknown\b|any\b|never\b|string\b|number\b|boolean\b|object\b|readonly\b|typeof\b|keyof\b|[{[(])/u;
-const TS_NON_NULL = /(?<=[\w$)\]])!(?![=!])(?=[.[)\],;:]|$)/u;
+  /\bas\s+(?!const\b)(?:[A-Z_$]|unknown\b|any\b|never\b|string\b|number\b|boolean\b|object\b|readonly\b|typeof\b|keyof\b|[{[(])/gu;
+const TS_NON_NULL = /(?<=[\w$)\]])!(?![=!])(?=[.[)\],;:]|$)/gu;
 const TS_IMPORT_SPECIFIER =
   /^\s*import\b|^\s*export\s+(?:type\s+)?[*{]|^\s*[\w$]+\s+as\s+[\w$]+,?\s*$/u;
-const SWIFT_FORCE = /\btry!|\bas!|(?<=[\w)\]])!(?![=!])(?=[.[(),:;\s]|$)/u;
+const SWIFT_FORCE = /\btry!|\bas!|(?<=[\w)\]])!(?![=!])(?=[.[(),:;\]\s]|$)/gu;
 const SKIPPED_TEST =
   /\b(?:describe|it|test|suite)\.(?:skip|todo|skipIf|todoIf)\b|\bx(?:describe|it|test)\(|[{,]\s*(?:skip|todo)\s*:\s*(?!false\b)|\bt\.(?:skip|todo)\(|\bXCTSkip(?:If|Unless)?\b|\.disabled\(/u;
 const FOCUSED_TEST =
@@ -158,6 +158,10 @@ const scanComments = (file, lines) =>
     ...(MARKER.test(line) ? [finding("marker", file, index + 1, line)] : []),
   ]);
 
+const occurrences = (pattern, code) => code.match(pattern)?.length ?? 0;
+
+// One finding for each assertion or force operation, so that a count does not depend on how
+// the code is broken into lines.
 const scanSource = (file, lines) => {
   const extension = path.extname(file);
   const found = [];
@@ -165,16 +169,19 @@ const scanSource = (file, lines) => {
   for (const [index, line] of lines.entries()) {
     const number = index + 1;
     const code = codeOf(line);
-    if (
-      TYPESCRIPT_EXTENSIONS.has(extension) &&
-      !TS_IMPORT_SPECIFIER.test(code) &&
-      (TS_ASSERTION.test(code) || TS_NON_NULL.test(code))
-    ) {
-      found.push(finding("type-assertion", file, number, line));
-    }
-    if (extension === ".swift" && SWIFT_FORCE.test(code)) {
-      found.push(finding("force-operation", file, number, line));
-    }
+    const assertions =
+      TYPESCRIPT_EXTENSIONS.has(extension) && !TS_IMPORT_SPECIFIER.test(code)
+        ? occurrences(TS_ASSERTION, code) + occurrences(TS_NON_NULL, code)
+        : 0;
+    const forces = extension === ".swift" ? occurrences(SWIFT_FORCE, code) : 0;
+    found.push(
+      ...Array.from({ length: assertions }, () =>
+        finding("type-assertion", file, number, line)
+      ),
+      ...Array.from({ length: forces }, () =>
+        finding("force-operation", file, number, line)
+      )
+    );
     if (testFile && SKIPPED_TEST.test(code)) {
       found.push(finding("skipped-test", file, number, line));
     }
@@ -476,6 +483,16 @@ const measureSwift = (root, manifest) => {
         `swift-format: ${match.groups.message}`
       )
     );
+  // A nonzero exit with no diagnostics means swift-format did not run, as when xcrun cannot
+  // find it, so there is no measurement.
+  if (result.status !== 0 && warnings.length === 0) {
+    const [output] = result.stderr.trim().split("\n");
+    return skippedPart(
+      ["swift.format"],
+      `swift-format exited with status ${result.status ?? result.signal} and no diagnostics${output ? `: ${output}` : ""}`,
+      unused
+    );
+  }
   return {
     findings: warnings,
     metrics: [metric("swift.format", warnings.length, command)],
