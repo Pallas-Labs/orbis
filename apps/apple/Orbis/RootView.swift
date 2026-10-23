@@ -26,6 +26,12 @@ import SwiftUI
     @State private var isNowPlayingShown = false
     /// Where the mini player sits in the window, which Now Playing grows out of.
     @State private var miniPlayerFrame: CGRect = .zero
+    /// The mini player, following `showsMiniPlayer` once a page has finished zooming in or out:
+    /// the bar leaving or arriving mid-zoom moves the tab bar under the page as it lands.
+    @State private var showsAccessory = false
+    @State private var pageMoved: ContinuousClock.Instant?
+    /// About as long as the zoom into a Set's page.
+    private static let pageZoom: Duration = .milliseconds(450)
 
     var body: some View {
       TabView(selection: tabSelection) {
@@ -42,7 +48,7 @@ import SwiftUI
       .tabBarMinimizeBehavior(.onScrollDown)
       // `isEnabled` is why the target is iOS 26.1: 26.0 reserves an empty pill for an empty
       // accessory, and the only way round it there is to rebuild the tab view.
-      .tabViewBottomAccessory(isEnabled: model.showsMiniPlayer) {
+      .tabViewBottomAccessory(isEnabled: showsAccessory) {
         NowPlayingBar(model: model) { isNowPlayingShown = true }
           .onGeometryChange(for: CGRect.self) {
             $0.frame(in: .global)
@@ -50,7 +56,23 @@ import SwiftUI
             miniPlayerFrame = $0
           }
       }
+      // VoiceOver reads only the player while it is open; the bar and tabs sit outside it.
+      .accessibilityHidden(isNowPlayingShown)
       .nowPlayingExpansion(model: model, isPresented: $isNowPlayingShown, from: miniPlayerFrame)
+      .onChange(of: model.openedSetId) { pageMoved = .now }
+      .task(id: model.showsMiniPlayer) {
+        // Only a page in motion is worth waiting for; a Set starting or ending changes the bar
+        // at once.
+        if let pageMoved {
+          try? await Task.sleep(until: pageMoved + Self.pageZoom)
+          guard !Task.isCancelled else { return }
+        }
+        showsAccessory = model.showsMiniPlayer
+      }
+      // The player goes with the last Set, so the next one played starts folded in the bar.
+      .onChange(of: model.audioPlayer.currentSetId == nil) { _, isEmpty in
+        if isEmpty { isNowPlayingShown = false }
+      }
     }
   }
 
@@ -297,9 +319,14 @@ struct DestinationView: View {
     }
   #endif
 
+  private var setZoom: SetZoom { SetZoom(namespace: setZoomNamespace, origin: $setZoomOrigin) }
+
   var body: some View {
     page
-      .environment(\.setZoom, SetZoom(namespace: setZoomNamespace, origin: $setZoomOrigin))
+      // Every root plays, queues, or changes Sets from its rows and menus, so a refusal shows
+      // where the tap was rather than nowhere.
+      .setChangeStatus(model)
+      .environment(\.setZoom, setZoom)
   }
 
   @ViewBuilder private var page: some View {
@@ -352,8 +379,9 @@ struct DestinationView: View {
         backdrop: .artwork(libraryLead.flatMap(SetPresentation.pageArtwork))
       )
       .refreshable { await model.refreshLibraryQuietly() }
-      // A row's menu and the selection bar change Sets from here, so their refusals show here.
-      .setChangeStatus(model)
+      // The first screenful's Tracklists, so a Set opened from here lands with its Tracklist
+      // rather than pushing its facts down mid-zoom.
+      .task(id: libraryPrefetch.map(\.id)) { await model.loadTracklists(libraryPrefetch) }
       .macPageSearch(text: $libraryQuery, prompt: "Find in Library")
       .macSearchToolbarBackground(isSearching: librarySearchIsActive)
       .sidebarPageTitle("Library")
@@ -364,7 +392,7 @@ struct DestinationView: View {
       .toolbar { libraryToolbar }
       .sheet(isPresented: $isFilingSheetShown) { filingSheet }
       .onChange(of: model.reveal != nil) { _, hasReveal in
-        if hasReveal { isFilingSheetShown = true }
+        if hasReveal, model.destination == destination { isFilingSheetShown = true }
       }
       .onChange(of: model.playlistImport.isImporting) { _, importing in
         if importing, model.destination == destination { isFilingSheetShown = true }
@@ -392,7 +420,7 @@ struct DestinationView: View {
     case .playlists:
       PlaylistsDestination(model: model)
         #if os(iOS)
-          .playlistPage(model, in: .playlists, zoom: setZoomNamespace) { id in setPage(id) }
+          .playlistPage(model, in: .playlists, zoom: setZoom) { id in setPage(id) }
         #endif
         .navigationDestination(item: openedSet) { id in setPage(id) }
     case .people:
@@ -407,6 +435,11 @@ struct DestinationView: View {
   /// The large title already says Library, so the list carries no heading of its own; the
   /// active filter is underlined in the ledger row instead.
   private var libraryHeading: Text? { nil }
+
+  private var libraryPrefetch: [SavedSet] {
+    guard case .loaded(let sets) = librarySets else { return [] }
+    return Array(sets.prefix(12))
+  }
 
   private var librarySets: Loadable<[SavedSet]> {
     #if os(macOS)
@@ -496,14 +529,15 @@ struct DestinationView: View {
     }
     .sheet(isPresented: $isFilingSheetShown) { filingSheet }
     .onChange(of: model.reveal != nil) { _, hasReveal in
-      if hasReveal { isFilingSheetShown = true }
+      // Every tab visited is still alive; only the one on show opens the sheet.
+      if hasReveal, model.destination == destination { isFilingSheetShown = true }
     }
     .onChange(of: model.playlistImport.isImporting) { _, importing in
       // The clipboard banner imports without the sheet open. Only the screen on show opens it.
       if importing, model.destination == destination { isFilingSheetShown = true }
     }
     #if os(iOS)
-      .playlistPage(model, in: .home, zoom: setZoomNamespace) { id in setPage(id) }
+      .playlistPage(model, in: .home, zoom: setZoom) { id in setPage(id) }
     #endif
     .navigationDestination(item: openedSet) { id in setPage(id) }
   }
@@ -1121,7 +1155,9 @@ struct SearchDestination: View {
         Task { await model.runSearch() }
       }
       .searchesAsTyped(model)
-      .task { await model.loadTracklistsForSearch() }
+      // Again once the library arrives: Search opened before it would otherwise never find a
+      // track by name.
+      .task(id: model.totalCount) { await model.loadTracklistsForSearch() }
   }
 
   private var recentQueries: [String] {

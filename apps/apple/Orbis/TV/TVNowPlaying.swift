@@ -19,7 +19,7 @@
 
     var body: some View {
       let player = model.audioPlayer
-      let set = player.currentSetId.flatMap { model.savedSet($0) }
+      let set = model.playingSet
       Group {
         if let set {
           content(set)
@@ -332,7 +332,7 @@
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-      let playing = model.audioPlayer.currentSetId.flatMap { model.savedSet($0) }
+      let playing = model.playingSet
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 8) {
           HStack(alignment: .firstTextBaseline) {

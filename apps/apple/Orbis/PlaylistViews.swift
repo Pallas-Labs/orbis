@@ -263,6 +263,8 @@ struct PlaylistsDestination: View {
 }
 
 enum PlaylistZoom {
+  /// The place a Playlist page's rows open Sets from.
+  static let place = "playlist-row"
   /// Apart from a Set's id, so a Playlist's folder and a Set's artwork can share a namespace.
   static func sourceID(_ playlistId: String) -> String { "playlist/\(playlistId)" }
 }
@@ -286,7 +288,7 @@ extension View {
     /// instead, a Set and the Playlist under it are two pages of the root, and Back from the
     /// Set pops both.
     func playlistPage<SetPage: View>(
-      _ model: AppModel, in place: Destination, zoom namespace: Namespace.ID,
+      _ model: AppModel, in place: Destination, zoom: SetZoom,
       @ViewBuilder setPage: @escaping (String) -> SetPage
     ) -> some View {
       let pushed = Binding<String?>(
@@ -301,7 +303,9 @@ extension View {
       return navigationDestination(item: pushed) { id in
         if let playlist = model.playlist(id) {
           PlaylistDetailView(model: model, playlist: playlist)
-            .zoomTransition(from: PlaylistZoom.sourceID(id), in: namespace)
+            // Handed down by name, so the page's rows are sources for the Sets they open.
+            .environment(\.setZoom, zoom)
+            .zoomTransition(from: PlaylistZoom.sourceID(id), in: zoom.namespace)
             .navigationDestination(item: openedSet, destination: setPage)
         }
       }
@@ -321,8 +325,14 @@ struct PlaylistDetailView: View {
   /// The play a person asked for while something else was playing, held until they confirm.
   @State private var pendingPlay: PlayOrder?
   @Environment(\.horizontalSizeClass) private var sizeClass
+  @Environment(\.setZoom) private var zoom
+  /// True once the hero's title has scrolled under the bar, which then names the Playlist.
+  @State private var isTitleInBar = false
 
   private var heroLayout: HeroLayout { HeroLayout(sizeClass) }
+  /// How far the list scrolls before the hero's title is under the bar: the artwork and the
+  /// eyebrow above it.
+  private static let heroTitleDepth: CGFloat = 220
 
   private enum PlayOrder {
     case inOrder
@@ -349,6 +359,10 @@ struct PlaylistDetailView: View {
         }
       }
     }
+    // Play and Shuffle start from here, so their refusals show here.
+    .setChangeStatus(model)
+    // Kept for the Back button of a Set opened from here; the bar shows it only once the hero's
+    // own title has gone, as Apple Music does, so the name is never on screen twice.
     .navigationTitle(playlist.name)
     .toolbarTitleDisplayMode(.inline)
     .background {
@@ -363,6 +377,16 @@ struct PlaylistDetailView: View {
       Text("This replaces what is playing now.")
     }
     .toolbar {
+      #if os(iOS)
+        ToolbarItem(placement: .principal) {
+          Text(playlist.name)
+            .font(.headline)
+            .lineLimit(1)
+            .opacity(isTitleInBar ? 1 : 0)
+            .animation(.easeOut(duration: 0.15), value: isTitleInBar)
+            .accessibilityHidden(!isTitleInBar)
+        }
+      #endif
       #if !os(iOS)
         ToolbarItem(placement: .cancellationAction) {
           Button {
@@ -491,6 +515,8 @@ struct PlaylistDetailView: View {
         Label("Play", systemImage: "play.fill")
           .font(.headline)
           .padding(.horizontal, 10)
+          // A List tints a row's symbols with the accent, which is this button's own fill.
+          .foregroundStyle(.white)
       }
       .buttonStyle(.glassProminent)
       .tint(Color.orbis.tint)
@@ -529,9 +555,13 @@ struct PlaylistDetailView: View {
             of: set, currentSetId: model.audioPlayer.currentSetId,
             isPlaying: model.audioPlayer.state == .playing),
           togglePlayback: { model.togglePlayback(set.id) },
-          select: { model.openSet(set.id) }
+          select: {
+            zoom?.open(from: PlaylistZoom.place)
+            model.openSet(set.id)
+          }
         )
-        .zoomsSetPage(set.id)
+        // Named apart from the page under it, which can show the same Set on Home.
+        .zoomsSetPage(set.id, place: PlaylistZoom.place)
         .accessibilityIdentifier("playlist-member-\(set.id)")
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
           Button("Remove", role: .destructive) {
@@ -545,6 +575,11 @@ struct PlaylistDetailView: View {
       }
     }
     .scrollContentBackground(.hidden)
+    .onScrollGeometryChange(for: Bool.self) {
+      $0.contentOffset.y + $0.contentInsets.top > Self.heroTitleDepth
+    } action: { _, isUnder in
+      isTitleInBar = isUnder
+    }
     .scrollEdgeEffectStyle(.soft, for: .top)
     .scrollEdgeEffectStyle(.soft, for: .bottom)
     .accessibilityIdentifier("playlist-members")

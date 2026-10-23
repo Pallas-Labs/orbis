@@ -67,7 +67,7 @@ import SwiftUI
     }
 
     var body: some View {
-      let set = model.audioPlayer.currentSetId.flatMap { model.savedSet($0) }
+      let set = model.playingSet
       ZStack {
         GeometryReader { proxy in
           ZStack(alignment: .topLeading) {
@@ -97,6 +97,8 @@ import SwiftUI
       .offset(y: pull)
       .gesture(pullDown, isEnabled: isExpanded && !isMoving)
       .allowsHitTesting(isExpanded || isMoving)
+      // Folded, its buttons stay out of a keyboard's reach and its Escape shortcut unclaimed.
+      .disabled(!isExpanded && !isMoving)
       .accessibilityHidden(!isExpanded)
       .accessibilityAddTraits(isExpanded ? .isModal : [])
       .onChange(of: isPresented, initial: true) { _, isPresented in

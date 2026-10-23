@@ -90,7 +90,19 @@ public struct SetCard: View {
     }
     .frame(width: Artwork.Size.card.width, alignment: .leading)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel([title, detail].compactMap { $0 }.joined(separator: ", "))
+    .accessibilityLabel(accessibilityLabel)
+  }
+
+  /// Announces playback and how far listening got, as a row does, because the bars and the
+  /// progress bar are drawn on artwork that VoiceOver skips.
+  private var accessibilityLabel: String {
+    var parts = [title]
+    if let detail { parts.append(detail) }
+    if isCurrent { parts.append(isPlaying ? "Now playing" : "Paused") }
+    if Artwork.showsProgress(progress), let progress {
+      parts.append("\(progress.formatted(.percent.precision(.fractionLength(0)))) played")
+    }
+    return parts.joined(separator: ", ")
   }
 }
 

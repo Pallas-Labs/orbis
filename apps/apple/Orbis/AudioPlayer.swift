@@ -64,21 +64,23 @@ final class AudioPlayer {
   private(set) var currentTitle = ""
   /// Who made the Set, for the artist line the system draws under the title.
   private(set) var currentArtist: String?
-  private var cues: [Cue] = []
+  private var cues: [Cue] = [] {
+    didSet { updateCues() }
+  }
   /// Where each Cue starts, for the marks along the seek bar.
   var cueStarts: [TimeInterval] { cues.compactMap(\.startSeconds) }
-  var currentCue: Cue? {
-    cues.last { cue in cue.startSeconds.map { $0 <= elapsed } ?? false }
-  }
+  /// Stored, not computed from `elapsed`, so a view that shows the Cue redraws when the mix
+  /// moves into the next one rather than every time the clock ticks.
+  private(set) var currentCue: Cue?
   /// The Cue the mix moves into next, once it has a start time.
-  var nextCue: Cue? {
-    cues.first { cue in cue.startSeconds.map { $0 > elapsed } ?? false }
-  }
+  private(set) var nextCue: Cue?
   /// The Set's artwork, once it has arrived, for the lock screen, the Dynamic Island, and
   /// Control Center. Fetched after playback starts so a slow image never delays the sound.
   private var currentArtwork: MPMediaItemArtwork?
   private var artworkFetch: Task<Void, Never>?
-  private(set) var elapsed: TimeInterval = 0
+  private(set) var elapsed: TimeInterval = 0 {
+    didSet { updateCues() }
+  }
   private(set) var duration: TimeInterval?
 
   var settledPosition: TimeInterval? {
@@ -738,6 +740,14 @@ final class AudioPlayer {
 
   /// Whether the Set's Tracklist has start times to step between.
   var canSkipCues: Bool { !cueStarts.isEmpty }
+
+  /// Writes the Cues only when they change, because every write wakes the views that read them.
+  private func updateCues() {
+    let current = cues.last { cue in cue.startSeconds.map { $0 <= elapsed } ?? false }
+    let next = cues.first { cue in cue.startSeconds.map { $0 > elapsed } ?? false }
+    if current != currentCue { currentCue = current }
+    if next != nextCue { nextCue = next }
+  }
 
   /// Jumps to the start of the next Cue. Past the last one there is nowhere to go.
   func skipToNextCue(origin: PlaybackDiagnostics.Origin = .app) {

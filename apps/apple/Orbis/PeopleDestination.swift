@@ -250,7 +250,7 @@ private struct ListeningCard: View {
 
   private var playButton: some View {
     Button {
-      model.togglePlayback(set.id)
+      model.togglePlayback(set)
     } label: {
       Image(systemName: isPlaying ? "pause.fill" : "play.fill")
         .font(.subheadline.weight(.bold))
@@ -486,7 +486,7 @@ struct PersonScreen: View {
       HStack(spacing: 10) {
         if set.downloadState == "ready" {
           Button {
-            model.togglePlayback(set.id)
+            model.togglePlayback(set)
           } label: {
             Label(isPlaying ? "Pause" : "Play", systemImage: isPlaying ? "pause.fill" : "play.fill")
               .font(.headline)
@@ -669,7 +669,7 @@ struct PersonScreen: View {
 
   private func play(_ set: SavedSet) {
     guard set.downloadState == "ready" else { return }
-    model.togglePlayback(set.id)
+    model.togglePlayback(set)
   }
 
   private func rail<Cards: View>(
@@ -740,7 +740,7 @@ private struct FriendPlaylistSheet: View {
     NavigationStack {
       List(playlist.sets) { set in
         FriendSetRow(model: model, set: set) {
-          if set.downloadState == "ready" { model.togglePlayback(set.id) }
+          if set.downloadState == "ready" { model.togglePlayback(set) }
         }
       }
       .listStyle(.plain)

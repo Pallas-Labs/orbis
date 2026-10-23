@@ -13,9 +13,15 @@ import SwiftUI
 final class ArtworkImages {
   static let shared = ArtworkImages()
   private let cache = NSCache<NSURL, PlatformImage>()
+  /// One download per image, shared by every view that asks while it runs. Not cancelled when one
+  /// of them goes away, because another may still be waiting on it.
+  private var loads: [URL: Task<Image?, Never>] = [:]
 
+  /// Bounded by decoded bytes as well as count, because a full-size picture decodes to several
+  /// megabytes.
   private init() {
     cache.countLimit = 300
+    cache.totalCostLimit = 64 * 1024 * 1024
   }
 
   func image(_ url: URL) -> Image? {
@@ -26,9 +32,25 @@ final class ArtworkImages {
   /// pay for decoding it.
   func load(_ url: URL) async -> Image? {
     if let image = image(url) { return image }
-    guard let decoded = await Self.fetch(url) else { return nil }
-    cache.setObject(decoded, forKey: url as NSURL)
-    return Image(decoded)
+    let load =
+      loads[url]
+      ?? Task {
+        defer { loads[url] = nil }
+        guard let decoded = await Self.fetch(url) else { return nil }
+        cache.setObject(decoded, forKey: url as NSURL, cost: Self.cost(decoded))
+        return Image(decoded)
+      }
+    loads[url] = load
+    return await load.value
+  }
+
+  /// The decoded size in bytes, at four bytes a pixel.
+  private static func cost(_ image: PlatformImage) -> Int {
+    #if canImport(UIKit)
+      Int(image.size.width * image.scale) * Int(image.size.height * image.scale) * 4
+    #else
+      image.representations.first.map { $0.pixelsWide * $0.pixelsHigh * 4 } ?? 0
+    #endif
   }
 
   @concurrent private static func fetch(_ url: URL) async -> sending PlatformImage? {
@@ -95,7 +117,8 @@ public struct CachedImage<Content: View, Placeholder: View>: View {
       }
     }
     .task(id: url) {
-      guard images.image(url) == nil else { return }
+      // Another view may have loaded the same URL first; `load` then returns at once, and
+      // setting `loaded` still draws this view again.
       if await images.load(url) != nil { loaded = url }
     }
   }

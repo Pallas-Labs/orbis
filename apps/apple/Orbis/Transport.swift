@@ -186,6 +186,16 @@ private struct PlaybackProgress: View {
         duration.map { "\(SetPresentation.spoken(shown)) of \(SetPresentation.spoken($0))" }
           ?? SetPresentation.spoken(shown)
       )
+      // A swipe moves by the skip buttons' steps; the slider's own step is a tenth of the Set,
+      // which on a two-hour mix is twelve minutes.
+      .accessibilityAdjustableAction { direction in
+        guard isCurrent else { return }
+        switch direction {
+        case .increment: player.skip(by: AudioPlayer.skipAhead)
+        case .decrement: player.skip(by: -AudioPlayer.skipBack)
+        @unknown default: break
+        }
+      }
       HStack {
         Text(SetPresentation.timestamp(shown))
         Spacer()

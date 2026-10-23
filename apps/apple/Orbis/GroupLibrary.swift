@@ -104,7 +104,7 @@ final class GroupLibraryModel {
   /// Plays a Group Set here when its audio is on the service.
   func play(_ set: SavedSet) {
     guard set.downloadState == "ready" else { return }
-    app.togglePlayback(set.id)
+    app.togglePlayback(set)
   }
 }
 

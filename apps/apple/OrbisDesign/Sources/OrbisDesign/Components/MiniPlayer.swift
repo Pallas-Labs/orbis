@@ -74,7 +74,9 @@ public struct MiniPlayer: View {
     HStack(spacing: 4) {
       Button(action: open) {
         HStack(spacing: 12) {
-          Artwork(url: artwork, seed: title, size: .row, cornerRadius: 6)
+          // Sized by the frame, as `header` is, so the whole picture fits the thumb. The 88-point
+          // row box spilled past the capsule's rounded end.
+          Artwork(url: artwork, seed: title, size: .header, cornerRadius: 6)
             .frame(width: 64, height: 36)
           VStack(alignment: .leading, spacing: 1) {
             Text(subtitle ?? title)
@@ -116,7 +118,7 @@ public struct MiniPlayer: View {
       }
     }
     .padding(.horizontal, 8)
-    .frame(height: isInline ? nil : 60)
+    .frame(minHeight: isInline ? nil : 60)
     .overlay(alignment: .bottom) {
       if Artwork.showsProgress(progress), let progress {
         GeometryReader { proxy in

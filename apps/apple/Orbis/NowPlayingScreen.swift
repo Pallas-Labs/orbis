@@ -13,6 +13,7 @@ struct NowPlayingScreen: View {
   @State private var isRenaming = false
   @State private var isShowingQueue = false
   @State private var showsTracklist = false
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   /// Closes the screen when something other than a sheet presents it, such as the player that
   /// grows out of the mini player. Nil dismisses the sheet.
   var close: (() -> Void)?
@@ -30,7 +31,7 @@ struct NowPlayingScreen: View {
 
   var body: some View {
     let player = model.audioPlayer
-    let set = player.currentSetId.flatMap { model.savedSet($0) }
+    let set = model.playingSet
     Group {
       if let set {
         content(set)
@@ -51,7 +52,10 @@ struct NowPlayingScreen: View {
     }
     .environment(\.colorScheme, .dark)
     .setChangeStatus(model)
-    .sheet(isPresented: $isShowingQueue) { QueueScreen(model: model) }
+    .sheet(isPresented: $isShowingQueue) {
+      // Dark like the player it opens over, not the light of the app behind.
+      QueueScreen(model: model).preferredColorScheme(.dark)
+    }
     #if os(iOS)
       // The swipe down is invisible and VoiceOver cannot make it, so the chevron where the
       // grabber sat is the way out anyone can see.
@@ -99,7 +103,14 @@ struct NowPlayingScreen: View {
       .padding(.horizontal, 32)
       .padding(.top, 24)
     #else
-      playerColumn(set, cues: cues, showsTracklistInPlace: showsTracklist)
+      let column = playerColumn(set, cues: cues, showsTracklistInPlace: showsTracklist)
+      // At the largest text sizes the column is taller than the screen, so it scrolls rather
+      // than push the bottom row off.
+      if dynamicTypeSize.isAccessibilitySize {
+        ScrollView { column }
+      } else {
+        column
+      }
     #endif
   }
 
@@ -140,7 +151,8 @@ struct NowPlayingScreen: View {
           .frame(maxWidth: Self.artworkWidth)
           .nowPlayingArtworkAnchor(artworkAnchor)
           .opacity(hidesArtwork ? 0 : 1)
-          .shadow(color: .black.opacity(0.45), radius: isPlaying ? 28 : 12, y: isPlaying ? 18 : 6)
+          // One radius: a blur that changes size is redrawn every frame of the step.
+          .shadow(color: .black.opacity(0.45), radius: 20, y: 12)
           .scaleEffect(isPlaying ? 1 : 0.86)
           .orbisAnimation(.playbackToggled, value: isPlaying)
         Spacer(minLength: 28)
