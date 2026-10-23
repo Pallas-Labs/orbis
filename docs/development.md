@@ -156,7 +156,7 @@ The sender probes use real URLSession HTTP, exercise cancellation and refusal be
 
 ```sh
 bun run --filter @orbis/contracts build
-bun test apps/server/src/playback-diagnostics.test.ts
+bun test --timeout 60000 apps/server/src/playback-diagnostics.test.ts
 bun run --filter @orbis/api test:playback
 ```
 

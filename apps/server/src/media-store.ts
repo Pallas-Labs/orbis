@@ -202,7 +202,8 @@ export class MediaStore extends Context.Service<
         const totalHeader = response.headers.get("content-length");
         const total = totalHeader ? Number(totalHeader) : null;
         const writer = Bun.file(destination).writer();
-        const drain = Effect.fn("MediaStore.drain")(function* drainChunk(
+        // Recurses once per chunk; a traced span per chunk multiplied time and heap about fivefold.
+        const drain = Effect.fnUntraced(function* drainChunk(
           reader: ReadableStreamDefaultReader<Uint8Array>,
           received: number
         ): Effect.fn.Return<number, LibraryError> {
