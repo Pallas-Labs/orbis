@@ -50,7 +50,7 @@ Saving a link creates a Person's Library Entry. Auto Download starts a Download 
 ## Choices worth a look
 
 - **Domain language first.** [`GLOSSARY.md`](GLOSSARY.md) defines the terms (Set, Retained Audio, Playback Position, Listen) and the words to avoid. The code and the [decision records](docs/adr) use them.
-- **Decision records.** [ADRs](docs/adr) record platform, storage, identity, and deployment decisions. Implementation and live acceptance evidence belong in [GitHub Issues](https://github.com/ParthMmm/orbis/issues).
+- **Decision records.** [ADRs](docs/adr) record platform, storage, identity, and deployment decisions. Implementation and live acceptance evidence belong in [Linear](https://linear.app/parthm/project/orbis-4cbc2f5c043a). A `#N` in older docs refer to closed GitHub issues.
 - **One source for design tokens.** [`docs/design/tokens.json`](docs/design/tokens.json) generates the Swift colors and the CSS. CI fails if the output drifts.
 - **Native test lanes.** `bun run native:lanes` starts a temporary server with its own database and trust store, pairs a device, and runs the unit tests and UI journeys against it. See [development](docs/development.md#native-clients) for lane modes and evidence retention.
 - **Swift 6 strict concurrency**, on by default in the app target.
@@ -58,7 +58,7 @@ Saving a link creates a Person's Library Entry. Auto Download starts a Download 
 
 ## Status
 
-Implementation status and remaining production checks live in [GitHub Issues](https://github.com/ParthMmm/orbis/issues).
+Implementation status and remaining production checks live in [Linear](https://linear.app/parthm/project/orbis-4cbc2f5c043a).
 
 iPhone, iPad, and Mac builds go to the Group through TestFlight. There is no public App Store release.
 

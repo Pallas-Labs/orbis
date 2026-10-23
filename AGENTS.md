@@ -34,7 +34,7 @@ On the Mac, read Xcode's bundled Apple docs first (the `axiom-apple-docs` skill)
 
 ### Issue tracker
 
-Use GitHub Issues in ParthMmm/orbis. Before reading or publishing specs and tickets, read `docs/agents/issue-tracker.md`.
+Use Linear (team Pallas, project Orbis). Before reading or publishing specs and tickets, read `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
