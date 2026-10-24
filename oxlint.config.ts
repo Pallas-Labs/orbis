@@ -16,6 +16,8 @@ export default defineConfig({
   ],
   // Vendored from t3code; see lint-plugins/t3code/README.md.
   jsPlugins: ["./lint-plugins/t3code/index.ts"],
+  // A suppression that no longer hides a diagnostic is noise; delete it.
+  options: { reportUnusedDisableDirectives: "error" },
   overrides: [
     {
       files: TEST_FILES,

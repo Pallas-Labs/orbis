@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- Ordered HTTP requests define the journey. */
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";

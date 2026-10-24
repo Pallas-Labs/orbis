@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- Each canary run reads the state the previous run left. */
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
