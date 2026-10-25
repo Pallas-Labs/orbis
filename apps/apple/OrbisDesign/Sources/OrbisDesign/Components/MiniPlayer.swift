@@ -23,7 +23,8 @@ public struct MiniPlayer: View {
   /// How far listening got, from 0 to 1, for the hairline along the bottom edge.
   public let progress: Double?
   public let surface: Surface
-  /// Where Now Playing zooms out of: the artwork, marked in this namespace.
+  /// Where Now Playing zooms out of: the whole player, marked in this namespace. Nil where
+  /// something other than the system's zoom opens Now Playing.
   public let transition: Namespace.ID?
   public let toggle: () -> Void
   /// Moves to the next track in the Set's Tracklist. Nil when there is no next track.
@@ -73,9 +74,10 @@ public struct MiniPlayer: View {
     HStack(spacing: 4) {
       Button(action: open) {
         HStack(spacing: 12) {
-          Artwork(url: artwork, seed: title, size: .row, cornerRadius: 6)
+          // Sized by the frame, as `header` is, so the whole picture fits the thumb. The 88-point
+          // row box spilled past the capsule's rounded end.
+          Artwork(url: artwork, seed: title, size: .header, cornerRadius: 6)
             .frame(width: 64, height: 36)
-            .transitionSource(in: transition)
           VStack(alignment: .leading, spacing: 1) {
             Text(subtitle ?? title)
               .font(.subheadline.weight(.semibold))
@@ -116,7 +118,7 @@ public struct MiniPlayer: View {
       }
     }
     .padding(.horizontal, 8)
-    .frame(height: isInline ? nil : 60)
+    .frame(minHeight: isInline ? nil : 60)
     .overlay(alignment: .bottom) {
       if Artwork.showsProgress(progress), let progress {
         GeometryReader { proxy in
@@ -133,6 +135,7 @@ public struct MiniPlayer: View {
         Color.clear.orbisGlass(radius: 30, interactive: true)
       }
     }
+    .transitionSource(in: transition)
     .accessibilityIdentifier("mini-player")
   }
 }
@@ -167,7 +170,7 @@ extension View {
   @ViewBuilder fileprivate func transitionSource(in namespace: Namespace.ID?) -> some View {
     if let namespace {
       matchedTransitionSource(id: MiniPlayer.transitionID, in: namespace) {
-        $0.clipShape(RoundedRectangle(cornerRadius: 22))
+        $0.clipShape(RoundedRectangle(cornerRadius: 30))
       }
     } else {
       self

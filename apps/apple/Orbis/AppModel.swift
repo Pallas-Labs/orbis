@@ -508,6 +508,7 @@ final class AppModel {
     selectedPlaylistId = nil
     openedPlaylistId = nil
     playlistMembers = .idle
+    lastPlaylistMembers = [:]
     playlistFailure = nil
     activeTags = []
     activeCreator = nil
@@ -577,6 +578,8 @@ final class AppModel {
     defer { isFiling = false }
     do {
       let saved = try await client.save(url: link)
+      // Signed out while it was filed: the Set belongs to a library this device no longer holds.
+      guard self.client?.token == client.token else { return }
       linkToFile = ""
       // A failed enrichment leaves a placeholder title, so the field starts empty rather
       // than inviting the placeholder to be kept.
@@ -600,8 +603,10 @@ final class AppModel {
     } catch OrbisError.cancelled {
       return
     } catch let error as OrbisError {
+      guard self.client?.token == client.token else { return }
       fileFailure = error
     } catch {
+      guard self.client?.token == client.token else { return }
       fileFailure = .unreachable
     }
   }
@@ -1198,7 +1203,22 @@ final class AppModel {
     }
   }
 
+  /// The one read running for each Set's Tracklist. The Set page, Now Playing, and the player
+  /// each ask for the same Tracklist, and a pending one is polled every second, so a second
+  /// caller waits on the first rather than polling beside it.
+  @ObservationIgnored private var tracklistLoads: [String: Task<Void, Never>] = [:]
+
   func loadTracklist(_ id: String) async {
+    // A ready Tracklist does not change, and the page asks again each time it appears.
+    guard client != nil, tracklists[id]?.state != .ready else { return }
+    if let running = tracklistLoads[id] { return await running.value }
+    let load = Task { await pollTracklist(id) }
+    tracklistLoads[id] = load
+    await load.value
+    tracklistLoads[id] = nil
+  }
+
+  private func pollTracklist(_ id: String) async {
     guard let client else { return }
     let generation = tracklistGeneration
     do {
@@ -1206,8 +1226,11 @@ final class AppModel {
         guard generation == tracklistGeneration, !Task.isCancelled else { return }
         let tracklist = try await client.tracklist(id)
         guard generation == tracklistGeneration, !Task.isCancelled else { return }
-        tracklists[id] = tracklist
-        if audioPlayer.currentSetId == id { audioPlayer.setCues(tracklist.cues) }
+        // Written only when it changed: a pending poll answers the same thing most seconds.
+        if tracklists[id] != tracklist {
+          tracklists[id] = tracklist
+          if audioPlayer.currentSetId == id { audioPlayer.setCues(tracklist.cues) }
+        }
         guard tracklist.state == .pending else { return }
         try await Task.sleep(for: .seconds(1))
       }
@@ -1479,10 +1502,20 @@ final class AppModel {
     if case .loading = library { return }
     libraryGeneration += 1
     let generation = libraryGeneration
+    let edits = libraryEdits
     guard let sets = try? await client.library(playlistId: selectedPlaylistId) else { return }
     guard generation == libraryGeneration, !Task.isCancelled else { return }
+    // A Set changed here while the read was out, and the read may be older than the change:
+    // read again rather than put the old title or Tags back on screen.
+    guard edits == libraryEdits else { return await refreshLibraryQuietly() }
+    // The same list again wakes every screen that shows the library for nothing.
+    if case .loaded(let current) = library, current == sets { return }
     library = .loaded(sets)
   }
+
+  /// Counts the changes made to the loaded library here, for a quiet refresh to tell whether its
+  /// answer is older than one of them.
+  @ObservationIgnored private var libraryEdits = 0
 
   /// What the mini player's button does. Pausing and resuming stay inside the player, because the
   /// Set is already the active one and pausing is part of the same Listen.
@@ -1524,6 +1557,7 @@ final class AppModel {
   @discardableResult
   private func replace(_ set: SavedSet) -> Bool {
     guard case .loaded(let sets) = library else { return false }
+    libraryEdits += 1
     if let selectedPlaylistId, !set.playlistIds.contains(selectedPlaylistId) {
       library = .loaded(sets.filter { $0.id != set.id })
     } else {
@@ -1567,9 +1601,29 @@ final class AppModel {
     return sets.first { $0.id == id }
   }
 
+  /// Sets played from someone else's library, which this library does not hold, so the player
+  /// can still show what it plays.
+  @ObservationIgnored private var visitedSets: [String: SavedSet] = [:]
+
+  /// The Set in the player: this library's copy, or the one played from someone else's.
+  var playingSet: SavedSet? {
+    audioPlayer.currentSetId.flatMap { savedSet($0) ?? visitedSets[$0] }
+  }
+
+  /// Plays or pauses a Set from someone else's library, remembering it for the player.
+  func togglePlayback(_ set: SavedSet) {
+    if savedSet(set.id) == nil { visitedSets[set.id] = set }
+    togglePlayback(set.id)
+  }
+
   func openSet(_ id: String) {
     setFailure = nil
     openedSetId = id
+    // Asked for at the tap rather than when the page appears, so the Tracklist is usually in
+    // before the page finishes zooming open, instead of pushing the page down once it lands.
+    if let set = savedSet(id), set.tracklistState != .none {
+      Task { [weak self] in await self?.loadTracklist(id) }
+    }
   }
 
   func closeSet() {
@@ -1581,11 +1635,8 @@ final class AppModel {
   /// it closes.
   func returnToRoot() {
     closeSet()
-    switch destination {
-    case .playlists: closePlaylist()
-    case .people: peopleRootRequests += 1
-    case .home, .library, .search: break
-    }
+    if playlistPlace == destination { closePlaylist() }
+    if destination == .people { peopleRootRequests += 1 }
   }
 
   /// Runs one change from the page. Every path reports through `setError`, so a refusal is
@@ -1695,9 +1746,16 @@ final class AppModel {
       if case .loaded(let sets) = library {
         library = .loaded(sets.filter { $0.id != removed.id })
       }
+      // Nor may a Playlist opened next show it from what it held last time.
+      lastPlaylistMembers = lastPlaylistMembers.mapValues { $0.filter { $0.id != removed.id } }
       if openedSets.values.contains(removed.id) {
         setFailure = nil
         openedSets = openedSets.filter { $0.value != removed.id }
+      }
+      // Its audio goes with it, so the player lets it go rather than play on with no Set.
+      if audioPlayer.currentSetId == removed.id {
+        audioPlayer.stop()
+        stopReportingPosition()
       }
       // A removed Set leaves the queue with it, so the queue is read again rather than patched.
       await loadQueue()
@@ -1719,7 +1777,10 @@ final class AppModel {
     guard let client else { return }
     playlistGeneration += 1
     let generation = playlistGeneration
-    playlists = .loading
+    // Playlists already on screen stay while they reload after an edit, so an open Playlist's
+    // page is not torn down and rebuilt, and a failed reload leaves them as they were.
+    let isShowing = if case .loaded = playlists { true } else { false }
+    if !isShowing { playlists = .loading }
     do {
       let items = try await client.playlists()
       // Forget clears the sidebar too, so an answer already out cannot put the old service's
@@ -1727,13 +1788,13 @@ final class AppModel {
       guard generation == playlistGeneration, !Task.isCancelled else { return }
       playlists = .loaded(items)
     } catch OrbisError.cancelled {
-      guard generation == playlistGeneration else { return }
+      guard generation == playlistGeneration, !isShowing else { return }
       playlists = .idle
     } catch let error as OrbisError {
-      guard generation == playlistGeneration else { return }
+      guard generation == playlistGeneration, !isShowing else { return }
       playlists = .failed(error.failure(at: client.address))
     } catch {
-      guard generation == playlistGeneration else { return }
+      guard generation == playlistGeneration, !isShowing else { return }
       playlists = .failed(OrbisError.unreachable.failure(at: client.address))
     }
   }
@@ -1749,7 +1810,16 @@ final class AppModel {
 
   /// The ordered Sets in the opened Playlist, loaded apart from the Library filter so a tab
   /// change does not disturb what another screen is showing.
-  var playlistMembers: Loadable<[SavedSet]> = .idle
+  var playlistMembers: Loadable<[SavedSet]> = .idle {
+    didSet {
+      if case .loaded(let sets) = playlistMembers, let id = openedPlaylistId {
+        lastPlaylistMembers[id] = sets
+      }
+    }
+  }
+  /// The members each Playlist had when last loaded, so a page opens on them while it refreshes
+  /// rather than zooming open on a placeholder.
+  @ObservationIgnored private var lastPlaylistMembers: [String: [SavedSet]] = [:]
 
   /// What the last Playlist change refused, kept where the action was taken.
   var playlistFailure: OrbisFailure?
@@ -1759,19 +1829,41 @@ final class AppModel {
     playlistItems.first { $0.id == id }
   }
 
-  func openPlaylist(_ id: String) {
+  /// The destination whose stack the open Playlist's page is pushed on. Home pushes a Playlist on
+  /// its own stack on a phone, so Back returns to Home.
+  var playlistPlace: Destination = .playlists
+
+  func openPlaylist(_ id: String, in place: Destination = .playlists) {
     playlistFailure = nil
     // A page left open from the last Playlist must not be the first thing this one shows.
-    openedSets[.playlists] = nil
-    playlistMembers = .idle
+    openedSets[place] = nil
+    // One Playlist is open at a time. The tab that loses it loses the Set pushed on it too, or
+    // that Set would land on the tab's first page with Back skipping the Playlist.
+    if playlistPlace != place, openedPlaylistId != nil { openedSets[playlistPlace] = nil }
+    playlistPlace = place
     openedPlaylistId = id
+    playlistMembers = lastPlaylistMembers[id].map(Loadable.loaded) ?? .idle
   }
 
   /// Goes to a Playlist's own page from anywhere: Home's folders, the sidebar, or Search.
   func showPlaylist(_ id: String) {
     destination = .playlists
     openPlaylist(id)
-    Task { [weak self] in await self?.loadPlaylistMembers(id) }
+  }
+
+  /// Loads every Playlist's members that are not yet in memory, one Playlist after another, so
+  /// a folder opens on its Sets and their artwork rather than on a placeholder.
+  func prefetchPlaylistMembers() async {
+    guard let client else { return }
+    for playlist in playlistItems where lastPlaylistMembers[playlist.id] == nil {
+      guard !Task.isCancelled else { return }
+      guard let sets = try? await client.library(playlistId: playlist.id) else { continue }
+      // Signed out, or the Playlist was opened and read fresher while this read was out.
+      guard self.client?.token == client.token else { return }
+      guard lastPlaylistMembers[playlist.id] == nil else { continue }
+      lastPlaylistMembers[playlist.id] = sets
+      await ArtworkPrefetch.load(sets.prefix(6).compactMap { SetPresentation.row($0).artwork })
+    }
   }
 
   func closePlaylist() {
@@ -1782,7 +1874,7 @@ final class AppModel {
 
   func loadPlaylistMembers(_ id: String) async {
     guard let client else { return }
-    playlistMembers = .loading
+    if case .loaded = playlistMembers {} else { playlistMembers = .loading }
     do {
       let sets = try await client.library(playlistId: id)
       guard openedPlaylistId == id, !Task.isCancelled else { return }
@@ -1946,16 +2038,23 @@ final class AppModel {
     }
     searchGeneration += 1
     let generation = searchGeneration
-    searchResultsFor = query
     // The Tags come from the library already loaded, so a Tag search asks the service nothing.
     guard !SetPresentation.isTagQuery(query) else {
+      searchResultsFor = query
       search = .loaded([])
       return
     }
-    search = .loading
+    // Results already on screen stay until the next ones arrive, so typing does not flash the
+    // list to placeholders at every pause.
+    let isShowing = if case .loaded = search { true } else { false }
+    if !isShowing {
+      searchResultsFor = query
+      search = .loading
+    }
     do {
       let sets = try await client.library(query: query)
       guard generation == searchGeneration, !Task.isCancelled else { return }
+      searchResultsFor = query
       search = .loaded(sets)
     } catch OrbisError.cancelled {
       guard generation == searchGeneration else { return }
@@ -1995,7 +2094,14 @@ final class AppModel {
   /// Reads every ready Tracklist the device has not loaded yet, a few at a time, so Search can
   /// look inside them. One read per Set and no polling: a pending Tracklist has nothing to match.
   func loadTracklistsForSearch() async {
-    guard let client, case .loaded(let sets) = library else { return }
+    guard case .loaded(let sets) = library else { return }
+    await loadTracklists(sets)
+  }
+
+  /// Fetches the ready Tracklists of `sets` not yet in memory, four at a time, so a page opened
+  /// from them shows its Tracklist from the first frame.
+  func loadTracklists(_ sets: [SavedSet]) async {
+    guard let client else { return }
     let missing = sets.filter { $0.tracklistState == .ready && tracklists[$0.id] == nil }.map(\.id)
     await withTaskGroup(of: (String, Tracklist?).self) { group in
       var pending = missing[...]

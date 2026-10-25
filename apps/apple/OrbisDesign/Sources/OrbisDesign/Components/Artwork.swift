@@ -89,6 +89,8 @@ public struct Artwork: View {
   }
 
   public let url: URL?
+  /// A smaller copy of the same picture, drawn while `url` loads if it is already in memory.
+  public let standIn: URL?
   /// What the placeholder tone is drawn from, usually the title.
   public let seed: String
   public let size: Size
@@ -98,10 +100,11 @@ public struct Artwork: View {
   public let cornerRadius: CGFloat?
 
   public init(
-    url: URL?, seed: String, size: Size = .row, progress: Double? = nil,
+    url: URL?, standIn: URL? = nil, seed: String, size: Size = .row, progress: Double? = nil,
     cornerRadius: CGFloat? = nil
   ) {
     self.url = url
+    self.standIn = standIn
     self.seed = seed
     self.size = size
     self.progress = progress
@@ -156,12 +159,10 @@ public struct Artwork: View {
 
   @ViewBuilder private var image: some View {
     if let url {
-      AsyncImage(url: url) { phase in
-        if let image = phase.image {
-          image.resizable().aspectRatio(contentMode: .fill)
-        } else {
-          placeholder
-        }
+      CachedImage(url: url, standIn: standIn) { image in
+        image.resizable().aspectRatio(contentMode: .fill)
+      } placeholder: {
+        placeholder
       }
     } else {
       placeholder

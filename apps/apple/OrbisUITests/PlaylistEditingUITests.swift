@@ -64,7 +64,10 @@ final class PlaylistEditingUITests: PlaylistJourney {
     )
     capture("playlist-removal-preserves-set")
 
-    app.buttons["playlist-back"].tap()
+    // Only the Mac draws its own back button; iOS pushes the page, and changing tabs leaves it.
+    if app.buttons["playlist-back"].exists {
+      app.buttons["playlist-back"].tap()
+    }
     if app.tabBars.buttons["Library"].waitForExistence(timeout: 5) {
       selectTab("Library", in: app)
     } else {

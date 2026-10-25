@@ -20,6 +20,7 @@ struct SetDetailScreen: View {
           showCreator: { model.showCreator(of: set) },
           length: set.durationSeconds.flatMap { $0 > 0 ? SetPresentation.length($0) : nil },
           artwork: SetPresentation.pageArtwork(set),
+          artworkStandIn: SetPresentation.row(set).artwork,
           failedToName: set.metadataState == "failed",
           dates: SetDetail.Dates(
             imported: SetPresentation.plainDate(set.createdAt),
@@ -35,7 +36,10 @@ struct SetDetailScreen: View {
         ) {
           audioSection(set)
         } tracklist: {
+          // A Tracklist that arrives after the page opened eases the facts below it down,
+          // rather than pushing them in one frame.
           TracklistSection(model: model, set: set)
+            .orbisAnimation(.tracklistArrived, value: model.tracklists[set.id]?.cues.count)
         } management: {
           SetManagementSection(model: model, set: set, isRenaming: $isRenaming)
         }
@@ -88,6 +92,10 @@ struct SetDetailScreen: View {
           playButton(set, isCurrent: isCurrent)
           if model.canPlayFromBeginning(set) { playFromBeginningButton(set) }
           queueActions(set)
+          // Where the sound goes, chosen here rather than only from Now Playing.
+          AirPlayButton(color: Color.orbis.tint)
+            .frame(width: 48, height: 48)
+            .background(Color.orbis.paperRaised, in: .rect(cornerRadius: Radius.row))
         }
         .orbisAnimation(.playbackToggled, value: model.canPlayFromBeginning(set))
         if isCurrent {
@@ -190,8 +198,11 @@ struct SetDetailScreen: View {
       }
       .accessibilityIdentifier("detail-add-to-queue")
     } label: {
-      Label("Play Next", systemImage: "text.badge.plus")
-        .albumButton()
+      ViewThatFits(in: .horizontal) {
+        Label("Play Next", systemImage: "text.badge.plus").fixedSize()
+        Label("Play Next", systemImage: "text.badge.plus").labelStyle(.iconOnly)
+      }
+      .albumButton(fills: false)
     } primaryAction: {
       Task { await model.playNext(set.id) }
     }

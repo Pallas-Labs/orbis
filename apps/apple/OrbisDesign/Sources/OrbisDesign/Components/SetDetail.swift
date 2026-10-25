@@ -10,6 +10,8 @@ public struct SetDetail: View {
   public let showCreator: (() -> Void)?
   public let length: String?
   public let artwork: URL?
+  /// The smaller artwork a card or row drew, shown while `artwork` loads.
+  public let artworkStandIn: URL?
   /// The service could not name this Set, so the name is the caller's to supply or the
   /// service's to try again.
   public let failedToName: Bool
@@ -75,7 +77,7 @@ public struct SetDetail: View {
   public init(
     title: String, source: String, creator: String? = nil, showCreator: (() -> Void)? = nil,
     length: String? = nil,
-    artwork: URL? = nil,
+    artwork: URL? = nil, artworkStandIn: URL? = nil,
     failedToName: Bool = false,
     dates: Dates? = nil, statistics: Statistics? = nil, retryName: @escaping () -> Void = {},
     @ViewBuilder transport: () -> some View = { EmptyView() },
@@ -88,6 +90,7 @@ public struct SetDetail: View {
     self.showCreator = showCreator
     self.length = length
     self.artwork = artwork
+    self.artworkStandIn = artworkStandIn
     self.failedToName = failedToName
     self.dates = dates
     self.statistics = statistics
@@ -183,7 +186,7 @@ public struct SetDetail: View {
       // The glow belongs to the header, so it scrolls away with it rather than staying behind the
       // tracklist. One screen tall, and raised under the bar, where the content does not reach.
       .background(alignment: .top) {
-        ArtworkGlow(url: artwork, reach: 0.6)
+        ArtworkGlow(url: artwork, standIn: artworkStandIn, reach: 0.6)
           .containerRelativeFrame(.vertical) { length, _ in length + topInset }
           .offset(y: -topInset)
       }
@@ -218,7 +221,7 @@ public struct SetDetail: View {
   }
 
   private var cover: some View {
-    Artwork(url: artwork, seed: title, size: .header)
+    Artwork(url: artwork, standIn: artworkStandIn, seed: title, size: .header)
       .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
   }
 

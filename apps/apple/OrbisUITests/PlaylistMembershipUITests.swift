@@ -121,6 +121,51 @@ final class PlaylistMembershipUITests: PlaylistJourney {
     try record("add-to-playlist", steps)
   }
 
+  /// A folder on Home opens its Playlist on Home's own stack, so Back returns to Home rather than
+  /// to the Playlists tab. A Set opened from that page goes back to the Playlist first.
+  func testHomePlaylistReturnsToHome() throws {
+    let service = try LaneService()
+    let set = try service.saveSet(title: unique("Home folder"), url: youtubeURL())
+    let playlist = try service.createPlaylist(named: unique("From Home"))
+    _ = try service.setMembers(of: playlist.id, to: [set.id])
+
+    let app = try launch()
+    selectTab("Home", in: app)
+    // The folders sit below the rails, and a lazy grid lists only what is on screen.
+    let folder = app.buttons["playlist-card-\(playlist.id)"]
+    var swipes = 0
+    while !(folder.exists && folder.isHittable), swipes < 8 {
+      app.swipeUp()
+      swipes += 1
+    }
+    XCTAssertTrue(folder.waitForExistence(timeout: 15), "Home must show the Playlist's folder")
+    folder.tap()
+
+    let member = app.descendants(matching: .any)["playlist-member-\(set.id)"]
+    XCTAssertTrue(
+      member.waitForExistence(timeout: 30),
+      "the folder must open its Playlist's page\n\(app.debugDescription)")
+    XCTAssertTrue(app.tabBars.buttons["Home"].isSelected, "the Playlist must open inside Home")
+    capture("home-playlist-open")
+
+    tapAtCentre(of: member, in: app)
+    XCTAssertTrue(
+      app.staticTexts["detail-title"].waitForExistence(timeout: 30),
+      "a member must open its Set's page\n\(app.debugDescription)")
+    app.navigationBars.buttons.firstMatch.tap()
+    XCTAssertTrue(
+      member.waitForExistence(timeout: 15),
+      "Back from the Set must return to the Playlist\n\(app.debugDescription)")
+
+    app.navigationBars.buttons.firstMatch.tap()
+    XCTAssertTrue(
+      folder.waitForExistence(timeout: 15),
+      "Back from the Playlist must return to Home\n\(app.debugDescription)")
+    XCTAssertTrue(app.tabBars.buttons["Home"].isSelected, "Back must stay on Home")
+    XCTAssertFalse(member.exists, "the Playlist's page must be gone")
+    capture("home-playlist-back")
+  }
+
   func testNoPlaylistsInvitesCreation() throws {
     let service = try LaneService()
     for playlist in try service.playlists() {

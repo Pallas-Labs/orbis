@@ -288,6 +288,8 @@ enum SetPresentation {
   static func length(_ seconds: Int) -> String {
     let hours = seconds / 3600
     let minutes = (seconds % 3600) / 60
+    // Under a minute, the seconds: "0m" reads as nothing left.
+    if hours == 0, minutes == 0 { return "\(seconds)s" }
     return hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
   }
 
