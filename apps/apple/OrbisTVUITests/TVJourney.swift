@@ -182,6 +182,75 @@ final class TVJourney: XCTestCase {
     capture("tv-home-set-page")
   }
 
+  /// An Apple Music Set on the TV (ADR 0021). MusicKit does not play in the simulator, which has no
+  /// Apple Music subscription either, so the journey proves the path a Person without access or a
+  /// subscription takes: the Set page shows the Tracklist and Play, the first Play asks for Apple
+  /// Music access, and once the answer is no, the page says to open the album in Apple Music
+  /// instead of offering Play. Playing a real mix is the device check on the issue.
+  func testAnAppleMusicSetAsksOnFirstPlayThenSaysToOpenAppleMusic() throws {
+    // The lane's second Person plays this one, so the host's Library, which the other journey
+    // reads, stays as seeded.
+    let service = try LaneService.settingsPerson()
+    let seeded = try service.saveAppleMusicSet(title: "Apple Music DJ mix")
+    addTeardownBlock { try? service.removeSet(seeded.id) }
+    // Every run asks afresh, whatever an earlier run answered on this simulator.
+    XCUIApplication().resetAuthorizationStatus(for: .mediaLibrary)
+    let app = launchOrbis(address: service.address, token: service.token)
+    self.app = app
+    let remote = XCUIRemote.shared
+
+    XCTAssertTrue(app.descendants(matching: .any)["tv-home"].waitForExistence(timeout: 30))
+    remote.press(.right)
+    XCTAssertTrue(app.descendants(matching: .any)["tv-library"].waitForExistence(timeout: 15))
+    let tile = app.buttons["tv-set-\(seeded.id)"]
+    XCTAssertTrue(
+      tile.waitForExistence(timeout: 30), "The Library must show the Apple Music Set\n\(app.debugDescription)")
+    XCTAssertTrue(moveFocus(to: tile, pressing: .down, limit: 4), "The Apple Music Set's tile must take focus")
+    remote.press(.select)
+
+    XCTAssertTrue(app.descendants(matching: .any)["tv-set-page"].waitForExistence(timeout: 30))
+    let thirdSong = app.descendants(matching: .any)["cue-2"]
+    XCTAssertTrue(
+      thirdSong.waitForExistence(timeout: 30),
+      "The Set page must show the album's songs as the Tracklist\n\(app.debugDescription)")
+    let play = app.buttons["detail-play-toggle"]
+    _ = play.waitForExistence(timeout: 10)
+    XCTAssertTrue(waitUntilSettled(thirdSong), "The Set page must come to rest")
+    capture("tv-apple-music-01-set-page")
+    XCTAssertTrue(play.exists, "An Apple Music Set offers Play before access is asked\n\(app.debugDescription)")
+    XCTAssertFalse(
+      app.descendants(matching: .any)["detail-download"].exists, "An Apple Music Set never offers Download")
+    XCTAssertTrue(moveFocus(to: play, pressing: .up, limit: 4), "Play must take focus on the Set page")
+    remote.press(.select)
+
+    // The system asks for Apple Music access. The answer is no, as for a Person who refuses; a
+    // simulator that answers without asking reads as no subscription and lands in the same place.
+    var asked = false
+    let refusals = [app, XCUIApplication(bundleIdentifier: "com.apple.PineBoard")].map {
+      $0.alerts.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Don'")).firstMatch
+    }
+    if waitUntil(timeout: 15, { refusals.contains { $0.exists } }) {
+      asked = true
+      capture("tv-apple-music-02-access-prompt")
+      let button = refusals.first { $0.exists }!
+      XCTAssertTrue(
+        moveFocus(to: button, pressing: .down, limit: 3) || moveFocus(to: button, pressing: .up, limit: 3),
+        "Don't Allow must take focus")
+      remote.press(.select)
+    }
+
+    let note = app.descendants(matching: .any)["detail-apple-music-note"]
+    XCTAssertTrue(
+      note.waitForExistence(timeout: 30),
+      "Without access the page must say to open Apple Music\n\(app.debugDescription)")
+    XCTAssertFalse(play.exists, "Without access the page offers no Play")
+    XCTAssertTrue(thirdSong.exists, "The Tracklist stays on the page")
+    XCTAssertTrue(waitUntilSettled(note), "The Set page must come to rest")
+    capture("tv-apple-music-03-open-apple-music")
+    try record(
+      "tv-apple-music-journey", ["setId": seeded.id, "askedForAccess": asked, "note": note.label])
+  }
+
   private func moveFocus(to element: XCUIElement, pressing button: XCUIRemote.Button, limit: Int) -> Bool {
     pressUntil(button, limit: limit) { element.exists && element.hasFocus }
   }

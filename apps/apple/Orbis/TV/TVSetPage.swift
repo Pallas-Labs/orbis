@@ -22,6 +22,7 @@
         if let set = model.savedSet(setId) {
           page(set)
             .task(id: setId) {
+              if set.source == .appleMusic { await model.checkAppleMusicAccess() }
               if set.tracklistState != .none { await model.loadTracklist(setId) }
             }
         } else if case .loaded = model.library {
@@ -109,10 +110,12 @@
     }
 
     /// Play and the queue actions, or the Download when the audio is not kept yet; the service
-    /// does the work, so the TV may ask.
+    /// does the work, so the TV may ask. An Apple Music Set this TV cannot play says why instead.
     @ViewBuilder private func actions(_ set: SavedSet) -> some View {
       HStack(spacing: 20) {
-        if set.downloadState == "ready" {
+        if set.source == .appleMusic, !model.appleMusicAccess.offersPlay {
+          appleMusicNote(set)
+        } else if set.isPlayable {
           playButton(set)
           if model.canPlayFromBeginning(set) {
             Button {
@@ -141,7 +144,24 @@
           downloadButtons(set)
         }
       }
-      .orbisAnimation(.downloadProgressed, value: set.downloadState == "ready")
+      .orbisAnimation(.downloadProgressed, value: set.isPlayable)
+    }
+
+    /// What an Apple Music Set shows in place of Play when this TV cannot play it. The TV has no
+    /// browser to open the album in, so the words send the person to the Apple Music app. It is
+    /// focusable so that VoiceOver reaches it.
+    private func appleMusicNote(_ set: SavedSet) -> some View {
+      Label(
+        model.appleMusicAccess == .noSubscription
+          ? "Playing this Set in Orbis needs an Apple Music subscription. Open the album in the Apple Music app."
+          : "Orbis needs access to Apple Music to play this Set. Allow it in Settings, or open the album in the "
+            + "Apple Music app.",
+        systemImage: SetPresentation.sourceSymbol(set.source)
+      )
+      .font(.orbis.body)
+      .foregroundStyle(.secondary)
+      .focusable()
+      .accessibilityIdentifier("detail-apple-music-note")
     }
 
     private func playButton(_ set: SavedSet) -> some View {
