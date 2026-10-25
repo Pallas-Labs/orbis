@@ -70,7 +70,7 @@ const SetPage = ({
   const router = useRouter();
   const player = usePlayer();
   const [problem, setProblem] = useState<string | null>(null);
-  const [retrying, setRetrying] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const downloadProgress = useDownloadProgress(
     session,
     set === null ? [] : [set]
@@ -113,10 +113,10 @@ const SetPage = ({
       await router.invalidate();
     }
   };
-  const retry = async () => {
-    setRetrying(true);
+  const refresh = async () => {
+    setRefreshing(true);
     const result = await retryTracklist(session, set.id);
-    setRetrying(false);
+    setRefreshing(false);
     setProblem(result.ok ? null : FAILURE_MESSAGES[result.failure]);
     if (result.ok) {
       await router.invalidate();
@@ -140,8 +140,8 @@ const SetPage = ({
         currentSeconds={
           player.playing?.set.id === set.id ? player.elapsed : null
         }
-        onRetry={() => {
-          retry();
+        onRefresh={() => {
+          refresh();
         }}
         onSeek={
           set.source === "apple-music"
@@ -150,7 +150,7 @@ const SetPage = ({
                 play(seconds);
               }
         }
-        retrying={retrying}
+        refreshing={refreshing}
         state={tracklist.value.state}
       />
     );
@@ -189,7 +189,6 @@ const SetPage = ({
       </header>
       {problem === null ? null : <p role="alert">{problem}</p>}
       {tracklistContent}
-      {retrying ? <p role="status">Retrying Tracklist…</p> : null}
     </main>
   );
 };

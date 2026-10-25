@@ -21,34 +21,43 @@ const timeLabel = (seconds: number): string => {
 export const Tracklist = ({
   cues,
   currentSeconds,
-  onRetry,
+  onRefresh,
   onSeek,
-  retrying,
+  refreshing,
   state,
 }: {
   readonly cues: readonly Cue[];
   readonly currentSeconds: number | null;
-  readonly onRetry: () => void;
+  /** Asks Versos to scan the Set again. */
+  readonly onRefresh: () => void;
   /** Absent when this page cannot play the Set, so no Cue is a button. */
   readonly onSeek?: ((seconds: number) => void) | undefined;
-  readonly retrying: boolean;
+  readonly refreshing: boolean;
   readonly state: "pending" | "ready" | "none" | "failed";
 }) => {
-  if (state === "pending" || state === "none") {
-    return null;
-  }
-  if (state === "failed") {
+  const refresh =
+    state === "pending" ? null : (
+      <Button
+        disabled={refreshing}
+        onClick={onRefresh}
+        size="sm"
+        variant="outline"
+      >
+        Refresh tracklist
+      </Button>
+    );
+  if (cues.length === 0) {
+    if (state === "pending") {
+      return <p role="status">Finding tracklist…</p>;
+    }
     return (
       <section aria-label="Tracklist" className="flex items-center gap-3">
-        <p className="text-muted-foreground text-sm">Tracklist unavailable.</p>
-        <Button
-          disabled={retrying}
-          onClick={onRetry}
-          size="sm"
-          variant="outline"
-        >
-          Retry
-        </Button>
+        <p className="text-muted-foreground text-sm">
+          {state === "failed"
+            ? "Tracklist unavailable."
+            : "No tracklist found."}
+        </p>
+        {refresh}
       </section>
     );
   }
@@ -67,9 +76,13 @@ export const Tracklist = ({
       aria-labelledby="tracklist-heading"
       className="flex flex-col gap-4"
     >
-      <h2 className="text-lg font-medium" id="tracklist-heading">
-        Tracklist
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-medium" id="tracklist-heading">
+          Tracklist
+        </h2>
+        {refresh}
+      </div>
+      {state === "pending" ? <p role="status">Finding tracklist…</p> : null}
       <ol aria-label="Tracklist" className="flex flex-col gap-1">
         {cues.map((cue) => {
           const active = cue.position === currentPosition;

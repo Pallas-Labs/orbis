@@ -16,6 +16,8 @@ export { VersosError } from "./versos-error.js";
 
 export interface TracklistRequest {
   readonly description: string | null;
+  /** Asks Versos to scan the Set again instead of returning its stored answer. */
+  readonly force?: true;
   readonly source: SetSource;
   readonly url: string;
 }

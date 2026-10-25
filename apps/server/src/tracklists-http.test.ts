@@ -14,6 +14,7 @@ import { createTestApp as createApp } from "./test-app.js";
 import { request } from "./test-http.js";
 import { runClaimedTracklist } from "./tracklists.js";
 import { Versos, VersosError } from "./versos.js";
+import type { TracklistPoll } from "./versos.js";
 import type { SourceDetails } from "./ytdlp-metadata.js";
 
 const DETAILS: SourceDetails = {
@@ -51,7 +52,8 @@ const CUES = [
 
 const start = async (
   versos: ReturnType<typeof Versos.layerOf>,
-  onEvent?: (event: WideEvent) => void
+  onEvent?: (event: WideEvent) => void,
+  details: () => SourceDetails = () => DETAILS
 ) => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-tracklists-"));
   const databasePath = path.join(directory, "library.sqlite");
@@ -59,7 +61,7 @@ const start = async (
     databasePath,
     logging: { onEvent: (event) => onEvent?.(event), silent: true },
     metadata: Metadata.layerOf({
-      details: () => Effect.succeed(DETAILS),
+      details: () => Effect.sync(details),
       enrich: () => Effect.die("title supplied by caller"),
     }),
     versos,
@@ -235,6 +237,144 @@ test("provider failure preserves the Set and retry replaces failure with Cues", 
       state: "ready",
     });
   } finally {
+    await server.dispose();
+  }
+});
+
+test("a refresh reads the source again and asks Versos to scan the new description", async () => {
+  const asked: unknown[] = [];
+  let answer: TracklistPoll = { state: "none" };
+  let details = DETAILS;
+  const server = await start(
+    Versos.layerOf({
+      poll: () => Effect.succeed(answer),
+      request: (input) => {
+        asked.push(input);
+        return Effect.succeed({ requestId: `job-${asked.length}` });
+      },
+    }),
+    undefined,
+    () => details
+  );
+  try {
+    const saved = await save(server.app);
+    const id = String(saved.json().id);
+    await waitForState(server.app, id, "none");
+    details = { ...DETAILS, description: "Tracklist\n00:00 New song" };
+    answer = { cues: CUES, state: "ready" };
+    const refreshed = await request(server.app, {
+      method: "POST",
+      url: `/sets/${id}/tracklist/retry`,
+    });
+    expect(refreshed.statusCode).toBe(200);
+    const ready = await waitForState(server.app, id, "ready");
+    expect(ready.json()).toEqual({ cues: CUES, state: "ready" });
+    expect(asked).toEqual([
+      {
+        description: DETAILS.description,
+        source: "youtube",
+        url: "https://www.youtube.com/watch?v=abcdefghijk",
+      },
+      {
+        description: "Tracklist\n00:00 New song",
+        force: true,
+        source: "youtube",
+        url: "https://www.youtube.com/watch?v=abcdefghijk",
+      },
+    ]);
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("a refresh that finds no Cues or fails keeps the Set's Tracklist", async () => {
+  let requests = 0;
+  let runs = 0;
+  let refresh: "none" | "fail" | null = null;
+  const server = await start(
+    Versos.layerOf({
+      poll: () =>
+        Effect.succeed(
+          refresh === "none"
+            ? { state: "none" as const }
+            : { cues: CUES, state: "ready" as const }
+        ),
+      request: () => {
+        requests += 1;
+        return refresh === "fail"
+          ? Effect.fail(new VersosError({ reason: "unavailable" }))
+          : Effect.succeed({ requestId: `job-${requests}` });
+      },
+    }),
+    (event) => {
+      if (event.job === "tracklist") {
+        runs += 1;
+      }
+    }
+  );
+  try {
+    const saved = await save(server.app);
+    const id = String(saved.json().id);
+    await waitForState(server.app, id, "ready");
+    await eventually(() => Promise.resolve(runs === 1 ? true : null));
+    const refreshTo = async (outcome: "none" | "fail", runsAfter: number) => {
+      refresh = outcome;
+      const refreshed = await request(server.app, {
+        method: "POST",
+        url: `/sets/${id}/tracklist/retry`,
+      });
+      expect(refreshed.statusCode).toBe(200);
+      await eventually(() => Promise.resolve(runs === runsAfter ? true : null));
+      const kept = await read(server.app, id);
+      expect(kept.json()).toEqual({ cues: CUES, state: "ready" });
+    };
+    await refreshTo("none", 2);
+    await refreshTo("fail", 3);
+    expect(requests).toBe(3);
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("a refresh while one is pending starts no second Versos request", async () => {
+  let requests = 0;
+  let blocked = Promise.withResolvers<null>();
+  blocked.resolve(null);
+  const server = await start(
+    Versos.layerOf({
+      poll: () => Effect.succeed({ cues: CUES, state: "ready" }),
+      request: () => {
+        requests += 1;
+        return Effect.promise(() => blocked.promise).pipe(
+          Effect.as({ requestId: `job-${requests}` })
+        );
+      },
+    })
+  );
+  try {
+    const saved = await save(server.app);
+    const id = String(saved.json().id);
+    await waitForState(server.app, id, "ready");
+    blocked = Promise.withResolvers<null>();
+    const first = await request(server.app, {
+      method: "POST",
+      url: `/sets/${id}/tracklist/retry`,
+    });
+    expect(first.json().state).toBe("pending");
+    await eventually(() => Promise.resolve(requests === 2 ? true : null));
+    const second = await request(server.app, {
+      method: "POST",
+      url: `/sets/${id}/tracklist/retry`,
+    });
+    expect(second.statusCode).toBe(200);
+    expect(second.json()).toEqual({ cues: CUES, state: "pending" });
+    await Bun.sleep(25);
+    expect(requests).toBe(2);
+    blocked.resolve(null);
+    const ready = await waitForState(server.app, id, "ready");
+    expect(ready.json()).toEqual({ cues: CUES, state: "ready" });
+  } finally {
+    blocked.resolve(null);
     await server.dispose();
   }
 });

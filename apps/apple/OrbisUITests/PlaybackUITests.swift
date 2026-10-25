@@ -211,6 +211,37 @@ final class PlaybackUITests: LibraryJourney {
     capture("tracklist-now-playing")
   }
 
+  func testRefreshKeepsAReadyTracklist() throws {
+    let service = try LaneService()
+    let seeded = try service.saveReadySet(
+      title: "Refresh journey", url: "https://www.youtube.com/watch?v=refresh0001")
+    try service.seedTracklist(seeded.id)
+    let app = try launch()
+    openLibrary(in: app)
+    let row = app.descendants(matching: .any)["set-row-\(seeded.id)"]
+    XCTAssertTrue(row.waitForExistence(timeout: 60))
+    tapAtCentre(of: row, in: app)
+
+    XCTAssertTrue(app.descendants(matching: .any)["tracklist"].waitForExistence(timeout: 30))
+    let refresh = app.buttons["tracklist-refresh"]
+    for _ in 0..<4 {
+      if refresh.isHittable { break }
+      app.swipeUp()
+    }
+    XCTAssertTrue(refresh.isHittable)
+    capture("tracklist-refresh")
+
+    refresh.tap()
+    // The lane's service has no Versos, so the scan finds nothing and the Set keeps its Cues.
+    let pending = app.descendants(matching: .any)["tracklist-pending"]
+    let settled = XCTNSPredicateExpectation(
+      predicate: NSPredicate(format: "exists == false"), object: pending)
+    XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 30), .completed)
+    XCTAssertTrue(refresh.waitForExistence(timeout: 10))
+    XCTAssertTrue(app.buttons["cue-1"].exists)
+    capture("tracklist-after-refresh")
+  }
+
   func testAColdCueNearTheEndStartsAtItsTimestamp() throws {
     let service = try LaneService()
     let seeded = try service.saveReadySet(

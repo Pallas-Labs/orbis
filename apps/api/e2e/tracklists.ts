@@ -21,6 +21,11 @@ const CUES = Array.from({ length: 43 }, (_, position) => ({
   startSeconds: position * 120,
   title: `Track ${position + 1}`,
 }));
+// A refresh asks Versos to scan again, and the new scan finds one more Cue.
+const REFRESHED_CUES = [
+  ...CUES,
+  { ...CUES[0], position: CUES.length, startSeconds: CUES.length * 120 },
+];
 
 const artifact = path.resolve(
   import.meta.dir,
@@ -28,7 +33,10 @@ const artifact = path.resolve(
   crypto.randomUUID()
 );
 await mkdir(artifact, { recursive: true });
-const TracklistRequest = Schema.Struct({ url: Schema.String });
+const TracklistRequest = Schema.Struct({
+  force: Schema.optional(Schema.Literal(true)),
+  url: Schema.String,
+});
 const decodeTracklistRequest = Schema.decodeUnknownSync(TracklistRequest);
 
 const Tracklist = Schema.Struct({
@@ -38,6 +46,7 @@ const Tracklist = Schema.Struct({
 const decodeTracklist = Schema.decodeUnknownSync(Tracklist);
 
 const requestedAt = new Map<string, number>();
+const forced = new Set<string>();
 const calls: string[] = [];
 const versos = Bun.serve({
   fetch: async (request) => {
@@ -46,6 +55,9 @@ const versos = Bun.serve({
     if (request.method === "POST" && url.pathname === "/orbis/tracklists") {
       const body = decodeTracklistRequest(await request.json());
       requestedAt.set(body.url, Date.now());
+      if (body.force) {
+        forced.add(body.url);
+      }
       return Response.json({ requestId: body.url });
     }
     const requestId = decodeURIComponent(
@@ -58,7 +70,10 @@ const versos = Bun.serve({
     return Response.json(
       Date.now() - started < READY_AFTER_MS
         ? { state: "pending" }
-        : { cues: CUES, state: "ready" }
+        : {
+            cues: forced.has(requestId) ? REFRESHED_CUES : CUES,
+            state: "ready",
+          }
     );
   },
   port: 0,
@@ -123,11 +138,29 @@ try {
   const second = await call("/sets/second-set/tracklist/retry", "POST");
   assert.equal(second.status, 200, second.text);
   await waitForReady("second-set");
+  // A ready Set keeps its Cues while Versos scans it again, then takes the new answer.
+  const refreshStartedAt = Date.now();
+  const refreshed = await call("/sets/slow-set/tracklist/retry", "POST");
+  assert.equal(refreshed.status, 200, refreshed.text);
+  const pending = decodeTracklist(JSON.parse(refreshed.text));
+  assert.equal(pending.state, "pending");
+  assert.equal(pending.cues.length, CUES.length);
+  const again = await call("/sets/slow-set/tracklist/retry", "POST");
+  assert.equal(again.status, 200, again.text);
+  const refreshedReady = await waitForReady("slow-set");
+  assert.equal(refreshedReady.cues.length, REFRESHED_CUES.length);
+  assert.ok(forced.has("https://www.youtube.com/watch?v=slow-set"));
+  assert.equal(
+    calls.filter((entry) => entry.endsWith("POST /orbis/tracklists")).length,
+    3
+  );
   await writeFile(
     path.join(artifact, "result.json"),
     `${JSON.stringify(
       {
-        readyAfterMs: Date.now() - startedAt,
+        readyAfterMs: refreshStartedAt - startedAt,
+        refreshReadyAfterMs: Date.now() - refreshStartedAt,
+        refreshedCues: refreshedReady.cues.length,
         setsReady: ["slow-set", "second-set"],
         versosAnsweredAfterMs: READY_AFTER_MS,
       },

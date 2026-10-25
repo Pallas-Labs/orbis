@@ -286,7 +286,8 @@ private struct TracklistSection: View {
     let tracklist = model.tracklists[set.id]
     let state = tracklist?.state ?? set.tracklistState
     switch state {
-    case .ready:
+    case .ready, .pending:
+      // A refresh keeps the Cues on screen while Versos scans the Set again.
       if let cues = tracklist?.cues, !cues.isEmpty {
         let selectedPosition =
           model.audioPlayer.currentSetId == set.id
@@ -297,15 +298,39 @@ private struct TracklistSection: View {
             cueRow(cue, selected: cue.position == selectedPosition)
             Divider().padding(.leading, 38)
           }
-          Text(cues.count == 1 ? "1 track" : "\(cues.count) tracks")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .padding(.top, 12)
+          HStack {
+            Text(cues.count == 1 ? "1 track" : "\(cues.count) tracks")
+              .font(.subheadline)
+              .foregroundStyle(.secondary)
+            Spacer()
+            if state == .ready { refreshButton }
+          }
+          .padding(.top, 12)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("tracklist")
+      } else if state == .ready {
+        refreshButton
       }
+      if state == .pending {
+        HStack(spacing: 8) {
+          ProgressView()
+            .controlSize(.small)
+          Text("Finding tracklist…")
+            .foregroundStyle(.secondary)
+        }
+        .font(.orbis.detail)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("tracklist-pending")
+      }
+    case .none:
+      HStack(spacing: 8) {
+        Text("No tracklist found")
+          .foregroundStyle(.secondary)
+        refreshButton
+      }
+      .font(.orbis.detail)
     case .failed:
       HStack(spacing: 8) {
         Text("Tracklist unavailable")
@@ -314,9 +339,14 @@ private struct TracklistSection: View {
       }
       .font(.orbis.detail)
       .accessibilityIdentifier("tracklist-retry")
-    case .pending, .none:
-      EmptyView()
     }
+  }
+
+  /// Asks Versos to scan the Set again, for a tracklist the upload gained after it was saved.
+  private var refreshButton: some View {
+    Button("Refresh tracklist") { Task { await model.retryTracklist(set.id) } }
+      .font(.orbis.detail)
+      .accessibilityIdentifier("tracklist-refresh")
   }
 
   /// The cue a paused Set will resume inside, so the page shows where the person stopped.

@@ -23,7 +23,7 @@ const pollSchedule = Schedule.exponential("250 millis").pipe(
 );
 const RUN_LEASE_MS = 5 * 60_000;
 
-interface TracklistClaim {
+export interface TracklistClaim {
   readonly description: string | null;
   readonly id: string;
   readonly source: (typeof sets.$inferSelect)["source"];
@@ -37,6 +37,11 @@ const hasReference = (db: typeof Database.Service, id: string) =>
     UNION ALL SELECT 1 AS present FROM ${playlistSets} WHERE ${playlistSets.setId} = ${id}
     UNION ALL SELECT 1 AS present FROM ${queueEntries} WHERE ${queueEntries.setId} = ${id}
     LIMIT 1
+  `);
+
+const hasCues = (db: typeof Database.Service, id: string) =>
+  db.get<{ readonly present: number }>(sql`
+    SELECT 1 AS present FROM ${setCues} WHERE ${setCues.setId} = ${id} LIMIT 1
   `);
 
 export const readTracklist = Effect.fn("Tracklists.read")((id: string) =>
@@ -116,12 +121,17 @@ const finishTracklist = Effect.fn("Tracklists.finishTracklist")(
     const db = yield* Database;
     return yield* db.transaction((tx) =>
       Effect.gen(function* finish() {
+        // Only an answer with Cues replaces a Set's Cues, so a refresh that finds nothing
+        // leaves the Tracklist the Set already had.
+        const kept =
+          (result.state === "none" || result.cues.length === 0) &&
+          Boolean(yield* hasCues(tx, claim.id));
         const [owned] = yield* tx
           .update(sets)
           .set({
             tracklistRunId: null,
             tracklistRunStartedAt: null,
-            tracklistState: result.state,
+            tracklistState: kept ? "ready" : result.state,
           })
           .where(
             and(eq(sets.id, claim.id), eq(sets.tracklistRunId, claim.token))
@@ -137,6 +147,9 @@ const finishTracklist = Effect.fn("Tracklists.finishTracklist")(
             .where(eq(sets.id, claim.id));
           yield* tx.delete(setCues).where(eq(setCues.setId, claim.id));
           return false;
+        }
+        if (kept) {
+          return true;
         }
         yield* tx.delete(setCues).where(eq(setCues.setId, claim.id));
         if (result.state === "ready") {
@@ -162,24 +175,34 @@ const releaseClaim = Effect.fn("Tracklists.releaseClaim")(
       .set({
         tracklistRunId: null,
         tracklistRunStartedAt: null,
-        tracklistState: state,
+        // A run that ends without an answer leaves a Set's existing Cues ready.
+        tracklistState: sql`CASE WHEN EXISTS (
+          SELECT 1 FROM ${setCues} WHERE ${setCues.setId} = ${claim.id}
+        ) THEN 'ready' ELSE ${state} END`,
       })
       .where(and(eq(sets.id, claim.id), eq(sets.tracklistRunId, claim.token)));
   }
 );
 
+/**
+ * Asks Versos for the claimed Set's Tracklist. A refresh passes `reread`, which reads the
+ * source's description again, and Versos scans the Set again instead of returning its stored
+ * answer.
+ */
 export const runClaimedTracklist = Effect.fn("Tracklists.runClaimed")(
-  (claim: TracklistClaim) =>
+  (claim: TracklistClaim, reread?: Effect.Effect<string | null>) =>
     Effect.gen(function* runClaimedTracklistEffect() {
       const versos = yield* Versos;
-      if (!claim.description?.trim()) {
+      const description = reread ? yield* reread : claim.description;
+      if (!description?.trim()) {
         return (yield* finishTracklist(claim, { state: "none" }))
           ? "none"
           : "pending";
       }
       const requested = yield* Effect.result(
         versos.request({
-          description: claim.description,
+          description,
+          ...(reread && { force: true }),
           source: claim.source,
           url: claim.url,
         })
