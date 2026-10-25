@@ -117,6 +117,20 @@ struct LaneService {
     try seed("late-tracklist/\(id)")
   }
 
+  /// Saves an Apple Music album link. The lane's service reads the album from the recorded answer
+  /// in `apps/server/src/fixtures/apple-music`, so the Set has its length and Tracklist, and no
+  /// Retained Audio.
+  func saveAppleMusicSet(title: String) throws -> Set {
+    try saveSet(title: title, url: "https://music.apple.com/us/album/dj-kicks-dj-mix/1046502556")
+  }
+
+  /// Removes a Set from this Person's Library, so a journey's own Set does not change the Library
+  /// the journeys after it see. Answers the HTTP status.
+  @discardableResult
+  func removeSet(_ id: String) throws -> Int {
+    try status("DELETE", "sets/\(id)", nil)
+  }
+
   func audioState(_ id: String) throws -> AudioState {
     try send("GET", "sets/\(id)/audio/state", nil)
   }

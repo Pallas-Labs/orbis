@@ -9,6 +9,7 @@ struct SetDetailScreen: View {
   @Bindable var model: AppModel
   let setId: String
   @State private var isRenaming = false
+  @Environment(\.openURL) private var openURL
 
   var body: some View {
     Group {
@@ -48,6 +49,7 @@ struct SetDetailScreen: View {
         .toolbarTitleDisplayMode(.inline)
         .accessibilityIdentifier("set-detail")
         .task(id: setId) {
+          if set.source == .appleMusic { await model.checkAppleMusicAccess() }
           if set.tracklistState != .none { await model.loadTracklist(setId) }
         }
       } else {
@@ -79,13 +81,14 @@ struct SetDetailScreen: View {
   private func audioSection(_ set: SavedSet) -> some View {
     // When the audio arrives the capsule grows into the player rather than being swapped for it.
     Group { audioControl(set) }
-      .orbisAnimation(.downloadProgressed, value: set.downloadState == "ready")
+      .orbisAnimation(.downloadProgressed, value: set.isPlayable)
   }
 
   @ViewBuilder
   private func audioControl(_ set: SavedSet) -> some View {
-    switch set.downloadState {
-    case "ready":
+    if set.source == .appleMusic, !model.appleMusicAccess.offersPlay {
+      openInAppleMusic(set)
+    } else if set.isPlayable {
       let isCurrent = model.audioPlayer.currentSetId == set.id
       VStack(spacing: 12) {
         HStack(spacing: 12) {
@@ -114,17 +117,40 @@ struct SetDetailScreen: View {
         }
       }
       .transition(.opacity.combined(with: .scale(0.96, anchor: .top)))
-    default:
-      if set.source.isDownloadable {
-        DownloadCapsule(
-          phase: SetPresentation.downloadPhase(set.downloadState, live: model.audioStates[set.id]),
-          start: { Task { await model.downloadAudio(set.id) } },
-          cancel: { Task { await model.cancelAudioDownload(set.id) } }
-        )
-        .frame(maxWidth: .infinity)
-        .transition(.opacity.combined(with: .scale(0.96, anchor: .top)))
-      }
+    } else if set.source.isDownloadable {
+      DownloadCapsule(
+        phase: SetPresentation.downloadPhase(set.downloadState, live: model.audioStates[set.id]),
+        start: { Task { await model.downloadAudio(set.id) } },
+        cancel: { Task { await model.cancelAudioDownload(set.id) } }
+      )
+      .frame(maxWidth: .infinity)
+      .transition(.opacity.combined(with: .scale(0.96, anchor: .top)))
     }
+  }
+
+  /// What an Apple Music Set offers in place of Play when this device cannot play it: the album in
+  /// Apple Music, and why. The Tracklist below still shows what the mix holds.
+  private func openInAppleMusic(_ set: SavedSet) -> some View {
+    VStack(spacing: 8) {
+      Button {
+        if let url = SetPresentation.sourceURL(set) { openURL(url) }
+      } label: {
+        Label("Open in Apple Music", systemImage: SetPresentation.sourceSymbol(set.source))
+          .albumButton()
+      }
+      .buttonStyle(.plain)
+      .accessibilityIdentifier("detail-open-apple-music")
+      Text(
+        model.appleMusicAccess == .noSubscription
+          ? "Playing this Set in Orbis needs an Apple Music subscription."
+          : "Orbis needs access to Apple Music to play this Set. You can allow it in Settings."
+      )
+      .font(.orbis.detail)
+      .foregroundStyle(.secondary)
+      .multilineTextAlignment(.center)
+      .accessibilityIdentifier("detail-apple-music-note")
+    }
+    .transition(.opacity.combined(with: .scale(0.96, anchor: .top)))
   }
 
   /// Play, the way an album page offers it: one wide button that starts the Set, resumes it, or

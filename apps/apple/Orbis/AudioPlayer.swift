@@ -19,7 +19,8 @@ private func clock(_ seconds: TimeInterval?) -> String {
   return String(format: "%.1fs", seconds)
 }
 
-/// Plays one Set's retained audio through a `PlaybackEngine`.
+/// Plays one Set through a `PlaybackEngine`: its Retained Audio through AVPlayer, or an Apple Music
+/// Set through MusicKit.
 ///
 /// Everything here stays on the main actor: playback control is not CPU-bound, and the
 /// engine does its own threading. Engine events reach here on the main actor and read the
@@ -153,6 +154,9 @@ final class AudioPlayer {
 
   private let session: Session
 
+  /// Makes the engine for a Set. The app's chooses by the Set's source; a test passes its own.
+  private let makeEngine: @MainActor (SavedSet) -> any PlaybackEngine
+
   /// The registrations this player made outside itself, held nonisolated so `deinit`, which
   /// cannot hop actors, takes back exactly its own handlers instead of clearing the shared
   /// command center. Ignored by observation: nothing reads them.
@@ -165,9 +169,18 @@ final class AudioPlayer {
   @ObservationIgnored nonisolated(unsafe) private var observers: [NSObjectProtocol] = []
   private var isObservingInterruptions = false
 
-  init(session: Session = .system) {
+  init(
+    session: Session = .system,
+    engines: @escaping @MainActor (SavedSet) -> any PlaybackEngine = AudioPlayer.engine(for:)
+  ) {
     self.session = session
-    setupCommands()
+    makeEngine = engines
+    answerRemoteCommands()
+  }
+
+  /// The engine that plays a Set: MusicKit for an Apple Music Set, AVPlayer for Retained Audio.
+  static func engine(for set: SavedSet) -> any PlaybackEngine {
+    set.source == .appleMusic ? MusicKitEngine() : AVPlayerEngine()
   }
 
   func playbackReport() -> String {
@@ -444,7 +457,7 @@ final class AudioPlayer {
     logger.info("Play \(set.id, privacy: .private(mask: .hash)) \(span, privacy: .public)")
     playbackGeneration += 1
     let generation = playbackGeneration
-    let engine = AVPlayerEngine()
+    let engine = makeEngine(set)
     // The generation check drops an event that a stopped or replaced engine queued before this
     // one took over.
     engine.load(set, baseURL: baseURL, token: token) { [weak self] event in
@@ -903,6 +916,10 @@ final class AudioPlayer {
       engine.pause()
       state = .failed("The audio stopped loading.")
       publishNowPlaying(isPlaying: false)
+    case .pausedBySystem:
+      record(.command(.init(kind: .pause, origin: .systemRemote)))
+      logger.debug("Paused by the system's controls")
+      pausePlayback()
     case .stalled:
       // The engine's own stall notice says the network fell behind, which reads the same as a
       // stuck load from outside.
@@ -1120,14 +1137,29 @@ final class AudioPlayer {
 
   /// Leaves the remote commands to an engine that answers them itself, and answers them here
   /// otherwise. Now Playing follows the same owner in `publishNowPlaying(isPlaying:)`.
+  ///
+  /// The handlers are taken away rather than the commands disabled: MusicKit may answer through
+  /// the same shared command center, and a disabled command would grey out its buttons too.
   private func takeSystemControls(from engine: any PlaybackEngine) {
-    let enabled = !engine.ownsNowPlaying
-    for command in Self.remoteCommands() where command.isEnabled != enabled {
-      command.isEnabled = enabled
+    if engine.ownsNowPlaying {
+      leaveRemoteCommands()
+    } else {
+      answerRemoteCommands()
     }
   }
 
-  private func setupCommands() {
+  /// Whether this player's handlers are on the remote commands now.
+  var answersRemoteCommands: Bool { !commandTargets.isEmpty }
+
+  private func leaveRemoteCommands() {
+    for command in Self.remoteCommands() {
+      for target in commandTargets { command.removeTarget(target) }
+    }
+    commandTargets = []
+  }
+
+  private func answerRemoteCommands() {
+    guard commandTargets.isEmpty else { return }
     let center = MPRemoteCommandCenter.shared()
     let play = center.playCommand.addTarget { [weak self] _ in
       self?.resume(origin: .systemRemote)

@@ -962,6 +962,26 @@ final class AppModel {
   /// plays at a time and the lock screen follows whatever it holds.
   private(set) var audioPlayer = AudioPlayer()
 
+  /// Whether this device can play Apple Music Sets. Read when an Apple Music Set's page opens,
+  /// and asked for on the first Play of one.
+  private(set) var appleMusicAccess = AppleMusicAccess.unknown
+  @ObservationIgnored var appleMusicAuthorization = AppleMusicAuthorization.system
+
+  /// Reads the Apple Music access without asking the person, so the Set page knows whether to
+  /// offer Play or Open in Apple Music.
+  func checkAppleMusicAccess() async {
+    appleMusicAccess = await appleMusicAuthorization.current()
+  }
+
+  /// Asks for Apple Music access before an Apple Music Set plays, until the answer is yes. A Set
+  /// with Retained Audio needs none.
+  private func mayPlay(_ id: String) async -> Bool {
+    guard (savedSet(id) ?? visitedSets[id])?.source == .appleMusic, appleMusicAccess != .allowed
+    else { return true }
+    appleMusicAccess = await appleMusicAuthorization.request()
+    return appleMusicAccess == .allowed
+  }
+
   /// True while a Set is playing now. This is what makes replacing the queue worth a question:
   /// replacing a queue nobody is listening to interrupts nothing.
   var isPlayingNow: Bool {
@@ -1105,6 +1125,7 @@ final class AppModel {
         break
       }
     }
+    guard await mayPlay(id) else { return }
     queueNotice = nil
     recordPendingActivation(.superseded)
     playGeneration += 1
@@ -2142,7 +2163,7 @@ final class AppModel {
   /// the last answer, rather than redrawn for every Set.
   func shufflePlaylist(_ id: String) async {
     guard let client, case .loaded(let members) = playlistMembers else { return }
-    let order = members.filter { $0.downloadState == "ready" }.shuffled()
+    let order = members.filter(\.isPlayable).shuffled()
     guard let first = order.first else { return }
     await playSet(first.id)
     guard audioPlayer.currentSetId == first.id, pendingActivation == nil else { return }
