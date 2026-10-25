@@ -142,6 +142,7 @@ import {
   readTracklist,
   runClaimedTracklist,
 } from "./tracklists.js";
+import type { TracklistClaim } from "./tracklists.js";
 import { trustOperation } from "./trust-storage.js";
 import { Versos } from "./versos.js";
 import {
@@ -479,9 +480,26 @@ export const createPortableApp = (options: {
           yield* announce(topic, reaches(caller.person.id));
         }
       );
+      // A refresh reads the source again, since its description may have gained a tracklist
+      // after the save. A failed read keeps the stored description for Versos to scan again.
+      const rereadDescription = (claim: TracklistClaim) => {
+        const keepDescription = (reason: string) =>
+          Effect.logWarning("set details refresh failed").pipe(
+            Effect.annotateLogs({ reason, set: claim.id }),
+            Effect.as(claim.description)
+          );
+        return metadata.details({ source: claim.source, url: claim.url }).pipe(
+          Effect.tap((details) => library.recordDetails(claim.id, details)),
+          Effect.map((details) => details.description),
+          Effect.catchTags({
+            LibraryError: (error) => keepDescription(error.message),
+            MetadataError: (error) => keepDescription(error.reason),
+          })
+        );
+      };
       const runningTracklists = new Set<string>();
       const startTracklist = Effect.fn("SaveSet.startTracklist")(
-        (id: string, retry = false) =>
+        (id: string, start: "first" | "retry" | "refresh" = "first") =>
           Effect.gen(function* startSavedSetTracklist() {
             if (runningTracklists.has(id)) {
               return;
@@ -489,13 +507,16 @@ export const createPortableApp = (options: {
             runningTracklists.add(id);
             let handedOff = false;
             yield* Effect.gen(function* launchTracklist() {
-              const claim = yield* claimTracklist(id, retry).pipe(
+              const claim = yield* claimTracklist(id, start !== "first").pipe(
                 Effect.provideService(Database, db)
               );
               if (!claim) {
                 return;
               }
-              yield* runClaimedTracklist(claim).pipe(
+              yield* runClaimedTracklist(
+                claim,
+                start === "refresh" ? rereadDescription(claim) : undefined
+              ).pipe(
                 Effect.interruptible,
                 Effect.provideService(Database, db),
                 Effect.provideService(Versos, versos),
@@ -937,13 +958,19 @@ export const createPortableApp = (options: {
                     Effect.provideService(Database, db)
                   );
                 }
-                const [set] = yield* db
-                  .select({ detailsState: setRows.detailsState })
-                  .from(setRows)
-                  .where(eq(setRows.id, params.id));
-                yield* set?.detailsState === "filled"
-                  ? startTracklist(params.id, true)
-                  : fillDetails(yield* personal.find(params.id));
+                // A pending Tracklist resumes a stalled run; a running one starts nothing new.
+                // Any other state is a refresh: the source is read again and Versos scans it.
+                if (saved.tracklistState === "pending") {
+                  const [set] = yield* db
+                    .select({ detailsState: setRows.detailsState })
+                    .from(setRows)
+                    .where(eq(setRows.id, params.id));
+                  yield* set?.detailsState === "filled"
+                    ? startTracklist(params.id, "retry")
+                    : fillDetails(saved);
+                } else {
+                  yield* startTracklist(params.id, "refresh");
+                }
                 return yield* readTracklist(params.id).pipe(
                   Effect.provideService(Database, db)
                 );

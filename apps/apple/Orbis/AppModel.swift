@@ -1277,7 +1277,7 @@ final class AppModel {
       return
     } catch {
       if generation == tracklistGeneration, tracklists[id]?.state != .ready {
-        tracklists[id] = Tracklist(state: .failed, cues: [])
+        markTracklistReadFailed(id)
       }
     }
   }
@@ -1294,10 +1294,15 @@ final class AppModel {
     } catch OrbisError.cancelled {
       return
     } catch {
-      if generation == tracklistGeneration {
-        tracklists[id] = Tracklist(state: .failed, cues: [])
-      }
+      if generation == tracklistGeneration { markTracklistReadFailed(id) }
     }
+  }
+
+  /// The service keeps a Set's Cues through a failed refresh, so a failed read keeps the Cues on
+  /// screen as ready. Only a Tracklist with no Cues shows as failed.
+  private func markTracklistReadFailed(_ id: String) {
+    let cues = tracklists[id]?.cues ?? []
+    tracklists[id] = Tracklist(state: cues.isEmpty ? .failed : .ready, cues: cues)
   }
 
   /// Puts a Set in the queue to play after the one playing now.

@@ -117,6 +117,11 @@ struct LaneService {
     try seed("late-tracklist/\(id)")
   }
 
+  /// Leaves the Set's Tracklist pending with its Cues, as it is while Versos scans.
+  func holdTracklistRun(_ id: String) throws {
+    try seed("running-tracklist/\(id)")
+  }
+
   /// Saves an Apple Music album link. The lane's service reads the album from the recorded answer
   /// in `apps/server/src/fixtures/apple-music`, so the Set has its length and Tracklist, and no
   /// Retained Audio.

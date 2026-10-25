@@ -169,4 +169,59 @@ final class SetPageTests: XCTestCase {
     }
     XCTAssertEqual(sets.map(\.title), ["Renamed"], "membership is unchanged, so the row stays")
   }
+
+  private nonisolated static let cues =
+    #"[{"position":1,"startSeconds":0,"artist":"A","title":"One"},"#
+    + #"{"position":2,"startSeconds":300,"artist":"B","title":"Two"}]"#
+
+  private func tracklistModel(
+    responder: @Sendable @escaping (URLRequest) -> (Int, String)
+  ) -> AppModel {
+    let client = OrbisClient(
+      address: URL(string: "https://vanta.example.ts.net")!,
+      token: "token",
+      session: StubProtocol.session(responder: responder)
+    )
+    return AppModel(client: client, settings: MemoryClientSettings())
+  }
+
+  /// The service keeps a Set's Cues through a failed refresh, so the page must too: the seek
+  /// rows stay usable and the page does not say "Tracklist unavailable".
+  func testARefreshThatCannotReachTheServiceKeepsTheCues() async {
+    let model = tracklistModel { request in
+      request.httpMethod == "POST"
+        ? (500, #"{"message":"The library is busy."}"#)
+        : (200, #"{"state":"ready","cues":\#(Self.cues)}"#)
+    }
+    await model.loadTracklist("1")
+
+    await model.retryTracklist("1")
+
+    XCTAssertEqual(model.tracklists["1"]?.state, .ready)
+    XCTAssertEqual(model.tracklists["1"]?.cues.map(\.title), ["One", "Two"])
+  }
+
+  /// A refresh leaves the Tracklist pending with its Cues while Versos works. A failed poll
+  /// in that state must not drop them.
+  func testAFailedPollDuringARefreshKeepsTheCues() async {
+    let model = tracklistModel { request in
+      request.httpMethod == "POST"
+        ? (200, #"{"state":"pending","cues":\#(Self.cues)}"#)
+        : (500, #"{"message":"The library is busy."}"#)
+    }
+
+    await model.retryTracklist("1")
+
+    XCTAssertEqual(model.tracklists["1"]?.state, .ready)
+    XCTAssertEqual(model.tracklists["1"]?.cues.map(\.title), ["One", "Two"])
+  }
+
+  /// With no Cues to keep, a failed refresh still says the Tracklist is unavailable.
+  func testAFailedRefreshWithNoCuesShowsTheFailure() async {
+    let model = tracklistModel { _ in (500, #"{"message":"The library is busy."}"#) }
+
+    await model.retryTracklist("1")
+
+    XCTAssertEqual(model.tracklists["1"], Tracklist(state: .failed, cues: []))
+  }
 }

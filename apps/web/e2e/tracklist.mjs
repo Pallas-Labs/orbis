@@ -238,6 +238,51 @@ try {
     );
     steps.push("Tracklist fits phone width");
 
+    await page.setViewportSize({ height: 900, width: 1280 });
+    const refresh = page.getByRole("button", { name: "Refresh tracklist" });
+    await refresh.waitFor();
+    // The journey's API has no Versos, so the refresh settles at once. One routed read holds
+    // the pending answer long enough to show what a person sees while Versos scans.
+    await page.route(
+      `**/sets/${saved.id}/tracklist`,
+      async (route) => {
+        const response = await route.fetch();
+        const body = await response.json();
+        await route.fulfill({ json: { ...body, state: "pending" }, response });
+      },
+      { times: 1 }
+    );
+    const refreshed = page.waitForResponse(
+      (response) =>
+        response.url().endsWith(`/sets/${saved.id}/tracklist/retry`) &&
+        response.request().method() === "POST"
+    );
+    await refresh.click();
+    const refreshResponse = await refreshed;
+    assert.equal(refreshResponse.status(), 200);
+    await page
+      .getByRole("status")
+      .filter({ hasText: "Finding tracklist…" })
+      .waitFor();
+    assert.equal(await list.getByRole("listitem").count(), 3);
+    await page.screenshot({
+      fullPage: true,
+      path: path.join(artifacts, "tracklist-refreshing.png"),
+    });
+    await page
+      .getByRole("status")
+      .filter({ hasText: "Finding tracklist…" })
+      .waitFor({ state: "detached" });
+    assert.equal(await list.getByRole("listitem").count(), 3);
+    await refresh.waitFor();
+    await page.screenshot({
+      fullPage: true,
+      path: path.join(artifacts, "tracklist-refresh.png"),
+    });
+    steps.push(
+      "a ready Tracklist refreshes, keeps its Cues while pending, and stays ready when the scan finds none"
+    );
+
     await page.route(
       `**/sets/${saved.id}/tracklist`,
       (route) => route.fulfill({ body: "unavailable", status: 503 }),
@@ -255,22 +300,37 @@ try {
       `import { Database } from "bun:sqlite";
        const db = new Database(process.argv[1]);
        db.query("UPDATE sets SET tracklist_state = 'failed' WHERE id = ?").run(process.argv[2]);
+       db.query("DELETE FROM set_cues WHERE set_id = ?").run(process.argv[2]);
        db.close();`,
       path.join(dataDirectory, "library.sqlite"),
       saved.id,
     ]);
     await page.reload();
-    const retry = page.getByRole("button", { exact: true, name: "Retry" });
-    await retry.waitFor();
+    const retry = page.getByRole("button", { name: "Refresh tracklist" });
     const retried = page.waitForResponse(
       (response) =>
         response.url().endsWith(`/sets/${saved.id}/tracklist/retry`) &&
         response.request().method() === "POST"
     );
     await retry.click();
+    await page.getByText("Tracklist unavailable.").waitFor();
+    await page.screenshot({
+      fullPage: true,
+      path: path.join(artifacts, "tracklist-failed.png"),
+    });
+    await retry.click();
     const response = await retried;
     assert.equal(response.status(), 200);
-    steps.push("a failed Tracklist offers a working retry action");
+    // Without a description or Versos, the refresh answers that the Set has no Tracklist.
+    await page.getByText("No tracklist found.").waitFor();
+    await page.getByRole("button", { name: "Refresh tracklist" }).waitFor();
+    await page.screenshot({
+      fullPage: true,
+      path: path.join(artifacts, "tracklist-none.png"),
+    });
+    steps.push(
+      "a failed Tracklist refreshes to none, which offers the refresh again"
+    );
   } finally {
     await browser.close();
   }
