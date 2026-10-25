@@ -38,7 +38,7 @@ final class PlaybackDiagnosticsTests: XCTestCase {
   }
 
   func testPrivatePlaybackValuesAndSDKErrorTextNeverEnterAReport() throws {
-    let privateSetID = "private-set-7381"
+    let setID = "set-7381"
     let privateTitle = "Private Sunday mix"
     let privateToken = "secret-token-9917"
     let privateAddress = "https://private.example.test/secret"
@@ -52,7 +52,7 @@ final class PlaybackDiagnosticsTests: XCTestCase {
     XCTAssertFalse(described.contains(privateToken))
 
     let set = SavedSet(
-      id: privateSetID, url: privateAddress, title: privateTitle, source: .youtube, tags: [],
+      id: setID, url: privateAddress, title: privateTitle, source: .youtube, tags: [],
       createdAt: "2026-01-01T00:00:00.000Z", releasedAt: nil, creator: nil,
       artworkUrl: nil, artworkLargeUrl: nil, durationSeconds: 30, metadataState: "enriched",
       downloadState: "ready", playlistIds: [], playbackPositionSeconds: 0, listenCount: 0,
@@ -63,9 +63,10 @@ final class PlaybackDiagnosticsTests: XCTestCase {
       set: set, baseURL: URL(string: privateAddress)!, token: privateToken, autoplay: false)
     player.recordError(error)
     let report = player.playbackReport()
-    for privateValue in [privateSetID, privateTitle, privateToken, privateAddress, localized] {
+    for privateValue in [privateTitle, privateToken, privateAddress, localized] {
       XCTAssertFalse(report.contains(privateValue), "Report leaked \(privateValue)")
     }
+    XCTAssertTrue(report.contains("\"setId\":\"\(setID)\""), "Report names the playing Set")
     XCTAssertNoThrow(try decode(report))
   }
 

@@ -49,6 +49,7 @@ const setup = (
     playbackDiagnostics: {
       accessClientId: "test-id",
       accessClientSecret: "test-secret",
+      environment: "test",
       url: collector.url.toString(),
     },
   });
@@ -79,7 +80,8 @@ test("valid authenticated native fixture reaches playback endpoint and exports O
     expect(request?.headers.get("cf-access-client-id")).toBe("test-id");
     expect(request?.headers.get("cf-access-client-secret")).toBe("test-secret");
     const text = JSON.stringify(request?.body);
-    expect(text).toContain("orbis.apple.playback");
+    expect(text).toContain("orbis-apple");
+    expect(text).not.toContain("orbis.apple.playback");
     expect(text).toContain(fixture.runId);
     expect(text).toContain("timeUnixNano");
     expect(text).not.toContain("test-secret");
@@ -105,6 +107,114 @@ test("valid authenticated native fixture reaches playback endpoint and exports O
       path.join(artifact, "broad-replay-otlp.json"),
       JSON.stringify(s.requests[1]?.body, null, 2)
     );
+  } finally {
+    await s.close();
+  }
+});
+
+interface OtlpAttribute {
+  key: string;
+  value: Record<string, string | number | boolean>;
+}
+interface OtlpBody {
+  resourceLogs: {
+    resource: { attributes: OtlpAttribute[] };
+    scopeLogs: {
+      logRecords: { attributes: OtlpAttribute[]; severityText: string }[];
+    }[];
+  }[];
+}
+type Entry = (typeof fixture.entries)[number];
+const attributeMap = (attributes: OtlpAttribute[]) =>
+  Object.fromEntries(attributes.map(({ key, value }) => [key, value]));
+const recordsOf = (body: OtlpBody) =>
+  (body.resourceLogs[0]?.scopeLogs[0]?.logRecords ?? []).map((record) =>
+    attributeMap(record.attributes)
+  );
+
+test("OTLP records carry resource attributes, event attributes, and the Set ID", async () => {
+  const s = setup();
+  try {
+    const [first] = fixture.entries;
+    if (!first) {
+      throw new Error("fixture is empty");
+    }
+    const entry = (
+      sequence: number,
+      event: Entry["event"],
+      snapshot: Partial<Entry["snapshot"]> = {}
+    ): Entry => ({
+      ...first,
+      event,
+      sequence,
+      snapshot: { ...first.snapshot, ...snapshot },
+    });
+    const body = {
+      ...batch(),
+      afterSequence: 0,
+      entries: [
+        entry(
+          1,
+          { command: { _0: { kind: "seek", origin: "app", target: 8.5 } } },
+          { setId: "set-42" }
+        ),
+        entry(2, {
+          seekResult: {
+            _0: {
+              actual: 8.4,
+              duration: 0.25,
+              finished: true,
+              seekID: 1,
+              target: 8.5,
+            },
+          },
+        }),
+        entry(3, {
+          item: {
+            _0: { error: { code: -1009, domain: "url" }, phase: "failed" },
+          },
+        }),
+        entry(4, { state: { _0: { from: "playing", to: "paused" } } }),
+      ],
+      throughSequence: 4,
+    };
+    const response = await s.send(JSON.stringify(body));
+    expect(response.status).toBe(200);
+    // SAFETY: the loopback collector stores the JSON body the relay posted.
+    const sent = s.requests[0]?.body as OtlpBody;
+    expect(
+      attributeMap(sent.resourceLogs[0]?.resource.attributes ?? [])
+    ).toEqual({
+      "app.build_id": { stringValue: fixture.metadata.appBuild },
+      "deployment.environment.name": { stringValue: "test" },
+      "os.name": { stringValue: fixture.metadata.osName },
+      "os.version": { stringValue: fixture.metadata.osVersion },
+      "service.name": { stringValue: "orbis-apple" },
+      "service.namespace": { stringValue: "orbis" },
+      "service.version": { stringValue: fixture.metadata.appVersion },
+    });
+    const [command, seek, item, state] = recordsOf(sent);
+    expect(command).toMatchObject({
+      "orbis.set_id": { stringValue: "set-42" },
+      "playback.command.kind": { stringValue: "seek" },
+      "playback.command.origin": { stringValue: "app" },
+      "playback.command.target": { doubleValue: 8.5 },
+      "session.id": { stringValue: fixture.runId },
+    });
+    expect(command).not.toHaveProperty("orbis.run_id");
+    expect(command).not.toHaveProperty("app.version");
+    expect(seek).toMatchObject({
+      "playback.seek.duration": { doubleValue: 0.25 },
+      "playback.seek.finished": { boolValue: true },
+    });
+    expect(seek).not.toHaveProperty("orbis.set_id");
+    expect(item).toMatchObject({
+      "error.type": { stringValue: "url:-1009" },
+      "playback.phase": { stringValue: "failed" },
+    });
+    expect(state).toMatchObject({
+      "playback.state.from": { stringValue: "playing" },
+    });
   } finally {
     await s.close();
   }
@@ -205,6 +315,18 @@ test("strict nested privacy schema rejects unknown fields and inconsistent seque
               },
             },
           },
+        ],
+      },
+      {
+        ...base,
+        entries: [
+          { ...first, snapshot: { ...first.snapshot, setId: "x".repeat(129) } },
+        ],
+      },
+      {
+        ...base,
+        entries: [
+          { ...first, snapshot: { ...first.snapshot, secretKey: "private" } },
         ],
       },
       { ...base, schemaVersion: 2 },

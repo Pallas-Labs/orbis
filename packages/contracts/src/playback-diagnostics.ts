@@ -55,6 +55,7 @@ const Snapshot = Schema.Struct({
   seekID: Sequence,
   seekInFlight: Schema.Boolean,
   sessionReady: Schema.Boolean,
+  setId: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(128))),
   state: State,
   waitingReason: WaitingReason,
 });
