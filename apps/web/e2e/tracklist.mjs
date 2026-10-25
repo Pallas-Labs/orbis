@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { spawn, execFileSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { setTimeout } from "node:timers/promises";
@@ -21,6 +21,13 @@ const apiUrl = `http://127.0.0.1:${ports.device}`;
 const webUrl = `http://127.0.0.1:${ports.web}`;
 const key = randomBytes(24).toString("base64url");
 const steps = [];
+const pasted = await readFile(
+  path.join(
+    root,
+    "apps/server/src/fixtures/tracklists/skin-on-skin-ade-2026.txt"
+  ),
+  "utf-8"
+);
 
 const waitFor = async (url) => {
   for (let attempt = 0; attempt < 150; attempt += 1) {
@@ -248,6 +255,56 @@ try {
     await list.getByRole("listitem").first().waitFor();
     steps.push(
       "a failed Tracklist load can be retried without requesting a new analysis"
+    );
+
+    await page.setViewportSize({ height: 900, width: 1280 });
+    await page.evaluate(() => {
+      window.orbisSamePage = true;
+    });
+    await page.getByRole("button", { name: "Paste tracklist" }).click();
+    const dialog = page.getByRole("dialog", { name: "Paste tracklist" });
+    const box = dialog.getByRole("textbox", { name: "Tracklist text" });
+    await box.fill("Skin On Skin | ADE 2026");
+    await dialog.getByRole("button", { name: "Save tracklist" }).click();
+    await dialog
+      .getByRole("alert")
+      .filter({
+        hasText: "Paste one track per line, such as 12:15 Artist - Title.",
+      })
+      .waitFor();
+    steps.push("text with no tracks shows the API's reason in the dialog");
+
+    await box.fill(pasted);
+    assert.equal(await dialog.getByRole("alert").count(), 0);
+    await page.screenshot({
+      path: path.join(artifacts, "paste-tracklist-dialog.png"),
+    });
+    await dialog.getByRole("button", { name: "Save tracklist" }).click();
+    await dialog.waitFor({ state: "hidden" });
+    await list
+      .getByRole("button", { name: "Oldskool, Jeno, starts at 1:02:05" })
+      .waitFor();
+    assert.equal(await list.getByRole("listitem").count(), 15);
+    assert.equal(
+      await list.getByRole("button").first().getAttribute("aria-label"),
+      "Cursed, PLAX, starts at 12:15"
+    );
+    assert.equal(
+      await list.getByRole("button").last().getAttribute("aria-label"),
+      "18 & Over, Nia Archives, starts at 2:11:55"
+    );
+    assert.equal(
+      await page.evaluate(() => window.orbisSamePage),
+      true,
+      "the page reloaded"
+    );
+    await page.mouse.move(0, 0);
+    await page.screenshot({
+      fullPage: true,
+      path: path.join(artifacts, "pasted-tracklist.png"),
+    });
+    steps.push(
+      "a pasted tracklist replaces the three Cues with 15 without a reload"
     );
 
     execFileSync("bun", [

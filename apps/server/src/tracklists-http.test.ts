@@ -1,6 +1,6 @@
 import { Database as Sqlite } from "bun:sqlite";
 import { expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -9,6 +9,7 @@ import type { WideEvent } from "evlog";
 
 import { backfillTracklists } from "./backfill-tracklists.js";
 import { layer as databaseLayer } from "./db/database.js";
+import { hashToken } from "./identity.js";
 import { Metadata } from "./metadata.js";
 import { createTestApp as createApp } from "./test-app.js";
 import { request } from "./test-http.js";
@@ -969,5 +970,221 @@ test("an unconfigured Versos leaves the Set pending and says why", async () => {
   } finally {
     await app.dispose();
     await rm(directory, { force: true, recursive: true });
+  }
+});
+
+// The Tracklist PAL-1000 was written for: a heading line, a blank line, then 15 timed Cues.
+const PASTED = await Bun.file(
+  path.join(import.meta.dir, "fixtures/tracklists/skin-on-skin-ade-2026.txt")
+).text();
+
+const paste = (app: ReturnType<typeof createApp>, id: string, text: string) =>
+  request(app, {
+    method: "PUT",
+    payload: { text },
+    url: `/sets/${id}/tracklist`,
+  });
+
+test("a pasted Tracklist replaces the Versos Cues and Versos never sees it", async () => {
+  let requests = 0;
+  const server = await start(
+    Versos.layerOf({
+      poll: () => Effect.succeed({ cues: CUES, state: "ready" }),
+      request: () => {
+        requests += 1;
+        return Effect.succeed({ requestId: "job-paste" });
+      },
+    })
+  );
+  try {
+    const saved = await save(server.app);
+    const id = String(saved.json().id);
+    await waitForState(server.app, id, "ready");
+    expect(requests).toBe(1);
+
+    const pasted = await paste(server.app, id, PASTED);
+    expect(pasted.statusCode).toBe(200);
+    const { cues, state } = pasted.json();
+    expect(state).toBe("ready");
+    expect(cues).toHaveLength(15);
+    expect(cues[0]).toEqual({
+      appleMusicId: null,
+      artist: "PLAX",
+      artworkUrl: null,
+      position: 0,
+      startSeconds: 735,
+      title: "Cursed",
+    });
+    expect(cues[1]).toMatchObject({
+      artist: "X-Trance",
+      title: "Friends 2000 (Fridge Remix)",
+    });
+    expect(cues[6]).toMatchObject({
+      artist: "Jeno",
+      startSeconds: 3725,
+      title: "Oldskool",
+    });
+    expect(cues[14]).toMatchObject({
+      artist: "Nia Archives",
+      position: 14,
+      startSeconds: 7915,
+      title: "18 & Over",
+    });
+    const reread = await read(server.app, id);
+    expect(reread.json()).toEqual({ cues, state });
+
+    const untimed = await paste(
+      server.app,
+      id,
+      "My notes\n\nFirst Artist - First song\n  0:30   Second Artist - Second - part two  \n"
+    );
+    expect(untimed.statusCode).toBe(200);
+    const replaced = await read(server.app, id);
+    expect(replaced.json()).toEqual({
+      cues: [
+        {
+          appleMusicId: null,
+          artist: "First Artist",
+          artworkUrl: null,
+          position: 0,
+          startSeconds: null,
+          title: "First song",
+        },
+        {
+          appleMusicId: null,
+          artist: "Second Artist",
+          artworkUrl: null,
+          position: 1,
+          startSeconds: 30,
+          title: "Second - part two",
+        },
+      ],
+      state: "ready",
+    });
+    expect(requests).toBe(1);
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("pasting needs the Set in your own Library and at least one Cue", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "orbis-paste-"));
+  const friendKey = "friend-paste-key";
+  await writeFile(
+    path.join(directory, "devices.json"),
+    JSON.stringify({
+      keys: [
+        {
+          addedAt: "2026-10-25T00:00:00.000Z",
+          id: "friend-key",
+          label: "phone",
+          lastUsedAt: null,
+          personId: "friend",
+          scope: "daily",
+          tokenHash: hashToken(friendKey),
+        },
+      ],
+      people: [
+        { id: "host", removed: false, username: "host" },
+        { id: "friend", removed: false, username: "friend" },
+      ],
+      version: 2,
+    })
+  );
+  const app = createApp({
+    databasePath: path.join(directory, "library.sqlite"),
+    logging: { silent: true },
+    metadata: Metadata.layerOf({
+      details: () => Effect.succeed(DETAILS),
+      enrich: () => Effect.die("title supplied by caller"),
+    }),
+    versos: Versos.layerOf({
+      poll: () => Effect.succeed({ cues: CUES, state: "ready" }),
+      request: () => Effect.succeed({ requestId: "job-owner" }),
+    }),
+  });
+  const asFriend = (
+    method: string,
+    url: string,
+    payload?: { social: boolean } | { text: string }
+  ) =>
+    request(app, {
+      headers: { authorization: `Bearer ${friendKey}` },
+      method,
+      payload,
+      url,
+    });
+  try {
+    const saved = await save(app);
+    const id = String(saved.json().id);
+    await waitForState(app, id, "ready");
+    const hostSocial = await request(app, {
+      method: "PATCH",
+      payload: { social: true },
+      url: "/me",
+    });
+    expect(hostSocial.statusCode).toBe(200);
+    const friendSocial = await asFriend("PATCH", "/me", { social: true });
+    expect(friendSocial.statusCode).toBe(200);
+    // The friend can see this Set's Tracklist, yet cannot replace it.
+    const seen = await asFriend("GET", `/sets/${id}/tracklist`);
+    expect(seen.statusCode).toBe(200);
+    const refused = await asFriend("PUT", `/sets/${id}/tracklist`, {
+      text: PASTED,
+    });
+    expect(refused.statusCode).toBe(404);
+    const missing = await paste(app, "no-such-set", PASTED);
+    expect(missing.statusCode).toBe(404);
+
+    const empty = await paste(app, id, "Skin On Skin | ADE 2026\n\n12:15\n");
+    expect(empty.statusCode).toBe(400);
+    expect(empty.json().message).toBe(
+      "Paste one track per line, such as 12:15 Artist - Title."
+    );
+    // A long line of spaces once made the line pattern backtrack for minutes.
+    const spaces = await paste(app, id, `00:00 ${" ".repeat(49_000)}x`);
+    expect(spaces.statusCode).toBe(400);
+    const kept = await read(app, id);
+    expect(kept.json()).toEqual({ cues: CUES, state: "ready" });
+  } finally {
+    await app.dispose();
+    await rm(directory, { force: true, recursive: true });
+  }
+});
+
+test("a Versos run in flight when a Tracklist is pasted cannot replace it", async () => {
+  const blocked = Promise.withResolvers<null>();
+  const requested = Promise.withResolvers<null>();
+  const settled = Promise.withResolvers<null>();
+  const server = await start(
+    Versos.layerOf({
+      poll: () => Effect.succeed({ cues: CUES, state: "ready" }),
+      request: () => {
+        requested.resolve(null);
+        return Effect.promise(() => blocked.promise).pipe(
+          Effect.as({ requestId: "job-race" })
+        );
+      },
+    }),
+    (event) => {
+      if (event.job === "tracklist") {
+        settled.resolve(null);
+      }
+    }
+  );
+  try {
+    const saved = await save(server.app);
+    const id = String(saved.json().id);
+    await requested.promise;
+    const pasted = await paste(server.app, id, PASTED);
+    expect(pasted.statusCode).toBe(200);
+    blocked.resolve(null);
+    await settled.promise;
+    const after = await read(server.app, id);
+    expect(after.json()).toEqual(pasted.json());
+    expect(after.json().cues).toHaveLength(15);
+  } finally {
+    blocked.resolve(null);
+    await server.dispose();
   }
 });

@@ -131,6 +131,10 @@ export const SaveSetPayload = Schema.Struct({
   url: Schema.String.check(Schema.isMaxLength(2048)),
 });
 export const UpdateTitlePayload = Schema.Struct({ title: Title });
+/** A Tracklist pasted as text, one Cue per line (`12:15 Artist - Title`). */
+export const PasteTracklistPayload = Schema.Struct({
+  text: Schema.String.check(Schema.isMaxLength(50_000)),
+});
 export const AudioStateSchema = Schema.Struct({
   bytesReceived: Schema.Number,
   bytesTotal: Schema.NullOr(Schema.Number),
@@ -460,6 +464,12 @@ export const SetsApi = HttpApi.make("orbis").add(
       HttpApiEndpoint.get("tracklist", "/sets/:id/tracklist", {
         error: [NotFound, InternalError],
         params: SetId,
+        success: TracklistSchema,
+      }),
+      HttpApiEndpoint.put("pasteTracklist", "/sets/:id/tracklist", {
+        error: [BadRequest, NotFound, InternalError],
+        params: SetId,
+        payload: PasteTracklistPayload,
         success: TracklistSchema,
       }),
       HttpApiEndpoint.post("retryTracklist", "/sets/:id/tracklist/retry", {

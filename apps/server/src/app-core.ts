@@ -27,6 +27,7 @@ import {
   SetPlaylistsPayload,
   SocialFiltersPayload,
   TagsPayload,
+  PasteTracklistPayload,
   UpdateTitlePayload,
   UpdateMePayload,
 } from "@orbis/contracts/http-api";
@@ -923,6 +924,20 @@ export const createPortableApp = (options: {
                   Effect.provideService(Database, db)
                 );
               })
+            )
+          )
+          .handleRaw("pasteTracklist", ({ params }) =>
+            withFailureResponse(
+              Effect.gen(function* pasteSetTracklist() {
+                const input = yield* HttpServerRequest.schemaBodyJson(
+                  PasteTracklistPayload
+                );
+                const personal = yield* Library;
+                yield* personal.pasteTracklist(params.id, input.text);
+                return yield* readTracklist(params.id).pipe(
+                  Effect.provideService(Database, db)
+                );
+              }).pipe(Effect.tap(() => announce("set", readsSet(params.id))))
             )
           )
           .handle("retryTracklist", ({ params }) =>

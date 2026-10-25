@@ -1,6 +1,7 @@
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import { PasteTracklist } from "@/components/library/paste-tracklist";
 import { setDetails } from "@/components/library/set-row";
 import { Tracklist } from "@/components/library/tracklist";
 import { useDownloadProgress } from "@/components/library/use-download-progress";
@@ -179,12 +180,19 @@ const SetPage = ({
             <h1 className="text-2xl font-medium text-pretty">{set.title}</h1>
             <p className="text-muted-foreground">{setDetails(set)}</p>
           </div>
-          <AudioAction
-            download={download}
-            play={play}
-            progress={downloadProgress.get(set.id)}
-            set={set}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <AudioAction
+              download={download}
+              play={play}
+              progress={downloadProgress.get(set.id)}
+              set={set}
+            />
+            <PasteTracklist
+              credentials={session}
+              setId={set.id}
+              state={tracklistState}
+            />
+          </div>
         </div>
       </header>
       {problem === null ? null : <p role="alert">{problem}</p>}

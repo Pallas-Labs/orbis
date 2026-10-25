@@ -39,6 +39,53 @@ const hasReference = (db: typeof Database.Service, id: string) =>
     LIMIT 1
   `);
 
+/** Replaces a Set's Cues. Run it inside the transaction that sets the Tracklist state. */
+export const replaceCues = Effect.fnUntraced(function* replaceCuesEffect(
+  db: typeof Database.Service,
+  id: string,
+  cues: readonly Cue[]
+) {
+  yield* db.delete(setCues).where(eq(setCues.setId, id));
+  const rows = cues.map((cue) => ({ ...cue, setId: id }));
+  for (const batch of insertBatches(setCues, rows)) {
+    yield* db.insert(setCues).values(batch);
+  }
+});
+
+// An optional `H:MM:SS` or `MM:SS` start at the front of a line.
+const PASTED_START =
+  /^(?:(?<hours>\d+):)?(?<minutes>\d{1,2}):(?<seconds>[0-5]\d)\s/u;
+// Searched, not matched with the rest of the line, so a long line cannot make it backtrack.
+const ARTIST_TITLE_SEPARATOR = /\s-\s/u;
+
+/** The Cues in pasted text, one per line. A line with no `Artist - Title`, such as a heading, is skipped. */
+export const parsePastedTracklist = (text: string): Cue[] =>
+  text
+    .split(/\r?\n/u)
+    .flatMap((raw) => {
+      const line = raw.trim();
+      const start = PASTED_START.exec(line);
+      const rest = start ? line.slice(start[0].length) : line;
+      const separator = rest.search(ARTIST_TITLE_SEPARATOR);
+      const artist = rest.slice(0, Math.max(separator, 0)).trim();
+      const title = rest.slice(separator + 3).trim();
+      if (separator === -1 || artist === "" || title === "") {
+        return [];
+      }
+      const { hours, minutes, seconds } = start?.groups ?? {};
+      const startSeconds =
+        minutes === undefined || seconds === undefined
+          ? null
+          : Number(hours ?? 0) * 3600 + Number(minutes) * 60 + Number(seconds);
+      return [{ artist, startSeconds, title }];
+    })
+    .map((cue, position) => ({
+      ...cue,
+      appleMusicId: null,
+      artworkUrl: null,
+      position,
+    }));
+
 export const readTracklist = Effect.fn("Tracklists.read")((id: string) =>
   Effect.gen(function* readTracklistEffect() {
     const db = yield* Database;
@@ -138,13 +185,11 @@ const finishTracklist = Effect.fn("Tracklists.finishTracklist")(
           yield* tx.delete(setCues).where(eq(setCues.setId, claim.id));
           return false;
         }
-        yield* tx.delete(setCues).where(eq(setCues.setId, claim.id));
-        if (result.state === "ready") {
-          const rows = result.cues.map((cue) => ({ ...cue, setId: claim.id }));
-          for (const batch of insertBatches(setCues, rows)) {
-            yield* tx.insert(setCues).values(batch);
-          }
-        }
+        yield* replaceCues(
+          tx,
+          claim.id,
+          result.state === "ready" ? result.cues : []
+        );
         return true;
       })
     );

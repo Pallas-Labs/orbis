@@ -32,6 +32,7 @@ import {
 import { LibraryPerson } from "./library-person.js";
 import type { EnrichedMetadata, SourceExtras } from "./metadata.js";
 import { normalizeSourceUrl } from "./source-url.js";
+import { parsePastedTracklist, replaceCues } from "./tracklists.js";
 import { resolveVisibleSet } from "./visibility.js";
 import type { SourceDetails } from "./ytdlp-metadata.js";
 
@@ -162,6 +163,11 @@ export class Library extends Context.Service<
       id: string,
       title: string
     ) => Effect.Effect<SavedSet, LibraryError>;
+    /** Replaces the Tracklist of a Set in this Person's Library with the Cues in pasted text. */
+    readonly pasteTracklist: (
+      id: string,
+      text: string
+    ) => Effect.Effect<void, LibraryError>;
     readonly release: (id: string) => Effect.Effect<void, LibraryError>;
     readonly remove: (id: string) => Effect.Effect<SavedSet, LibraryError>;
     readonly tags: () => Effect.Effect<string[], LibraryError>;
@@ -582,6 +588,39 @@ export class Library extends Context.Service<
                 return yield* Effect.fail(setNotFound());
               }
               return yield* findSavedSet(id);
+            })
+          )
+      );
+
+      const pasteTracklist = Effect.fn("Library.pasteTracklist")(
+        (id: string, text: string) =>
+          execute(
+            Effect.gen(function* pasteTracklistEffect() {
+              yield* ensureEntry(id);
+              const cues = parsePastedTracklist(text);
+              if (cues.length === 0) {
+                return yield* Effect.fail(
+                  new LibraryError({
+                    message:
+                      "Paste one track per line, such as 12:15 Artist - Title.",
+                    statusCode: 400,
+                  })
+                );
+              }
+              yield* db.transaction((tx) =>
+                Effect.gen(function* writePastedTracklist() {
+                  // Clearing the run means a Versos run still in flight cannot write its Cues.
+                  yield* tx
+                    .update(sets)
+                    .set({
+                      tracklistRunId: null,
+                      tracklistRunStartedAt: null,
+                      tracklistState: "ready",
+                    })
+                    .where(eq(sets.id, id));
+                  yield* replaceCues(tx, id, cues);
+                })
+              );
             })
           )
       );
@@ -1467,6 +1506,7 @@ export class Library extends Context.Service<
         findByUrl,
         finishDownload,
         list,
+        pasteTracklist,
         playlists: playlistsList,
         queueDownload,
         recordDetails,

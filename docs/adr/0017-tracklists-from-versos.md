@@ -4,4 +4,6 @@ A Set has one Tracklist shared by everyone who can see it, as Artwork is shared.
 
 Orbis uses one server key for Versos rather than a key for each Person. Versos owns identification of Cues and their start times; Orbis stores the result and serves it through the Set's visibility rules. A Cue without a start time remains visible, but it has no seek action. Orbis does not create a Versos or Apple Music playlist. iOS, macOS, and web show the Tracklist; CarPlay does not yet.
 
+A Person who has the Set in their Library can also paste a Tracklist as text, one `12:15 Artist - Title` line per Cue (PAL-1000). Orbis parses the text itself and never sends it to Versos. The pasted Tracklist replaces the Set's Tracklist for everyone, and a Versos run still in flight for that Set can no longer write its Cues.
+
 The Versos API work is tracked by PAL-771. Until it ships, Orbis uses a fake Versos service in tests and leaves the live provider unconfigured by default.
