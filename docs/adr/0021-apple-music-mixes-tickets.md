@@ -1,16 +1,16 @@
 # Ticket plan: Apple Music DJ mixes
 
-This plan carries out [ADR 0021](0021-apple-music-mixes.md). Each ticket is a vertical slice that a fresh agent can finish and verify alone. Parth accepted the ADR on 2026-10-25. The tickets are in Linear under the parent issue "Apple Music DJ mixes".
+This plan carries out [ADR 0021](0021-apple-music-mixes.md). Each ticket is a vertical slice that a fresh agent can finish and verify alone. Parth accepted the ADR on 2026-10-25. The tickets are in Linear under PAL-989 "Apple Music DJ mixes", as PAL-990 to PAL-996.
 
-| # | Title | Blocked by |
-| --- | --- | --- |
-| 1 | Read Apple Music albums on the service (bring PR #274 up to date) | None |
-| 2 | Share an album from the Music app to Orbis | 1 |
-| 3 | Put the audio engine behind a seam in `AudioPlayer` | None |
-| 4 | Play an Apple Music Set through MusicKit on iPhone and Mac | 1, 3 |
-| 5 | Find Apple Music DJ mixes from Add Set | 1 |
-| 6 | Show, save, and search Apple Music Sets on web | 1, 5 |
-| 7 | Play Apple Music Sets on Apple TV | 4 |
+| # | Linear | Title | Blocked by |
+| --- | --- | --- | --- |
+| 1 | PAL-990 | Read Apple Music albums on the service (bring PR #274 up to date) | None |
+| 2 | PAL-991 | Share an album from the Music app to Orbis | 1 |
+| 3 | PAL-992 | Put the audio engine behind a seam in `AudioPlayer` | None |
+| 4 | PAL-993 | Play an Apple Music Set through MusicKit on iPhone and Mac | 1, 3 |
+| 5 | PAL-994 | Find Apple Music DJ mixes from Add Set | 1 |
+| 6 | PAL-995 | Show, save, and search Apple Music Sets on web | 1, 5 |
+| 7 | PAL-996 | Play Apple Music Sets on Apple TV | 4 |
 
 Tickets 1 and 3 can start now; 2 and 5 follow 1 and can run in parallel. Every slice that reads Apple Music tests with recorded Apple Music responses until Parth enables the MusicKit App Service on `app.orbis.client` and creates the Orbis MusicKit key (see "What Parth must do" in the ADR). Only the live checks wait for the key; ticket 4's device check also needs the App Service. Apple client checks need the Mac and a device with an Apple Music subscription; record them as unverified when an agent works from Vanta.
 
