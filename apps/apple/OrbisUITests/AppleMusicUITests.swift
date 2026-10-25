@@ -78,7 +78,11 @@ final class AppleMusicUITests: LibraryJourney {
   /// Music access, and once the answer is no, the page shows the Tracklist and Open in Apple Music
   /// instead of Play. Playing a real mix is the device check on the issue.
   func testAnAppleMusicSetAsksOnFirstPlayThenOffersOpenInAppleMusic() throws {
-    let seeded = try LaneService().saveAppleMusicSet(title: "Apple Music DJ mix")
+    let service = try LaneService()
+    let seeded = try service.saveAppleMusicSet(title: "Apple Music DJ mix")
+    // The lane library is shared by every journey in the run, and the Filter journeys look for a
+    // seeded Set near the top of it.
+    addTeardownBlock { try? service.removeSet(seeded.id) }
     // Every run asks afresh, whatever an earlier run answered on this simulator.
     XCUIApplication().resetAuthorizationStatus(for: .mediaLibrary)
     let app = try launch()
