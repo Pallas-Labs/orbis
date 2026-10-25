@@ -1,10 +1,10 @@
 # Ticket plan: Apple Music DJ mixes
 
-This plan carries out [ADR 0021](0021-apple-music-mixes.md). Each ticket is a vertical slice that a fresh agent can finish and verify alone. No Linear issues exist yet. Publish them in this order after Parth answers the ADR's questions and approves the breakdown.
+This plan carries out [ADR 0021](0021-apple-music-mixes.md). Each ticket is a vertical slice that a fresh agent can finish and verify alone. Parth accepted the ADR on 2026-10-25. The tickets are in Linear under the parent issue "Apple Music DJ mixes".
 
 | # | Title | Blocked by |
 | --- | --- | --- |
-| 1 | Read Apple Music albums on the service (bring PR #274 up to date) | Parth's answers to ADR questions 1, 2, and 7 |
+| 1 | Read Apple Music albums on the service (bring PR #274 up to date) | None |
 | 2 | Share an album from the Music app to Orbis | 1 |
 | 3 | Put the audio engine behind a seam in `AudioPlayer` | None |
 | 4 | Play an Apple Music Set through MusicKit on iPhone and Mac | 1, 3 |
@@ -12,20 +12,21 @@ This plan carries out [ADR 0021](0021-apple-music-mixes.md). Each ticket is a ve
 | 6 | Show, save, and search Apple Music Sets on web | 1, 5 |
 | 7 | Play Apple Music Sets on Apple TV | 4 |
 
-Tickets 2, 3, and 5 can run in parallel once their blockers are done. Live checks need the MusicKit key and the MusicKit App Service, which only Parth can set up (see "What Parth must do" in the ADR). Apple client checks need the Mac and a device with an Apple Music subscription; record them as unverified when an agent works from Vanta.
+Tickets 1 and 3 can start now; 2 and 5 follow 1 and can run in parallel. Every slice that reads Apple Music tests with recorded Apple Music responses until Parth enables the MusicKit App Service on `app.orbis.client` and creates the Orbis MusicKit key (see "What Parth must do" in the ADR). Only the live checks wait for the key; ticket 4's device check also needs the App Service. Apple client checks need the Mac and a device with an Apple Music subscription; record them as unverified when an agent works from Vanta.
 
 ## 1: Read Apple Music albums on the service (bring PR #274 up to date)
 
 **What to build:** A Person saves an Apple Music album link through the API and gets a Set with the album's title, creator, Artwork, length, and its songs as a ready Tracklist. Orbis never offers or makes a Download for it, and it can enter the Listening Queue.
 
-**Blocked by:** Parth's answers to ADR questions 1, 2, and 7.
+**Blocked by:** None (can start immediately). The live check needs the Orbis MusicKit key.
 
-**Status:** ready-for-agent once unblocked.
+**Status:** ready-for-agent.
 
 - [ ] PR #274 has main merged in and no ADR commits; this record's PR holds the ADR.
 - [ ] The client-supplied album is gone from the save payload, with its refusal and the friend-save special case.
 - [ ] Apple Music is an entry in the metadata provider registry (ADR 0005), present only when the Team ID, Key ID, and private key are configured. The Group signs an ES256 developer token and reuses it until it is near expiry.
 - [ ] A save of an album link reads the album with its songs. The Set has metadata enriched, details filled, a Tracklist ready, one Cue per song in album order, start times from summed song lengths, and each Cue's `appleMusicId`.
+- [ ] Every read uses the `us` storefront, whatever storefront the link names. A non-US link saves when the album is in the US catalog. When Apple Music answers that it is not, the save is refused with "This album is not in the US Apple Music catalog." and no Set is made.
 - [ ] A song link inside an album saves the album. Playlist, artist, station, and bare song links are refused with the shared Source Link message.
 - [ ] A refused or timed-out read saves the Set with the temporary title "Apple Music mix" and failed metadata. The metadata retry and the Tracklist retry read Apple Music again.
 - [ ] A Download request for an Apple Music Set is refused, Auto Download reports it unavailable, and the audio node never claims one.
@@ -90,7 +91,7 @@ Tickets 2, 3, and 5 can run in parallel once their blockers are done. Live check
 **Status:** ready-for-agent.
 
 - [ ] Before the rules: record real search and album responses for at least five queries (for example a DJ, a mix series, a label, and a studio artist). List where the ADR's DJ-mix rules would be wrong, and adjust the rules in the ADR if needed. Commit the responses as fixtures.
-- [ ] `GET /apple-music/search?q=` is in the typed API. It runs the typed search and the same words followed by "DJ Mix", merges them without duplicates, and reads the albums with their songs in one batched call.
+- [ ] `GET /apple-music/search?q=` is in the typed API. It runs the typed search and the same words followed by "DJ Mix", merges them without duplicates, and reads the albums with their songs in one batched call, all in the `us` storefront.
 - [ ] Each result carries the Source Link, title, creator, Artwork, release date, song count, length, whether it looks like a DJ mix, and whether it is in the Person's Library.
 - [ ] DJ mixes sort first and keep Apple's order. The default shows only DJ mixes; the All Albums switch shows the rest. A single is never a DJ mix.
 - [ ] With no key configured, the endpoint answers with a clear "not configured" error and the field says Apple Music search is not set up.

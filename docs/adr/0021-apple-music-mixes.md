@@ -1,22 +1,22 @@
 # Save Apple Music DJ mixes as Sets played through MusicKit
 
-Status: proposed.
+Status: accepted. Accepted by Parth on 2026-10-25.
 
 Revised 2026-10-24. The first draft is in PR #274. This revision adds two ways in, sharing from the Music app and a search inside Orbis, and moves the album read from the Apple app to the service. The ticket plan is in [0021-apple-music-mixes-tickets.md](0021-apple-music-mixes-tickets.md).
 
-## Questions for Parth
+## Decisions by Parth
 
-Each question has a recommendation. The rest of this record assumes the recommendation.
+Parth answered the seven open questions on 2026-10-25.
 
-1. **Accept the direction?** An Apple Music DJ mix becomes a Set with its songs as the Tracklist. The Apple app plays it through MusicKit, and Orbis never downloads it. **Recommend: yes.**
-2. **May the service hold an Apple Music key?** The first draft kept the key off the service, so only the Apple app could read an album. That leaves the share extension unable to save a mix on its own, and it puts search and the DJ-mix rules in Swift, which Vanta cannot build or test. **Recommend: yes. The Group signs its own developer token from a MusicKit private key.**
-3. **Which key?** Versos already signs Apple Music developer tokens (`APPLE_MUSIC_TEAM_ID`, `APPLE_MUSIC_KEY_ID`, `APPLE_MUSIC_PRIVATE_KEY`). **Recommend: create a separate MusicKit key for Orbis in the same team, so that you can revoke one without breaking the other.** Reusing the Versos key also works if you prefer one key.
-4. **Which storefront?** The Apple Music API reads the catalog of one country. **Recommend: read with the storefront in the shared link, and use `us` when the link has none.** Tell us if a friend uses Apple Music in another country.
-5. **What does search show first?** **Recommend: only albums that look like DJ mixes, with an All Albums switch. Any album can still be saved.**
-6. **Apple TV and web?** **Recommend: Apple TV plays saved Apple Music Sets in a later ticket, with no search on the TV. Web shows, searches, and saves Apple Music Sets, but does not play them.** Web playback needs MusicKit JS and each listener's Music User Token, which this record does not plan.
-7. **What happens to PR #274?** **Recommend: keep it as the server PR. Merge main into it, remove its ADR commits (this record replaces them), and change its save path as ticket 1 says.**
+1. **Direction.** An Apple Music DJ mix becomes a Set with its songs as the Tracklist. The Apple app plays it through MusicKit, and Orbis never downloads it.
+2. **Key on the service.** The Group holds a MusicKit private key and signs its own developer token. The first draft kept the key off the service, which left the share extension unable to save a mix on its own and put search and the DJ-mix rules in Swift, which Vanta cannot build or test.
+3. **A new key.** Orbis gets its own MusicKit key in the same team, so that revoking the Orbis key or the Versos key does not break the other app.
+4. **US only.** Every read and search uses the `us` storefront, whatever storefront the shared link names. A link from another country saves when the album is in the US catalog. When it is not, the save is refused with "This album is not in the US Apple Music catalog."
+5. **Search shows DJ mixes.** By default search shows only albums that look like DJ mixes, with an All Albums switch. Any album can still be saved.
+6. **Apple TV and web.** Apple TV plays saved Apple Music Sets in a later ticket, with no search on the TV. Web shows, searches, and saves Apple Music Sets, but does not play them. Web playback needs MusicKit JS and each listener's Music User Token, which this record does not plan.
+7. **PR #274 stays the server PR.** It takes main, drops its ADR commits (this record replaces them), and changes its save path as ticket 1 says.
 
-### What Parth must do
+## What Parth must do
 
 - Enable the MusicKit App Service on the App ID `app.orbis.client`: Certificates, Identifiers & Profiles > Identifiers > `app.orbis.client` > App Services > MusicKit. The iPhone, Mac, and Apple TV builds share this App ID. The share extension (`app.orbis.client.share`) does not use MusicKit and needs nothing.
 - Create a Media ID and a private key with Media Services (MusicKit) enabled. Keep the `.p8` file. Give the Team ID, Key ID, and key to the Group as Worker secrets.
@@ -28,9 +28,9 @@ Apple Music carries DJ mixes, but it files each one as an album: a list of songs
 
 **Source and Source Link.** Apple Music is a third Source, `apple-music`. Its Source Link is the album address without a storefront, `https://music.apple.com/album/<id>`, so a link from any country names the same Set. A song link inside an album (`?i=<song id>`) saves the album. Playlist, artist, station, and bare song links are refused with the shared Source Link message. PR #274 already holds this rule and its cases.
 
-**Reading the album.** The service reads Apple Music albums, as it reads YouTube and SoundCloud. Apple Music becomes a third entry in ADR 0005's provider registry. The Group signs an ES256 developer token from the MusicKit private key, keeps it for an hour, and calls `GET /v1/catalog/{storefront}/albums/{id}?include=tracks`. The read gives the title, the artist as creator, Artwork at both sizes, the release date, and the songs. Each song becomes a Cue in album order. A Cue's start time is the sum of the song lengths (`durationInMillis`) before it, and its `appleMusicId` is the song's catalog id. The Set's length is the sum of all song lengths. The Tracklist is ready when the read succeeds, so Versos (ADR 0017) is not asked about these Sets.
+**Reading the album.** The service reads Apple Music albums, as it reads YouTube and SoundCloud. Apple Music becomes a third entry in ADR 0005's provider registry. The Group signs an ES256 developer token from the MusicKit private key, keeps it for an hour, and calls `GET /v1/catalog/us/albums/{id}?include=tracks`. The storefront is always `us` (decision 4). The read gives the title, the artist as creator, Artwork at both sizes, the release date, and the songs. Each song becomes a Cue in album order. A Cue's start time is the sum of the song lengths (`durationInMillis`) before it, and its `appleMusicId` is the song's catalog id. The Set's length is the sum of all song lengths. The Tracklist is ready when the read succeeds, so Versos (ADR 0017) is not asked about these Sets.
 
-ADR 0005's rule that a read never fails a save holds. If Apple Music refuses or times out, the Set keeps the temporary title "Apple Music mix", its metadata state is failed, and the client offers a retry, which reads the album again. With no key configured, Apple Music has no registry entry, so tests and a Group without the secrets save the Set with failed metadata and make no Apple Music request.
+ADR 0005's rule that a read never fails a save holds, with one exception. When Apple Music answers that the album is not in the US catalog, the save is refused with "This album is not in the US Apple Music catalog." and no Set is made, because no listener in Orbis could read or play it. If Apple Music refuses for another reason or times out, the Set keeps the temporary title "Apple Music mix", its metadata state is failed, and the client offers a retry, which reads the album again. With no key configured, Apple Music has no registry entry, so tests and a Group without the secrets save the Set with failed metadata and make no Apple Music request.
 
 **No Retained Audio.** Apple Music audio is protected and licensed to each listener, so Orbis never makes a Download for it. The Set's download state stays `none`, Auto Download skips it, a Download request is refused, and no client offers Download. ADR 0001's rule that only Sets with Retained Audio enter the Listening Queue widens to playable Sets: Sets with Retained Audio, and Apple Music Sets. The service cannot know whether a client can play Apple Music, so it accepts them, and a client that cannot play one skips it.
 
@@ -42,7 +42,7 @@ ADR 0005's rule that a read never fails a save holds. If Apple Music refuses or 
 
 The exact attachments the Music app sends are confirmed on a device in ticket 2 before the code changes. The Mac Music app's Share menu must also list Orbis there; if it does not, the Mac path is to copy the link and paste it into Add Set.
 
-**Search.** Add Set gets a Find on Apple Music field. The field calls a new endpoint, `GET /apple-music/search?q=`, in the typed API (ADR 0014). The endpoint runs two catalog searches with `types=albums`: the words as typed, and the words followed by "DJ Mix", so a DJ's own mixes rise above their studio albums. It merges the two lists without duplicates and reads the found albums with their songs in one batched `GET /v1/catalog/{storefront}/albums?ids=…&include=tracks` call. Each result carries the Source Link, title, creator, Artwork, release date, song count, length, whether the album looks like a DJ mix, and whether the Set is already in the Person's Library. Choosing a result saves its Source Link through the ordinary save, so a search save and a shared save are the same Set. The search is on the service, not on the device, so web and Raycast can use it, and its rules are tested over HTTP with recorded Apple Music responses.
+**Search.** Add Set gets a Find on Apple Music field. The field calls a new endpoint, `GET /apple-music/search?q=`, in the typed API (ADR 0014). The endpoint searches the `us` catalog. It runs two catalog searches with `types=albums`: the words as typed, and the words followed by "DJ Mix", so a DJ's own mixes rise above their studio albums. It merges the two lists without duplicates and reads the found albums with their songs in one batched `GET /v1/catalog/us/albums?ids=…&include=tracks` call. Each result carries the Source Link, title, creator, Artwork, release date, song count, length, whether the album looks like a DJ mix, and whether the Set is already in the Person's Library. Choosing a result saves its Source Link through the ordinary save, so a search save and a shared save are the same Set. The search is on the service, not on the device, so web and Raycast can use it, and its rules are tested over HTTP with recorded Apple Music responses.
 
 **Telling a DJ mix from an album.** The Apple Music API has no DJ-mix flag and no continuous-mix flag. `isCompilation` is true for label samplers that are not mixed, and genres such as Dance and Electronic hold most studio albums too. Apple marks most of the mixes it carries in the names instead: the album title ends in "(DJ Mix)" and each song title ends in "(Mixed)". Ticket 5 records real responses to confirm this before the rules are written. The service calls an album a DJ mix when any of these is true:
 
