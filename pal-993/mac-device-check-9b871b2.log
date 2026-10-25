@@ -1,0 +1,189 @@
+# Mac device check, PAL-993. Debug build of app.orbis.client on macOS (MacBook), disposable fixture service, real MusicKit.
+# Build b21e50c: pids 38322 (first play), 45709/47771/49097 (resume before fix). Build b21e50c + engine fix (9b871b2 plus a seek log): pids 50291, 52684, 53623, 55825.
+2026-10-25 00:10:42.790 Db Orbis[38322:d15c07] [app.orbis:player] Command toggle generation=2
+2026-10-25 00:10:42.790 Db Orbis[38322:d15c07] [app.orbis:player] Command pause generation=2
+2026-10-25 00:10:42.790 Db Orbis[38322:d15c07] [app.orbis:player] Pause from failed("The audio stopped loading.")
+2026-10-25 00:10:42.792 Db Orbis[38322:d15c07] [app.orbis:player] Pause applied generation=2 duration=0.002406 rate=0.000000
+2026-10-25 00:10:42.840 Db Orbis[38322:d15c07] [app.orbis:player] Stop at 0.0s
+2026-10-25 00:10:42.841 I  Orbis[38322:d15c07] [app.orbis:player] Play <mask.hash: 'OhPIELgXrCHfDVmaoJRfjQ=='> from 0.0s of 4778.0s
+2026-10-25 00:10:42.884 Db Orbis[38322:d15c07] [app.orbis:player] Session ready generation=4 start=2
+2026-10-25 00:10:43.431 I  Orbis[38322:d15c07] [app.orbis:player] Item ready; length 4778.3s, service says 4778.0s
+2026-10-25 00:10:43.487 Db Orbis[38322:d15c07] [app.orbis:player] Player paused at 0.0s
+2026-10-25 00:10:44.140 Db Orbis[38322:d15c07] [app.orbis:player] Playing at 0.0s
+2026-10-25 00:10:44.142 I  Orbis[38322:d15c07] [app.orbis:player] First playing generation=4 actual=0.502208 delay=1.301462
+2026-10-25 00:11:37.579 Db Orbis[38322:d15c07] [app.orbis:player] Command seek generation=4
+2026-10-25 00:11:37.579 Db Orbis[38322:d15c07] [app.orbis:player] Seek requested generation=4 seek=1 target=420.000000
+2026-10-25 00:11:37.605 Db Orbis[38322:d15c07] [app.orbis:player] Seek to 420.0s landed at 420.0s
+2026-10-25 00:11:37.605 Db Orbis[38322:d15c07] [app.orbis:player] Seek completed generation=4 seek=1 finished=true target=420.000000 actual=420.000067 duration=0.026846
+2026-10-25 00:11:38.093 Db Orbis[38322:d15c07] [app.orbis:player] Playing at 420.0s
+2026-10-25 00:13:07.063 Db Orbis[38322:d15c07] [app.orbis:player] Next track at 610.0s
+2026-10-25 00:13:07.063 Db Orbis[38322:d15c07] [app.orbis:player] Command seek generation=4
+2026-10-25 00:13:07.063 Db Orbis[38322:d15c07] [app.orbis:player] Seek requested generation=4 seek=2 target=610.000000
+2026-10-25 00:13:07.168 Db Orbis[38322:d15c07] [app.orbis:player] Seek to 610.0s landed at 610.2s
+2026-10-25 00:13:07.168 Db Orbis[38322:d15c07] [app.orbis:player] Seek completed generation=4 seek=2 finished=true target=610.000000 actual=610.213044 duration=0.104958
+2026-10-25 00:13:07.692 Db Orbis[38322:d15c07] [app.orbis:player] Playing at 610.2s
+2026-10-25 00:13:32.319 Db Orbis[38322:d15c07] [app.orbis:player] Command pause generation=4
+2026-10-25 00:13:32.319 Db Orbis[38322:d15c07] [app.orbis:player] Pause from playing
+2026-10-25 00:13:32.321 Db Orbis[38322:d15c07] [app.orbis:player] Pause applied generation=4 duration=0.001543 rate=1.000000
+2026-10-25 00:13:32.848 Db Orbis[38322:d15c07] [app.orbis:player] Player paused at 635.1s
+2026-10-25 00:15:40.584 Db Orbis[45709:d1be6a] [app.orbis:player] Command pause generation=0
+2026-10-25 00:15:40.584 Db Orbis[45709:d1be6a] [app.orbis:player] Pause from idle
+2026-10-25 00:15:40.584 Db Orbis[45709:d1be6a] [app.orbis:player] Pause applied generation=0 duration=0.000038 rate=0.000000
+2026-10-25 00:15:40.633 I  Orbis[45709:d1be6a] [app.orbis:player] Play <mask.hash: 'x/bR2Z/AAuemDmjkoTIbpg=='> from 635.0s of 4778.0s
+2026-10-25 00:15:40.682 Db Orbis[45709:d1be6a] [app.orbis:player] Session ready generation=2 start=1
+2026-10-25 00:15:43.688 I  Orbis[45709:d1be6a] [app.orbis:player] Item ready; length 4778.3s, service says 4778.0s
+2026-10-25 00:15:43.689 Db Orbis[45709:d1be6a] [app.orbis:player] Applying held seek to 635.0s
+2026-10-25 00:15:43.689 Db Orbis[45709:d1be6a] [app.orbis:player] Seek requested generation=2 seek=1 target=635.000000
+2026-10-25 00:15:43.689 Db Orbis[45709:d1be6a] [app.orbis:player] Seek to 635.0s stopped at 0.0s
+2026-10-25 00:15:43.689 Db Orbis[45709:d1be6a] [app.orbis:player] Seek completed generation=2 seek=1 finished=false target=635.000000 actual=0.000000 duration=0.000045
+2026-10-25 00:15:43.736 Db Orbis[45709:d1be6a] [app.orbis:player] Player paused at 635.0s
+2026-10-25 00:17:44.034 Df tccd[858:d1d929] [com.apple.TCC:access] AUTHREQ_PROMPTING: msgID=47771.7, service=kTCCServiceMediaLibrary, subject=Sub:{app.orbis.client}Resp:{TCCDProcess: identifier=app.orbis.client, pid=47771, auid=501, euid=50
+2026-10-25 00:18:04.394 I  tccd[858:d1d929] [com.apple.TCC:access] CFUserNotification response: 0x0; service kTCCServiceMediaLibrary and subject app.orbis.client
+2026-10-25 00:18:04.591 Db Orbis[47771:d1da46] [app.orbis:player] Command pause generation=0
+2026-10-25 00:18:04.591 Db Orbis[47771:d1da46] [app.orbis:player] Pause from idle
+2026-10-25 00:18:04.591 Db Orbis[47771:d1da46] [app.orbis:player] Pause applied generation=0 duration=0.000038 rate=0.000000
+2026-10-25 00:18:04.659 I  Orbis[47771:d1da46] [app.orbis:player] Play <mask.hash: 'Nd8+vDo+Zfymf1JKVxx86g=='> from 635.0s of 4778.0s
+2026-10-25 00:18:04.699 Db Orbis[47771:d1da46] [app.orbis:player] Session ready generation=2 start=1
+2026-10-25 00:18:08.491 I  Orbis[47771:d1da46] [app.orbis:player] Item ready; length 4778.3s, service says 4778.0s
+2026-10-25 00:18:08.491 Db Orbis[47771:d1da46] [app.orbis:player] Applying held seek to 635.0s
+2026-10-25 00:18:08.491 Db Orbis[47771:d1da46] [app.orbis:player] Seek requested generation=2 seek=1 target=635.000000
+2026-10-25 00:18:08.491 Db Orbis[47771:d1da46] [app.orbis:player] Seek to 635.0s stopped at 0.0s
+2026-10-25 00:18:08.491 Db Orbis[47771:d1da46] [app.orbis:player] Seek completed generation=2 seek=1 finished=false target=635.000000 actual=0.000000 duration=0.000073
+2026-10-25 00:18:08.560 Db Orbis[47771:d1da46] [app.orbis:player] Player paused at 635.0s
+2026-10-25 00:18:45.382 Db Orbis[47771:d1da46] [app.orbis:player] Command toggle generation=2
+2026-10-25 00:18:45.382 Db Orbis[47771:d1da46] [app.orbis:player] Resume from failed("The audio could not move to that position.")
+2026-10-25 00:18:45.382 Db Orbis[47771:d1da46] [app.orbis:player] Applying held seek to 635.0s
+2026-10-25 00:18:45.382 Db Orbis[47771:d1da46] [app.orbis:player] Seek requested generation=2 seek=2 target=635.000000
+2026-10-25 00:18:45.382 Db Orbis[47771:d1da46] [app.orbis:player] Seek to 635.0s stopped at 0.0s
+2026-10-25 00:18:45.382 Db Orbis[47771:d1da46] [app.orbis:player] Seek completed generation=2 seek=2 finished=false target=635.000000 actual=0.000000 duration=0.000033
+2026-10-25 00:19:59.294 Db Orbis[49097:d1f082] [app.orbis:player] Command pause generation=0
+2026-10-25 00:19:59.294 Db Orbis[49097:d1f082] [app.orbis:player] Pause from idle
+2026-10-25 00:19:59.294 Db Orbis[49097:d1f082] [app.orbis:player] Pause applied generation=0 duration=0.000055 rate=0.000000
+2026-10-25 00:19:59.338 I  Orbis[49097:d1f082] [app.orbis:player] Play <mask.hash: 'XCjaZ2iYtHUTFVh13Upkgg=='> from 635.0s of 4778.0s
+2026-10-25 00:19:59.391 Db Orbis[49097:d1f082] [app.orbis:player] Session ready generation=2 start=1
+2026-10-25 00:20:02.438 I  Orbis[49097:d1f082] [app.orbis:player] Item ready; length 4778.3s, service says 4778.0s
+2026-10-25 00:20:02.438 Db Orbis[49097:d1f082] [app.orbis:player] Applying held seek to 635.0s
+2026-10-25 00:20:02.438 Db Orbis[49097:d1f082] [app.orbis:player] Seek requested generation=2 seek=1 target=635.000000
+2026-10-25 00:20:02.438 Df Orbis[49097:d1f082] [app.orbis:musickit-diag] seek 635.000000 loaded=true song=Optional((song: 3, offset: 24.787000000000035)) entries=1 queue=1 current=Optional(0) status=paused
+2026-10-25 00:20:02.438 Db Orbis[49097:d1f082] [app.orbis:player] Seek to 635.0s stopped at 0.0s
+2026-10-25 00:20:02.438 Db Orbis[49097:d1f082] [app.orbis:player] Seek completed generation=2 seek=1 finished=false target=635.000000 actual=0.000000 duration=0.000147
+2026-10-25 00:20:02.498 Db Orbis[49097:d1f082] [app.orbis:player] Player paused at 635.0s
+2026-10-25 00:22:09.089 Db Orbis[50291:d201b9] [app.orbis:player] Command pause generation=0
+2026-10-25 00:22:09.089 Db Orbis[50291:d201b9] [app.orbis:player] Pause from idle
+2026-10-25 00:22:09.089 Db Orbis[50291:d201b9] [app.orbis:player] Pause applied generation=0 duration=0.000052 rate=0.000000
+2026-10-25 00:22:09.168 I  Orbis[50291:d201b9] [app.orbis:player] Play <mask.hash: 'dFcUOQith357s4lxOrvKVw=='> from 635.0s of 4778.0s
+2026-10-25 00:22:09.224 Db Orbis[50291:d201b9] [app.orbis:player] Session ready generation=2 start=1
+2026-10-25 00:22:12.564 I  Orbis[50291:d201b9] [app.orbis:player] Item ready; length 4778.3s, service says 4778.0s
+2026-10-25 00:22:12.564 Db Orbis[50291:d201b9] [app.orbis:player] Applying held seek to 635.0s
+2026-10-25 00:22:12.564 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=1 target=635.000000
+2026-10-25 00:22:12.564 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 635.000000 song=Optional((song: 3, offset: 24.787000000000035)) queue=1 current=Optional(0) status=paused
+2026-10-25 00:22:12.615 Db Orbis[50291:d201b9] [app.orbis:player] Player paused at 635.0s
+2026-10-25 00:22:13.087 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 635.0s landed at 635.0s
+2026-10-25 00:22:13.087 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=1 finished=true target=635.000000 actual=635.000000 duration=0.523130
+2026-10-25 00:22:13.138 Db Orbis[50291:d201b9] [app.orbis:player] Player paused at 635.0s
+2026-10-25 00:22:13.669 Db Orbis[50291:d201b9] [app.orbis:player] Playing at 635.0s
+2026-10-25 00:22:13.671 I  Orbis[50291:d201b9] [app.orbis:player] First playing generation=2 actual=635.264266 delay=4.502711
+2026-10-25 00:22:37.635 Db Orbis[50291:d201b9] [app.orbis:player] Command seek generation=2
+2026-10-25 00:22:37.635 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=2 target=420.000000
+2026-10-25 00:22:37.635 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 420.000000 song=Optional((song: 2, offset: 45.05399999999992)) queue=18 current=Optional(3) status=playing
+2026-10-25 00:22:37.664 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 420.0s landed at 420.0s
+2026-10-25 00:22:37.664 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=2 finished=true target=420.000000 actual=420.000121 duration=0.029034
+2026-10-25 00:22:37.964 Db Orbis[50291:d201b9] [app.orbis:player] Playing at 420.0s
+2026-10-25 00:22:51.415 Db Orbis[50291:d201b9] [app.orbis:player] Command seek generation=2
+2026-10-25 00:22:51.415 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=3 target=368.000000
+2026-10-25 00:22:51.415 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 368.000000 song=Optional((song: 1, offset: 186.507)) queue=18 current=Optional(2) status=playing
+2026-10-25 00:22:51.442 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 368.0s landed at 368.0s
+2026-10-25 00:22:51.442 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=3 finished=true target=368.000000 actual=368.000342 duration=0.026772
+2026-10-25 00:22:51.442 Db Orbis[50291:d201b9] [app.orbis:player] Playing at 368.0s
+2026-10-25 00:22:59.317 Db Orbis[50291:d201b9] [app.orbis:player] Playing at 374.8s
+2026-10-25 00:23:35.750 Db Orbis[50291:d201b9] [app.orbis:player] Next track at 610.0s
+2026-10-25 00:23:35.750 Db Orbis[50291:d201b9] [app.orbis:player] Command seek generation=2
+2026-10-25 00:23:35.750 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=4 target=610.000000
+2026-10-25 00:23:35.750 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 610.000000 song=Optional((song: 3, offset: 0.0)) queue=18 current=Optional(2) status=playing
+2026-10-25 00:23:35.871 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 610.0s landed at 610.2s
+2026-10-25 00:23:35.871 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=4 finished=true target=610.000000 actual=610.213054 duration=0.121120
+2026-10-25 00:23:36.130 Db Orbis[50291:d201b9] [app.orbis:player] Playing at 610.2s
+2026-10-25 00:23:46.075 Db Orbis[50291:d201b9] [app.orbis:player] Command seek generation=2
+2026-10-25 00:23:46.075 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=5 target=610.000000
+2026-10-25 00:23:46.075 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 610.000000 song=Optional((song: 3, offset: 0.0)) queue=18 current=Optional(3) status=playing
+2026-10-25 00:23:46.121 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 610.0s landed at 610.2s
+2026-10-25 00:23:46.121 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=5 finished=true target=610.000000 actual=610.213070 duration=0.046154
+2026-10-25 00:24:04.032 Db Orbis[50291:d201b9] [app.orbis:player] Command seek generation=2
+2026-10-25 00:24:04.032 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=6 target=610.000000
+2026-10-25 00:24:04.032 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 610.000000 song=Optional((song: 3, offset: 0.0)) queue=18 current=Optional(3) status=playing
+2026-10-25 00:24:04.086 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 610.0s landed at 610.2s
+2026-10-25 00:24:04.086 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=6 finished=true target=610.000000 actual=610.213069 duration=0.054056
+2026-10-25 00:24:07.552 Db Orbis[50291:d201b9] [app.orbis:player] Command seek generation=2
+2026-10-25 00:24:07.552 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=7 target=610.000000
+2026-10-25 00:24:07.552 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 610.000000 song=Optional((song: 3, offset: 0.0)) queue=18 current=Optional(3) status=playing
+2026-10-25 00:24:07.609 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 610.0s landed at 610.2s
+2026-10-25 00:24:07.609 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=7 finished=true target=610.000000 actual=610.213040 duration=0.056802
+2026-10-25 00:24:39.237 Db Orbis[50291:d201b9] [app.orbis:player] Command pause generation=2
+2026-10-25 00:24:39.237 Db Orbis[50291:d201b9] [app.orbis:player] Pause from playing
+2026-10-25 00:24:39.239 Db Orbis[50291:d201b9] [app.orbis:player] Pause applied generation=2 duration=0.001870 rate=1.000000
+2026-10-25 00:24:39.356 Db Orbis[50291:d201b9] [app.orbis:player] Player paused at 641.3s
+2026-10-25 00:24:43.523 Db Orbis[50291:d201b9] [app.orbis:player] Command seek generation=2
+2026-10-25 00:24:43.523 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=8 target=611.000000
+2026-10-25 00:24:43.523 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 611.000000 song=Optional((song: 3, offset: 0.7870000000000346)) queue=18 current=Optional(3) status=paused
+2026-10-25 00:24:43.527 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 611.0s landed at 611.0s
+2026-10-25 00:24:43.527 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=8 finished=true target=611.000000 actual=611.000000 duration=0.003733
+2026-10-25 00:24:51.535 Db Orbis[50291:d201b9] [app.orbis:player] Command seek generation=2
+2026-10-25 00:24:51.535 Db Orbis[50291:d201b9] [app.orbis:player] Seek requested generation=2 seek=9 target=375.000000
+2026-10-25 00:24:51.535 Df Orbis[50291:d201b9] [app.orbis:musickit-diag] seek 375.000000 song=Optional((song: 2, offset: 0.053999999999973625)) queue=18 current=Optional(3) status=paused
+2026-10-25 00:24:51.575 Db Orbis[50291:d201b9] [app.orbis:player] Seek to 375.0s landed at 375.0s
+2026-10-25 00:24:51.575 Db Orbis[50291:d201b9] [app.orbis:player] Seek completed generation=2 seek=9 finished=true target=375.000000 actual=375.000000 duration=0.039865
+2026-10-25 00:24:51.700 Db Orbis[50291:d201b9] [app.orbis:player] Player paused at 375.0s
+2026-10-25 00:25:19.588 Db Orbis[50291:d201b9] [app.orbis:player] Command play generation=2
+2026-10-25 00:25:19.588 Db Orbis[50291:d201b9] [app.orbis:player] Resume from paused
+2026-10-25 00:25:19.600 Db Orbis[50291:d201b9] [app.orbis:player] Session ready generation=2 start=2
+2026-10-25 00:25:19.899 Db Orbis[50291:d201b9] [app.orbis:player] Playing at 375.0s
+2026-10-25 00:25:34.318 Db Orbis[50291:d201b9] [app.orbis:player] Command pause generation=2
+2026-10-25 00:25:34.318 Db Orbis[50291:d201b9] [app.orbis:player] Pause from playing
+2026-10-25 00:25:34.320 Db Orbis[50291:d201b9] [app.orbis:player] Pause applied generation=2 duration=0.001422 rate=1.000000
+2026-10-25 00:25:34.519 Db Orbis[50291:d201b9] [app.orbis:player] Player paused at 389.1s
+2026-10-25 00:26:12.774 Df tccd[858:d222b7] [com.apple.TCC:access] AUTHREQ_PROMPTING: msgID=52684.7, service=kTCCServiceMediaLibrary, subject=Sub:{app.orbis.client}Resp:{TCCDProcess: identifier=app.orbis.client, pid=52684, auid=501, euid=50
+2026-10-25 00:26:17.002 I  tccd[858:d222b7] [com.apple.TCC:access] CFUserNotification response: 0x0; service kTCCServiceMediaLibrary and subject app.orbis.client
+2026-10-25 00:26:17.153 Db Orbis[52684:d222d3] [app.orbis:player] Command pause generation=0
+2026-10-25 00:26:17.153 Db Orbis[52684:d222d3] [app.orbis:player] Pause from idle
+2026-10-25 00:26:17.153 Db Orbis[52684:d222d3] [app.orbis:player] Pause applied generation=0 duration=0.000083 rate=0.000000
+2026-10-25 00:26:17.219 I  Orbis[52684:d222d3] [app.orbis:player] Play <mask.hash: 'aZihYh2PPnlee1vuapcqQg=='> from 0.0s of 4778.0s
+2026-10-25 00:26:17.288 Db Orbis[52684:d222d3] [app.orbis:player] Session ready generation=2 start=1
+2026-10-25 00:26:17.332 E  Orbis[52684:d222d3] [app.orbis:player] Playback broke at 0.0s: domain=other code=1
+2026-10-25 00:26:20.828 I  Orbis[52684:d222d3] [app.orbis:player] Item ready; length 4778.3s, service says 4778.0s
+2026-10-25 00:26:20.888 Db Orbis[52684:d222d3] [app.orbis:player] Player paused at 0.0s
+2026-10-25 00:28:15.714 Df tccd[858:d23364] [com.apple.TCC:access] AUTHREQ_PROMPTING: msgID=53623.8, service=kTCCServiceMediaLibrary, subject=Sub:{app.orbis.client}Resp:{TCCDProcess: identifier=app.orbis.client, pid=53623, auid=501, euid=50
+2026-10-25 00:28:19.906 I  tccd[858:d23364] [com.apple.TCC:access] CFUserNotification response: 0x0; service kTCCServiceMediaLibrary and subject app.orbis.client
+2026-10-25 00:28:20.029 Db Orbis[53623:d230d0] [app.orbis:player] Command pause generation=0
+2026-10-25 00:28:20.029 Db Orbis[53623:d230d0] [app.orbis:player] Pause from idle
+2026-10-25 00:28:20.029 Db Orbis[53623:d230d0] [app.orbis:player] Pause applied generation=0 duration=0.000068 rate=0.000000
+2026-10-25 00:28:20.083 I  Orbis[53623:d230d0] [app.orbis:player] Play <mask.hash: 'PpGo8jEB6xcgqG1KVY10qA=='> from 0.0s of 4778.0s
+2026-10-25 00:28:20.152 Db Orbis[53623:d230d0] [app.orbis:player] Session ready generation=2 start=1
+2026-10-25 00:28:23.026 I  Orbis[53623:d230d0] [app.orbis:player] Item ready; length 4778.3s, service says 4778.0s
+2026-10-25 00:28:23.099 Db Orbis[53623:d230d0] [app.orbis:player] Player paused at 0.0s
+2026-10-25 00:28:23.714 Db Orbis[53623:d230d0] [app.orbis:player] Playing at 0.0s
+2026-10-25 00:28:23.716 I  Orbis[53623:d230d0] [app.orbis:player] First playing generation=2 actual=0.381008 delay=3.633383
+2026-10-25 00:29:54.341 Db Orbis[53623:d230d0] [app.orbis:player] Command seek generation=2
+2026-10-25 00:29:54.341 Db Orbis[53623:d230d0] [app.orbis:player] Seek requested generation=2 seek=1 target=4770.000000
+2026-10-25 00:29:54.341 Df Orbis[53623:d230d0] [app.orbis:musickit-diag] seek 4770.000000 song=Optional((song: 17, offset: 127.84000000000015)) queue=18 current=Optional(0) status=playing
+2026-10-25 00:29:54.392 Db Orbis[53623:d230d0] [app.orbis:player] Seek to 4770.0s landed at 4770.0s
+2026-10-25 00:29:54.392 Db Orbis[53623:d230d0] [app.orbis:player] Seek completed generation=2 seek=1 finished=true target=4770.000000 actual=4770.000065 duration=0.050715
+2026-10-25 00:29:54.392 Db Orbis[53623:d230d0] [app.orbis:player] Playing at 4770.0s
+2026-10-25 00:30:03.976 I  Orbis[53623:d230d0] [app.orbis:player] Item ended generation=2 actual=4778.307000 duration=4778.307000
+2026-10-25 00:30:04.022 Db Orbis[53623:d230d0] [app.orbis:player] Stop at 4778.2s
+2026-10-25 00:30:04.023 I  Orbis[53623:d230d0] [app.orbis:player] Play <mask.hash: 'saw3KjxvzQ9Fd8Efkxpx+w=='> from 0.0s of 30.0s
+2026-10-25 00:30:04.099 Db Orbis[53623:d230d0] [app.orbis:player] Session ready generation=4 start=2
+2026-10-25 00:30:04.145 Db Orbis[53623:d230d0] [app.orbis:player] Waiting at 0.0s: AVPlayerWaitingWhileEvaluatingBufferingRateReason
+2026-10-25 00:30:04.241 I  Orbis[53623:d230d0] [app.orbis:player] First playing generation=4 actual=0.000000 delay=0.217996
+2026-10-25 00:30:04.241 I  Orbis[53623:d230d0] [app.orbis:player] Item ready; length 30.0s, service says 30.0s
+2026-10-25 00:30:04.241 Db Orbis[53623:d230d0] [app.orbis:player] Playing at 0.0s
+2026-10-25 00:30:34.379 I  Orbis[53623:d230d0] [app.orbis:player] Item ended generation=4 actual=29.975329 duration=29.975329
+2026-10-25 00:30:34.388 Db Orbis[53623:d230d0] [app.orbis:player] Player paused at 30.0s
+2026-10-25 00:30:34.472 Db Orbis[53623:d230d0] [app.orbis:player] Stop at 30.0s
+2026-10-25 00:30:34.472 I  Orbis[53623:d230d0] [app.orbis:player] Play <mask.hash: 'BpG9uFiudJWO5T1SfJT/NQ=='> from 0.0s of 10109.0s
+2026-10-25 00:30:34.501 Db Orbis[53623:d230d0] [app.orbis:player] Session ready generation=6 start=3
+2026-10-25 00:30:35.781 I  Orbis[53623:d230d0] [app.orbis:player] Item ready; length 10109.2s, service says 10109.0s
+2026-10-25 00:30:35.782 Db Orbis[53623:d230d0] [app.orbis:player] Player paused at 0.0s
+2026-10-25 00:30:36.354 Db Orbis[53623:d230d0] [app.orbis:player] Playing at 0.0s
+2026-10-25 00:30:36.355 I  Orbis[53623:d230d0] [app.orbis:player] First playing generation=6 actual=0.367704 delay=1.882875
+2026-10-25 00:31:49.975 Df tccd[858:d253a3] [com.apple.TCC:access] AUTHREQ_PROMPTING: msgID=55825.8, service=kTCCServiceMediaLibrary, subject=Sub:{app.orbis.client}Resp:{TCCDProcess: identifier=app.orbis.client, pid=55825, auid=501, euid=50
+2026-10-25 00:31:54.219 I  tccd[858:d253a3] [com.apple.TCC:access] CFUserNotification response: 0x1; service kTCCServiceMediaLibrary and subject app.orbis.client
