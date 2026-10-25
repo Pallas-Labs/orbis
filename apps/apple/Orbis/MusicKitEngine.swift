@@ -58,8 +58,9 @@ final class MusicKitEngine: PlaybackEngine {
   private var loading: Task<Void, Never>?
   private var ticker: Task<Void, Never>?
   private var timeline = MixTimeline(lengths: [])
-  /// The queue's entries in album order, so the current entry gives its song.
-  private var entries: [MusicPlayer.Queue.Entry] = []
+  /// The album's songs in order. MusicKit fills its queue a few entries at a time, so a queue
+  /// entry gives its song by the item it plays, not by its place in the queue.
+  private var tracks: [Track] = []
   private var loadFailure: PlaybackDiagnostics.NormalizedError?
   private var isLoaded = false
   private var hasEnded = false
@@ -104,7 +105,7 @@ final class MusicKitEngine: PlaybackEngine {
         try await Self.prepareToPlay()
         guard !Task.isCancelled else { return }
         self.timeline = MixTimeline(lengths: tracks.map(\.duration))
-        self.entries = Array(player.queue.entries)
+        self.tracks = Array(tracks)
         self.isLoaded = true
         self.report(.statusChanged)
         self.report(.durationChanged)
@@ -135,8 +136,6 @@ final class MusicKitEngine: PlaybackEngine {
 
   private func poll() {
     guard isLoaded, !hasEnded else { return }
-    // MusicKit can fill in the entries after the queue is prepared.
-    if entries.isEmpty { entries = Array(player.queue.entries) }
     let status = player.state.playbackStatus
     let entry = player.queue.currentEntry?.id
     let time = currentTime
@@ -170,6 +169,9 @@ final class MusicKitEngine: PlaybackEngine {
   }
 
   func play() {
+    // MusicKit refuses to play before the queue is loaded. `AudioPlayer` asks again once the
+    // engine reports ready.
+    guard isLoaded else { return }
     pauseRequested = false
     Task { [weak self] in
       do {
@@ -199,34 +201,39 @@ final class MusicKitEngine: PlaybackEngine {
   }
 
   /// Moves to the song that holds the mix time, then to the offset in it. MusicKit changes the
-  /// song on its own schedule, so the offset waits until the new song is current.
+  /// song on its own schedule, so the offset waits until the new song is current. A song MusicKit
+  /// has not queued yet gets a new queue that starts at it.
   func seek(to seconds: TimeInterval, completion: @escaping @MainActor (Bool) -> Void) {
     seekNumber += 1
     let number = seekNumber
-    guard isLoaded, let target = timeline.locate(seconds), entries.indices.contains(target.song)
+    guard isLoaded, let target = timeline.locate(seconds), tracks.indices.contains(target.song)
     else {
       completion(false)
       return
     }
-    let entry = entries[target.song]
     let player = self.player
-    if player.queue.currentEntry?.id == entry.id {
+    if currentSong == target.song {
       player.playbackTime = target.offset
       lastPlayingTime = seconds
       completion(true)
       return
     }
-    player.queue.currentEntry = entry
+    let tracks = self.tracks
+    let track = tracks[target.song]
     Task { [weak self] in
+      if let entry = player.queue.entries.first(where: { $0.item?.id == track.id }) {
+        player.queue.currentEntry = entry
+      } else {
+        // Replacing the queue stops MusicKit; `AudioPlayer` plays again once the seek lands.
+        self?.pauseRequested = player.state.playbackStatus == .playing
+        player.queue = ApplicationMusicPlayer.Queue(for: tracks, startingAt: track)
+        try? await Self.prepareToPlay()
+      }
       let deadline = ContinuousClock.now + .seconds(5)
-      while player.queue.currentEntry?.id != entry.id, ContinuousClock.now < deadline {
+      while self?.currentSong != target.song, ContinuousClock.now < deadline {
         try? await Task.sleep(for: .milliseconds(50))
       }
-      guard let self, self.seekNumber == number else {
-        completion(false)
-        return
-      }
-      guard player.queue.currentEntry?.id == entry.id else {
+      guard let self, self.seekNumber == number, self.currentSong == target.song else {
         completion(false)
         return
       }
@@ -246,8 +253,8 @@ final class MusicKitEngine: PlaybackEngine {
 
   /// The song MusicKit is on, by its place in the album.
   private var currentSong: Int? {
-    guard let id = player.queue.currentEntry?.id else { return nil }
-    return entries.firstIndex { $0.id == id }
+    guard let id = player.queue.currentEntry?.item?.id else { return nil }
+    return tracks.firstIndex { $0.id == id }
   }
 
   var currentTime: TimeInterval {
