@@ -1,0 +1,70 @@
+{
+  "recorded": false,
+  "note": "Not yet captured on a device. These are the attachments ADR 0021 expects, with Apple's own catalog URLs for album 1046502556. To record: share from the Music app to a Debug build of Orbis and read `log stream --level debug --predicate 'subsystem == \"app.orbis\" AND category == \"share\"'`, then replace each case's attachments and set recorded to true.",
+  "macShareMenuListsOrbis": null,
+  "shares": [
+    {
+      "platform": "iOS",
+      "item": "album",
+      "attachments": [
+        {
+          "typeIdentifier": "public.url",
+          "value": "https://music.apple.com/us/album/dj-kicks-dj-mix/1046502556"
+        },
+        {
+          "typeIdentifier": "public.plain-text",
+          "value": "DJ-Kicks (DJ Mix) by Seth Troxler\nhttps://music.apple.com/us/album/dj-kicks-dj-mix/1046502556"
+        }
+      ],
+      "sourceLink": "https://music.apple.com/us/album/dj-kicks-dj-mix/1046502556"
+    },
+    {
+      "platform": "iOS",
+      "item": "song",
+      "attachments": [
+        {
+          "typeIdentifier": "public.url",
+          "value": "https://music.apple.com/us/album/would-it-be-mixed/1046502556?i=1046502558"
+        },
+        {
+          "typeIdentifier": "public.plain-text",
+          "value": "Would It Be (Mixed) by Seth Troxler\nhttps://music.apple.com/us/album/would-it-be-mixed/1046502556?i=1046502558"
+        }
+      ],
+      "sourceLink": "https://music.apple.com/us/album/would-it-be-mixed/1046502556?i=1046502558"
+    },
+    {
+      "platform": "macOS",
+      "item": "album",
+      "attachments": [
+        {
+          "typeIdentifier": "public.url",
+          "value": "https://music.apple.com/us/album/dj-kicks-dj-mix/1046502556"
+        }
+      ],
+      "sourceLink": "https://music.apple.com/us/album/dj-kicks-dj-mix/1046502556"
+    },
+    {
+      "platform": "macOS",
+      "item": "song",
+      "attachments": [
+        {
+          "typeIdentifier": "public.url",
+          "value": "https://music.apple.com/us/album/would-it-be-mixed/1046502556?i=1046502558"
+        }
+      ],
+      "sourceLink": "https://music.apple.com/us/album/would-it-be-mixed/1046502556?i=1046502558"
+    },
+    {
+      "platform": "iOS",
+      "item": "album, text only",
+      "attachments": [
+        {
+          "typeIdentifier": "public.plain-text",
+          "value": "DJ-Kicks (DJ Mix) by Seth Troxler\nhttps://music.apple.com/us/album/dj-kicks-dj-mix/1046502556"
+        }
+      ],
+      "sourceLink": "https://music.apple.com/us/album/dj-kicks-dj-mix/1046502556"
+    }
+  ]
+}

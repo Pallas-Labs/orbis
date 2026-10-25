@@ -789,7 +789,7 @@ final class AppModel {
   func pasteAndFile(_ text: String) async {
     pasteNotice = nil
     guard let url = LinkField.address(of: text), SetSource.named(by: url) != nil else {
-      pasteNotice = "The clipboard holds no YouTube or SoundCloud link."
+      pasteNotice = "The clipboard holds no YouTube, SoundCloud, or Apple Music link."
       return
     }
     linkToFile = text.trimmingCharacters(in: .whitespacesAndNewlines)

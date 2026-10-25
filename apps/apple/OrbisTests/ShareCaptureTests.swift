@@ -23,9 +23,37 @@ final class ShareCaptureTests: XCTestCase {
     )
   }
 
+  /// What the Music app sends when an album or a song is shared to Orbis, on iPhone and on Mac.
+  private struct MusicAppShares: Decodable {
+    struct Share: Decodable {
+      struct Attachment: Decodable { let value: String }
+      let platform: String
+      let item: String
+      let attachments: [Attachment]
+      let sourceLink: String
+    }
+    let shares: [Share]
+  }
+
+  func testSourceLinkFindsTheAppleMusicLinkInEachMusicAppShare() throws {
+    let url = try XCTUnwrap(
+      Bundle(for: Self.self).url(forResource: "MusicAppShares", withExtension: "json"))
+    let fixture = try JSONDecoder().decode(MusicAppShares.self, from: Data(contentsOf: url))
+    XCTAssertFalse(fixture.shares.isEmpty)
+    for share in fixture.shares {
+      // The extension reads each attachment's value in order, as `ShareExtensionPayloads` does.
+      let link = ShareCapture.sourceLink(from: share.attachments.map(\.value))
+      XCTAssertEqual(link?.absoluteString, share.sourceLink, "\(share.platform) \(share.item)")
+      XCTAssertEqual(link.flatMap(SetSource.named(by:)), .appleMusic, "\(share.platform) \(share.item)")
+    }
+  }
+
   func testSourceLinkRejectsUnsupportedHosts() {
     XCTAssertNil(ShareCapture.sourceLink(from: ["https://example.com/mix"]))
     XCTAssertNil(ShareCapture.sourceLink(from: ["not a link"]))
+    // Only Apple Music's own host; Apple's other sites are not a Source.
+    XCTAssertNil(ShareCapture.sourceLink(from: ["https://www.apple.com/apple-music/"]))
+    XCTAssertNil(ShareCapture.sourceLink(from: ["https://music.apple.com.example.test/us/album/x/1"]))
   }
 
   func testSaveReportsDuplicateWithoutTouchingClipboardPath() async {

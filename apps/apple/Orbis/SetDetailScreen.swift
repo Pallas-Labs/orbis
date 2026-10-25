@@ -115,13 +115,15 @@ struct SetDetailScreen: View {
       }
       .transition(.opacity.combined(with: .scale(0.96, anchor: .top)))
     default:
-      DownloadCapsule(
-        phase: SetPresentation.downloadPhase(set.downloadState, live: model.audioStates[set.id]),
-        start: { Task { await model.downloadAudio(set.id) } },
-        cancel: { Task { await model.cancelAudioDownload(set.id) } }
-      )
-      .frame(maxWidth: .infinity)
-      .transition(.opacity.combined(with: .scale(0.96, anchor: .top)))
+      if set.source.isDownloadable {
+        DownloadCapsule(
+          phase: SetPresentation.downloadPhase(set.downloadState, live: model.audioStates[set.id]),
+          start: { Task { await model.downloadAudio(set.id) } },
+          cancel: { Task { await model.cancelAudioDownload(set.id) } }
+        )
+        .frame(maxWidth: .infinity)
+        .transition(.opacity.combined(with: .scale(0.96, anchor: .top)))
+      }
     }
   }
 

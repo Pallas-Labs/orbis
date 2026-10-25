@@ -101,7 +101,7 @@ struct FilingSheet: View {
     } footer: {
       VStack(alignment: .leading, spacing: 10) {
         Text(
-          "A YouTube or SoundCloud link. Orbis reads the title, artist and artwork from it. A YouTube playlist link imports every Set in it."
+          "A YouTube, SoundCloud, or Apple Music link. Orbis reads the title, artist and artwork from it. A YouTube playlist link imports every Set in it."
         )
         PasteButton(payloadType: String.self) { pasted in
           guard let text = pasted.first else { return }
