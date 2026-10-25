@@ -19,6 +19,9 @@ if (!dataDirectory || !fixture || !port) {
 }
 
 const db = new Database(path.join(dataDirectory, "library.sqlite"));
+// The lane service writes to the same file while journeys run in parallel. Without a wait, a seed
+// that meets one of its writes fails with SQLITE_BUSY and takes this server down with it.
+db.run("PRAGMA busy_timeout = 5000");
 const audioDirectory = path.join(dataDirectory, "audio");
 const slowSets = new Map();
 const downloads = new Map();
