@@ -58,6 +58,9 @@ enum PlaybackEngineEvent {
   case ended
   /// Playback broke after it started.
   case failed(PlaybackDiagnostics.NormalizedError?)
+  /// The system's controls paused an engine that answers them itself (`ownsNowPlaying`), so
+  /// `AudioPlayer` heard nothing of the press.
+  case pausedBySystem
   case stalled
   /// The stream logged an error; playback may continue.
   case streamError(PlaybackDiagnostics.NormalizedError?)

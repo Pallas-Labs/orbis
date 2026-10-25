@@ -35,6 +35,18 @@ struct SavedSet: Identifiable, Decodable, Hashable {
 }
 
 extension SavedSet {
+  /// Whether the app can play this Set: it has Retained Audio, or it is an Apple Music Set, which
+  /// plays through MusicKit (ADR 0021). The service's `isPlayableSet` holds the same rule.
+  var isPlayable: Bool { downloadState == "ready" || source == .appleMusic }
+
+  /// The catalog id of an Apple Music Set's album, the last part of its Source Link
+  /// (`https://music.apple.com/album/<id>`).
+  var appleMusicAlbumID: String? {
+    guard source == .appleMusic, let url = URL(string: url) else { return nil }
+    let id = url.lastPathComponent
+    return id.isEmpty || id == "/" ? nil : id
+  }
+
   /// Where playback should start for this Set: where the last Listen left off, or the beginning
   /// for a Set nobody has heard, which is also where a finished one starts again.
   var resumePosition: TimeInterval { TimeInterval(playbackPositionSeconds) }

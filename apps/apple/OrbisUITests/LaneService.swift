@@ -117,6 +117,14 @@ struct LaneService {
     try seed("late-tracklist/\(id)")
   }
 
+  /// Saves an Apple Music album link and gives it the length and Tracklist the Apple Music
+  /// provider would read: three songs, with no Retained Audio.
+  func saveAppleMusicSet(title: String) throws -> Set {
+    let saved = try saveSet(title: title, url: "https://music.apple.com/album/1440818839")
+    try seed("apple-music-album/\(saved.id)")
+    return saved
+  }
+
   func audioState(_ id: String) throws -> AudioState {
     try send("GET", "sets/\(id)/audio/state", nil)
   }

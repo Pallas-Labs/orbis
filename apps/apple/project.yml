@@ -76,6 +76,8 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         INFOPLIST_KEY_CFBundleDisplayName: Orbis
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.music
+        # Asked on the first Play of an Apple Music Set, which plays through MusicKit (ADR 0021).
+        INFOPLIST_KEY_NSAppleMusicUsageDescription: Orbis plays the Apple Music DJ mixes you save as Sets, with one seek bar across the whole mix.
         # UILaunchScreen, a dictionary, and UIBackgroundModes, an array, cannot be build settings:
         # INFOPLIST_KEY_ carries only flat values, so both live in Orbis/Info.plist, where
         # UILaunchScreen names the color the splash is drawn on. Everything flat stays here.

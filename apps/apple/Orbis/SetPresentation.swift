@@ -192,13 +192,13 @@ enum SetPresentation {
     return state.isEmpty ? nil : state
   }
 
-  /// What the row's artwork control does for a Set: nothing without Retained Audio, and for
-  /// the Set in the player, the change the control makes to it.
+  /// What the row's artwork control does for a Set: nothing for a Set the app cannot play, and
+  /// for the Set in the player, the change the control makes to it.
   @MainActor
   static func playback(
     of set: SavedSet, currentSetId: String?, isPlaying: Bool
   ) -> SetRow.Playback? {
-    guard set.downloadState == "ready" else { return nil }
+    guard set.isPlayable else { return nil }
     guard set.id == currentSetId else { return .ready }
     return isPlaying ? .playing : .paused
   }

@@ -144,6 +144,8 @@ node scripts/native-lanes.mjs --only OrbisTests/PlaybackReliabilityTests --only 
 
 The streaming fixture can withhold and release response bytes. Its tests retain raw player time, monotonic time, buffer ranges, and playback state as JSON attachments. They check actual seek landing and recovery in both directions on the media timeline. The recovery UI journeys also remove and restore Retained Audio before retrying Play from Set detail and Now Playing.
 
+`AudioPlayer` plays a Set through a `PlaybackEngine`: `AVPlayerEngine` for Retained Audio, and `MusicKitEngine` for an Apple Music Set ([ADR 0021](adr/0021-apple-music-mixes.md)). The MusicKit engine queues the album's songs in `ApplicationMusicPlayer` and reports one clock for the whole mix; `ApplicationMusicPlayer` then owns Now Playing and the remote commands. MusicKit catalog reads and playback do not run in the simulator. `OrbisTests/AppleMusicPlaybackTests` checks the mix-time arithmetic and the engine handover with a fake engine, and the `AppleMusicUITests` journey checks the access prompt and the Open in Apple Music fallback; playing a real mix needs a device with an Apple Music subscription.
+
 The player writes what it does to the unified log under subsystem `app.orbis`, category `player`: each play with its start and the service's length, item readiness and failures with the stream's error log, waits with their reason, stalls, and every seek with where it landed. A Set's id is hashed and titles, addresses and the token are never written. Follow it on a Mac, or a device attached to one, with:
 
 ```sh
