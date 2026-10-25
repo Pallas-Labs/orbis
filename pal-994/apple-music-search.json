@@ -1,0 +1,23 @@
+{
+  "allAlbumsFirst" : [
+    "Boiler Room: Thom Yorke in London, Oct 11, 2011 (DJ Mix)",
+    "Tomorrowland Around The World 2020: Lost Frequencies (DJ Mix)",
+    "Tomorrowland Around The World 2020: Alan Walker (DJ Mix)",
+    "LXM Festival: Paul Kalkbrenner in Lisbon, Dec 14, 2019 (DJ Mix)",
+    "OK Computer"
+  ],
+  "djMixes" : [
+    "Boiler Room: Thom Yorke in London, Oct 11, 2011 (DJ Mix)",
+    "Tomorrowland Around The World 2020: Lost Frequencies (DJ Mix)",
+    "Tomorrowland Around The World 2020: Alan Walker (DJ Mix)",
+    "LXM Festival: Paul Kalkbrenner in Lisbon, Dec 14, 2019 (DJ Mix)"
+  ],
+  "journey" : "apple-music-search",
+  "query" : "Radiohead",
+  "saved" : {
+    "id" : "cdee6612-70a9-4d50-ab02-0612876cc230",
+    "source" : "apple-music",
+    "title" : "Boiler Room: Thom Yorke in London, Oct 11, 2011 (DJ Mix)",
+    "url" : "https:\/\/music.apple.com\/album\/1500803901"
+  }
+}
