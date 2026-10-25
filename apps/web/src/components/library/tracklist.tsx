@@ -29,7 +29,8 @@ export const Tracklist = ({
   readonly cues: readonly Cue[];
   readonly currentSeconds: number | null;
   readonly onRetry: () => void;
-  readonly onSeek: (seconds: number) => void;
+  /** Absent when this page cannot play the Set, so no Cue is a button. */
+  readonly onSeek?: ((seconds: number) => void) | undefined;
   readonly retrying: boolean;
   readonly state: "pending" | "ready" | "none" | "failed";
 }) => {
@@ -101,7 +102,7 @@ export const Tracklist = ({
           );
           return (
             <li key={cue.position}>
-              {startSeconds === null ? (
+              {startSeconds === null || onSeek === undefined ? (
                 <div className="flex min-h-11 items-center gap-3 px-2 py-1">
                   {details}
                 </div>

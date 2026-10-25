@@ -4,7 +4,7 @@ import type { Credentials } from "@/lib/orbis";
 /** The Library filters, as the URL carries them. */
 export interface LibraryFilters {
   readonly q?: string;
-  readonly source?: "youtube" | "soundcloud";
+  readonly source?: SavedSet["source"];
   readonly tag?: string;
 }
 
@@ -28,6 +28,17 @@ export const listSets = (credentials: Credentials, filters: LibraryFilters) => {
   }
   return callOrbis(credentials, (client) => client.sets.list({ query }));
 };
+
+/** Albums in the US Apple Music catalog for these words, DJ mixes first (ADR 0021). */
+export const searchAppleMusic = (credentials: Credentials, q: string) =>
+  callOrbis(credentials, (client) =>
+    client.appleMusic.search({ query: { q } })
+  );
+
+export type AppleMusicAlbum = Extract<
+  Awaited<ReturnType<typeof searchAppleMusic>>,
+  { ok: true }
+>["value"]["albums"][number];
 
 export const listTags = (credentials: Credentials) =>
   callOrbis(credentials, (client) => client.library.tags());

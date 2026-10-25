@@ -2,7 +2,11 @@ import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
-import { DownloadBadge, setDetails } from "@/components/library/set-row";
+import {
+  DownloadBadge,
+  canDownload,
+  setDetails,
+} from "@/components/library/set-row";
 import { useDownloadProgress } from "@/components/library/use-download-progress";
 import { useLiveEvents } from "@/components/live-events";
 import { usePlayer } from "@/components/player/player";
@@ -82,9 +86,7 @@ const FriendSetRow = ({
       await router.invalidate();
     }
   };
-  const downloadable = ["none", "failed", "canceled"].includes(
-    set.downloadState
-  );
+  const downloadable = canDownload(set);
   return (
     <li className="flex items-start gap-4 py-4">
       {set.artworkUrl === null ? (

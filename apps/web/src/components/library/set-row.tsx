@@ -46,13 +46,13 @@ import type { Playlist } from "@/lib/playlists";
 
 type Dialogs = "rename" | "tags" | "playlists" | "remove";
 
-const SOURCE_LABELS = {
+export const SOURCE_LABELS = {
   "apple-music": "Apple Music",
   soundcloud: "SoundCloud",
   youtube: "YouTube",
 } as const;
 
-const duration = (seconds: number | null): string | null => {
+export const duration = (seconds: number | null): string | null => {
   if (seconds === null) {
     return null;
   }
@@ -73,6 +73,11 @@ export const setDetails = (set: SavedSet): string =>
   ]
     .filter((part) => part !== null)
     .join(" · ");
+
+/** Apple Music audio is licensed to each listener, so Orbis never keeps it (ADR 0021). */
+export const canDownload = (set: SavedSet): boolean =>
+  set.source !== "apple-music" &&
+  ["none", "failed", "canceled"].includes(set.downloadState);
 
 export const DownloadBadge = ({
   progress,
@@ -202,9 +207,7 @@ export const SetRow = ({
     setDialog(null);
     await router.invalidate();
   };
-  const downloadable = ["none", "failed", "canceled"].includes(
-    set.downloadState
-  );
+  const downloadable = canDownload(set);
   const inFlight =
     set.downloadState === "queued" || set.downloadState === "downloading";
   return (
