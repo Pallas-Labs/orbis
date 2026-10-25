@@ -125,8 +125,8 @@ struct LaneService {
     return saved
   }
 
-  /// Removes a Set from the lane library, so a journey's own Set does not change the Library the
-  /// journeys after it see. Answers the HTTP status.
+  /// Removes a Set from this Person's Library, so a journey's own Set does not change the Library
+  /// the journeys after it see. Answers the HTTP status.
   @discardableResult
   func removeSet(_ id: String) throws -> Int {
     try status("DELETE", "sets/\(id)", nil)
