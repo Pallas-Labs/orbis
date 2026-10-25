@@ -86,8 +86,6 @@ export interface MetadataService {
 export interface MetadataOptions {
   /** The Host's MusicKit key. Without it Apple Music has no provider. */
   readonly appleMusic?: AppleMusicCredentials | undefined;
-  /** The catalog country an album is read from. Source Links carry none (ADR 0021). */
-  readonly appleMusicStorefront?: string | undefined;
   readonly fetch?: RequestFetch;
   /** Fills what the provider APIs leave out, and stands in for a YouTube API key that is not set. */
   readonly ytDlp?: YtDlpMetadataService | undefined;
@@ -108,6 +106,8 @@ interface Provider {
 
 interface ProviderOptions {
   readonly headers?: Readonly<Record<string, string>>;
+  /** What a 404 means for this provider, when it means more than a refusal. */
+  readonly notFound?: string;
   readonly label: string;
   readonly request: RequestFetch;
 }
@@ -187,6 +187,11 @@ const requestJson = Effect.fn("Metadata.requestJson")(
       catch: () => unavailable(`${options.label} is unreachable.`),
       try: (signal) => options.request(url, signal, options.headers),
     });
+    if (response.status === 404 && options.notFound) {
+      return yield* Effect.fail(
+        new MetadataError({ message: options.notFound, reason: "not-found" })
+      );
+    }
     if (!response.ok) {
       return yield* Effect.fail(
         response.status >= 500
@@ -530,6 +535,10 @@ const appleMusicMetadata = (album: AppleMusicAlbum): EnrichedMetadata => {
   };
 };
 
+/** Orbis reads one catalog (ADR 0021), so an album outside it cannot become a Set. */
+export const APPLE_MUSIC_NOT_FOUND =
+  "This album is not in the US Apple Music catalog.";
+
 const appleMusicProvider = (
   credentials: AppleMusicCredentials,
   storefront: string,
@@ -555,13 +564,17 @@ const appleMusicProvider = (
         {
           headers: { authorization: `Bearer ${developerToken}` },
           label: "Apple Music",
+          notFound: APPLE_MUSIC_NOT_FOUND,
           request,
         }
       );
       const [album] = response.data;
       if (!album) {
         return yield* Effect.fail(
-          rejected("Apple Music does not have this album.")
+          new MetadataError({
+            message: APPLE_MUSIC_NOT_FOUND,
+            reason: "not-found",
+          })
         );
       }
       const metadata = appleMusicMetadata(album);
@@ -649,7 +662,7 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
     if (options.appleMusic) {
       providers["apple-music"] = appleMusicProvider(
         options.appleMusic,
-        options.appleMusicStorefront ?? "us",
+        "us",
         request
       );
     }

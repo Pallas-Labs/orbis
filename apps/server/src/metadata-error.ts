@@ -5,6 +5,8 @@ const { TaggedError: taggedFailure } = Schema;
 
 export const MetadataReason = Schema.Literals([
   "not-configured",
+  /** The provider answered that it has no such item, as Apple does for an album outside its catalog. */
+  "not-found",
   "provider-rejected",
   "provider-unavailable",
   "unexpected-response",

@@ -128,6 +128,7 @@ import type { PresenceOptions } from "./presence.js";
 import { QueueSignals } from "./queue-signals.js";
 import { Queue } from "./queue.js";
 import { expandShortLink } from "./short-link.js";
+import { normalizeSourceUrl } from "./source-url.js";
 import { Stats } from "./stats.js";
 import { checkStreamGrant, issueStreamGrant } from "./stream-grant-core.js";
 import type { StreamGrantVerdict } from "./stream-grant-core.js";
@@ -584,7 +585,9 @@ export const createPortableApp = (options: {
       // one outcome a client cannot see. The log records which set and which reason.
       const enrichSavedSet = Effect.fn("SaveSet.enrich")((
         set: SavedSet,
-        personal: typeof Library.Service
+        personal: typeof Library.Service,
+        /** An answer already read before the save; otherwise the Set is read now. */
+        read?: Effect.Effect<EnrichedMetadata, MetadataError>
       ) => {
         const onMetadataFailure = (error: MetadataError) =>
           Effect.logWarning("set metadata enrichment failed").pipe(
@@ -596,7 +599,9 @@ export const createPortableApp = (options: {
             ),
             Effect.flatMap(() => personal.find(set.id))
           );
-        return metadata.enrich({ source: set.source, url: set.url }).pipe(
+        return (
+          read ?? metadata.enrich({ source: set.source, url: set.url })
+        ).pipe(
           // Apple names its albums cleanly; there is no upload title to tidy.
           Effect.flatMap((enriched) =>
             set.source === "apple-music"
@@ -607,6 +612,46 @@ export const createPortableApp = (options: {
           Effect.catchTag("MetadataError", onMetadataFailure)
         );
       });
+      /**
+       * An album outside the catalog Orbis reads can never be read, so it is refused before
+       * anything is written (ADR 0021). Any other miss saves the Set with failed metadata, so the
+       * answer is kept for the save to record. A Set that already has its Tracklist is not read.
+       */
+      const readAppleMusicBeforeSave = Effect.fn("SaveSet.readAppleMusic")(
+        function* readAppleMusicBeforeSave(link: string) {
+          const normalized = yield* Effect.try({
+            catch: (error) => error,
+            try: () => normalizeSourceUrl(link),
+          }).pipe(Effect.option);
+          if (
+            Option.isNone(normalized) ||
+            normalized.value.source !== "apple-music"
+          ) {
+            return;
+          }
+          const { source, url } = normalized.value;
+          const [held] = yield* db
+            .select({ tracklistState: setRows.tracklistState })
+            .from(setRows)
+            .where(eq(setRows.url, url));
+          if (held?.tracklistState === "ready") {
+            return;
+          }
+          const answer = yield* Effect.result(metadata.enrich({ source, url }));
+          if (answer._tag === "Success") {
+            return Effect.succeed(answer.success);
+          }
+          if (answer.failure.reason === "not-found") {
+            return yield* Effect.fail(
+              new LibraryError({
+                message: answer.failure.message,
+                statusCode: 400,
+              })
+            );
+          }
+          return Effect.fail(answer.failure);
+        }
+      );
       const autoDownloadSaved = Effect.fn("AutoDownload.onSave")(
         function* autoDownloadSaved(saved: SavedSet, person: PersonRecord) {
           const result = (
@@ -826,6 +871,7 @@ export const createPortableApp = (options: {
                 );
                 const caller = yield* SetCaller;
                 const personal = yield* Library;
+                const albumRead = yield* readAppleMusicBeforeSave(url);
                 const saved = yield* personal.save({
                   tags: [...(input.tags ?? [])],
                   title: input.title ?? "",
@@ -851,7 +897,7 @@ export const createPortableApp = (options: {
                   return yield* autoDownloadSaved(saved, caller.person);
                 }
                 return yield* autoDownloadSaved(
-                  yield* enrichSavedSet(saved, personal),
+                  yield* enrichSavedSet(saved, personal, albumRead),
                   caller.person
                 );
               }).pipe(

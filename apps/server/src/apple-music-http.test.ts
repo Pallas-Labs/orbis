@@ -21,6 +21,7 @@ const failures = [
   "a Download or Auto Download is queued for DRM audio",
   "the Listening Queue refuses a mix because it has no Retained Audio",
   "a refused or timed-out read fails the save instead of keeping a temporary title",
+  "an album missing from the US catalog is saved as a Set nothing can read",
   "a metadata or Tracklist retry does not read the album again",
   "removing and saving the mix again loses its Tracklist",
   "a Group without the key calls Apple at all",
@@ -113,7 +114,7 @@ const musicKitKey = async () => {
   return { privateKey, verify };
 };
 
-type AppleAnswer = "album" | "refuse" | "hang";
+type AppleAnswer = "album" | "refuse" | "hang" | "missing";
 
 const start = async (options: { configured?: boolean } = {}) => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-apple-music-"));
@@ -160,6 +161,9 @@ const start = async (options: { configured?: boolean } = {}) => {
       fetch: (url, signal, headers) => {
         reads.push({ token: headers?.authorization, url });
         if (answer === "refuse") {
+          return Promise.resolve(new Response("{}", { status: 401 }));
+        }
+        if (answer === "missing") {
           return Promise.resolve(new Response("{}", { status: 404 }));
         }
         if (answer === "hang") {
@@ -382,6 +386,27 @@ test("a refused or silent Apple Music read keeps the save, and a retry reads the
       afterRetry: library.json().sets[0],
       refused: refused.json(),
     });
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("an album the US catalog does not hold is refused and leaves no Set", async () => {
+  const server = await start();
+  try {
+    server.answer("missing");
+    const refused = await request(server.app, {
+      method: "POST",
+      payload: { url: "https://music.apple.com/jp/album/example/1700000000" },
+      url: "/sets",
+    });
+    expect(refused.statusCode).toBe(400);
+    expect(refused.json().message).toBe(
+      "This album is not in the US Apple Music catalog."
+    );
+    const library = await request(server.app, { method: "GET", url: "/sets" });
+    expect(library.json().sets).toEqual([]);
+    await record("missing-from-us-catalog", { refused: refused.json() });
   } finally {
     await server.dispose();
   }
