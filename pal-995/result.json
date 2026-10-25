@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "steps": [
+    {
+      "name": "a search shows only DJ mixes by default",
+      "albums": 27,
+      "djMixes": 16
+    },
+    {
+      "name": "All Albums shows every album",
+      "albums": 27
+    },
+    {
+      "name": "adding a search result saves its Source Link",
+      "title": "Seth Troxler at Circoloco Thailand (DJ Mix)",
+      "url": "https://music.apple.com/album/1814380376"
+    },
+    {
+      "name": "the Library row shows Apple Music, Artwork, and length",
+      "actions": [
+        "Rename…",
+        "Edit Tags…",
+        "Add to Playlist…",
+        "Remove…"
+      ],
+      "details": "Seth Troxler · Apple Music · 1h 29m"
+    },
+    {
+      "name": "a pasted Apple Music song link saves its album",
+      "url": "https://music.apple.com/album/1046502556"
+    },
+    {
+      "name": "refused links show the service's reason"
+    },
+    {
+      "name": "the Set page shows the Tracklist and Open in Apple Music only",
+      "cues": 24,
+      "details": "Seth Troxler · Apple Music · 1h 29m"
+    },
+    {
+      "name": "the Set page fits phone width"
+    },
+    {
+      "name": "the pasted Set's Cues carry their artists",
+      "firstCue": "0:00Would It Be (Mixed)Niki Nakazawa"
+    }
+  ]
+}
