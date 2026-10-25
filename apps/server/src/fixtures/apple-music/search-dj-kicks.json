@@ -1,0 +1,166 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=DJ-Kicks&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=DJ-Kicks&types=albums",
+        "data": [
+          {
+            "id": "6799949835",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/6799949835",
+            "attributes": { "name": "DJ - Kicks: Djrum (DJ Mix)" }
+          },
+          {
+            "id": "1804169716",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1804169716",
+            "attributes": { "name": "DJ-Kicks (Kruder & Dorfmeister) [DJ Mix]" }
+          },
+          {
+            "id": "1015492427",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015492427",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1079896969",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1079896969",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1423555942",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1423555942",
+            "attributes": { "name": "DJ-Kicks (Mount Kimbie) [DJ Mix]" }
+          },
+          {
+            "id": "1192768316",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1192768316",
+            "attributes": { "name": "DJ-Kicks (Matthew Dear) [DJ Mix]" }
+          },
+          {
+            "id": "1499893138",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1499893138",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1586151106",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1586151106",
+            "attributes": { "name": "DJ - Kicks: Disclosure - EP" }
+          },
+          {
+            "id": "1015479430",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015479430",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1562174369",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1562174369",
+            "attributes": { "name": "DJ-Kicks: Jayda G (DJ Mix)" }
+          },
+          {
+            "id": "1450974443",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1450974443",
+            "attributes": { "name": "DJ-Kicks (Laurel Halo) [DJ Mix]" }
+          },
+          {
+            "id": "1337833023",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1337833023",
+            "attributes": { "name": "DJ-Kicks (Deetron) [Mixed Tracks]" }
+          },
+          {
+            "id": "1015495040",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015495040",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1015515131",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015515131",
+            "attributes": { "name": "DJ-Kicks (Maya Jane Coles) [DJ Mix]" }
+          },
+          {
+            "id": "442390602",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/442390602",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1461471084",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1461471084",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1506215734",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1506215734",
+            "attributes": { "name": "DJ-Kicks" }
+          },
+          {
+            "id": "468047020",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/468047020",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1462082729",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1462082729",
+            "attributes": { "name": "DJ-Kicks - EP" }
+          },
+          {
+            "id": "1562349438",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1562349438",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1870553746",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1870553746",
+            "attributes": { "name": "DJ - Kicks: Sofia Kourtesis (DJ Mix)" }
+          },
+          {
+            "id": "1438788105",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1438788105",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "504529842",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/504529842",
+            "attributes": { "name": "DJ-Kicks" }
+          },
+          {
+            "id": "1166865309",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1166865309",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1523784093",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1523784093",
+            "attributes": { "name": "DJ-Kicks (Avalon Emerson) [DJ Mix]" }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:39.764Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=DJ-Kicks&types=albums"
+}

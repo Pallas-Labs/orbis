@@ -7,6 +7,7 @@ final class ContractResponseTests: XCTestCase {
   private struct Samples: Decodable {
     struct Tags: Decodable { let tags: [String] }
 
+    let appleMusicSearch: AppleMusicSearchResponse
     let audioState: AudioState
     let library: LibraryResponse
     let me: Me
@@ -42,5 +43,8 @@ final class ContractResponseTests: XCTestCase {
         .failed(message: "YouTube is not answering. Try the import again."),
       ])
     XCTAssertEqual(samples.playlistImports.first?.playlist.id, samples.playlist.id)
+    XCTAssertEqual(samples.appleMusicSearch.albums.map(\.djMix), [true, false])
+    XCTAssertEqual(samples.appleMusicSearch.albums.first?.inLibrary, true)
+    XCTAssertEqual(samples.appleMusicSearch.albums.first?.durationSeconds, 5393)
   }
 }

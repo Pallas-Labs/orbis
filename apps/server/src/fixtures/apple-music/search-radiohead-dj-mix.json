@@ -1,0 +1,186 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=Radiohead+DJ+Mix&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=Radiohead+DJ+Mix&types=albums",
+        "data": [
+          {
+            "id": "1111577743",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1111577743",
+            "attributes": { "name": "A Moon Shaped Pool" }
+          },
+          {
+            "id": "1097861387",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1097861387",
+            "attributes": { "name": "OK Computer" }
+          },
+          {
+            "id": "1109714933",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1109714933",
+            "attributes": { "name": "In Rainbows" }
+          },
+          {
+            "id": "1097862870",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1097862870",
+            "attributes": { "name": "Kid A" }
+          },
+          {
+            "id": "1097863576",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1097863576",
+            "attributes": { "name": "Hail to the Thief" }
+          },
+          {
+            "id": "1239489060",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1239489060",
+            "attributes": { "name": "OK Computer OKNOTOK 1997 2017" }
+          },
+          {
+            "id": "1109714965",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1109714965",
+            "attributes": { "name": "The King of Limbs" }
+          },
+          {
+            "id": "1712388490",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1712388490",
+            "attributes": { "name": "Roses (Imanbek Remix) - Single" }
+          },
+          {
+            "id": "1467816521",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1467816521",
+            "attributes": {
+              "name": "Easy (Remix) [feat. Chris Brown] - Single"
+            }
+          },
+          {
+            "id": "1500803901",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1500803901",
+            "attributes": {
+              "name": "Boiler Room: Thom Yorke in London, Oct 11, 2011 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1454454062",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1454454062",
+            "attributes": { "name": "Girls Need Love (Remix) - Single" }
+          },
+          {
+            "id": "1531791781",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1531791781",
+            "attributes": {
+              "name": "Said Sum (Remix) [feat. City Girls & DaBaby] - Single"
+            }
+          },
+          {
+            "id": "1525467379",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1525467379",
+            "attributes": {
+              "name": "Tomorrowland Around The World 2020: Lost Frequencies (DJ Mix)"
+            }
+          },
+          {
+            "id": "1525640183",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1525640183",
+            "attributes": {
+              "name": "Tomorrowland Around The World 2020: Alan Walker (DJ Mix)"
+            }
+          },
+          {
+            "id": "1496030499",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1496030499",
+            "attributes": {
+              "name": "LXM Festival: Paul Kalkbrenner in Lisbon, Dec 14, 2019 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1623854804",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1623854804",
+            "attributes": { "name": "Mr. Morale & The Big Steppers" }
+          },
+          {
+            "id": "1300707517",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1300707517",
+            "attributes": {
+              "name": "Rake It Up (feat. Nicki Minaj) [Diplo & Party Favor Remix] - Single"
+            }
+          },
+          {
+            "id": "1469404638",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1469404638",
+            "attributes": {
+              "name": "Falling Down (Travis Barker Remix) - Single"
+            }
+          },
+          {
+            "id": "1501765538",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1501765538",
+            "attributes": {
+              "name": "Suicidal (Remix) [feat. Juice WRLD] - Single"
+            }
+          },
+          {
+            "id": "1711601753",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1711601753",
+            "attributes": { "name": "A Love Letter To You" }
+          },
+          {
+            "id": "1419758421",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1419758421",
+            "attributes": {
+              "name": "Beautiful (feat. Camila Cabello) - Single"
+            }
+          },
+          {
+            "id": "1537889223",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1537889223",
+            "attributes": { "name": "THICK (Remix) - Single" }
+          },
+          {
+            "id": "1097862062",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1097862062",
+            "attributes": { "name": "Pablo Honey" }
+          },
+          {
+            "id": "1421952733",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1421952733",
+            "attributes": { "name": "New Light (Zookëper Remix) - Single" }
+          },
+          {
+            "id": "1474669063",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1474669063",
+            "attributes": { "name": "Norman F*****g Rockwell!" }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:41.346Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=Radiohead+DJ+Mix&types=albums"
+}

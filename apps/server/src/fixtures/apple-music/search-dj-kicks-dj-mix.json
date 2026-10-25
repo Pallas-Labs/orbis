@@ -1,0 +1,168 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=DJ-Kicks+DJ+Mix&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=DJ-Kicks+DJ+Mix&types=albums",
+        "data": [
+          {
+            "id": "1015492427",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015492427",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1391203079",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1391203079",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1079896969",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1079896969",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1461471084",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1461471084",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1499893138",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1499893138",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "442390602",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/442390602",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1222074150",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1222074150",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1015526174",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015526174",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1046502556",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1046502556",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1015495040",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015495040",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1015479430",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015479430",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1438788105",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1438788105",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1445052080",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1445052080",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1166865309",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1166865309",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "468047020",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/468047020",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1362077737",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1362077737",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "874979970",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/874979970",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1562349438",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1562349438",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "419078823",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/419078823",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1238174614",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1238174614",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1423555942",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1423555942",
+            "attributes": { "name": "DJ-Kicks (Mount Kimbie) [DJ Mix]" }
+          },
+          {
+            "id": "1637725387",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1637725387",
+            "attributes": { "name": "DJ-Kicks: Theo Parrish (DJ Mix)" }
+          },
+          {
+            "id": "1015515131",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1015515131",
+            "attributes": { "name": "DJ-Kicks (Maya Jane Coles) [DJ Mix]" }
+          },
+          {
+            "id": "1500933343",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1500933343",
+            "attributes": {
+              "name": "Boiler Room: Nightmares On Wax in London, Aug 28, 2013 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1450974443",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1450974443",
+            "attributes": { "name": "DJ-Kicks (Laurel Halo) [DJ Mix]" }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:40.004Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=DJ-Kicks+DJ+Mix&types=albums"
+}

@@ -68,7 +68,10 @@ import {
   revokeDevice,
   revokeKey,
 } from "./admin.js";
-import { appleMusicDownloadRefused } from "./apple-music.js";
+import {
+  appleMusicDownloadRefused,
+  appleMusicSearchRefusal,
+} from "./apple-music.js";
 import { makeAttemptLimiter } from "./attempt-limiter.js";
 import { Audio } from "./audio-service.js";
 import type { AudioFile } from "./audio-service.js";
@@ -1507,6 +1510,43 @@ export const createPortableApp = (options: {
             )
           )
       );
+      const appleMusicGroup = HttpApiBuilder.group(
+        OrbisApi,
+        "appleMusic",
+        (handlers) =>
+          handlers.handle("search", ({ query }) =>
+            withFailureResponse(
+              Effect.gen(function* searchAppleMusic() {
+                const words = query.q.trim().replaceAll(/\s+/gu, " ");
+                if (!words) {
+                  return yield* Effect.fail(
+                    new LibraryError({
+                      message: "Type what to find on Apple Music.",
+                      statusCode: 400,
+                    })
+                  );
+                }
+                const found = yield* metadata
+                  .searchAppleMusic(words)
+                  .pipe(
+                    Effect.catchTag("MetadataError", (error) =>
+                      Effect.fail(appleMusicSearchRefusal(error))
+                    )
+                  );
+                const personal = yield* Library;
+                const saved = yield* personal.savedUrls(
+                  found.map((album) => album.url)
+                );
+                return {
+                  albums: found.map((album) => ({
+                    ...album,
+                    inLibrary: saved.has(album.url),
+                  })),
+                };
+              })
+            )
+          )
+      );
       const libraryGroup = HttpApiBuilder.group(
         OrbisApi,
         "library",
@@ -2202,6 +2242,7 @@ export const createPortableApp = (options: {
       yield* Layer.buildWithScope(
         HttpApiBuilder.layer(OrbisApi, { openapiPath: "/openapi.json" }).pipe(
           Layer.provide(setGroup),
+          Layer.provide(appleMusicGroup),
           Layer.provide(playlistGroup),
           Layer.provide(queueGroup),
           Layer.provide(libraryGroup),

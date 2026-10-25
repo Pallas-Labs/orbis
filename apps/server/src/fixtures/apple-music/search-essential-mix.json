@@ -1,0 +1,192 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=Essential+Mix&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=Essential+Mix&types=albums",
+        "data": [
+          {
+            "id": "76025603",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/76025603",
+            "attributes": { "name": "Essential Mix" }
+          },
+          {
+            "id": "1512991678",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1512991678",
+            "attributes": {
+              "name": "Tum Mile The Essential Mix (Remix By DJ Suketu) [From \"Tum Mile\"] - Single"
+            }
+          },
+          {
+            "id": "1867567427",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1867567427",
+            "attributes": { "name": "Brown Acid \"The Essential Mix\"" }
+          },
+          {
+            "id": "1514141264",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1514141264",
+            "attributes": {
+              "name": "Neele Neele Ambar Par The Essential Mix (Remix By DJ Suketu) [From \"Kalaakaar\"] - Single"
+            }
+          },
+          {
+            "id": "1514143391",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1514143391",
+            "attributes": {
+              "name": "Mat Aazma Re The Essential Mix (Remix By DJ Suketu) [From \"Murder 3\"] - Single"
+            }
+          },
+          {
+            "id": "1511975142",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1511975142",
+            "attributes": {
+              "name": "Kal Ho Naa Ho The Essential Mix (Remix By DJ Suketu) [From \"Kal Ho Naa Ho\"] - Single"
+            }
+          },
+          {
+            "id": "1774134083",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1774134083",
+            "attributes": { "name": "Essential Mix" }
+          },
+          {
+            "id": "1516255937",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1516255937",
+            "attributes": {
+              "name": "Deewane To Deewane Hain The Essential Mix (Remix By DJ Suketu) - Single"
+            }
+          },
+          {
+            "id": "1510898165",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1510898165",
+            "attributes": {
+              "name": "Muskurane The Essential Mix (Remix By DJ Suketu) [From \"Citylights\"] - Single"
+            }
+          },
+          {
+            "id": "1619057260",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1619057260",
+            "attributes": { "name": "Essential Mix" }
+          },
+          {
+            "id": "1637375183",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1637375183",
+            "attributes": { "name": "Amapiano Essentials (DJ Mix)" }
+          },
+          {
+            "id": "1495465771",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1495465771",
+            "attributes": { "name": "Essential Mix - EP" }
+          },
+          {
+            "id": "1444272197",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1444272197",
+            "attributes": {
+              "name": "Cold Water (feat. Justin Bieber & MØ) [Don Omar Remix] - Single"
+            }
+          },
+          {
+            "id": "198017385",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/198017385",
+            "attributes": { "name": "The Essential Isley Brothers" }
+          },
+          {
+            "id": "854963792",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/854963792",
+            "attributes": { "name": "The Essential R. Kelly" }
+          },
+          {
+            "id": "785482075",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/785482075",
+            "attributes": {
+              "name": "Rxxistance Vol. 3: Essential, Mixed by Stoned Baby (Continuous Mix)"
+            }
+          },
+          {
+            "id": "1473560086",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1473560086",
+            "attributes": {
+              "name": "Stellar Fountain's Essential Mix Volume I. (DJ Mix)"
+            }
+          },
+          {
+            "id": "1516638252",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1516638252",
+            "attributes": { "name": "GodLovesUgly (Remix) - Single" }
+          },
+          {
+            "id": "1533234767",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1533234767",
+            "attributes": {
+              "name": "A Real Mother for Ya (Ben Liebrand Disco, Jackin's, Essential Mix) - EP"
+            }
+          },
+          {
+            "id": "1724182897",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1724182897",
+            "attributes": { "name": "Radionova (Essential Mix) - EP" }
+          },
+          {
+            "id": "1528815089",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1528815089",
+            "attributes": {
+              "name": "Summer Cafe Ibiza Vibes: Essential Chill Out Music, Beach Party Hot Mix"
+            }
+          },
+          {
+            "id": "1631267560",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1631267560",
+            "attributes": { "name": "Anjunabeats Volume 16 (DJ Mix)" }
+          },
+          {
+            "id": "393865606",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/393865606",
+            "attributes": {
+              "name": "12\" Masters - The Essential Mixes: Usher"
+            }
+          },
+          {
+            "id": "1583036744",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1583036744",
+            "attributes": { "name": "A Momentary Lapse of Reason (2019 Remix)" }
+          },
+          {
+            "id": "1532571287",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1532571287",
+            "attributes": {
+              "name": "Delicate Sound of Thunder (2019 Remix) [Live]"
+            }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:43.367Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=Essential+Mix&types=albums"
+}

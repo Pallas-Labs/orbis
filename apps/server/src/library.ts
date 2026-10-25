@@ -125,6 +125,10 @@ export class Library extends Context.Service<
     ) => Effect.Effect<SavedSet, LibraryError>;
     readonly find: (id: string) => Effect.Effect<SavedSet, LibraryError>;
     readonly findByUrl: (url: string) => Effect.Effect<SavedSet, LibraryError>;
+    /** Which of these Source Links are in this Person's Library. */
+    readonly savedUrls: (
+      urls: readonly string[]
+    ) => Effect.Effect<ReadonlySet<string>, LibraryError>;
     /** The Sets with these identifiers, in the order asked for. Missing ones are left out. */
     readonly byIds: (
       ids: readonly string[]
@@ -601,6 +605,28 @@ export class Library extends Context.Service<
             return yield* find(row.id);
           })
         )
+      );
+
+      const savedUrls = Effect.fn("Library.savedUrls")(
+        (urls: readonly string[]) =>
+          execute(
+            Effect.gen(function* savedUrlsEffect() {
+              if (urls.length === 0) {
+                return new Set<string>();
+              }
+              const rows = yield* db
+                .select({ url: sets.url })
+                .from(libraryEntries)
+                .innerJoin(sets, eq(sets.id, libraryEntries.setId))
+                .where(
+                  and(
+                    eq(libraryEntries.personId, personId),
+                    inArray(sets.url, [...urls])
+                  )
+                );
+              return new Set(rows.map((row) => row.url));
+            })
+          )
       );
 
       // Queue order comes from the caller; each Set must resolve for this Person.
@@ -1452,6 +1478,7 @@ export class Library extends Context.Service<
         renamePlaylist,
         resetStuckDownloads,
         save,
+        savedUrls,
         setPlaybackPosition,
         setPlaylistMembers,
         setPlaylistMemberships,

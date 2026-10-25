@@ -1,0 +1,206 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=Defected&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=Defected&types=albums",
+        "data": [
+          {
+            "id": "1549437746",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1549437746",
+            "attributes": {
+              "name": "Defected: John Summit, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1552992191",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1552992191",
+            "attributes": {
+              "name": "Defected: Dom Dolla, We Dance As One, NYE 2021 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1543277493",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1543277493",
+            "attributes": {
+              "name": "Defected: Dennis Ferrer, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1718768938",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1718768938",
+            "attributes": {
+              "name": "Defected Malta: Groove Armada, Oct 7, 2023 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1550883760",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1550883760",
+            "attributes": {
+              "name": "Defected: Louie Vega, We Dance As One, Glitterbox Love Stream, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1552812097",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1552812097",
+            "attributes": {
+              "name": "Defected: Eats Everything, We Dance As One, NYE 2021 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1550694258",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1550694258",
+            "attributes": {
+              "name": "Defected: Vintage Culture, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1529206863",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1529206863",
+            "attributes": {
+              "name": "Defected: Jellybean Benitez at Glitterbox Virtual Festival, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1534772483",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1534772483",
+            "attributes": {
+              "name": "Defected: Purple Disco Machine at Glitterbox Virtual Festival, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1532102446",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1532102446",
+            "attributes": {
+              "name": "Defected: Roger Sanchez at Glitterbox Hï Ibiza, 2019 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1542872314",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1542872314",
+            "attributes": {
+              "name": "Defected: CamelPhat, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1549793066",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1549793066",
+            "attributes": {
+              "name": "Defected: Purple Disco Machine, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1539838975",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1539838975",
+            "attributes": { "name": "Defected - Single" }
+          },
+          {
+            "id": "1613674598",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1613674598",
+            "attributes": { "name": "Defected - Single" }
+          },
+          {
+            "id": "973557689",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/973557689",
+            "attributes": { "name": "Defected - EP" }
+          },
+          {
+            "id": "1552927560",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1552927560",
+            "attributes": {
+              "name": "Defected: Roger Sanchez, We Dance As One, NYE 2021 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1745562136",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1745562136",
+            "attributes": {
+              "name": "Defected Presents TSHA In The House (DJ Mix)"
+            }
+          },
+          {
+            "id": "1873471774",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1873471774",
+            "attributes": {
+              "name": "Defected Malta: Horse Meat Disco, 2025 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1531979994",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1531979994",
+            "attributes": {
+              "name": "Defected: Gorgon City in Ibiza, May 26, 2019 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1763150684",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1763150684",
+            "attributes": {
+              "name": "Defected: Armand Van Helden in London, Dec 31, 2023 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1820508283",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1820508283",
+            "attributes": {
+              "name": "Gorgon City: Defected Pacha Ibiza, May 22, 2025 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1866770324",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1866770324",
+            "attributes": {
+              "name": "Defected presents Frankie Knuckles In The House (DJ Mix)"
+            }
+          },
+          {
+            "id": "1550396599",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1550396599",
+            "attributes": {
+              "name": "Defected: Dave Lee, We Dance As One, Glitterbox Love Stream, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1783985597",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1783985597",
+            "attributes": { "name": "Defected Worldwide (DJ Mix)" }
+          },
+          {
+            "id": "1441100033",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1441100033",
+            "attributes": { "name": "Defected - Single" }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:40.258Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=Defected&types=albums"
+}

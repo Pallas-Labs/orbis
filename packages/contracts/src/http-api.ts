@@ -79,6 +79,22 @@ export const TracklistSchema = Schema.Struct({
   cues: Schema.Array(CueSchema),
   state: SavedSetSchema.fields.tracklistState,
 });
+/** An album an Apple Music search found, ready to save by its Source Link (ADR 0021). */
+export const AppleMusicAlbumSchema = Schema.Struct({
+  artworkUrl: Schema.NullOr(Schema.String),
+  creator: Schema.NullOr(Schema.String),
+  djMix: Schema.Boolean,
+  durationSeconds: Schema.NullOr(Schema.Number),
+  inLibrary: Schema.Boolean,
+  releasedAt: Schema.NullOr(Schema.String),
+  songCount: Schema.Number,
+  title: Schema.String,
+  url: Schema.String,
+});
+/** DJ mixes first, then other albums, each group in Apple's order. */
+export const AppleMusicSearchSchema = Schema.Struct({
+  albums: Schema.Array(AppleMusicAlbumSchema),
+});
 export const LibraryResponseSchema = Schema.Struct({
   sets: Schema.Array(SavedSetSchema).pipe(Schema.mutable),
 });
@@ -507,7 +523,19 @@ export const SetsApi = HttpApi.make("orbis").add(
     .middleware(SetAccess)
 );
 
-const PlaylistApi = SetsApi.add(
+const AppleMusicApi = SetsApi.add(
+  HttpApiGroup.make("appleMusic")
+    .add(
+      HttpApiEndpoint.get("search", "/apple-music/search", {
+        error: [BadRequest, ServiceUnavailable, InternalError],
+        query: { q: Schema.String.check(Schema.isMaxLength(200)) },
+        success: AppleMusicSearchSchema,
+      })
+    )
+    .middleware(SetAccess)
+);
+
+const PlaylistApi = AppleMusicApi.add(
   HttpApiGroup.make("playlists")
     .add(
       HttpApiEndpoint.get("list", "/playlists", {

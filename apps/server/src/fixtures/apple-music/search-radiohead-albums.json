@@ -1,0 +1,4613 @@
+{
+  "body": {
+    "data": [
+      {
+        "id": "1097861387",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1097861387",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "fefeff",
+            "height": 4000,
+            "textColor1": "031623",
+            "textColor2": "332b2c",
+            "textColor3": "35454f",
+            "textColor4": "5b5556",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/07/60/ba/0760ba0f-148c-b18f-d0ff-169ee96f3af5/634904078164.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "A dozen songs of terror and oblivion and hope.",
+            "standard": "<b>100 Best Albums</b> Few albums so audacious, innovative, and anxious have ever captured the popular imagination like <i>OK Computer</i>, the 1997 Radiohead triumph that not only announced a new frontier of rock exploration, but also articulated budding pre-millennial interest in—and concern over—our technological toys. Here are a dozen songs of terror and oblivion, their singer so alienated by the society spinning around him that he pines to be abducted by aliens so that he may witness “the world as I’d love to see it.” There are car crashes and stolen thoughts, clouds of death and specters of persecution, malevolent robots and a Macintosh LC II that deadpans the new rules for living. It remains a deeply unsettling song cycle that is also deeply magnetic, its reordering of rock ’n’ roll’s sounds with classical ambition making it one of the form’s most radical and necessary statements.\n\nRadiohead had not learned its lessons from “Creep.” After wearing themselves thin promoting their first album, they rode the road even harder for <i>The Bends</i>, playing nearly 200 shows in 1995 alone and prowling the United States in a bus emblazoned with an airbrushed stallion. Thom Yorke crowded spiral-bound notebooks with his unease and expressions of isolation, even as he and his pals moved from one crowded room to another. But Radiohead’s relentless devotion to promotion afforded them complete creative control from a label surprised by their success. They reassembled the dream team that had first worked on <i>The Bends</i>—young engineer turned trusted producer Nigel Godrich and artist Stanley Donwood—and decamped to a palatial estate in the British countryside to wrestle with their worries.\n\nDebates about Radiohead’s motivations and intentions have raged since <i>OK Computer</i>’s release: Were Yorke and the band lashing out at the work that was almost killing them, or were they concerned about what technology would do to our humanity? Both roots, however, lead to the same sense of desperate isolation that <i>OK Computer</i> captures so well. The narrator in “Subterranean Homesick Alien” can no longer smell their surroundings, while the survivor in “Karma Police” can no longer think their thoughts in safety. Love is a final act of desperation during “Exit Music (For a Film),” friendship a cover for raptor-like predation during “Climbing Up the Walls.” The band animates these ideas perfectly, alternately stripping the arrangement until it feels like an icy chill, or adding 16 violins clawing at each other to invoke mental claustrophobia. <i>OK Computer</i> is every lump in your throat, turned into a succession of anthems.\n\nFor all of its dread, <i>OK Computer</i> is ultimately an act of hope, the expression in a belief that our inexorable path of progress does not have to cost us our goodness. Above the hangman riff of “Lucky,” Yorke pines to be pulled back from this abyss’ edge, to be resurrected in love. “It’s gonna be a glorious day,” he sings, and you have to believe it at least <i>could</i> be true. And if there is a remedy to the dizzying pace of, well, everything, it’s simple enough: “Idiot, slow down,” he sings for the last words of closer “The Tourist,” his falsetto newly resolute. “Slow down.” In the decades since <i>OK Computer</i> made Radiohead rock’s new standard-bearers, its grievances—namely, our accelerating isolation—have only mounted. But the answers and the hope it holds linger still.",
+            "tagline": "Featured in 100 Best Albums"
+          },
+          "isSingle": false,
+          "name": "OK Computer",
+          "releaseDate": "1997-05-21"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1097861387/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1097861387/tracks",
+            "data": [
+              {
+                "id": "1097861769",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861769",
+                "attributes": { "durationInMillis": 287880, "name": "Airbag" }
+              },
+              {
+                "id": "1097861770",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861770",
+                "attributes": {
+                  "durationInMillis": 387213,
+                  "name": "Paranoid Android"
+                }
+              },
+              {
+                "id": "1097861832",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861832",
+                "attributes": {
+                  "durationInMillis": 267693,
+                  "name": "Subterranean Homesick Alien"
+                }
+              },
+              {
+                "id": "1097861833",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861833",
+                "attributes": {
+                  "durationInMillis": 267187,
+                  "name": "Exit Music (For a Film)"
+                }
+              },
+              {
+                "id": "1097861834",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861834",
+                "attributes": { "durationInMillis": 299560, "name": "Let Down" }
+              },
+              {
+                "id": "1097861836",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861836",
+                "attributes": {
+                  "durationInMillis": 264067,
+                  "name": "Karma Police"
+                }
+              },
+              {
+                "id": "1097861838",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861838",
+                "attributes": {
+                  "durationInMillis": 117333,
+                  "name": "Fitter Happier"
+                }
+              },
+              {
+                "id": "1097861839",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861839",
+                "attributes": {
+                  "durationInMillis": 230627,
+                  "name": "Electioneering"
+                }
+              },
+              {
+                "id": "1097861841",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861841",
+                "attributes": {
+                  "durationInMillis": 285200,
+                  "name": "Climbing Up the Walls"
+                }
+              },
+              {
+                "id": "1097861842",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861842",
+                "attributes": {
+                  "durationInMillis": 229120,
+                  "name": "No Surprises"
+                }
+              },
+              {
+                "id": "1097861843",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861843",
+                "attributes": { "durationInMillis": 258813, "name": "Lucky" }
+              },
+              {
+                "id": "1097861845",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097861845",
+                "attributes": {
+                  "durationInMillis": 326533,
+                  "name": "The Tourist"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1109714933",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1109714933",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "1e1807",
+            "height": 4000,
+            "textColor1": "d0c741",
+            "textColor2": "e9872e",
+            "textColor3": "aca436",
+            "textColor4": "c07126",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/dd/50/c7/dd50c790-99ac-d3d0-5ab8-e3891fb8fd52/634904032463.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "A groundbreaking, hitmaking classic.",
+            "standard": "For those who grew up during the streaming era, it may be impossible to grasp just how monumental the announcement of Radiohead’s seventh album, <i>In Rainbows</i>, seemed in 2007. But in early October, guitarist Jonny Greenwood logged onto the band’s blog to announce that not only was the group’s long-awaited new record finished, but that it would be available online in 10 days—and that fans could pay whatever they wanted for the files (including, well, nothing). Debates have raged about the consequences of Radiohead’s decision ever since, but it was a bold response to the onslaught of digital piracy. Radiohead had fulfilled its contract with EMI, becoming one of the world’s biggest rock bands in the world. What did the band members have to lose by seeing how much listeners actually valued their music?\n\nThough that decision dominated headlines, <i>In Rainbows</i> presented another bit of unexpected upheaval in Radiohead’s world: After years of in-studio sonic experimentation, the group had come back to earth, making a 10-song, 42-minute record with actual, you know, <i>singles</i>. And <i>guitars</i>. And lyrics about loneliness and love and yearning. This was Radiohead reverting to its past—slightly. Sure, you could hear the experimental vapors of <i>Kid A</i> in the tessellated textures of “Reckoner” and the skitters of “15 Step.” And you could sense the luminous aggression of <i>Hail to the Thief</i> in the caterwauls of “Bodysnatchers.” But then there was the gorgeous-if-fretful “Nude,” a song Radiohead had been trying to get right for a decade: With its preening new bassline, it became their first US Top 40 hit since “Creep.” And on “House of Cards,” a song unabashedly about sex and all the places it could lead, the bandmates sound like a dubplate version of their former rock band selves, all lust-drunk and wobbling.\n\nRadiohead may have seemed newly at ease on <i>In Rainbows</i>, but making the record nearly broke the band. For the first time since <i>OK Computer</i>, the group members tried working with a producer other than Nigel Godrich—only to abandon the attempt, and instead take some tunes on the road. They eventually reunited with Godrich, who forced the bandmates—some of whom were new fathers—to focus on music, sequestering them in a broken-down country palace, and making them sort through all their fragments and false starts.\n\nThe effort yielded some of Radiohead’s most memorable songs, as though time and touring had taught the group to find this material’s essence. The impossible guitar tangle of “Weird Fishes/Arpeggi” finds a climax worthy of the best post-rock bands, as does the brief acoustic phantom, “Faust Arp.” Most stunning, though, might be the album’s finale, “Videotape.” Equal parts love note and goodbye letter, “Videotape” first arrived as a maximalist rush onstage at the Hammersmith Ballroom in 2006. But the band members kept peeling back layers and dropping parts in the studio, until all that remained were skeletal piano and rhythms that cracked apart and eventually floated skyward—as though Radiohead was drifting off into the void."
+          },
+          "isSingle": false,
+          "name": "In Rainbows",
+          "releaseDate": "2007-10-10"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1109714933/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1109714933/tracks",
+            "data": [
+              {
+                "id": "1109715066",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715066",
+                "attributes": { "durationInMillis": 237293, "name": "15 Step" }
+              },
+              {
+                "id": "1109715161",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715161",
+                "attributes": {
+                  "durationInMillis": 242293,
+                  "name": "Bodysnatchers"
+                }
+              },
+              {
+                "id": "1109715165",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715165",
+                "attributes": { "durationInMillis": 255387, "name": "Nude" }
+              },
+              {
+                "id": "1109715168",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715168",
+                "attributes": {
+                  "durationInMillis": 318187,
+                  "name": "Weird Fishes / Arpeggi"
+                }
+              },
+              {
+                "id": "1109715293",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715293",
+                "attributes": {
+                  "durationInMillis": 228747,
+                  "name": "All I Need"
+                }
+              },
+              {
+                "id": "1109715308",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715308",
+                "attributes": {
+                  "durationInMillis": 129680,
+                  "name": "Faust Arp"
+                }
+              },
+              {
+                "id": "1109715309",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715309",
+                "attributes": { "durationInMillis": 290213, "name": "Reckoner" }
+              },
+              {
+                "id": "1109715467",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715467",
+                "attributes": {
+                  "durationInMillis": 328293,
+                  "name": "House of Cards"
+                }
+              },
+              {
+                "id": "1109715469",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715469",
+                "attributes": {
+                  "durationInMillis": 248893,
+                  "name": "Jigsaw Falling Into Place"
+                }
+              },
+              {
+                "id": "1109715479",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715479",
+                "attributes": {
+                  "durationInMillis": 279634,
+                  "name": "Videotape"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1097862870",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1097862870",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "0a0a08",
+            "height": 4000,
+            "textColor1": "e2eaee",
+            "textColor2": "d3d2d1",
+            "textColor3": "b7bdc0",
+            "textColor4": "abaaa8",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/bd/8e/13/bd8e1358-b367-a689-cb84-cebd0b067dc4/634904078263.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "How do you follow up a revolutionary album? With a more revolutionary one.",
+            "standard": "<b>100 Best Albums</b> In three albums released over the course of four years, Radiohead had done the unlikely: They had gone from potential one-hit wonders cresting a wave of reverent rock to a more atmospheric version of such to a band that then broke many of those rules and reconfigured the lexicon on 1997’s <i>OK Computer</i>. So, what was a band suddenly touted for making “the best record of all time” to do, aside from tour until they were threadbare as was Radiohead’s wont? They were, with some stress and shouting and madness, going to throw away the rules altogether. In turn, <i>Kid A</i> became their second revolutionary act in as many records.\n\nThom Yorke had begun to resist the idea that he was in a rock band at all, that Radiohead instead was rather an expressive outlet in search of the best way to say something. He found, though, that he had nothing to say, that every idea for a song was better suited for the trash. He went on long walks in the English rain and prowled around old buildings, listening to the vertiginous electronic vanguard of, say, Aphex Twin and Autrechre. New ideas began to emerge, as did new equipment in their Oxford studio—modular synths, samplers, a haunted theremin contemporary called the ondes Martenot.\n\n<i>Kid A</i> did not introduce these intentions slowly. With its seasick sequences and Yorke’s multiplied vocal lines folding in and over and around one another like an Escher sketch, “Everything In Its Right Place” is both taunt and gambit, a little wink from the band that had gone from “Creep” to these so-called creepy sounds. That was simply the start. “Idioteque” brazenly subverted dance-floor tropes, not only with drums so blown out they suggested a bullet’s report, but also Yorke’s purred lines about Cold War anxiety. If the acoustic strums, distant hums, and rising rhythm of “How to Disappear Completely” at least suggested something recognizable for those with The Bends, its chaser, “Treefingers,” ferried it away with a dimly phosphorescent electronic ripple, as if the sun had forever set just below the horizon.\n\nThe demented bass and howling horns of “The National Anthem,” the harp sweeps and operatic tremors of “Motion Picture Soundtrack,” the refracted guitars and babbling circuity of “In Limbo”: Radiohead found new space to explore on every <i>Kid A</i> track. Each song, though, was anchored to a hook—however hidden it first appeared—something familiar as the band set off into often-unfamiliar spaces.\n\nPopular and critical opinion about <i>Kid A</i> was initially mixed. Had Yorke finally teetered off the edge? Were they a bunch of scene-hopping poseurs? But as people found those melodies and made their own meanings from its mondegreens, they understood that Radiohead not only meant this new avenue of expression but also needed it. This was a new arena for old blues, fit for the 21st century—and helping shape it, too.",
+            "tagline": "Featured in 100 Best Albums"
+          },
+          "isSingle": false,
+          "name": "Kid A",
+          "releaseDate": "2000-10-02"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1097862870/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1097862870/tracks",
+            "data": [
+              {
+                "id": "1097863108",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863108",
+                "attributes": {
+                  "durationInMillis": 251427,
+                  "name": "Everything In Its Right Place"
+                }
+              },
+              {
+                "id": "1097863120",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863120",
+                "attributes": { "durationInMillis": 284507, "name": "Kid A" }
+              },
+              {
+                "id": "1097863241",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863241",
+                "attributes": {
+                  "durationInMillis": 351693,
+                  "name": "The National Anthem"
+                }
+              },
+              {
+                "id": "1097863247",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863247",
+                "attributes": {
+                  "durationInMillis": 356333,
+                  "name": "How to Disappear Completely"
+                }
+              },
+              {
+                "id": "1097863252",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863252",
+                "attributes": {
+                  "durationInMillis": 222600,
+                  "name": "Treefingers"
+                }
+              },
+              {
+                "id": "1097863254",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863254",
+                "attributes": {
+                  "durationInMillis": 315973,
+                  "name": "Optimistic"
+                }
+              },
+              {
+                "id": "1097863258",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863258",
+                "attributes": { "durationInMillis": 211000, "name": "In Limbo" }
+              },
+              {
+                "id": "1097863262",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863262",
+                "attributes": {
+                  "durationInMillis": 309093,
+                  "name": "Idioteque"
+                }
+              },
+              {
+                "id": "1097863575",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863575",
+                "attributes": {
+                  "durationInMillis": 275800,
+                  "name": "Morning Bell"
+                }
+              },
+              {
+                "id": "1097863579",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863579",
+                "attributes": {
+                  "durationInMillis": 200483,
+                  "name": "Motion Picture Soundtrack"
+                }
+              },
+              {
+                "id": "1097863582",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863582",
+                "attributes": { "durationInMillis": 52695, "name": "Untitled" }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1097862703",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1097862703",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "030101",
+            "height": 4000,
+            "textColor1": "fccbbf",
+            "textColor2": "fec29a",
+            "textColor3": "caa399",
+            "textColor4": "cc9b7b",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/1b/a9/5c/1ba95cac-b245-d386-63fb-6b857aa9dce8/634904078065.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "A brilliant sophomore effort, full of anthems for the alienated.",
+            "standard": "By the mid-1990s, the members of Radiohead were exhausted. “Creep,” the brooding anthem from the band’s 1993 debut <i>Pablo Honey</i>, had become a surprise mega-hit, thanks to its music-box chorus and tidal noise. Yet the song had also turned into an albatross for Thom Yorke and his bandmates. They were sick of playing it live, and worried it would be their legacy. Could they write something as good as “Creep”—or would they be forever consigned to the junk bin of one-hit wonders?\n\nThe only way to find out was to head back into the studio. The stop-and-start sessions for the group’s sophomore album stretched across much of 1994, as Radiohead searched for songs and sounds that didn’t forever put them in a pigeonhole—but that also didn’t immediately alienate every audience member they’d earned.\n\nThe resulting album, 1995’s <i>The Bends</i>, kicks off with “Planet Telex”—a song written late in the process, but one that would demonstrate that Radiohead wasn’t aiming for another “Creep.” With its delayed pianos and wafting guitar chords offering new textures, and Yorke’s vocals offering a sense of frustrated urgency, “Planet Telex” announces the beginning of Radiohead’s first masterpiece.\n\nThe rest of <i>The Bends</i> is just as invigorating. Though these are recognizable guitar-rock songs—ones that are not altogether removed from 1995’s lingering grunge haze—Radiohead introduces a half-dozen new musical elements: There’s Yorke’s yearning falsetto during the gorgeous and tragic “Fake Plastic Trees,” inspired by a Jeff Buckley gig. The warped drums and strums of “High and Dry.” The accretive repetition of “Street Spirit (Fade Out).” Even on first listen, it was clear Radiohead’s ambition, palette, and experience had moved far beyond that of <i>Pablo Honey</i>.\n\n<i>The Bends</i> also announced Radiohead as savvy critics of modernity, with Yorke’s lyrics analyzing our increasing distrust of technology—and its impact on our relationships—way better than his peers. Where “Fake Plastic Trees” decries our everything-all-the-time approach to consumerism, “Black Star” mourns our collective struggles with mental illnesses—and the way society can easily brush them aside. And while <i>The Bends</i> failed to deliver a “Creep”-sized hit, the album did set up Radiohead as one of music’s great iconoclasts—and set the band members on the path to art-rock infamy."
+          },
+          "isSingle": false,
+          "name": "The Bends",
+          "releaseDate": "1995-03-08"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1097862703/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1097862703/tracks",
+            "data": [
+              {
+                "id": "1097862726",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862726",
+                "attributes": {
+                  "durationInMillis": 259200,
+                  "name": "Planet Telex"
+                }
+              },
+              {
+                "id": "1097862821",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862821",
+                "attributes": {
+                  "durationInMillis": 246200,
+                  "name": "The Bends"
+                }
+              },
+              {
+                "id": "1097862833",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862833",
+                "attributes": {
+                  "durationInMillis": 257480,
+                  "name": "High and Dry"
+                }
+              },
+              {
+                "id": "1097862845",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862845",
+                "attributes": {
+                  "durationInMillis": 290707,
+                  "name": "Fake Plastic Trees"
+                }
+              },
+              {
+                "id": "1097862889",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862889",
+                "attributes": { "durationInMillis": 189000, "name": "Bones" }
+              },
+              {
+                "id": "1097862894",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862894",
+                "attributes": {
+                  "durationInMillis": 233227,
+                  "name": "(Nice Dream)"
+                }
+              },
+              {
+                "id": "1097862901",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862901",
+                "attributes": { "durationInMillis": 234800, "name": "Just" }
+              },
+              {
+                "id": "1097863038",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863038",
+                "attributes": {
+                  "durationInMillis": 276427,
+                  "name": "My Iron Lung"
+                }
+              },
+              {
+                "id": "1097863210",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863210",
+                "attributes": {
+                  "durationInMillis": 208733,
+                  "name": "Bullet Proof ... I Wish I Was"
+                }
+              },
+              {
+                "id": "1097863219",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863219",
+                "attributes": {
+                  "durationInMillis": 247040,
+                  "name": "Black Star"
+                }
+              },
+              {
+                "id": "1097863233",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863233",
+                "attributes": { "durationInMillis": 222960, "name": "Sulk" }
+              },
+              {
+                "id": "1097863295",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863295",
+                "attributes": {
+                  "durationInMillis": 253853,
+                  "name": "Street Spirit (Fade Out)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1097864180",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1097864180",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "000000",
+            "height": 4000,
+            "textColor1": "f84133",
+            "textColor2": "ee3f30",
+            "textColor3": "c63429",
+            "textColor4": "be3226",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/43/d8/ec/43d8ec17-0e96-dba9-21d9-4cdf9d98f2bf/634904078362.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "Radiohead forges new electronic frontiers on its 2001 masterwork.",
+            "standard": "During the run-up to the release of Radiohead’s 2000 electronic opus <i>Kid A</i>, the band members often spoke about breaking up. It was, in part, a hypothetical consideration, one that preceded the album’s recording sessions: If the group’s heralded 1997 release <i>OK Computer</i> was such a masterpiece, why bother trying to top it? But it was also an acknowledgement of the intra-band tension involved in the making of <i>Kid A</i>. That album—which found Radiohead pushing past its guitar-rock sound—had led to shouting matches and tirades, power plays and pity parties. Could the bandmates actually endure making a follow-up?\n\nBut as Radiohead toured in support of <i>Kid A</i>—which at one point had been conceived as a double album—the members began listening to the dozens of songs and sketches that didn’t make the cut the first time around. Which is why, just seven months after <i>Kid A</i>’s release, Radiohead returned with 2001’s <i>Amnesiac</i>—an album Thom Yorke described as “our secret weapon against all the weirdness going on.” It was a surprisingly cohesive companion that at once felt more esoteric and accessible than its predecessor. And <i>Amnesiac</i> proved that the electronic explorations and the fragmented lyrical codex of <i>Kid A</i> weren’t a fluke: This was now Radiohead, at a new vanguard of rock.\n\nInformed by Charles Mingus, “Pyramid Song” is one of the prettiest songs in Radiohead’s catalog, its meaty piano chords and ominous electronic tide lifting Yorke’s falsetto croon. And though it’s a polemic against Tony Blair and politicians like him, “You and Whose Army?” is an exquisite drift, anchored by Colin Greenwood’s perfect bassline. “Life in a Glasshouse,” meanwhile, unfurls over the jazz-band sighs of British trumpeter Humphrey Lyttelton. It’s a song you could slip into a family holiday playlist—so long as the volume remained low enough to hide its little symphony of dissonance.\n\n<i>Amnesiac</i> also proved just how far the group had ventured into electronics and abstraction. The askance percussion samples of “Packt Like Sardines in a Crushd Tin Box” dart around its dance-floor rhythm like a tease, with Yorke riding the beat with stunning R&B aplomb. And the band wanders into electro-acoustic territory for “Hunting Bears,” which features a pensive spaghetti-western guitar slowly sinking into itself. Meanwhile, “Pulk/Pull Revolving Doors” remains one of the most aggressive Radiohead cuts, its mix of battering-ram arrhythmia, prepared piano strikes, and static loops clawing at Yorke’s warped voice like the track is an existential battle for space. What <i>Amnesiac</i> lacks in clear narrative it makes up for in breadth—and in its ability to suggest the many directions in which Radiohead might still move."
+          },
+          "isSingle": false,
+          "name": "Amnesiac",
+          "releaseDate": "2001-06-04"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1097864180/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1097864180/tracks",
+            "data": [
+              {
+                "id": "1097864284",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864284",
+                "attributes": {
+                  "durationInMillis": 240333,
+                  "name": "Packt Like Sardines in a Crushed Tin Box"
+                }
+              },
+              {
+                "id": "1097864572",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864572",
+                "attributes": {
+                  "durationInMillis": 288733,
+                  "name": "Pyramid Song"
+                }
+              },
+              {
+                "id": "1097864574",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864574",
+                "attributes": {
+                  "durationInMillis": 247267,
+                  "name": "Pulk / Pull Revolving Doors"
+                }
+              },
+              {
+                "id": "1097864577",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864577",
+                "attributes": {
+                  "durationInMillis": 191000,
+                  "name": "You and Whose Army?"
+                }
+              },
+              {
+                "id": "1097864580",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864580",
+                "attributes": {
+                  "durationInMillis": 293773,
+                  "name": "I Might Be Wrong"
+                }
+              },
+              {
+                "id": "1097864582",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864582",
+                "attributes": {
+                  "durationInMillis": 254867,
+                  "name": "Knives Out"
+                }
+              },
+              {
+                "id": "1097864836",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864836",
+                "attributes": {
+                  "durationInMillis": 194267,
+                  "name": "Morning Bell / Amnesiac"
+                }
+              },
+              {
+                "id": "1097864898",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864898",
+                "attributes": {
+                  "durationInMillis": 291733,
+                  "name": "Dollars & Cents"
+                }
+              },
+              {
+                "id": "1097864900",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864900",
+                "attributes": {
+                  "durationInMillis": 121200,
+                  "name": "Hunting Bears"
+                }
+              },
+              {
+                "id": "1097864909",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864909",
+                "attributes": {
+                  "durationInMillis": 237467,
+                  "name": "Like Spinning Plates"
+                }
+              },
+              {
+                "id": "1097865056",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097865056",
+                "attributes": {
+                  "durationInMillis": 276693,
+                  "name": "Life in a Glasshouse"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1111577743",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1111577743",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "cecdd2",
+            "height": 1400,
+            "textColor1": "0c0a09",
+            "textColor2": "171616",
+            "textColor3": "333131",
+            "textColor4": "3c3b3b",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/b7/f2/5d/b7f25d91-4320-47c8-146a-6f84d5bc7e78/cover.jpg/{w}x{h}bb.jpg",
+            "width": 1400
+          },
+          "editorialNotes": {
+            "short": "A gorgeous, grief-filled stunner from Radiohead’s later years.",
+            "standard": "For two decades, Radiohead’s recording career had been a seesaw between past and present—or between records that recalled its roots as a rock band, and ones that suggested the group members were actively seeking some next frontier. For 2011’s <i>The King of Limbs</i>, Radiohead had used sampling software to build eight amorphous songs from loops, each shifting like phantoms in the sky. But longtime producer Nigel Godrich wanted to go the other way as sessions began for Radiohead’s follow-up album. This time around, he captured the bandmates on tape as they dug into Thom Yorke’s demos for the first time. The sounds that emerged suggested a synthesis of Radiohead’s first quarter-century, with the electronic experimentation of their most iconoclastic works interlacing with the romantic surges of their earliest days. The resulting album, 2016’s <i>A Moon Shaped Pool</i> is perhaps the most assured-sounding album of Radiohead’s existence.\n\nIt’s also a record that expresses deep personal anguish and existential doubt. Yorke split from his longtime partner, Rachel Owen, as the band worked; after a battle with cancer, she would die seven months after the release of <i>A Moon Shaped Pool</i>. Many of these songs explore loss—not just of a relationship itself, but of the time spent in something that simply stops working: A fragile and haunted lullaby, “Daydreaming” surveys just how much our stubborn habits cost us, its tense strings slicing like a hot knife through Yorke’s mangled vocals. And during the devastating “Glass Eyes,” he takes a rare step into first-person narration, relaying the onset of a panic attack above lachrymose textures that also conjure that condition’s unsteady breaths. The album concludes with “True Love Waits”—an older Radiohead tune that fans had been bootlegging for years. A slow and balletic beauty, with piano traced by electronics so faint they suggest a whispering apparition, “True Love Waits” sends off the album with a hymn for holding on and being held in love.\n\nThe sessions for <i>A Moon Shaped Pool</i> were so fraught, the members hesitated to discuss it—even a year after the album’s release. “I don’t want to talk about it anymore, if that’s all right,” Ed O’Brien told a reporter. “I feel like the dust hasn’t settled.” But Radiohead again rose to the moment entirely, both in those songs about the tenderest parts of our hearts, and the songs that turned outward, especially on “The Numbers.” A power-to-the-people opus for the climate-change fight, it felt like Radiohead venturing back into politics, pointing us forward. “The future is inside us,” Yorke moans through a psychedelic haze. “It’s not somewhere else.”"
+          },
+          "isSingle": false,
+          "name": "A Moon Shaped Pool",
+          "releaseDate": "2016-05-08"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1111577743/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1111577743/tracks",
+            "data": [
+              {
+                "id": "1111577770",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111577770",
+                "attributes": {
+                  "durationInMillis": 220607,
+                  "name": "Burn the Witch"
+                }
+              },
+              {
+                "id": "1111577949",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111577949",
+                "attributes": {
+                  "durationInMillis": 384439,
+                  "name": "Daydreaming"
+                }
+              },
+              {
+                "id": "1111577965",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111577965",
+                "attributes": {
+                  "durationInMillis": 281011,
+                  "name": "Decks Dark"
+                }
+              },
+              {
+                "id": "1111577967",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111577967",
+                "attributes": {
+                  "durationInMillis": 224698,
+                  "name": "Desert Island Disk"
+                }
+              },
+              {
+                "id": "1111577976",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111577976",
+                "attributes": { "durationInMillis": 367349, "name": "Ful Stop" }
+              },
+              {
+                "id": "1111577978",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111577978",
+                "attributes": {
+                  "durationInMillis": 172936,
+                  "name": "Glass Eyes"
+                }
+              },
+              {
+                "id": "1111578058",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111578058",
+                "attributes": {
+                  "durationInMillis": 266644,
+                  "name": "Identikit"
+                }
+              },
+              {
+                "id": "1111578064",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111578064",
+                "attributes": {
+                  "durationInMillis": 345887,
+                  "name": "The Numbers"
+                }
+              },
+              {
+                "id": "1111578065",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111578065",
+                "attributes": {
+                  "durationInMillis": 306581,
+                  "name": "Present Tense"
+                }
+              },
+              {
+                "id": "1111578067",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111578067",
+                "attributes": {
+                  "durationInMillis": 303689,
+                  "name": "Tinker Tailor Soldier Sailor Rich Man Poor Man Beggar Man Thief"
+                }
+              },
+              {
+                "id": "1111578103",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111578103",
+                "attributes": {
+                  "durationInMillis": 283445,
+                  "name": "True Love Waits"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1097862062",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1097862062",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "ded9d2",
+            "height": 4000,
+            "textColor1": "0e0a03",
+            "textColor2": "3e2217",
+            "textColor3": "38332c",
+            "textColor4": "5e473c",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/78/a4/ec/78a4ec7b-c6d6-c9c8-441b-660486e56a89/634904077969.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "One of rock’s biggest acts creeps into the spotlight.",
+            "standard": "No matter how sardonic he was, there’s still something shocking about hearing Thom Yorke sneer “Grow my hair/I wanna be, wanna be, wanna be Jim Morrison” halfway through Radiohead’s second single, “Anyone Can Play Guitar.” The Lizard King was Yorke’s proxy for all the preening and puffery of conventional rock ’n’ roll—of what it took for the record industry to take you seriously. Yorke was in his mid-20s when Radiohead cut its debut album, 1993’s <i>Pablo Honey</i>, over the course of three weeks in Oxfordshire. He was an angry young man, teeming with ire for the state of rock and pop. “I don’t like to be cynical, but if that really is the best that pop music can do in the space of a year or two,” he said of the band Suede in a 1993 interview, “then there’s no hope for the world.”\n\nThing was, though, for all the potshots, Radiohead started out as a rather conventional—but still very good—guitar-rock band, suspended between the emerging Britpop of their island brethren like Suede and the stateside churn of bands like Dinosaur Jr. But the band members didn’t lack ambition. They wanted to get big—they just didn’t want to get bloated. “The idea was to cut straight through all that paying-your-dues [stuff],” Yorke said in the same interview, “and get the whole world to see us… I like that breadth of vision.”\n\n<i>Pablo Honey</i> did get the world’s attention—even if now, decades later, it’s clearly the sound of a band still trying to define itself. Borrowing melodically from Neil Young, “Prove Yourself” rises from weepy struggles with self-esteem to a mantric march about doing exactly what the title suggests. “Stop Whispering,” meanwhile, is a protest song against the aging social order, one that builds into a mighty crescendo, with Yorke screaming wordlessly into his mighty band’s clatter. These songs and others—“You,” “Ripcord,” and even the acoustic lament “Thinking About You”—would fit squarely in an international survey of early-1990s alternative rock.\n\nThere are, however, whiffs of what Radiohead would soon become. A surprise worldwide hit, “Creep” proved the band could not only confront brutal truths, but that Yorke and his bandmates could sculpt abrasion while making it magnetic. Then there’s the delicacy of “Lurgee,” where shimmering guitars reflect off Philip Selway’s smart cymbal work, as Yorke turns to face the future without someone he once thought he needed. It appropriately arrives near <i>Pablo Honey</i>’s end, just as Radiohead launched one of rock music’s most revolutionary run of records ever."
+          },
+          "isSingle": false,
+          "name": "Pablo Honey",
+          "releaseDate": "1993-02-22"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1097862062/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1097862062/tracks",
+            "data": [
+              {
+                "id": "1097862228",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862228",
+                "attributes": { "durationInMillis": 208667, "name": "You" }
+              },
+              {
+                "id": "1097862231",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862231",
+                "attributes": { "durationInMillis": 238640, "name": "Creep" }
+              },
+              {
+                "id": "1097862232",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862232",
+                "attributes": {
+                  "durationInMillis": 132173,
+                  "name": "How Do You?"
+                }
+              },
+              {
+                "id": "1097862240",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862240",
+                "attributes": {
+                  "durationInMillis": 325627,
+                  "name": "Stop Whispering"
+                }
+              },
+              {
+                "id": "1097862419",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862419",
+                "attributes": {
+                  "durationInMillis": 161533,
+                  "name": "Thinking About You"
+                }
+              },
+              {
+                "id": "1097862427",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862427",
+                "attributes": {
+                  "durationInMillis": 217800,
+                  "name": "Anyone Can Play Guitar"
+                }
+              },
+              {
+                "id": "1097862430",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862430",
+                "attributes": { "durationInMillis": 189733, "name": "Ripcord" }
+              },
+              {
+                "id": "1097862432",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862432",
+                "attributes": {
+                  "durationInMillis": 192667,
+                  "name": "Vegetable"
+                }
+              },
+              {
+                "id": "1097862434",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862434",
+                "attributes": {
+                  "durationInMillis": 145373,
+                  "name": "Prove Yourself"
+                }
+              },
+              {
+                "id": "1097862437",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862437",
+                "attributes": { "durationInMillis": 253093, "name": "I Can't" }
+              },
+              {
+                "id": "1097862439",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862439",
+                "attributes": { "durationInMillis": 187867, "name": "Lurgee" }
+              },
+              {
+                "id": "1097862440",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097862440",
+                "attributes": { "durationInMillis": 282067, "name": "Blow Out" }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1097863576",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1097863576",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "6f9ebf",
+            "height": 4000,
+            "textColor1": "0e120f",
+            "textColor2": "251e23",
+            "textColor3": "212e32",
+            "textColor4": "343742",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/3c/95/1d/3c951d73-f6c6-12dd-34b4-cc95f63e210c/634904078560.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "The group returns to rock—sort of—in this politically minded rager.",
+            "standard": "As Thom Yorke sat down to type out the lyrics to “A Wolf at the Door”—the near-rap that ends Radiohead’s sixth album, <i>Hail to the Thief</i>—for artist Stanley Donwood, the singer was stunned by the cumulative violence of the images: knives in necks, Stepford wives and clandestine mistresses, dead people dragged through windows. But all that danger and anger was in the air as Radiohead plotted and recorded this dark 2003 effort, its title a reference to George W. Bush’s electoral hijinks, and its songs written and recorded as the United States began its post-9/11 assaults. And on <i>Hail to the Thief</i>, the angst of that era is everywhere: There’s the Orwellian logic of “2 + 2 = 5,” the nuclear fallout of “I Will,” and the plagued race of “Myxomatosis,” named for an especially fatal rabbit pox. Perhaps it was the cumulative effect of early-2000s despair that had inspired Yorke’s bleak lyrics? “Rather than waking you up and it’s like, ‘Uhh, it’s all been a lovely dream,’” the singer later confirmed, “it’s all been a nightmare, and you need to go and get a glass of water now.”\n\nFollowing the creative successes of <i>Kid A</i> and <i>Amnesiac</i>—which found the members of Radiohead rethinking their approach to the studio—the group once again shook things up on <i>Hail to the Thief</i>. In 2002, Yorke and his bandmates decamped to the famed Ocean Way in Los Angeles for two weeks, recording a song every day. For the first time in years, they had real fun, indulging not only in the sunshine outside but in the studio’s big room, where they worked as a cohesive quintet. While still testing out equipment, the group laid down the track that would become “2 + 2 = 5”—and the song’s incisive riff, falsetto vocals, and rhythmic tricks set the stage for <i>Hail to the Thief</i>’s scope. This is an album that finds Radiohead approaching familiar rock territory, from the momentous strum-and-drum anthem “Go to Sleep” to the chiming notes of “Scatterbrain.” But witness the tape-splice wizardry and big beat of “The Gloaming,” or the whirring circuits and clipped rhythms of “Backdrifts”: This is a band that, having ventured far beyond recognizable comforts after <i>OK Computer</i>, was now moving deliberately and defiantly toward the center—at least for a spell.\n\nThere’s no Radiohead record more vitriolic, nor more emotionally persuasive, than <i>Hail to the Thief</i>—which is fitting, given that it was birthed in a political climate that felt poised to end the world. The dystopian nightmares Radiohead had voiced on every record from the start were coming true—and an ending Yorke had long predicted now seemed to be in bloom. “We are not the same as you,” he sings during “The Gloaming,” drawing a line between those defending the world and those destroying it. With big drums and damning language, strangling solos and corroded electronics, <i>Hail to the Thief</i> is Radiohead’s fight music."
+          },
+          "isSingle": false,
+          "name": "Hail to the Thief",
+          "releaseDate": "2003-06-09"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1097863576/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1097863576/tracks",
+            "data": [
+              {
+                "id": "1097863810",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863810",
+                "attributes": {
+                  "durationInMillis": 199360,
+                  "name": "2 + 2 = 5"
+                }
+              },
+              {
+                "id": "1097863817",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863817",
+                "attributes": {
+                  "durationInMillis": 259973,
+                  "name": "Sit Down. Stand Up"
+                }
+              },
+              {
+                "id": "1097863819",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863819",
+                "attributes": {
+                  "durationInMillis": 258360,
+                  "name": "Sail to the Moon"
+                }
+              },
+              {
+                "id": "1097863821",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863821",
+                "attributes": {
+                  "durationInMillis": 322600,
+                  "name": "Backdrifts"
+                }
+              },
+              {
+                "id": "1097863823",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863823",
+                "attributes": {
+                  "durationInMillis": 201507,
+                  "name": "Go to Sleep"
+                }
+              },
+              {
+                "id": "1097863827",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863827",
+                "attributes": {
+                  "durationInMillis": 269293,
+                  "name": "Where I End and You Begin"
+                }
+              },
+              {
+                "id": "1097863828",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863828",
+                "attributes": {
+                  "durationInMillis": 296707,
+                  "name": "We Suck Young Blood"
+                }
+              },
+              {
+                "id": "1097863831",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863831",
+                "attributes": {
+                  "durationInMillis": 212027,
+                  "name": "The Gloaming"
+                }
+              },
+              {
+                "id": "1097863832",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097863832",
+                "attributes": {
+                  "durationInMillis": 323600,
+                  "name": "There, There"
+                }
+              },
+              {
+                "id": "1097864220",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864220",
+                "attributes": { "durationInMillis": 119467, "name": "I Will" }
+              },
+              {
+                "id": "1097864250",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864250",
+                "attributes": {
+                  "durationInMillis": 297333,
+                  "name": "A Punch Up at a Wedding"
+                }
+              },
+              {
+                "id": "1097864256",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864256",
+                "attributes": {
+                  "durationInMillis": 232533,
+                  "name": "Myxomatosis"
+                }
+              },
+              {
+                "id": "1097864259",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864259",
+                "attributes": {
+                  "durationInMillis": 201707,
+                  "name": "Scatterbrain"
+                }
+              },
+              {
+                "id": "1097864364",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097864364",
+                "attributes": {
+                  "durationInMillis": 201333,
+                  "name": "A Wolf at the Door"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1581785974",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1581785974",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "000000",
+            "height": 4000,
+            "textColor1": "eff5f5",
+            "textColor2": "d9d8d3",
+            "textColor3": "bfc4c4",
+            "textColor4": "aeada9",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/45/fb/81/45fb8153-21f0-8a66-ba39-4bbd66a12be0/191404116654.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "Two groundbreaking and career-defining albums, reissued as one.",
+            "standard": "<i>KID A MNESIA</i> isn’t just an occasion to revisit a pair of groundbreaking albums (2000’s <i>Kid A</i> and 2001’s <i>Amnesiac</i>), but a chance to hear a little of how Radiohead got there. Recording sessions were tough: Thom Yorke had writer’s block, and his new commitment to electronic music—or, at least, a turn away from conventional rock—left some of his bandmates wondering about their function and purpose. As guitarist Ed O’Brien once put it, he was a guitarist faced with a bunch of tracks that had no guitar.<br />\nAt one point, producer Nigel Godrich split the band into two groups: one working with instruments in the main recording area, the other in a programming room processing sounds from next door, all under the condition that no acoustic instruments—guitars, drums, etc.—be used. The constraints opened doors: Not only did the band discover new ways of working (and, by extension, refresh their passion for music after years of unyielding pressure), but, in doing so, they shifted the template for what we think of when we think of a rock band, mixing the acoustic and the electronic (“Everything in Its Right Place,” “Like Spinning Plates”) and relatively straightforward tracks (“Optimistic,” “Pyramid Song”) with fragmentary, discursive ones (“Kid A,” “Pulk/Pull Revolving Doors”). <br />\nIn the outtakes, we get glimpses of the band’s past (the paranoiac folk of “Follow Me Around“) and future (the deconstructed, full-band sound of “If You Say the Word”), as well as versions of “Like Spinning Plates” and “Pulk/Pull Revolving Doors” that chart their evolution in real time. It’s a snapshot of a band taking step back from themselves and the way they worked, finding a way forward in the process."
+          },
+          "isSingle": false,
+          "name": "KID A MNESIA",
+          "releaseDate": "2021-11-05"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1581785974/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1581785974/tracks",
+            "data": [
+              {
+                "id": "1581786337",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786337",
+                "attributes": {
+                  "durationInMillis": 251427,
+                  "name": "Everything In Its Right Place"
+                }
+              },
+              {
+                "id": "1581786339",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786339",
+                "attributes": { "durationInMillis": 284507, "name": "Kid A" }
+              },
+              {
+                "id": "1581786343",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786343",
+                "attributes": {
+                  "durationInMillis": 351693,
+                  "name": "The National Anthem"
+                }
+              },
+              {
+                "id": "1581786346",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786346",
+                "attributes": {
+                  "durationInMillis": 356333,
+                  "name": "How to Disappear Completely"
+                }
+              },
+              {
+                "id": "1581786348",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786348",
+                "attributes": {
+                  "durationInMillis": 222600,
+                  "name": "Treefingers"
+                }
+              },
+              {
+                "id": "1581786350",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786350",
+                "attributes": {
+                  "durationInMillis": 315973,
+                  "name": "Optimistic"
+                }
+              },
+              {
+                "id": "1581786352",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786352",
+                "attributes": { "durationInMillis": 211000, "name": "In Limbo" }
+              },
+              {
+                "id": "1581786354",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786354",
+                "attributes": {
+                  "durationInMillis": 309093,
+                  "name": "Idioteque"
+                }
+              },
+              {
+                "id": "1581786356",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786356",
+                "attributes": {
+                  "durationInMillis": 275800,
+                  "name": "Morning Bell"
+                }
+              },
+              {
+                "id": "1581786358",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786358",
+                "attributes": {
+                  "durationInMillis": 200483,
+                  "name": "Motion Picture Soundtrack"
+                }
+              },
+              {
+                "id": "1581786359",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786359",
+                "attributes": { "durationInMillis": 52695, "name": "Untitled" }
+              },
+              {
+                "id": "1581786360",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786360",
+                "attributes": {
+                  "durationInMillis": 240333,
+                  "name": "Packt Like Sardines In a Crushd Tin Box"
+                }
+              },
+              {
+                "id": "1581786364",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786364",
+                "attributes": {
+                  "durationInMillis": 288733,
+                  "name": "Pyramid Song"
+                }
+              },
+              {
+                "id": "1581786696",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786696",
+                "attributes": {
+                  "durationInMillis": 247267,
+                  "name": "Pulk/Pull Revolving Doors"
+                }
+              },
+              {
+                "id": "1581786698",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786698",
+                "attributes": {
+                  "durationInMillis": 191000,
+                  "name": "You and Whose Army?"
+                }
+              },
+              {
+                "id": "1581786700",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786700",
+                "attributes": {
+                  "durationInMillis": 293773,
+                  "name": "I Might Be Wrong"
+                }
+              },
+              {
+                "id": "1581786702",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786702",
+                "attributes": {
+                  "durationInMillis": 254867,
+                  "name": "Knives Out"
+                }
+              },
+              {
+                "id": "1581786703",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786703",
+                "attributes": {
+                  "durationInMillis": 194267,
+                  "name": "Morning Bell/Amnesiac"
+                }
+              },
+              {
+                "id": "1581786705",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786705",
+                "attributes": {
+                  "durationInMillis": 291733,
+                  "name": "Dollars and Cents"
+                }
+              },
+              {
+                "id": "1581786706",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786706",
+                "attributes": {
+                  "durationInMillis": 121200,
+                  "name": "Hunting Bears"
+                }
+              },
+              {
+                "id": "1581786707",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786707",
+                "attributes": {
+                  "durationInMillis": 237467,
+                  "name": "Like Spinning Plates"
+                }
+              },
+              {
+                "id": "1581786709",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786709",
+                "attributes": {
+                  "durationInMillis": 276693,
+                  "name": "Life In a Glasshouse"
+                }
+              },
+              {
+                "id": "1581786710",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786710",
+                "attributes": {
+                  "durationInMillis": 304631,
+                  "name": "Like Spinning Plates ('Why Us?' Version)"
+                }
+              },
+              {
+                "id": "1581786714",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786714",
+                "attributes": {
+                  "durationInMillis": 108510,
+                  "name": "Untitled V1"
+                }
+              },
+              {
+                "id": "1581786717",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786717",
+                "attributes": {
+                  "durationInMillis": 145443,
+                  "name": "Fog (Again Again Version)"
+                }
+              },
+              {
+                "id": "1581786718",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786718",
+                "attributes": {
+                  "durationInMillis": 260733,
+                  "name": "If You Say the Word"
+                }
+              },
+              {
+                "id": "1581786720",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786720",
+                "attributes": {
+                  "durationInMillis": 319288,
+                  "name": "Follow Me Around"
+                }
+              },
+              {
+                "id": "1581786725",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581786725",
+                "attributes": {
+                  "durationInMillis": 166166,
+                  "name": "Pulk/Pull (True Love Waits Version)"
+                }
+              },
+              {
+                "id": "1581787116",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581787116",
+                "attributes": {
+                  "durationInMillis": 46081,
+                  "name": "Untitled V2"
+                }
+              },
+              {
+                "id": "1581787118",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581787118",
+                "attributes": {
+                  "durationInMillis": 120108,
+                  "name": "The Morning Bell (In the Dark Version)"
+                }
+              },
+              {
+                "id": "1581787121",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581787121",
+                "attributes": {
+                  "durationInMillis": 78003,
+                  "name": "Pyramid Strings"
+                }
+              },
+              {
+                "id": "1581787126",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581787126",
+                "attributes": {
+                  "durationInMillis": 92488,
+                  "name": "Alt. Fast Track"
+                }
+              },
+              {
+                "id": "1581787133",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581787133",
+                "attributes": {
+                  "durationInMillis": 76519,
+                  "name": "Untitled V3"
+                }
+              },
+              {
+                "id": "1581787137",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1581787137",
+                "attributes": {
+                  "durationInMillis": 332694,
+                  "name": "How to Disappear into Strings"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1109714965",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1109714965",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "934d28",
+            "height": 4000,
+            "textColor1": "f9faec",
+            "textColor2": "fbe3dd",
+            "textColor3": "e4d7c5",
+            "textColor4": "e6c5b9",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/af/b6/7b/afb67b4e-6cf8-10b3-31f1-1389e301166d/634904078768.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "Radiohead aims for reinvention—and renewal—on this surprising effort.",
+            "standard": "At the Reading Festival in the summer of 2009, Radiohead gave the people what they wanted. The group’s set began with “Creep,” the song that had nearly made Radiohead one-hit wonders, released on a debut album the band members had all but disavowed. The next 22 songs ran like a greatest-hits collage, as the band moved from the rock atmospherics of <i>The Bends</i> to the electronic abstractions of <i>Kid A</i>, from the aggressive polemics of <i>Hail to the Thief</i> to the delicate swells of <i>In Rainbows</i>. The performance felt like career capstone for a group frequently cited as one of the most important in rock. “It was kind of like, ‘Well, that’s that; don’t need to go there again now,’” singer Thom Yorke remembered a few years later. “So there was a lot of... ‘Well, OK, if we are gonna carry on, we need to do it for a new set of reasons.’”\n\nThis restlessness was a standard refrain for Radiohead, of course; this is a band that’s spent years toggling between sounds and styles. But the sessions the group members started that summer with longtime producer Nigel Godrich proved especially fraught as they searched for the next direction. Though Yorke had a few elliptical strummers in process, they weren’t quite working for his bandmates. So they took the tapes and dumped them into digital files, which they began to dig through like hip-hop producers, looking for little bits they could loop in order to build something bigger. “You had to simplify what you were doing,” guitarist Ed O’Brien remembered. “You couldn’t do loads of ideas.” Slowly and painstakingly, then, they amassed <i>The King of Limbs</i>, featuring eight tracks that asked, once again, what it meant to be Radiohead at all.\n\nThe big thematic ideas of Radiohead’s albums yield to a vague sense of displacement on <i>The King of Limbs</i>—a feeling of planned obsolescence for ordinary people. Yorke’s words hang as drapery over the tightly wound rhythms of opener “Bloom,” in which icy electronics linger in the distance like specters. He swivels inside of the percolating bass and drums of “Lotus Flower,” his falsetto filling the space between the beats with pure longing. Meanwhile, “Morning Mr. Magpie” buckles and jerks like Afrobeat, reduced to the scale of a rock band fretting for the future.\n\nThere are more straightforward moments here, especially the piano ache of “Codex,” but the overriding feeling of <i>The King of Limbs</i> is one of willful transition, of the band members recognizing that their venerated past is only useful as a springboard into a future they were very much trying to stake. “If you think this is over,” Yorke sings over chiming guitars and skittering bits at the end, “then you’re wrong.” This is Radiohead, once again, pushing for the vanguard."
+          },
+          "isSingle": false,
+          "name": "The King of Limbs",
+          "releaseDate": "2011-02-18"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1109714965/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1109714965/tracks",
+            "data": [
+              {
+                "id": "1109715099",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715099",
+                "attributes": { "durationInMillis": 313671, "name": "Bloom" }
+              },
+              {
+                "id": "1109715140",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715140",
+                "attributes": {
+                  "durationInMillis": 280719,
+                  "name": "Morning Mr. Magpie"
+                }
+              },
+              {
+                "id": "1109715144",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715144",
+                "attributes": {
+                  "durationInMillis": 267154,
+                  "name": "Little by Little"
+                }
+              },
+              {
+                "id": "1109715146",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715146",
+                "attributes": { "durationInMillis": 192743, "name": "Feral" }
+              },
+              {
+                "id": "1109715151",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715151",
+                "attributes": {
+                  "durationInMillis": 300219,
+                  "name": "Lotus Flower"
+                }
+              },
+              {
+                "id": "1109715241",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715241",
+                "attributes": { "durationInMillis": 287067, "name": "Codex" }
+              },
+              {
+                "id": "1109715242",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715242",
+                "attributes": {
+                  "durationInMillis": 290067,
+                  "name": "Give Up the Ghost"
+                }
+              },
+              {
+                "id": "1109715243",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1109715243",
+                "attributes": {
+                  "durationInMillis": 319249,
+                  "name": "Separator"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1239489060",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1239489060",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "f4f2ef",
+            "height": 4000,
+            "textColor1": "2b221d",
+            "textColor2": "392a20",
+            "textColor3": "534c47",
+            "textColor4": "5e524a",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/9c/f5/04/9cf50453-c311-5324-ffe3-805a811efd73/dj.besjjjpd.jpg/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "Three new tracks headline a reissue worthy of a modern masterpiece.",
+            "standard": "“One of the <i>crazy</i> things we did was not release this song because we didn’t think it was good enough.” That was Thom Yorke’s message to a Norwegian crowd in June 2017 before Radiohead played “I Promise” live for the first time since 1996. The centerpiece of <i>OKNOTOK</i>’s second set of unreleased tracks and B-sides, it’s a startlingly beautiful snapshot of the band’s ridiculous post-<i>The Bends</i>, <i>OK Computer</i>-era potency. Elsewhere, “Lift” is another glistening gem from the vaults and “Meeting in the Aisle” provides a reminder of the band’s haunting way around an instrumental. A remastered <i>OK Computer</i>, meanwhile, remains the foreboding masterpiece it ever was."
+          },
+          "isSingle": false,
+          "name": "OK Computer OKNOTOK 1997 2017",
+          "releaseDate": "1997-06-16"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1239489060/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1239489060/tracks",
+            "data": [
+              {
+                "id": "1239489061",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489061",
+                "attributes": {
+                  "durationInMillis": 283800,
+                  "name": "Airbag (Remastered)"
+                }
+              },
+              {
+                "id": "1239489062",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489062",
+                "attributes": {
+                  "durationInMillis": 383973,
+                  "name": "Paranoid Android (Remastered)"
+                }
+              },
+              {
+                "id": "1239489064",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489064",
+                "attributes": {
+                  "durationInMillis": 269093,
+                  "name": "Subterranean Homesick Alien (Remastered)"
+                }
+              },
+              {
+                "id": "1239489065",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489065",
+                "attributes": {
+                  "durationInMillis": 265053,
+                  "name": "Exit Music (For a Film) [Remastered]"
+                }
+              },
+              {
+                "id": "1239489067",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489067",
+                "attributes": {
+                  "durationInMillis": 299280,
+                  "name": "Let Down (Remastered)"
+                }
+              },
+              {
+                "id": "1239489069",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489069",
+                "attributes": {
+                  "durationInMillis": 261427,
+                  "name": "Karma Police (Remastered)"
+                }
+              },
+              {
+                "id": "1239489070",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489070",
+                "attributes": {
+                  "durationInMillis": 117387,
+                  "name": "Fitter Happier (Remastered)"
+                }
+              },
+              {
+                "id": "1239489581",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489581",
+                "attributes": {
+                  "durationInMillis": 230573,
+                  "name": "Electioneering (Remastered)"
+                }
+              },
+              {
+                "id": "1239489584",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489584",
+                "attributes": {
+                  "durationInMillis": 285133,
+                  "name": "Climbing Up the Walls (Remastered)"
+                }
+              },
+              {
+                "id": "1239489599",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489599",
+                "attributes": {
+                  "durationInMillis": 228387,
+                  "name": "No Surprises (Remastered)"
+                }
+              },
+              {
+                "id": "1239489607",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489607",
+                "attributes": {
+                  "durationInMillis": 259960,
+                  "name": "Lucky (Remastered)"
+                }
+              },
+              {
+                "id": "1239489609",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489609",
+                "attributes": {
+                  "durationInMillis": 323535,
+                  "name": "The Tourist (Remastered)"
+                }
+              },
+              {
+                "id": "1239489610",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489610",
+                "attributes": {
+                  "durationInMillis": 239227,
+                  "name": "I Promise"
+                }
+              },
+              {
+                "id": "1239489762",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489762",
+                "attributes": {
+                  "durationInMillis": 269093,
+                  "name": "Man of War"
+                }
+              },
+              {
+                "id": "1239489763",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489763",
+                "attributes": { "durationInMillis": 246840, "name": "Lift" }
+              },
+              {
+                "id": "1239489764",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489764",
+                "attributes": {
+                  "durationInMillis": 145840,
+                  "name": "Lull (Remastered)"
+                }
+              },
+              {
+                "id": "1239489765",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489765",
+                "attributes": {
+                  "durationInMillis": 187707,
+                  "name": "Meeting In the Aisle (Remastered)"
+                }
+              },
+              {
+                "id": "1239489766",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489766",
+                "attributes": {
+                  "durationInMillis": 128733,
+                  "name": "Melatonin (Remastered)"
+                }
+              },
+              {
+                "id": "1239489768",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489768",
+                "attributes": {
+                  "durationInMillis": 232387,
+                  "name": "A Reminder (Remastered)"
+                }
+              },
+              {
+                "id": "1239489769",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489769",
+                "attributes": {
+                  "durationInMillis": 262467,
+                  "name": "Polyethylene, Pts. 1 & 2 (Remastered)"
+                }
+              },
+              {
+                "id": "1239489770",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489770",
+                "attributes": {
+                  "durationInMillis": 218598,
+                  "name": "Pearly (Remastered)"
+                }
+              },
+              {
+                "id": "1239489778",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489778",
+                "attributes": {
+                  "durationInMillis": 231816,
+                  "name": "Palo Alto (Remastered)"
+                }
+              },
+              {
+                "id": "1239489779",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1239489779",
+                "attributes": {
+                  "durationInMillis": 187117,
+                  "name": "How I Made My Millions (Remastered)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1828175826",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1828175826",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "111618",
+            "height": 4000,
+            "textColor1": "c6e2f3",
+            "textColor2": "b9c0cc",
+            "textColor3": "a2b9c7",
+            "textColor4": "979ea8",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/8e/8b/bd/8e8bbda2-4f83-6e06-ce1e-08f7c2ef5e46/191404156377.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "Giving the tracklist a light trim, the band rebuilds HTTT in scintillating live takes.",
+            "tagline": "New Live Album"
+          },
+          "isSingle": false,
+          "name": "Hail to the Thief (Live Recordings 2003-2009)",
+          "releaseDate": "2025-08-13"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1828175826/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1828175826/tracks",
+            "data": [
+              {
+                "id": "1828175829",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175829",
+                "attributes": {
+                  "durationInMillis": 216165,
+                  "name": "2 + 2 = 5 (Live)"
+                }
+              },
+              {
+                "id": "1828175833",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175833",
+                "attributes": {
+                  "durationInMillis": 251738,
+                  "name": "Sit Down. Stand Up (Live)"
+                }
+              },
+              {
+                "id": "1828175836",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175836",
+                "attributes": {
+                  "durationInMillis": 259159,
+                  "name": "Sail To The Moon (Live)"
+                }
+              },
+              {
+                "id": "1828175837",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175837",
+                "attributes": {
+                  "durationInMillis": 225963,
+                  "name": "Go To Sleep (Live)"
+                }
+              },
+              {
+                "id": "1828175840",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175840",
+                "attributes": {
+                  "durationInMillis": 250841,
+                  "name": "Where I End and You Begin (Live)"
+                }
+              },
+              {
+                "id": "1828175843",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175843",
+                "attributes": {
+                  "durationInMillis": 297023,
+                  "name": "We Suck Young Blood (Live)"
+                }
+              },
+              {
+                "id": "1828175845",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175845",
+                "attributes": {
+                  "durationInMillis": 239268,
+                  "name": "The Gloaming (Live)"
+                }
+              },
+              {
+                "id": "1828175846",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175846",
+                "attributes": {
+                  "durationInMillis": 333514,
+                  "name": "There, There (Live)"
+                }
+              },
+              {
+                "id": "1828175847",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828175847",
+                "attributes": {
+                  "durationInMillis": 129360,
+                  "name": "I Will (Live)"
+                }
+              },
+              {
+                "id": "1828176239",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828176239",
+                "attributes": {
+                  "durationInMillis": 244658,
+                  "name": "Myxomatosis (Live)"
+                }
+              },
+              {
+                "id": "1828176242",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828176242",
+                "attributes": {
+                  "durationInMillis": 205950,
+                  "name": "Scatterbrain (Live)"
+                }
+              },
+              {
+                "id": "1828176255",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1828176255",
+                "attributes": {
+                  "durationInMillis": 210744,
+                  "name": "A Wolf At the Door (Live)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1160370310",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1160370310",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "0e1019",
+            "height": 4000,
+            "textColor1": "d0bf56",
+            "textColor2": "e59e44",
+            "textColor3": "a99c4a",
+            "textColor4": "ba823b",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/13/39/3c/13393c12-a1cf-445f-5dd0-07988cbe540d/634904032449.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "Additional sonic sketches from their 2007 triumph.",
+            "standard": "Take away the industry-shaking specifics of <i>In Rainbows</i> and it still stands as a monument to Radiohead hitting their creative stride. And there’s no greater evidence of that fact than this, an eight-track collection of bonus cuts. There’s sonic doodling, of course (see the abrasive skronk of “Bangers + Mash”), but fully-formed tracks like “Up on the Ladder” and elegiac closer “4 Minute Warning” capture a band brimming over with can’t-miss imagination."
+          },
+          "isSingle": false,
+          "name": "In Rainbows Disk 2",
+          "releaseDate": "2007-12-03"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1160370310/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1160370310/tracks",
+            "data": [
+              {
+                "id": "1160370460",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1160370460",
+                "attributes": { "durationInMillis": 62930, "name": "MK 1" }
+              },
+              {
+                "id": "1160370501",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1160370501",
+                "attributes": {
+                  "durationInMillis": 299283,
+                  "name": "Down Is the New Up"
+                }
+              },
+              {
+                "id": "1160370510",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1160370510",
+                "attributes": {
+                  "durationInMillis": 228236,
+                  "name": "Go Slowly"
+                }
+              },
+              {
+                "id": "1160370518",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1160370518",
+                "attributes": { "durationInMillis": 53004, "name": "MK 2" }
+              },
+              {
+                "id": "1160370559",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1160370559",
+                "attributes": {
+                  "durationInMillis": 266478,
+                  "name": "Last Flowers"
+                }
+              },
+              {
+                "id": "1160370565",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1160370565",
+                "attributes": {
+                  "durationInMillis": 257170,
+                  "name": "Up on the Ladder"
+                }
+              },
+              {
+                "id": "1160370573",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1160370573",
+                "attributes": {
+                  "durationInMillis": 199502,
+                  "name": "Bangers + Mash"
+                }
+              },
+              {
+                "id": "1160370576",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1160370576",
+                "attributes": {
+                  "durationInMillis": 244285,
+                  "name": "4 Minute Warning"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1113546075",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1113546075",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "666467",
+            "height": 4000,
+            "textColor1": "f3e8f9",
+            "textColor2": "e1d0ea",
+            "textColor3": "d7cedc",
+            "textColor4": "c9bad0",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/cf/88/57/cf885754-e21a-97bf-6931-f1fcd918c5d0/634904081867.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "isSingle": true,
+          "name": "Spectre - Single",
+          "releaseDate": "2015-12-25"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1113546075/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1113546075/tracks",
+            "data": [
+              {
+                "id": "1113546470",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1113546470",
+                "attributes": { "durationInMillis": 199334, "name": "Spectre" }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1687497049",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1687497049",
+        "attributes": {
+          "artistName": "Nightly",
+          "artwork": {
+            "bgColor": "151515",
+            "height": 3000,
+            "textColor1": "f2f2f2",
+            "textColor2": "e4e4e4",
+            "textColor3": "c6c6c6",
+            "textColor4": "bbbbbb",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/81/02/9a/81029a5c-b3b3-4551-dc6c-72d29f97a023/0.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "isSingle": true,
+          "name": "radiohead - Single",
+          "releaseDate": "2023-03-17"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1687497049/artists",
+            "data": [
+              {
+                "id": "352310972",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/352310972"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1687497049/tracks",
+            "data": [
+              {
+                "id": "1687497050",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1687497050",
+                "attributes": {
+                  "durationInMillis": 197018,
+                  "name": "radiohead"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1446881820",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1446881820",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "50647e",
+            "height": 4000,
+            "textColor1": "f6f7f8",
+            "textColor2": "edeff2",
+            "textColor3": "d4d9e0",
+            "textColor4": "cdd3da",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/6c/a1/45/6ca1451a-2313-65ab-45c1-781733108717/191404098059.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "isSingle": true,
+          "name": "Ill Wind - Single",
+          "releaseDate": "2016"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1446881820/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1446881820/tracks",
+            "data": [
+              {
+                "id": "1446881822",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1446881822",
+                "attributes": { "durationInMillis": 254113, "name": "Ill Wind" }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1110448315",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1110448315",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "afafaf",
+            "height": 1400,
+            "textColor1": "030303",
+            "textColor2": "111111",
+            "textColor3": "252525",
+            "textColor4": "313131",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music18/v4/e1/1b/87/e11b87d2-b763-65ad-6e2d-f83cd08c7cd7/cover.jpg/{w}x{h}bb.jpg",
+            "width": 1400
+          },
+          "editorialNotes": {
+            "short": "The band’s first single in five years is thrilling, unsettling and deeply gorgeous.",
+            "standard": "The band’s first single in five years is thrilling, unsettling and deeply gorgeous. Trademark Radiohead, essentially. Driven on by an urgent, stabbing string section, it marks the joyful completion of a track first teased to fans in 2006 live performances."
+          },
+          "isSingle": true,
+          "name": "Burn the Witch - Single",
+          "releaseDate": "2016-05-03"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1110448315/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1110448315/tracks",
+            "data": [
+              {
+                "id": "1110448421",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1110448421",
+                "attributes": {
+                  "durationInMillis": 220607,
+                  "name": "Burn the Witch"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1114686637",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1114686637",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "1d1d1d",
+            "height": 4000,
+            "textColor1": "f3f3f3",
+            "textColor2": "e0e0e0",
+            "textColor3": "c8c8c8",
+            "textColor4": "b9b9b9",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/6b/e6/2c/6be62c8b-12bf-d3d2-bb43-bfde45a67c08/634904081065.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "isSingle": false,
+          "name": "The Daily Mail / Staircase - Single",
+          "releaseDate": "2011-12-19"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1114686637/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1114686637/tracks",
+            "data": [
+              {
+                "id": "1114686716",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1114686716",
+                "attributes": {
+                  "durationInMillis": 217798,
+                  "name": "The Daily Mail"
+                }
+              },
+              {
+                "id": "1114686718",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1114686718",
+                "attributes": {
+                  "durationInMillis": 271530,
+                  "name": "Staircase"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1097873905",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1097873905",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "030301",
+            "height": 4000,
+            "textColor1": "e5c18b",
+            "textColor2": "d7ab67",
+            "textColor3": "b89b6f",
+            "textColor4": "ac8952",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/48/bc/68/48bc6874-b2d7-8c34-4999-cb111f45c6fe/634904078461.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "editorialNotes": {
+            "short": "A document of the band’s turn-of-the-century fury and finesse.",
+            "standard": "By late 2001, Radiohead was thriving—in spite of some naysayers’ predictions. Record-label executives and critics had initially dubbed the group’s 2000 album <i>Kid A</i> “commercial suicide,” and claimed the band’s electronic volte-face had turned the band members into miserabilists—still whining about society and dejection, but now doing it in a formless mess.\n\nBut the back-to-back successes of <i>Kid A</i> and its follow-up, <i>Amnesiac</i>, validated the band’s new direction—as did <i>I Might Be Wrong: Live Recordings</i>, an ecstatic rejoinder to those potshots. Released in the fall of 2001, it captures the euphoria that greeted the band as it mounted an extensive world tour. On these eight songs, you can hear crowds screaming in fits, from the French Alps to the banks of Ohio’s Cuyahoga River. More importantly, you can hear the members themselves having a legitimate blast, adapting these amorphous songs for the stage, and digging into them with impressive improvisational gusto. “It was so much fun,” Thom Yorke later said of the <i>Kid A</i> era, “like the kids are being given the keys to the sports car.”\n\nOnstage, the band had dropped some of the more cerebral aspects of <i>Kid A</i> and <i>Amnesiac</i> for pure aggression. Yorke swivels and gasps over the blown-out bass during set opener “The National Anthem,” with Jonny Greenwood howling on the ondes Martenot like a furious ghost in the distance. For a band that had disavowed rock, the exit of “I Might Be Wrong” borders on Sonic Youth abrasion, as the guitars claw at Philip Selway’s churn. And “Idioteque,” already the seat of <i>Kid A</i>’s power, finds a new fever pitch, with Yorke sailing into paroxysms over a cavalcade of drums. The hometown Oxford crowd joins him for his devilish chant: “Take the money and run.”\n\n<i>I Might Be Wrong</i> also doubles as something of a rarities collection. “Like Spinning Plates” would move in and out of the group’s set lists in years to come, but the <i>Amnesiac</i> oddity becomes a star-gazing beauty here: Above a romantic piano, with electronic washes dissolving through the mix, Yorke sounds unapologetically plaintive as he pleads for mercy. And the album concludes during the summer of 2001 at the Hollywood Bowl with a performance of “True Love Waits,” a fan favorite since the days of <i>The Bends</i>—and a song the group would struggle for years to get right in the studio. Simple and yearning, with lyrics begging for someone to stay, “True Love Waits” was a reminder that the members of Radiohead—seen then as the most important, and arguably the most <i>pretentious</i>, band in the world—were only humans, too, simply trying to muddle through this set and onto the next."
+          },
+          "isSingle": false,
+          "name": "I Might Be Wrong (Live)",
+          "releaseDate": "2001-11-12"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1097873905/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1097873905/tracks",
+            "data": [
+              {
+                "id": "1097874288",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097874288",
+                "attributes": {
+                  "durationInMillis": 297533,
+                  "name": "The National Anthem (Live in France)"
+                }
+              },
+              {
+                "id": "1097874296",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097874296",
+                "attributes": {
+                  "durationInMillis": 292133,
+                  "name": "I Might Be Wrong (Live)"
+                }
+              },
+              {
+                "id": "1097874540",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097874540",
+                "attributes": {
+                  "durationInMillis": 254067,
+                  "name": "Morning Bell (Live in Oxford)"
+                }
+              },
+              {
+                "id": "1097874652",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097874652",
+                "attributes": {
+                  "durationInMillis": 232800,
+                  "name": "Like Spinning Plates (Live)"
+                }
+              },
+              {
+                "id": "1097874664",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097874664",
+                "attributes": {
+                  "durationInMillis": 264840,
+                  "name": "Idioteque (Live in Oxford)"
+                }
+              },
+              {
+                "id": "1097874782",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097874782",
+                "attributes": {
+                  "durationInMillis": 462800,
+                  "name": "Everything in Its Right Place (Live in France)"
+                }
+              },
+              {
+                "id": "1097874843",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097874843",
+                "attributes": {
+                  "durationInMillis": 313000,
+                  "name": "Dollars & Cents (Live)"
+                }
+              },
+              {
+                "id": "1097874850",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1097874850",
+                "attributes": {
+                  "durationInMillis": 304920,
+                  "name": "True Love Waits (Live in Oslo)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1112408551",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1112408551",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "ffffff",
+            "height": 4000,
+            "textColor1": "3c1212",
+            "textColor2": "4d2828",
+            "textColor3": "634242",
+            "textColor4": "715353",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/de/29/39/de293979-fa6b-aa11-c122-be20fb66be3e/634904080068.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "isSingle": false,
+          "name": "High & Dry / Planet Telex - EP",
+          "releaseDate": "1995-02-27"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1112408551/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1112408551/tracks",
+            "data": [
+              {
+                "id": "1112408820",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112408820",
+                "attributes": {
+                  "durationInMillis": 257480,
+                  "name": "High and Dry"
+                }
+              },
+              {
+                "id": "1112409067",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112409067",
+                "attributes": {
+                  "durationInMillis": 259200,
+                  "name": "Planet Telex"
+                }
+              },
+              {
+                "id": "1112409069",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112409069",
+                "attributes": {
+                  "durationInMillis": 206867,
+                  "name": "Maquiladora"
+                }
+              },
+              {
+                "id": "1112409074",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112409074",
+                "attributes": {
+                  "durationInMillis": 404800,
+                  "name": "Planet Telex (Hexidecimal Mix)"
+                }
+              },
+              {
+                "id": "1112409076",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112409076",
+                "attributes": {
+                  "durationInMillis": 183893,
+                  "name": "Killer Cars"
+                }
+              },
+              {
+                "id": "1112409081",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112409081",
+                "attributes": {
+                  "durationInMillis": 280240,
+                  "name": "Planet Telex (L.F.O. DJ Mix)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1111495817",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1111495817",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "272727",
+            "height": 1400,
+            "textColor1": "ededed",
+            "textColor2": "cecece",
+            "textColor3": "c6c6c6",
+            "textColor4": "acacac",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/7c/c1/f8/7cc1f880-9c18-b257-a66a-d774061ead1a/cover.jpg/{w}x{h}bb.jpg",
+            "width": 1400
+          },
+          "isSingle": true,
+          "name": "Daydreaming - Single",
+          "releaseDate": "2016-05-06"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1111495817/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1111495817/tracks",
+            "data": [
+              {
+                "id": "1111495824",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1111495824",
+                "attributes": {
+                  "durationInMillis": 384439,
+                  "name": "Daydreaming"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1112408006",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1112408006",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "191a2b",
+            "height": 4000,
+            "textColor1": "ffffff",
+            "textColor2": "c5b4e2",
+            "textColor3": "d0d1d4",
+            "textColor4": "a395bd",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/74/34/ab/7434abae-88ad-54b0-d077-ca7fd23ab130/634904079864.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "isSingle": false,
+          "name": "My Iron Lung - EP",
+          "releaseDate": "1994-09-26"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1112408006/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1112408006/tracks",
+            "data": [
+              {
+                "id": "1112408388",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112408388",
+                "attributes": {
+                  "durationInMillis": 276427,
+                  "name": "My Iron Lung"
+                }
+              },
+              {
+                "id": "1112408392",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112408392",
+                "attributes": {
+                  "durationInMillis": 282293,
+                  "name": "The Trickster"
+                }
+              },
+              {
+                "id": "1112408395",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112408395",
+                "attributes": {
+                  "durationInMillis": 200080,
+                  "name": "Lewis (Mistreated)"
+                }
+              },
+              {
+                "id": "1112408400",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112408400",
+                "attributes": {
+                  "durationInMillis": 281227,
+                  "name": "Punchdrunk Lovesick Singalong"
+                }
+              },
+              {
+                "id": "1112408403",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112408403",
+                "attributes": {
+                  "durationInMillis": 169253,
+                  "name": "Permanent Daylight"
+                }
+              },
+              {
+                "id": "1112408407",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112408407",
+                "attributes": {
+                  "durationInMillis": 137227,
+                  "name": "Lozenge of Love"
+                }
+              },
+              {
+                "id": "1112408472",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112408472",
+                "attributes": {
+                  "durationInMillis": 104440,
+                  "name": "You Never Wash up After Yourself"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1112425223",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1112425223",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "060606",
+            "height": 4000,
+            "textColor1": "f6faff",
+            "textColor2": "d9ecff",
+            "textColor3": "c5c9cd",
+            "textColor4": "aebdcd",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/73/7f/e5/737fe5fe-ae9d-d997-7b76-467108c782ea/634904080266.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "isSingle": false,
+          "name": "Street Spirit (Fade Out) - EP",
+          "releaseDate": "1996-01-22"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1112425223/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1112425223/tracks",
+            "data": [
+              {
+                "id": "1112425401",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112425401",
+                "attributes": {
+                  "durationInMillis": 253853,
+                  "name": "Street Spirit (Fade Out)"
+                }
+              },
+              {
+                "id": "1112425458",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112425458",
+                "attributes": {
+                  "durationInMillis": 281000,
+                  "name": "Talk Show Host"
+                }
+              },
+              {
+                "id": "1112425469",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112425469",
+                "attributes": {
+                  "durationInMillis": 205040,
+                  "name": "Bishop's Robes"
+                }
+              },
+              {
+                "id": "1112425471",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112425471",
+                "attributes": {
+                  "durationInMillis": 141680,
+                  "name": "Banana Co"
+                }
+              },
+              {
+                "id": "1112425474",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112425474",
+                "attributes": { "durationInMillis": 147573, "name": "Molasses" }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1112407235",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1112407235",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "ffffff",
+            "height": 4000,
+            "textColor1": "202338",
+            "textColor2": "212e42",
+            "textColor3": "4d4f60",
+            "textColor4": "4d5867",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/52/45/61/5245617a-1bf0-6fe1-c694-8685f4792776/634904079963.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "isSingle": false,
+          "name": "Fake Plastic Trees - Single",
+          "releaseDate": "1995-05-15"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1112407235/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1112407235/tracks",
+            "data": [
+              {
+                "id": "1112407653",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112407653",
+                "attributes": {
+                  "durationInMillis": 290707,
+                  "name": "Fake Plastic Trees"
+                }
+              },
+              {
+                "id": "1112407656",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112407656",
+                "attributes": {
+                  "durationInMillis": 206320,
+                  "name": "India Rubber"
+                }
+              },
+              {
+                "id": "1112407659",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1112407659",
+                "attributes": {
+                  "durationInMillis": 261947,
+                  "name": "How Can You Be Sure?"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1143391524",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1143391524",
+        "attributes": {
+          "artistName": "Radiohead",
+          "artwork": {
+            "bgColor": "ffffff",
+            "height": 4000,
+            "textColor1": "282424",
+            "textColor2": "2e3442",
+            "textColor3": "535050",
+            "textColor4": "585d68",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/77/fd/0a/77fd0a4e-e5b1-8597-12dc-8917ead835bb/634904080853.png/{w}x{h}bb.jpg",
+            "width": 4000
+          },
+          "isSingle": false,
+          "name": "Com Lag: 2+2=5 - EP",
+          "releaseDate": "2004-03-24"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1143391524/artists",
+            "data": [
+              {
+                "id": "657515",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/657515"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1143391524/tracks",
+            "data": [
+              {
+                "id": "1143391760",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391760",
+                "attributes": {
+                  "durationInMillis": 215267,
+                  "name": "2 + 2 = 5 (Live at Earls Court)"
+                }
+              },
+              {
+                "id": "1143391817",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391817",
+                "attributes": {
+                  "durationInMillis": 309920,
+                  "name": "Remyxomatosis (Cristian Vogel RMX)"
+                }
+              },
+              {
+                "id": "1143391820",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391820",
+                "attributes": {
+                  "durationInMillis": 133240,
+                  "name": "I Will (Los Angeles Version)"
+                }
+              },
+              {
+                "id": "1143391821",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391821",
+                "attributes": {
+                  "durationInMillis": 238280,
+                  "name": "Paperbag Writer"
+                }
+              },
+              {
+                "id": "1143391822",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391822",
+                "attributes": {
+                  "durationInMillis": 186333,
+                  "name": "I Am a Wicked Child"
+                }
+              },
+              {
+                "id": "1143391823",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391823",
+                "attributes": {
+                  "durationInMillis": 212600,
+                  "name": "I Am Citizen Insane"
+                }
+              },
+              {
+                "id": "1143391824",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391824",
+                "attributes": {
+                  "durationInMillis": 265107,
+                  "name": "Skttrbrain (Four Tet Remix)"
+                }
+              },
+              {
+                "id": "1143391825",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391825",
+                "attributes": {
+                  "durationInMillis": 216000,
+                  "name": "Gagging Order"
+                }
+              },
+              {
+                "id": "1143391948",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391948",
+                "attributes": {
+                  "durationInMillis": 138400,
+                  "name": "Fog (Again) [Live]"
+                }
+              },
+              {
+                "id": "1143391951",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1143391951",
+                "attributes": {
+                  "durationInMillis": 271253,
+                  "name": "Where Bluebirds Fly"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1712388490",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1712388490",
+        "attributes": {
+          "artistName": "SAINt JHN",
+          "artwork": {
+            "bgColor": "f0f0f0",
+            "height": 3000,
+            "textColor1": "1c0809",
+            "textColor2": "2b2c2b",
+            "textColor3": "463637",
+            "textColor4": "525352",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/31/85/ef/3185ef68-d5fc-ced3-cda0-ec37c1529401/22CRGIM34100.rgb.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "isSingle": true,
+          "name": "Roses (Imanbek Remix) - Single",
+          "releaseDate": "2019-09-18"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1712388490/artists",
+            "data": [
+              {
+                "id": "1133442919",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/1133442919"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1712388490/tracks",
+            "data": [
+              {
+                "id": "1712388494",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1712388494",
+                "attributes": {
+                  "durationInMillis": 176219,
+                  "name": "Roses (Imanbek Remix)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1467816521",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1467816521",
+        "attributes": {
+          "artistName": "DaniLeigh",
+          "artwork": {
+            "bgColor": "27294b",
+            "height": 3000,
+            "textColor1": "c6d8d3",
+            "textColor2": "deb27a",
+            "textColor3": "a6b5b8",
+            "textColor4": "b99670",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/88/7e/8d/887e8d16-a3d3-ac05-39bb-7d1d600000e0/19UMGIM53142.rgb.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "isSingle": true,
+          "name": "Easy (Remix) [feat. Chris Brown] - Single",
+          "releaseDate": "2019-05-31"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1467816521/artists",
+            "data": [
+              {
+                "id": "1063826207",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/1063826207"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1467816521/tracks",
+            "data": [
+              {
+                "id": "1467816528",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1467816528",
+                "attributes": {
+                  "durationInMillis": 186564,
+                  "name": "Easy (Remix) [feat. Chris Brown]"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1500803901",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1500803901",
+        "attributes": {
+          "artistName": "Thom Yorke",
+          "artwork": {
+            "bgColor": "000000",
+            "height": 3000,
+            "textColor1": "a8d2a9",
+            "textColor2": "abd25e",
+            "textColor3": "86a887",
+            "textColor4": "89a84b",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Features124/v4/fc/90/d1/fc90d182-3ce4-b7d7-2850-6725eb5a26f7/mza_12511281908112798373.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "editorialNotes": {
+            "short": "A paranoid android leads a journey into bass.",
+            "standard": "Radiohead have long been torchbearers for leftfield electronic music—as James Murphy might put it, they were the first to play Autechre to the rock kids—but Thom Yorke rarely DJs, which makes the chance to catch him behind the decks an occasion to celebrate. Kicking off with Blawan’s thundering remix of Radiohead’s own “Bloom,” which was fresh from the record plant at the time, Yorke’s 2011 set for Boiler Room doubles as a cross-section of his esoteric tastes—and a snapshot of the era’s cutting-edge club music. After cruising through sleek, mechanical techno from Alex Cortex and Steve Moore, he spends the bulk of his energies exploring bass music’s craggy corners. Anstam’s “Baldwin” is an ominous slice of post-dubstep; 2562’s “The Wind-Up” wraps muscular syncopations in lush pads; and Africa HiTech’s “Blen (Remix)” puts a Caribbean spin on broken beat. Toward the end, Yorke takes a surprising detour through Chicago juke via DJ Slugo’s booming 808s before looping back to Radiohead’s wheelhouse with a cut from Aphex Twin, a towering influence on Radiohead’s own electronic conversion on <i>Kid A</i>."
+          },
+          "isSingle": false,
+          "name": "Boiler Room: Thom Yorke in London, Oct 11, 2011 (DJ Mix)",
+          "releaseDate": "2011-10-11"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1500803901/artists",
+            "data": [
+              {
+                "id": "39753073",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/39753073"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1500803901/tracks",
+            "data": [
+              {
+                "id": "1500803902",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803902",
+                "attributes": {
+                  "durationInMillis": 27731,
+                  "name": "Commentary (from Boiler Room: Thom Yorke in London, Oct 11, 2011) [Mixed]"
+                }
+              },
+              {
+                "id": "1500803903",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803903",
+                "attributes": {
+                  "durationInMillis": 232158,
+                  "name": "Bloom (Blawan Rmx) [Mixed]"
+                }
+              },
+              {
+                "id": "1500803904",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803904",
+                "attributes": {
+                  "durationInMillis": 244263,
+                  "name": "ID (from Boiler Room: Thom Yorke in London, Oct 11, 2011) [Mixed]"
+                }
+              },
+              {
+                "id": "1500803905",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803905",
+                "attributes": {
+                  "durationInMillis": 78377,
+                  "name": "Bayern Kurve (Mixed)"
+                }
+              },
+              {
+                "id": "1500803906",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803906",
+                "attributes": {
+                  "durationInMillis": 197750,
+                  "name": "Baldwin (Mixed)"
+                }
+              },
+              {
+                "id": "1500803907",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803907",
+                "attributes": {
+                  "durationInMillis": 197750,
+                  "name": "The Wind-Up (Mixed)"
+                }
+              },
+              {
+                "id": "1500803908",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803908",
+                "attributes": {
+                  "durationInMillis": 188415,
+                  "name": "Blen (Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1500803909",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803909",
+                "attributes": {
+                  "durationInMillis": 169489,
+                  "name": "Prototype (Modeselektor's Broken Handbrake Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1500803910",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803910",
+                "attributes": {
+                  "durationInMillis": 153569,
+                  "name": "Juke Me from the Back Low (Mixed)"
+                }
+              },
+              {
+                "id": "1500803911",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803911",
+                "attributes": {
+                  "durationInMillis": 128452,
+                  "name": "To Cure a Weakling Child (Mixed)"
+                }
+              },
+              {
+                "id": "1500803912",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803912",
+                "attributes": {
+                  "durationInMillis": 90636,
+                  "name": "Work Them (Mixed)"
+                }
+              },
+              {
+                "id": "1500803913",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1500803913",
+                "attributes": {
+                  "durationInMillis": 210155,
+                  "name": "America's Most Blunted (feat. Quasimoto) [Mixed]"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1454454062",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1454454062",
+        "attributes": {
+          "artistName": "Summer Walker & Drake",
+          "artwork": {
+            "bgColor": "ff9499",
+            "height": 3000,
+            "textColor1": "05080d",
+            "textColor2": "15181c",
+            "textColor3": "372429",
+            "textColor4": "443135",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/af/14/7e/af147e7f-e6db-fe0d-3ac0-07df6b079c03/19UMGIM18253.rgb.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "isSingle": true,
+          "name": "Girls Need Love (Remix) - Single",
+          "releaseDate": "2019-02-10"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1454454062/artists",
+            "data": [
+              {
+                "id": "990402287",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/990402287"
+              },
+              {
+                "id": "271256",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/271256"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1454454062/tracks",
+            "data": [
+              {
+                "id": "1454454066",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1454454066",
+                "attributes": {
+                  "durationInMillis": 222374,
+                  "name": "Girls Need Love (Remix)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1531791781",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1531791781",
+        "attributes": {
+          "artistName": "Moneybagg Yo",
+          "artwork": {
+            "bgColor": "10d0b2",
+            "height": 3000,
+            "textColor1": "000b08",
+            "textColor2": "2b180f",
+            "textColor3": "03322a",
+            "textColor4": "263d2f",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/81/3c/81/813c81e7-eb6a-e7ec-6db5-e3690641156e/20UMGIM75695.rgb.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "isSingle": true,
+          "name": "Said Sum (Remix) [feat. City Girls & DaBaby] - Single",
+          "releaseDate": "2020-09-17"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1531791781/artists",
+            "data": [
+              {
+                "id": "991187319",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/991187319"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1531791781/tracks",
+            "data": [
+              {
+                "id": "1531791782",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1531791782",
+                "attributes": {
+                  "durationInMillis": 177704,
+                  "name": "Said Sum (Remix) [feat. City Girls & DaBaby]"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1525467379",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1525467379",
+        "attributes": {
+          "artistName": "Lost Frequencies",
+          "artwork": {
+            "bgColor": "021729",
+            "height": 3000,
+            "textColor1": "74b8e2",
+            "textColor2": "41baf5",
+            "textColor3": "5d98bd",
+            "textColor4": "349acc",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Features114/v4/21/15/01/21150197-395f-9ae4-4276-d70e693fff3d/mza_12554983279273263405.png/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "editorialNotes": {
+            "short": "The Belgian DJ brings the 🔥 to the virtual fest. Are you with him?",
+            "standard": "The Belgian DJ brings the 🔥 to the virtual fest. Are you with him?"
+          },
+          "isSingle": false,
+          "name": "Tomorrowland Around The World 2020: Lost Frequencies (DJ Mix)",
+          "releaseDate": "2020-08-05"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1525467379/artists",
+            "data": [
+              {
+                "id": "877792512",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/877792512"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1525467379/tracks",
+            "data": [
+              {
+                "id": "1525467380",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467380",
+                "attributes": {
+                  "durationInMillis": 294748,
+                  "name": "Beat of My Heart (feat. Love Harder) [Deluxe Intro Edit] [Mixed]"
+                }
+              },
+              {
+                "id": "1525467382",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467382",
+                "attributes": {
+                  "durationInMillis": 122878,
+                  "name": "ID (from Tomorrowland Around The World 2020: Lost Frequencies) [Mixed]"
+                }
+              },
+              {
+                "id": "1525467383",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467383",
+                "attributes": {
+                  "durationInMillis": 143773,
+                  "name": "Flou (Lost Frequencies Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525467384",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467384",
+                "attributes": {
+                  "durationInMillis": 261332,
+                  "name": "Snow (Hey Oh) [Lost Frequencies Remix] [Mixed]"
+                }
+              },
+              {
+                "id": "1525467385",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467385",
+                "attributes": {
+                  "durationInMillis": 136805,
+                  "name": "Love to Go (Deluxe Mix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525467386",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467386",
+                "attributes": {
+                  "durationInMillis": 231155,
+                  "name": "Black & Blue (Lost Frequencies Sunrise Club Mix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525467387",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467387",
+                "attributes": {
+                  "durationInMillis": 175463,
+                  "name": "Slow Burn (feat. Elayna Boynton) [Lost Frequencies Remix] [Mixed]"
+                }
+              },
+              {
+                "id": "1525467388",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467388",
+                "attributes": {
+                  "durationInMillis": 283830,
+                  "name": "Lay Your Head On Me (feat. Marcus Mumford) [Lost Frequencies Remix] [Mixed]"
+                }
+              },
+              {
+                "id": "1525467389",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525467389",
+                "attributes": {
+                  "durationInMillis": 228537,
+                  "name": "Electrified (feat. Kye Sones) [Mixed]"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1525640183",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1525640183",
+        "attributes": {
+          "artistName": "Alan Walker",
+          "artwork": {
+            "bgColor": "021729",
+            "height": 3000,
+            "textColor1": "74b8e2",
+            "textColor2": "41baf5",
+            "textColor3": "5d98bd",
+            "textColor4": "349acc",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/e9/56/2f/e9562f17-7732-0999-e8bf-fb15d23fa9e3/TOMORROWLAND_ARTIST-COVER_Alan-Walker.png/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "isSingle": false,
+          "name": "Tomorrowland Around The World 2020: Alan Walker (DJ Mix)",
+          "releaseDate": "2020-08-05"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1525640183/artists",
+            "data": [
+              {
+                "id": "1062085272",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/1062085272"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1525640183/tracks",
+            "data": [
+              {
+                "id": "1525640184",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640184",
+                "attributes": {
+                  "durationInMillis": 216631,
+                  "name": "Sky (Remix) / Alone (Acapella) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640185",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640185",
+                "attributes": {
+                  "durationInMillis": 50709,
+                  "name": "Darkside (feat. Au/Ra & Tomine Harket) [Afrojack Remix] [Mixed]"
+                }
+              },
+              {
+                "id": "1525640186",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640186",
+                "attributes": {
+                  "durationInMillis": 80468,
+                  "name": "Darkside (feat. Au/Ra & Tomine Harket) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640187",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640187",
+                "attributes": {
+                  "durationInMillis": 82274,
+                  "name": "Sing Me to Sleep (Acapella) / Resurection (Maurice West Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640188",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640188",
+                "attributes": {
+                  "durationInMillis": 128377,
+                  "name": "The Spectre / Elements (Mixed)"
+                }
+              },
+              {
+                "id": "1525640189",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640189",
+                "attributes": {
+                  "durationInMillis": 89292,
+                  "name": "Move Your Body (Alan Walker Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640190",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640190",
+                "attributes": {
+                  "durationInMillis": 111303,
+                  "name": "Sky (VIP Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640191",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640191",
+                "attributes": {
+                  "durationInMillis": 275607,
+                  "name": "Time (Alan Walker Extended Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640192",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640192",
+                "attributes": {
+                  "durationInMillis": 31869,
+                  "name": "Time (Alan Walker Festival Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640193",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640193",
+                "attributes": {
+                  "durationInMillis": 63558,
+                  "name": "Different World (feat. CORSAK) [NIVIRO Remix] [Mixed]"
+                }
+              },
+              {
+                "id": "1525640194",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640194",
+                "attributes": {
+                  "durationInMillis": 180029,
+                  "name": "Tired (Steerner & Tobu Remix) [VIP] [Mixed]"
+                }
+              },
+              {
+                "id": "1525640195",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640195",
+                "attributes": {
+                  "durationInMillis": 59361,
+                  "name": "It Goes Like (Mixed)"
+                }
+              },
+              {
+                "id": "1525640286",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640286",
+                "attributes": {
+                  "durationInMillis": 149531,
+                  "name": "All Falls Down (Mark Villa Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640287",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640287",
+                "attributes": {
+                  "durationInMillis": 168747,
+                  "name": "Alone, Pt. II (Alex Skrindo & Sebastian Wibe Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640288",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640288",
+                "attributes": {
+                  "durationInMillis": 128101,
+                  "name": "Ignite (feat. Alan Walker, Julie Bergan & SeungRi) / Ignite (feat. Alan Walker, Julie Bergan & SeungRi) [Remix] [Mixed]"
+                }
+              },
+              {
+                "id": "1525640289",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640289",
+                "attributes": {
+                  "durationInMillis": 263273,
+                  "name": "Faded (Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1525640290",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1525640290",
+                "attributes": {
+                  "durationInMillis": 74589,
+                  "name": "Faded (Tiesto's Northern Lights Remix) [Mixed]"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1496030499",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1496030499",
+        "attributes": {
+          "artistName": "Paul Kalkbrenner",
+          "artwork": {
+            "bgColor": "000000",
+            "height": 3000,
+            "textColor1": "e9e9e9",
+            "textColor2": "cecece",
+            "textColor3": "bbbbbb",
+            "textColor4": "a5a5a5",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/52/ef/89/52ef8926-8b26-c1bb-0eb5-a655d4bfe924/PK_3000.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "editorialNotes": {
+            "short": "A thrilling live set from the German techno producer, recorded in Portugal."
+          },
+          "isSingle": false,
+          "name": "LXM Festival: Paul Kalkbrenner in Lisbon, Dec 14, 2019 (DJ Mix)",
+          "releaseDate": "2019-12-14"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1496030499/artists",
+            "data": [
+              {
+                "id": "49254184",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/49254184"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1496030499/tracks",
+            "data": [
+              {
+                "id": "1496030505",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030505",
+                "attributes": {
+                  "durationInMillis": 406992,
+                  "name": "No Goodbye (Mixed)"
+                }
+              },
+              {
+                "id": "1496030509",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030509",
+                "attributes": {
+                  "durationInMillis": 300921,
+                  "name": "Battery Park (Mixed)"
+                }
+              },
+              {
+                "id": "1496030510",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030510",
+                "attributes": {
+                  "durationInMillis": 284068,
+                  "name": "Part Twelve (Mixed)"
+                }
+              },
+              {
+                "id": "1496030511",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030511",
+                "attributes": {
+                  "durationInMillis": 404668,
+                  "name": "Altes Kamuffel (Mixed)"
+                }
+              },
+              {
+                "id": "1496030513",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030513",
+                "attributes": {
+                  "durationInMillis": 372084,
+                  "name": "Feed Your Head (Mixed)"
+                }
+              },
+              {
+                "id": "1496030514",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030514",
+                "attributes": {
+                  "durationInMillis": 316292,
+                  "name": "Der Buhold (Mixed)"
+                }
+              },
+              {
+                "id": "1496030515",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030515",
+                "attributes": {
+                  "durationInMillis": 167153,
+                  "name": "Part Eight (Mixed)"
+                }
+              },
+              {
+                "id": "1496030516",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030516",
+                "attributes": {
+                  "durationInMillis": 283068,
+                  "name": "La Mezcla (Paul Kalkbrenner Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1496030517",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030517",
+                "attributes": {
+                  "durationInMillis": 327433,
+                  "name": "Part Four (Mixed)"
+                }
+              },
+              {
+                "id": "1496030518",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030518",
+                "attributes": {
+                  "durationInMillis": 252765,
+                  "name": "Mad World (feat. Gary Jules) [Remix] [Mixed]"
+                }
+              },
+              {
+                "id": "1496030519",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030519",
+                "attributes": {
+                  "durationInMillis": 223474,
+                  "name": "Part Three (Mixed)"
+                }
+              },
+              {
+                "id": "1496030520",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030520",
+                "attributes": {
+                  "durationInMillis": 461082,
+                  "name": "Te quiero (Paul Kalkbrenner Remix) [Mixed]"
+                }
+              },
+              {
+                "id": "1496030521",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030521",
+                "attributes": {
+                  "durationInMillis": 312784,
+                  "name": "Happy Zombies (Mixed)"
+                }
+              },
+              {
+                "id": "1496030522",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030522",
+                "attributes": {
+                  "durationInMillis": 295391,
+                  "name": "Part One (Mixed)"
+                }
+              },
+              {
+                "id": "1496030523",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030523",
+                "attributes": {
+                  "durationInMillis": 176080,
+                  "name": "Bright Roller (Mixed)"
+                }
+              },
+              {
+                "id": "1496030524",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030524",
+                "attributes": {
+                  "durationInMillis": 333459,
+                  "name": "ID (from LXM Festival: Paul Kalkbrenner in Lisbon, Dec 14, 2019) [Mixed]"
+                }
+              },
+              {
+                "id": "1496030525",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030525",
+                "attributes": {
+                  "durationInMillis": 391388,
+                  "name": "Sky and Sand (Mixed)"
+                }
+              },
+              {
+                "id": "1496030766",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030766",
+                "attributes": {
+                  "durationInMillis": 276376,
+                  "name": "Absynthe (Mixed)"
+                }
+              },
+              {
+                "id": "1496030767",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1496030767",
+                "attributes": {
+                  "durationInMillis": 319523,
+                  "name": "Aaron (Mixed)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1623854804",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1623854804",
+        "attributes": {
+          "artistName": "Kendrick Lamar",
+          "artwork": {
+            "bgColor": "1c1814",
+            "height": 3000,
+            "textColor1": "d8e2dd",
+            "textColor2": "ddc28e",
+            "textColor3": "b2b9b5",
+            "textColor4": "b6a075",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/72/a1/a9/72a1a9a0-6c42-a37f-aad4-7e8772365c6d/22UMGIM52376.rgb.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "editorialNotes": {
+            "short": "King Kendrick’s two-part masterwork: Hear it in Spatial Audio.",
+            "standard": "When Kendrick Lamar popped up on two tracks from Baby Keem’s <i>The Melodic Blue</i> (“range brothers” and “family ties”), it felt like one of hip-hop’s prophets had descended a mountain to deliver scripture. His verses were stellar, to be sure, but it also just felt like way too much time had passed since we’d heard his voice. He’d helmed 2018’s <i>Black Panther</i> compilation/soundtrack, but his last proper release was 2017’s <i>DAMN.</i> That kind of scarcity in hip-hop can only serve to deify an artist as beloved as Lamar. But if the Compton MC is broadcasting anything across his fifth proper album <i>Mr. Morale & The Big Steppers</i>, it’s that he’s only human.\n\nThe project is split into two parts, each comprising nine songs, all of which serve to illuminate Lamar’s continually evolving worldview. Central to Lamar’s thesis is accountability. The MC has painstakingly itemized his shortcomings, assessing his relationships with money (“United in Grief”), white women (“Worldwide Steppers”), his father (“Father Time”), the limits of his loyalty (“Rich Spirit”), love in the context of heteronormative relationships (“We Cry Together,” “Purple Hearts”), motivation (“Count Me Out”), responsibility (“Crown”), gender (“Auntie Diaries”), and generational trauma (“Mother I Sober”). It’s a dense and heavy listen. But just as sure as Kendrick Lamar is human like the rest of us, he’s also a Pulitzer Prize winner, one of the most thoughtful MCs alive, and someone whose honesty across <i>Mr. Morale & The Big Steppers</i> could help us understand why any of us are the way we are."
+          },
+          "isSingle": false,
+          "name": "Mr. Morale & The Big Steppers",
+          "releaseDate": "2022-05-13"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1623854804/artists",
+            "data": [
+              {
+                "id": "368183298",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/368183298"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1623854804/tracks",
+            "data": [
+              {
+                "id": "1623854815",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623854815",
+                "attributes": {
+                  "durationInMillis": 255378,
+                  "name": "United In Grief"
+                }
+              },
+              {
+                "id": "1623854822",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623854822",
+                "attributes": { "durationInMillis": 195950, "name": "N95" }
+              },
+              {
+                "id": "1623854825",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623854825",
+                "attributes": {
+                  "durationInMillis": 203367,
+                  "name": "Worldwide Steppers"
+                }
+              },
+              {
+                "id": "1623855343",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855343",
+                "attributes": { "durationInMillis": 239027, "name": "Die Hard" }
+              },
+              {
+                "id": "1623855351",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855351",
+                "attributes": {
+                  "durationInMillis": 222497,
+                  "name": "Father Time (feat. Sampha)"
+                }
+              },
+              {
+                "id": "1623855353",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855353",
+                "attributes": {
+                  "durationInMillis": 103319,
+                  "name": "Rich (Interlude)"
+                }
+              },
+              {
+                "id": "1623855359",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855359",
+                "attributes": {
+                  "durationInMillis": 202286,
+                  "name": "Rich Spirit"
+                }
+              },
+              {
+                "id": "1623855667",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855667",
+                "attributes": {
+                  "durationInMillis": 341307,
+                  "name": "We Cry Together"
+                }
+              },
+              {
+                "id": "1623855679",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855679",
+                "attributes": {
+                  "durationInMillis": 329295,
+                  "name": "Purple Hearts"
+                }
+              },
+              {
+                "id": "1623855685",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855685",
+                "attributes": {
+                  "durationInMillis": 283642,
+                  "name": "Count Me Out"
+                }
+              },
+              {
+                "id": "1623855907",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855907",
+                "attributes": { "durationInMillis": 264299, "name": "Crown" }
+              },
+              {
+                "id": "1623855917",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855917",
+                "attributes": {
+                  "durationInMillis": 220779,
+                  "name": "Silent Hill"
+                }
+              },
+              {
+                "id": "1623855921",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623855921",
+                "attributes": {
+                  "durationInMillis": 152986,
+                  "name": "Savior (Interlude)"
+                }
+              },
+              {
+                "id": "1623856060",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623856060",
+                "attributes": { "durationInMillis": 224466, "name": "Savior" }
+              },
+              {
+                "id": "1623856066",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623856066",
+                "attributes": {
+                  "durationInMillis": 281070,
+                  "name": "Auntie Diaries"
+                }
+              },
+              {
+                "id": "1623856073",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623856073",
+                "attributes": {
+                  "durationInMillis": 210841,
+                  "name": "Mr. Morale"
+                }
+              },
+              {
+                "id": "1623856243",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623856243",
+                "attributes": {
+                  "durationInMillis": 406528,
+                  "name": "Mother I Sober (feat. Beth Gibbons)"
+                }
+              },
+              {
+                "id": "1623856246",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1623856246",
+                "attributes": { "durationInMillis": 256008, "name": "Mirror" }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1300707517",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1300707517",
+        "attributes": {
+          "artistName": "Yo Gotti",
+          "artwork": {
+            "bgColor": "191b08",
+            "height": 1500,
+            "textColor1": "e9947c",
+            "textColor2": "d49d50",
+            "textColor3": "bf7c64",
+            "textColor4": "ae8342",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/15/3e/1c/153e1cf9-8353-49f5-f528-300e62997021/886446811284.jpg/{w}x{h}bb.jpg",
+            "width": 1500
+          },
+          "isSingle": true,
+          "name": "Rake It Up (feat. Nicki Minaj) [Diplo & Party Favor Remix] - Single",
+          "releaseDate": "2017-10-26"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1300707517/artists",
+            "data": [
+              {
+                "id": "62763238",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/62763238"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1300707517/tracks",
+            "data": [
+              {
+                "id": "1300707518",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1300707518",
+                "attributes": {
+                  "durationInMillis": 172987,
+                  "name": "Rake It Up (feat. Nicki Minaj) [Diplo & Party Favor Remix]"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1469404638",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1469404638",
+        "attributes": {
+          "artistName": "Lil Peep & XXXTENTACION",
+          "artwork": {
+            "bgColor": "181616",
+            "height": 3000,
+            "textColor1": "bfd1c8",
+            "textColor2": "c3cfcf",
+            "textColor3": "9eaca4",
+            "textColor4": "a1aaaa",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/a9/55/0d/a9550de3-6837-effa-c0e0-3f5c761e2ff9/886447771075.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "isSingle": true,
+          "name": "Falling Down (Travis Barker Remix) - Single",
+          "releaseDate": "2019-07-11"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1469404638/artists",
+            "data": [
+              {
+                "id": "1077454941",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/1077454941"
+              },
+              {
+                "id": "1082533559",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/1082533559"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1469404638/tracks",
+            "data": [
+              {
+                "id": "1469404642",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1469404642",
+                "attributes": {
+                  "durationInMillis": 241120,
+                  "name": "Falling Down (Travis Barker Remix)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1501765538",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1501765538",
+        "attributes": {
+          "artistName": "YNW Melly",
+          "artwork": {
+            "bgColor": "2d0d08",
+            "height": 1425,
+            "textColor1": "e7e7e6",
+            "textColor2": "ced0d0",
+            "textColor3": "c1bbb9",
+            "textColor4": "aea9a8",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/26/4c/91/264c91ab-670b-068f-89fe-9228b7e61a01/810043680387.jpg/{w}x{h}bb.jpg",
+            "width": 1425
+          },
+          "isSingle": true,
+          "name": "Suicidal (Remix) [feat. Juice WRLD] - Single",
+          "releaseDate": "2020-03-13"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1501765538/artists",
+            "data": [
+              {
+                "id": "1294478827",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/1294478827"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1501765538/tracks",
+            "data": [
+              {
+                "id": "1501765543",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1501765543",
+                "attributes": {
+                  "durationInMillis": 225857,
+                  "name": "Suicidal (Remix) [feat. Juice WRLD]"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1711601753",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1711601753",
+        "attributes": {
+          "artistName": "Trippie Redd",
+          "artwork": {
+            "bgColor": "100f10",
+            "height": 1500,
+            "textColor1": "d7d5ce",
+            "textColor2": "b8b6d9",
+            "textColor3": "afada8",
+            "textColor4": "9694b1",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/57/f0/07/57f007fc-6044-a1bf-c110-f3fd1c999d7c/842812100789.jpg/{w}x{h}bb.jpg",
+            "width": 1500
+          },
+          "editorialNotes": {
+            "short": "Trap sound, pop-punk feeling, and a big debut. "
+          },
+          "isSingle": false,
+          "name": "A Love Letter To You",
+          "releaseDate": "2017-05-26"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1711601753/artists",
+            "data": [
+              {
+                "id": "1203172438",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/1203172438"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1711601753/tracks",
+            "data": [
+              {
+                "id": "1711601766",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601766",
+                "attributes": {
+                  "durationInMillis": 143969,
+                  "name": "Love Scars"
+                }
+              },
+              {
+                "id": "1711601770",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601770",
+                "attributes": {
+                  "durationInMillis": 155368,
+                  "name": "Love Scars Pt. 2 / Rack City (feat. Antionia & Chris King)"
+                }
+              },
+              {
+                "id": "1711601913",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601913",
+                "attributes": {
+                  "durationInMillis": 208000,
+                  "name": "Romeo & Juliet"
+                }
+              },
+              {
+                "id": "1711601931",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601931",
+                "attributes": {
+                  "durationInMillis": 200000,
+                  "name": "Deeply Scared (feat. UnoTheActivist)"
+                }
+              },
+              {
+                "id": "1711601933",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601933",
+                "attributes": {
+                  "durationInMillis": 188029,
+                  "name": "Blade Of Woe (feat. Famous Dex)"
+                }
+              },
+              {
+                "id": "1711601937",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601937",
+                "attributes": {
+                  "durationInMillis": 282667,
+                  "name": "It Takes Time"
+                }
+              },
+              {
+                "id": "1711601945",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601945",
+                "attributes": {
+                  "durationInMillis": 149576,
+                  "name": "Poles 1469"
+                }
+              },
+              {
+                "id": "1711601947",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601947",
+                "attributes": {
+                  "durationInMillis": 147393,
+                  "name": "No Smoke No Smoke 1400 B.C. / Sauce (feat. Pachino)"
+                }
+              },
+              {
+                "id": "1711601950",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711601950",
+                "attributes": {
+                  "durationInMillis": 140722,
+                  "name": "Stoves On 14th (feat. Black Jezuss)"
+                }
+              },
+              {
+                "id": "1711602266",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711602266",
+                "attributes": {
+                  "durationInMillis": 240048,
+                  "name": "Limitless"
+                }
+              },
+              {
+                "id": "1711602282",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711602282",
+                "attributes": {
+                  "durationInMillis": 162759,
+                  "name": "Can You Rap Like Me?"
+                }
+              },
+              {
+                "id": "1711602360",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1711602360",
+                "attributes": {
+                  "durationInMillis": 146511,
+                  "name": "Never Ever Land"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1419758421",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1419758421",
+        "attributes": {
+          "artistName": "Bazzi",
+          "artwork": {
+            "bgColor": "f4da62",
+            "height": 1425,
+            "textColor1": "182130",
+            "textColor2": "2f332f",
+            "textColor3": "44463a",
+            "textColor4": "565439",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/9c/a1/54/9ca1544e-7de5-2f42-62b8-10fc6c082b27/075679864895.jpg/{w}x{h}bb.jpg",
+            "width": 1425
+          },
+          "editorialNotes": {
+            "short": "Two rising pop stars flip a flirty slow jam into an aching duet.",
+            "standard": "LA singer Bazzi first climbed the pop charts with his pleading R&B torch song “Mine.” Here he drops a head-over-heels remix of a slow-jam highlight from his 2018 debut album, <i>Cosmic</i>, with former Fifth Harmony singer Camila Cabello. Together they transform Bazzi’s “Beautiful” from a solo love song into an achingly gorgeous duet, cranking up the original’s wide-eyed sweetness and flirty swag in the process."
+          },
+          "isSingle": true,
+          "name": "Beautiful (feat. Camila Cabello) - Single",
+          "releaseDate": "2018-08-02"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1419758421/artists",
+            "data": [
+              {
+                "id": "800263205",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/800263205"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1419758421/tracks",
+            "data": [
+              {
+                "id": "1419758422",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1419758422",
+                "attributes": {
+                  "durationInMillis": 180000,
+                  "name": "Beautiful (feat. Camila Cabello)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1537889223",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1537889223",
+        "attributes": {
+          "artistName": "DJ Chose & Megan Thee Stallion",
+          "artwork": {
+            "bgColor": "fd4673",
+            "height": 1400,
+            "textColor1": "0e0508",
+            "textColor2": "230910",
+            "textColor3": "3e121d",
+            "textColor4": "4e1524",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/3a/f7/9a/3af79a91-dea0-1cca-d260-efe6a88d7fa7/dj.wqooaqwy.jpg/{w}x{h}bb.jpg",
+            "width": 1400
+          },
+          "isSingle": true,
+          "name": "THICK (Remix) - Single",
+          "releaseDate": "2020-10-30"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1537889223/artists",
+            "data": [
+              {
+                "id": "404963569",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/404963569"
+              },
+              {
+                "id": "1258989914",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/1258989914"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1537889223/tracks",
+            "data": [
+              {
+                "id": "1537889225",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1537889225",
+                "attributes": {
+                  "durationInMillis": 205296,
+                  "name": "THICK (Remix)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1421952733",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1421952733",
+        "attributes": {
+          "artistName": "John Mayer",
+          "artwork": {
+            "bgColor": "c0a5d1",
+            "height": 3000,
+            "textColor1": "1a1918",
+            "textColor2": "112c25",
+            "textColor3": "3b353d",
+            "textColor4": "344448",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/04/57/40/04574013-fc05-e888-3820-1b2637ef33f8/886447254516.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "isSingle": true,
+          "name": "New Light (Zookëper Remix) - Single",
+          "releaseDate": "2018-08-10"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1421952733/artists",
+            "data": [
+              {
+                "id": "472054",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/472054"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1421952733/tracks",
+            "data": [
+              {
+                "id": "1421953620",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1421953620",
+                "attributes": {
+                  "durationInMillis": 237933,
+                  "name": "New Light (Zookëper Remix)"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "1474669063",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1474669063",
+        "attributes": {
+          "artistName": "Lana Del Rey",
+          "artwork": {
+            "bgColor": "7e9da6",
+            "height": 3000,
+            "textColor1": "0d0706",
+            "textColor2": "170e0b",
+            "textColor3": "242526",
+            "textColor4": "2b2a2a",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/c6/5f/b9/c65fb9eb-da2f-89a9-b640-2fff1fc3a660/19UMGIM61350.rgb.jpg/{w}x{h}bb.jpg",
+            "width": 3000
+          },
+          "editorialNotes": {
+            "short": "She paints with sincerity and satire and challenges you to spot the difference.",
+            "standard": "<b>100 Best Albums</b> Part of the fun of listening to Lana Del Rey’s ethereal lullabies is the sly sense of humor that brings them back down to earth. Tucked inside her dreamscapes about Hollywood and the Hamptons are reminders—and celebrations—of just how empty these places can be. Here, on her sixth album, she fixes her gaze on another place primed for exploration: the art world. Winking and vivid, <i>Norman F*****g Rockwell!</i> is a conceptual riff on the rules that govern integrity and authenticity from an artist who has made a career out of breaking them.<br />\nIn a 2018 interview with Apple Music's Zane Lowe, Del Rey said working with songwriter Jack Antonoff (who produced the album along with Rick Nowels and Andrew Watt) put her in a lighter mood: “He was so <i>funny</i>,” she said. Their partnership—as seen on the title track, a study of inflated egos—allowed her to take her subjects less seriously. \"It's about this guy who is such a genius artist, but he thinks he’s the shit and he knows it,” she said. \"So often I end up with these creative types. They just go on and on about themselves and I'm like, 'Yeah, yeah.' But there’s merit to it also—they are so good.”<br />\nThis paradox becomes a theme on <i>Rockwell</i>, a canvas upon which she paints with sincerity and satire and challenges you to spot the difference. (On “The Next Best American Record,” she sings, “We were so obsessed with writing the next best American record/’Cause we were just that good/It was just that good.”) Whether she’s wistfully nostalgic or jaded and detached is up for interpretation—really, everything is. The album’s finale, “hope is a dangerous thing for a woman like me to have - but I have it,” is packaged like a confessional—first-person, reflective, sung over simple piano chords—but it’s also flamboyantly cinematic, interweaving references to Sylvia Plath and Slim Aarons with anecdotes from Del Rey's own life to make us question, again, what's real. When she repeats the phrase “a woman like me,” it feels like a taunt; she’s spent the last decade mixing personas—outcast and pop idol, debutante and witch, pinup girl and poet, sinner and saint—ostensibly in an effort to render them all moot. Here, she suggests something even bolder: that the only thing more dangerous than a complicated woman is one who refuses to give up.",
+            "tagline": "Featured in 100 Best Albums"
+          },
+          "isSingle": false,
+          "name": "Norman F*****g Rockwell!",
+          "releaseDate": "2019-08-30"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1474669063/artists",
+            "data": [
+              {
+                "id": "464296584",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/464296584"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1474669063/tracks",
+            "data": [
+              {
+                "id": "1474669065",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669065",
+                "attributes": {
+                  "durationInMillis": 248934,
+                  "name": "Norman f*****g Rockwell"
+                }
+              },
+              {
+                "id": "1474669066",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669066",
+                "attributes": {
+                  "durationInMillis": 247150,
+                  "name": "Mariners Apartment Complex"
+                }
+              },
+              {
+                "id": "1474669067",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669067",
+                "attributes": {
+                  "durationInMillis": 577199,
+                  "name": "Venice Bitch"
+                }
+              },
+              {
+                "id": "1474669068",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669068",
+                "attributes": {
+                  "durationInMillis": 218288,
+                  "name": "F**k it I love you"
+                }
+              },
+              {
+                "id": "1474669071",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669071",
+                "attributes": {
+                  "durationInMillis": 202193,
+                  "name": "Doin' Time"
+                }
+              },
+              {
+                "id": "1474669073",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669073",
+                "attributes": {
+                  "durationInMillis": 229326,
+                  "name": "Love song"
+                }
+              },
+              {
+                "id": "1474669074",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669074",
+                "attributes": {
+                  "durationInMillis": 300683,
+                  "name": "Cinnamon Girl"
+                }
+              },
+              {
+                "id": "1474669286",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669286",
+                "attributes": {
+                  "durationInMillis": 228071,
+                  "name": "How to disappear"
+                }
+              },
+              {
+                "id": "1474669287",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669287",
+                "attributes": {
+                  "durationInMillis": 305900,
+                  "name": "California"
+                }
+              },
+              {
+                "id": "1474669290",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669290",
+                "attributes": {
+                  "durationInMillis": 349347,
+                  "name": "The Next Best American Record"
+                }
+              },
+              {
+                "id": "1474669292",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669292",
+                "attributes": {
+                  "durationInMillis": 300361,
+                  "name": "The greatest"
+                }
+              },
+              {
+                "id": "1474669293",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669293",
+                "attributes": {
+                  "durationInMillis": 263441,
+                  "name": "Bartender"
+                }
+              },
+              {
+                "id": "1474669295",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669295",
+                "attributes": {
+                  "durationInMillis": 272485,
+                  "name": "Happiness is a butterfly"
+                }
+              },
+              {
+                "id": "1474669296",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1474669296",
+                "attributes": {
+                  "durationInMillis": 324540,
+                  "name": "hope is a dangerous thing for a woman like me to have - but I have it"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "recordedAt": "2026-10-25T02:59:41.542Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/albums?fields%5Balbums%5D=artistName%2Cartwork%2CeditorialNotes%2CisSingle%2Cname%2CreleaseDate&fields%5Bsongs%5D=durationInMillis%2Cname&ids=1097861387%2C1109714933%2C1097862870%2C1097862703%2C1097864180%2C1111577743%2C1097862062%2C1097863576%2C1581785974%2C1109714965%2C1239489060%2C1828175826%2C1160370310%2C1113546075%2C1687497049%2C1446881820%2C1110448315%2C1114686637%2C1097873905%2C1112408551%2C1111495817%2C1112408006%2C1112425223%2C1112407235%2C1143391524%2C1712388490%2C1467816521%2C1500803901%2C1454454062%2C1531791781%2C1525467379%2C1525640183%2C1496030499%2C1623854804%2C1300707517%2C1469404638%2C1501765538%2C1711601753%2C1419758421%2C1537889223%2C1421952733%2C1474669063&include=tracks"
+}

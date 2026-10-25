@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 import {
+  AppleMusicSearchSchema,
   AudioStateSchema,
   ListeningQueueSchema,
   PlaylistImportSchema,
@@ -15,6 +16,7 @@ import { Schema } from "effect";
 import { createTestApp as createApp } from "./test-app.js";
 
 const Samples = Schema.Struct({
+  appleMusicSearch: AppleMusicSearchSchema,
   audioGrant: Schema.Struct({ url: Schema.String }),
   audioState: AudioStateSchema,
   health: Schema.Struct({ status: Schema.Literal("ok") }),
@@ -75,6 +77,9 @@ const OpenApiDocument = Schema.Struct({
 const decodeOpenApiDocument = Schema.decodeUnknownSync(OpenApiDocument);
 
 const sampleKeyFor = (operationId: string): keyof typeof samples => {
+  if (operationId === "appleMusic.search") {
+    return "appleMusicSearch";
+  }
   if (operationId === "sets.save") {
     return "saveResult";
   }
@@ -286,7 +291,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(49);
+    expect(checked).toBe(50);
   } finally {
     await app.dispose();
   }

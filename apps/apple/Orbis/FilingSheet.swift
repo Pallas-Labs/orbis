@@ -41,8 +41,11 @@ struct FilingSheet: View {
     .presentationDetents([.medium, .large], selection: $detent)
     .sensoryFeedback(.success, trigger: model.reveal?.set.id) { _, new in new != nil }
     .playlistImportPresentation(model)
-    .onChange(of: model.reveal != nil || model.playlistImport.importedPlaylistId != nil, initial: true) {
-      _, hasResult in
+    .onChange(
+      of: model.reveal != nil || model.playlistImport.importedPlaylistId != nil
+        || model.appleMusicSearch != .idle,
+      initial: true
+    ) { _, hasResult in
       if hasResult { detent = .large }
     }
   }
@@ -142,6 +145,9 @@ struct FilingSheet: View {
             .accessibilityIdentifier("file-confirmation")
         }
       }
+    }
+    if !model.playlistImport.isImporting {
+      AppleMusicSearchSection(model: model)
     }
   }
 

@@ -3,6 +3,10 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { createApp } from "../apps/server/src/app.js";
+import {
+  appleMusicRecordings,
+  musicKitPem,
+} from "../apps/server/src/apple-music-recordings.js";
 import { startFixtureServer } from "../apps/server/src/fixture-server.js";
 import { hashToken } from "../apps/server/src/identity.js";
 import { Metadata } from "../apps/server/src/metadata.js";
@@ -148,6 +152,47 @@ const laneYouTube = async (url: string) => {
   }
   return new Response("not found", { status: 404 });
 };
+/**
+ * Apple Music as the lane sees it: the answers `bun run record:apple-music` recorded, found by
+ * address. A single album read is answered from any recorded album, so a journey can save
+ * whichever result it chooses, and a search nobody recorded finds nothing. The key is made for
+ * this run, and nothing reaches Apple.
+ */
+interface AppleMusicRecording {
+  readonly body: { readonly data?: readonly { readonly id: string }[] };
+  readonly status: number;
+  readonly url: string;
+}
+const recordedAppleMusic = await appleMusicRecordings<AppleMusicRecording>();
+const recordedAlbums = new Map(
+  [...recordedAppleMusic.values()].flatMap((recording) =>
+    (recording.body.data ?? []).map((album) => [album.id, album] as const)
+  )
+);
+const laneAppleMusic = (url: string) => {
+  const recording = recordedAppleMusic.get(url);
+  if (recording) {
+    return Response.json(recording.body, { status: recording.status });
+  }
+  if (new URL(url).pathname.endsWith("/search")) {
+    return Response.json({ results: {} });
+  }
+  const albumId = /\/albums\/(?<id>\d+)\?include=tracks$/u.exec(url)?.groups
+    ?.id;
+  const album = albumId ? recordedAlbums.get(albumId) : undefined;
+  return album
+    ? Response.json({ data: [album] })
+    : Response.json({ errors: [] }, { status: 404 });
+};
+const laneKey = await crypto.subtle.generateKey(
+  { name: "ECDSA", namedCurve: "P-256" },
+  true,
+  ["sign"]
+);
+const lanePrivateKey = musicKitPem(
+  await crypto.subtle.exportKey("pkcs8", laneKey.privateKey)
+);
+
 const app = createApp({
   audio: {
     audioDir: path.join(dataDirectory, "audio"),
@@ -171,7 +216,18 @@ const app = createApp({
   databasePath,
   devicesPath,
   logging: { silent: true },
-  metadata: Metadata.layer({ fetch: laneYouTube, youTubeApiKey: "lane" }),
+  metadata: Metadata.layer({
+    appleMusic: {
+      keyId: "LANEKEY",
+      privateKey: lanePrivateKey,
+      teamId: "LANE",
+    },
+    fetch: (url) =>
+      url.startsWith("https://api.music.apple.com/")
+        ? Promise.resolve(laneAppleMusic(url))
+        : laneYouTube(url),
+    youTubeApiKey: "lane",
+  }),
   playbackDiagnostics: {
     accessClientId:
       process.env.ORBIS_FIXTURE_SIGNOZ_OTLP_ACCESS_CLIENT_ID ?? "",

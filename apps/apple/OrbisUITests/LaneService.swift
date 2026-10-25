@@ -47,6 +47,9 @@ struct LaneService {
   struct Set: Decodable {
     let id: String
     let title: String
+    let url: String
+    let source: String
+    let metadataState: String
     let tags: [String]
     let playbackPositionSeconds: Int
     let finishCount: Int

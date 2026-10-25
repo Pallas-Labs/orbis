@@ -1,4 +1,30 @@
 {
+  "appleMusicSearch": {
+    "albums": [
+      {
+        "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/16/8d/b9/168db9f1-c17d-20e3-49b2-5b8a6fd1d1f7/c9005a8d-8beb-4667-9b2b-9485bb32c50b.jpg/300x300bb.jpg",
+        "creator": "Seth Troxler",
+        "djMix": true,
+        "durationSeconds": 5393,
+        "inLibrary": true,
+        "releasedAt": "2025-01-11",
+        "songCount": 24,
+        "title": "Seth Troxler at Circoloco Thailand (DJ Mix)",
+        "url": "https://music.apple.com/album/1814380376"
+      },
+      {
+        "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/04/85/d4/0485d4da-25cb-607c-ea81-0bad1cadd63f/5060913700096.jpg/300x300bb.jpg",
+        "creator": "Seth Troxler",
+        "djMix": false,
+        "durationSeconds": 509,
+        "inLibrary": false,
+        "releasedAt": "2021-05-24",
+        "songCount": 1,
+        "title": "Lumartes (Extended) - Single",
+        "url": "https://music.apple.com/album/1677680660"
+      }
+    ]
+  },
   "audioGrant": {
     "url": "/sets/e712bcc8-3341-4098-aba4-63154c467c4c/audio?grant=sample"
   },

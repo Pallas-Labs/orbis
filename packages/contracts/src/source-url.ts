@@ -39,6 +39,10 @@ const videoIdFrom = (url: URL): string | null => {
 export const youTubeWatchUrl = (id: string) =>
   `https://www.youtube.com/watch?v=${id}`;
 
+/** The canonical Source Link for an Apple Music album, in no storefront. */
+export const appleMusicAlbumUrl = (id: string) =>
+  `https://music.apple.com/album/${id}`;
+
 /**
  * The album identifier in an Apple Music album link, with or without a storefront and a slug.
  * A song link inside an album (`?i=`) names the album too: the album is what Orbis saves.
@@ -146,7 +150,7 @@ export const normalizeSourceUrl = (
     }
     return {
       source: "apple-music",
-      url: `https://music.apple.com/album/${id}`,
+      url: appleMusicAlbumUrl(id),
     };
   }
   throw invalid();

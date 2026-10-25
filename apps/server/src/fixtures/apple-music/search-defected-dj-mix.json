@@ -1,0 +1,210 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=Defected+DJ+Mix&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=Defected+DJ+Mix&types=albums",
+        "data": [
+          {
+            "id": "1550376370",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1550376370",
+            "attributes": {
+              "name": "Defected: DJ Paulette, We Dance As One, Glitterbox Love Stream, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1722504453",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1722504453",
+            "attributes": {
+              "name": "Kevin Saunderson b2b Dantiez at Movement Detroit 2023: KMS Records & Defected (DJ Mix)"
+            }
+          },
+          {
+            "id": "1544010247",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1544010247",
+            "attributes": {
+              "name": "Defected: Natasha Diggs, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1543503069",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1543503069",
+            "attributes": {
+              "name": "Defected: Disciples, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1543277493",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1543277493",
+            "attributes": {
+              "name": "Defected: Dennis Ferrer, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1529678590",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1529678590",
+            "attributes": {
+              "name": "Boys Noize at Defected Virtual Festival, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1532102446",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1532102446",
+            "attributes": {
+              "name": "Defected: Roger Sanchez at Glitterbox Hï Ibiza, 2019 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1543502834",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1543502834",
+            "attributes": {
+              "name": "Defected: Sam Divine, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1529371337",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1529371337",
+            "attributes": {
+              "name": "Defected: Natasha Diggs at Glitterbox Virtual Festival, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1216862360",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1216862360",
+            "attributes": {
+              "name": "Location (Remix) [feat. Lil Wayne & Kehlani] - Single"
+            }
+          },
+          {
+            "id": "1226530409",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1226530409",
+            "attributes": {
+              "name": "Both (Remix) [feat. Drake & Lil Wayne] - Single"
+            }
+          },
+          {
+            "id": "1586582649",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1586582649",
+            "attributes": { "name": "Wockesha (Remix) - Single" }
+          },
+          {
+            "id": "1444678446",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1444678446",
+            "attributes": {
+              "name": "TAlk tO Me (Remix) [feat. Lil Wayne] - Single"
+            }
+          },
+          {
+            "id": "1617892596",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1617892596",
+            "attributes": {
+              "name": "We Set The Trends (Remix) [feat. ‎Migos & Juelz Santana] - Single"
+            }
+          },
+          {
+            "id": "1549998430",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1549998430",
+            "attributes": {
+              "name": "Defected: Sef Kombo b2b Louie Dunmore, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1569871725",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1569871725",
+            "attributes": {
+              "name": "Batman (Remix) [feat. Moneybagg Yo] - Single"
+            }
+          },
+          {
+            "id": "1533747614",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1533747614",
+            "attributes": { "name": "Deep End (SIDEPIECE Remix) - Single" }
+          },
+          {
+            "id": "1718768938",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1718768938",
+            "attributes": {
+              "name": "Defected Malta: Groove Armada, Oct 7, 2023 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1445167785",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1445167785",
+            "attributes": {
+              "name": "No New Friends (feat. Drake, Rick Ross & Lil Wayne) [SFTB Remix] - Single"
+            }
+          },
+          {
+            "id": "1745562136",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1745562136",
+            "attributes": {
+              "name": "Defected Presents TSHA In The House (DJ Mix)"
+            }
+          },
+          {
+            "id": "1549437746",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1549437746",
+            "attributes": {
+              "name": "Defected: John Summit, We Dance As One, 2020 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1783985597",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1783985597",
+            "attributes": { "name": "Defected Worldwide (DJ Mix)" }
+          },
+          {
+            "id": "1790431924",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1790431924",
+            "attributes": {
+              "name": "Joys (Purple Disco Machine Remix) - Single"
+            }
+          },
+          {
+            "id": "1552992191",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1552992191",
+            "attributes": {
+              "name": "Defected: Dom Dolla, We Dance As One, NYE 2021 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1771763866",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1771763866",
+            "attributes": {
+              "name": "DJ Minx: Defected Broadcasting House (DJ Mix)"
+            }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:40.549Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=Defected+DJ+Mix&types=albums"
+}
