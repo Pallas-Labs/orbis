@@ -7,7 +7,8 @@ import { Schema } from "effect";
 import { useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 
-import { SetRow } from "@/components/library/set-row";
+import { AppleMusicSearch } from "@/components/library/apple-music-search";
+import { SOURCE_LABELS, SetRow } from "@/components/library/set-row";
 import { useDownloadProgress } from "@/components/library/use-download-progress";
 import { RouteProblem } from "@/components/route-problem";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ import type {
   LibraryFilters,
   SavedSet,
 } from "@/lib/library";
-import { FAILURE_MESSAGES } from "@/lib/orbis";
+import { FAILURE_MESSAGES, problemFor } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
 import { listPlaylists } from "@/lib/playlists";
 import type { Playlist } from "@/lib/playlists";
@@ -32,7 +33,9 @@ import type { Session } from "@/routes/_app";
 
 const LibrarySearch = Schema.Struct({
   q: Schema.optionalKey(Schema.String),
-  source: Schema.optionalKey(Schema.Literals(["youtube", "soundcloud"])),
+  source: Schema.optionalKey(
+    Schema.Literals(["youtube", "soundcloud", "apple-music"])
+  ),
   tag: Schema.optionalKey(Schema.String),
 });
 
@@ -66,7 +69,7 @@ const SaveSetForm = ({
     const form = event.currentTarget;
     const url = String(new FormData(form).get("url") ?? "").trim();
     if (url === "") {
-      setMessage("Paste a YouTube or SoundCloud link.");
+      setMessage("Paste a YouTube, SoundCloud, or Apple Music link.");
       return;
     }
     setPending(true);
@@ -76,12 +79,17 @@ const SaveSetForm = ({
       setMessage(
         saved.failure === "conflict"
           ? "This Set is already in your Library."
-          : FAILURE_MESSAGES[saved.failure]
+          : problemFor(saved)
       );
       return;
     }
     form.reset();
-    setMessage(saveNotice(saved.value.autoDownloadResult));
+    // Orbis never keeps Apple Music audio, so Auto Download has nothing to say.
+    setMessage(
+      saved.value.source === "apple-music"
+        ? null
+        : saveNotice(saved.value.autoDownloadResult)
+    );
     await router.invalidate();
   };
   return (
@@ -155,8 +163,11 @@ const Filters = ({
           value={filters.source ?? ""}
         >
           <NativeSelectOption value="">All sources</NativeSelectOption>
-          <NativeSelectOption value="youtube">YouTube</NativeSelectOption>
-          <NativeSelectOption value="soundcloud">SoundCloud</NativeSelectOption>
+          {Object.entries(SOURCE_LABELS).map(([source, label]) => (
+            <NativeSelectOption key={source} value={source}>
+              {label}
+            </NativeSelectOption>
+          ))}
         </NativeSelect>
       </div>
       <div className="flex flex-col gap-2">
@@ -232,6 +243,7 @@ const Library = ({
       <h1 className="text-2xl font-medium">Library</h1>
       <AutoDownloadSwitch session={credentials} />
       <SaveSetForm credentials={credentials} />
+      <AppleMusicSearch credentials={credentials} />
       <Filters filters={filters} tags={tags} />
       <p className="text-muted-foreground text-sm" role="status">
         {sets.length} {sets.length === 1 ? "Set" : "Sets"}

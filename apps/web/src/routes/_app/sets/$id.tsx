@@ -1,11 +1,12 @@
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import { setDetails } from "@/components/library/set-row";
 import { Tracklist } from "@/components/library/tracklist";
 import { useDownloadProgress } from "@/components/library/use-download-progress";
 import { usePlayer } from "@/components/player/player";
 import { RouteProblem } from "@/components/route-problem";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { listSets, requestDownload } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
@@ -23,6 +24,19 @@ const AudioAction = ({
   readonly progress: number | undefined;
   readonly set: SavedSet;
 }) => {
+  // Web cannot play Apple Music (ADR 0021), and Orbis never keeps its audio.
+  if (set.source === "apple-music") {
+    return (
+      <a
+        className={buttonVariants()}
+        href={set.url}
+        rel="noreferrer"
+        target="_blank"
+      >
+        Open in Apple Music
+      </a>
+    );
+  }
   if (set.downloadState === "ready") {
     return (
       <Button onClick={() => play(set.playbackPositionSeconds)}>Play</Button>
@@ -129,9 +143,13 @@ const SetPage = ({
         onRetry={() => {
           retry();
         }}
-        onSeek={(seconds) => {
-          play(seconds);
-        }}
+        onSeek={
+          set.source === "apple-music"
+            ? undefined
+            : (seconds) => {
+                play(seconds);
+              }
+        }
         retrying={retrying}
         state={tracklist.value.state}
       />
@@ -159,9 +177,7 @@ const SetPage = ({
         <div className="flex min-w-0 flex-col items-start gap-3">
           <div>
             <h1 className="text-2xl font-medium text-pretty">{set.title}</h1>
-            <p className="text-muted-foreground">
-              {set.creator ?? "Unknown creator"}
-            </p>
+            <p className="text-muted-foreground">{setDetails(set)}</p>
           </div>
           <AudioAction
             download={download}

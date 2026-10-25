@@ -66,7 +66,7 @@ Run from the repository root after a frozen install:
 	bun test --timeout 60000 apps/server/src
 ```
 
-The web test command builds the production client, then runs the journeys selected in `package.json` against real HTTP listeners and a temporary SQLite database. Only the external audio provider uses the retained-audio fixture. Each journey exports screenshots and `result.json` under the root `.cache` directory. It leaves the production service and database untouched.
+The web test command builds the production client, then runs the journeys selected in `package.json` against real HTTP listeners and a temporary SQLite database. Only the external providers are replaced: audio comes from the retained-audio fixture, and Apple Music answers with the responses recorded in `apps/server/src/fixtures/apple-music`. Each journey exports screenshots and `result.json` under the root `.cache` directory. It leaves the production service and database untouched.
 
 The four original journey groups keep their entrypoint names. Their assertions now use the rebuilt client:
 
@@ -77,6 +77,7 @@ The four original journey groups keep their entrypoint names. Their assertions n
 | `live-queue` | `e2e/live-queue.mjs` | Remote Playlist enqueue, another Person's queue isolation, bearer-authenticated events, reconnect, Playback Position, and automatic advance | `.cache/web-player` |
 | `shared-audio` | `e2e/shared-audio.mjs` | Shared playback without saving, the caller's Playback Position, a save without the friend's title, and a shared Download that plays | `.cache/web-social` |
 | `presence` | `e2e/presence.mjs` | Presence actions from real audio events: a failed play sends none, play shows Presence to another Person, renew, pause clears it, and a Library change from a second browser appears without a reload ([#212](https://github.com/ParthMmm/orbis/issues/212)) | `.cache/web-presence` |
+| `apple-music` | `e2e/apple-music.mjs` | Apple Music Sets ([ADR 0021](../../docs/adr/0021-apple-music-mixes.md)) against recorded Apple Music answers: the search with its All Albums switch, a search save, a pasted song link that saves its album, refused links, and the Library row and Set page with Artwork, length, Tracklist, and Open in Apple Music instead of Play or Download | `.cache/web-apple-music` |
 
 The migration spec [#137](https://github.com/ParthMmm/orbis/issues/137) has thirteen child issues. The table records the code verification for each child. A passing local journey does not verify a live deployment.
 
