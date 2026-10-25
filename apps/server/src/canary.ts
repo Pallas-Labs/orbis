@@ -1,12 +1,21 @@
 import { appendFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import type { SavedSet } from "@orbis/contracts";
 import { Effect, Exit, Layer } from "effect";
 
 import { Cobalt } from "./cobalt.js";
 import { DownloadBackends } from "./download-backends.js";
 import type { BackendName } from "./download-backends.js";
-import { configureLogging, loggingLayer, withWideEvent } from "./logging.js";
+import {
+  annotateWideEvent,
+  configureLogging,
+  flushLogs,
+  loggingLayer,
+  otlpFromEnvironment,
+  raiseWideEventLevel,
+  withWideEvent,
+} from "./logging.js";
 import { MediaStore } from "./media-store.js";
 import { Ytdlp } from "./ytdlp.js";
 
@@ -15,12 +24,15 @@ import { Ytdlp } from "./ytdlp.js";
  * through the worker's own code, before a user's download finds out it does not.
  * Run by orbis-canary.timer. It records one `download-canary` wide event, writes
  * `canary/last.json` and appends `canary/history.jsonl` under ORBIS_DATA_DIR, and
- * exits 1 when a check fails so the unit shows as failed.
+ * exits 1 when a check fails so the unit shows as failed. The event is an error
+ * only when a source has no working backend, which users would notice; a source
+ * that lost its safety net but still downloads is a warning.
  */
 
 interface Fixture {
   readonly durationSeconds: number;
   readonly name: string;
+  readonly source: SavedSet["source"];
   readonly url: string;
 }
 
@@ -29,16 +41,19 @@ const FIXTURES: readonly Fixture[] = [
   {
     durationSeconds: 597,
     name: "youtube-short",
+    source: "youtube",
     url: "https://www.youtube.com/watch?v=YE7VzlLtp-4",
   },
   {
     durationSeconds: 7173,
     name: "youtube-long",
+    source: "youtube",
     url: "https://www.youtube.com/watch?v=x8r5otKq75w",
   },
   {
     durationSeconds: 6902,
     name: "soundcloud-long",
+    source: "soundcloud",
     url: "https://soundcloud.com/rinsefm/skin-on-skin-07-august-2026",
   },
 ];
@@ -113,7 +128,10 @@ const dataDirectory = path.resolve(process.env.ORBIS_DATA_DIR ?? "data");
 const canaryDirectory = path.join(dataDirectory, "canary");
 await mkdir(canaryDirectory, { recursive: true });
 const workDirectory = await mkdtemp(path.join(canaryDirectory, "run-"));
-configureLogging({ environment: process.env.NODE_ENV ?? "development" });
+configureLogging({
+  environment: process.env.NODE_ENV ?? "development",
+  otlp: otlpFromEnvironment("canary"),
+});
 const options = {
   audioDir: workDirectory,
   cobaltApiKey: process.env.ORBIS_COBALT_API_KEY,
@@ -133,12 +151,25 @@ const program = Effect.gen(function* runCanary() {
     ({ backend, fixture }) => check(backend, fixture)
   );
   const failed = results.filter((result) => !result.ok).length;
+  // A source is down when some fixture of it passed through no backend at all.
+  const sourcesWithoutBackend = [
+    ...new Set(
+      FIXTURES.filter(
+        (fixture) =>
+          !results.some(
+            (result) => result.fixture === fixture.name && result.ok
+          )
+      ).map((fixture) => fixture.source)
+    ),
+  ];
   const record = {
     at: new Date().toISOString(),
     backends,
     ok: results.length > 0 && failed === 0,
     results,
+    sourcesWithoutBackend,
   };
+  yield* annotateWideEvent({ failed, ok: record.ok, sourcesWithoutBackend });
   yield* Effect.promise(async () => {
     await writeFile(
       path.join(canaryDirectory, "last.json"),
@@ -149,15 +180,19 @@ const program = Effect.gen(function* runCanary() {
       `${JSON.stringify(record)}\n`
     );
   });
-  if (!record.ok) {
+  if (sourcesWithoutBackend.length > 0) {
     return yield* Effect.fail(
       new Error(
         results.length === 0
           ? "No download backend is configured."
-          : `${failed} of ${results.length} canary checks failed.`
+          : `No working backend for ${sourcesWithoutBackend.join(", ")}.`
       )
     );
   }
+  if (!record.ok) {
+    yield* raiseWideEventLevel("warn");
+  }
+  return record;
 }).pipe(withWideEvent({ job: "download-canary" }));
 
 const exit = await Effect.runPromiseExit(
@@ -173,4 +208,5 @@ const exit = await Effect.runPromiseExit(
   )
 );
 await rm(workDirectory, { force: true, recursive: true });
-process.exit(Exit.isSuccess(exit) ? 0 : 1);
+await flushLogs();
+process.exit(Exit.isSuccess(exit) && exit.value.ok ? 0 : 1);

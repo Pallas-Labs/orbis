@@ -15,6 +15,16 @@ final class PeopleModel {
   @ObservationIgnored private var seen: Set<String> = []
   /// What visible People are playing now, as the event stream last said.
   var listening: [Presence] = []
+  @ObservationIgnored private var friends: [String: FriendModel] = [:]
+
+  /// The model behind a person's page, made once and kept, so the page opens on what it last
+  /// loaded instead of a spinner.
+  func friend(_ personId: String) -> FriendModel {
+    if let friend = friends[personId] { return friend }
+    let friend = FriendModel(app: app, personId: personId)
+    friends[personId] = friend
+    return friend
+  }
   /// How long to wait before the event stream reconnects. Doubles with each drop, and starts over
   /// once a stream delivers a frame.
   @ObservationIgnored private var reconnectDelay = PeopleModel.firstReconnectDelay

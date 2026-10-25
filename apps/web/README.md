@@ -63,7 +63,7 @@ Run from the repository root after a frozen install:
 ```sh
 	bun run --filter @orbis/contracts build
 	bun run --filter @orbis/web test
-	bun test apps/server/src
+	bun test --timeout 60000 apps/server/src
 ```
 
 The web test command builds the production client, then runs the journeys selected in `package.json` against real HTTP listeners and a temporary SQLite database. Only the external audio provider uses the retained-audio fixture. Each journey exports screenshots and `result.json` under the root `.cache` directory. It leaves the production service and database untouched.

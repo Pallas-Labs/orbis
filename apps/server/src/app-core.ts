@@ -1,12 +1,15 @@
-import type { SavedSet } from "@orbis/contracts";
+import { youTubePlaylistId } from "@orbis/contracts";
+import type { PlaylistImport, SavedSet } from "@orbis/contracts";
 import type {
   ChangeTopic,
   SaveSetResultSchema,
 } from "@orbis/contracts/http-api";
 import {
+  decodePlaybackDiagnosticsBatch,
   AdminKeyPayload,
   AdminPersonPayload,
   CollaborationPayload,
+  ImportPlaylistPayload,
   JoinPayload,
   RedeemSignInCodePayload,
   SaveSetPayload,
@@ -107,7 +110,18 @@ import {
 } from "./logging.js";
 import type { MetadataError } from "./metadata-error.js";
 import { Metadata } from "./metadata.js";
-import type { EnrichedMetadata } from "./metadata.js";
+import type { EnrichedMetadata, PlaylistTrack } from "./metadata.js";
+import {
+  makePlaybackDiagnosticsRelay,
+  readBoundedBody,
+  PlaybackBodyLimitError,
+} from "./playback-diagnostics.js";
+import type { PlaybackDiagnosticsOptions } from "./playback-diagnostics.js";
+import {
+  PlaylistImporter,
+  playlistImportRefusal,
+} from "./playlist-importer.js";
+import type { PlaylistImporterOptions } from "./playlist-importer.js";
 import { PresenceJournal } from "./presence-journal.js";
 import { Presence } from "./presence.js";
 import type { PresenceOptions } from "./presence.js";
@@ -281,6 +295,8 @@ const Filters = Schema.Struct({
   ),
   tags: Tags,
 });
+const decodeFiltersEffect = Schema.decodeUnknownEffect(Filters);
+
 const logDetailsFailure = (set: SavedSet, reason: string) =>
   Effect.logWarning("set details fill failed").pipe(
     Effect.annotateLogs({ reason, set: set.id })
@@ -321,6 +337,12 @@ const trustUnavailable = () =>
     statusCode: 500,
   });
 
+/** What a change becomes on one `/events?changes=1` stream; null when it is not for that stream. */
+type ChangeFrame =
+  | { readonly kind: "changed"; readonly topic: ChangeTopic }
+  | { readonly kind: "playlistImport"; readonly playlistImport: PlaylistImport }
+  | null;
+
 const missingPlaylist = () =>
   new LibraryError({ message: "Playlist not found.", statusCode: 404 });
 
@@ -344,11 +366,13 @@ export const createPortableApp = (options: {
   database: Layer.Layer<Database, unknown>;
   trustPath?: string | undefined;
   logging?: LoggingOptions;
+  playbackDiagnostics?: PlaybackDiagnosticsOptions;
   recordKeyUse?: boolean;
   metadata?: Layer.Layer<Metadata>;
   /** How long after a Playback Position report a Person still counts as listening. */
   presenceWindowMs?: number;
   presence?: PresenceOptions & { journal?: Layer.Layer<PresenceJournal> };
+  playlistImports?: Pick<PlaylistImporterOptions, "heartbeat" | "retry">;
   /** The clock Sign-in Codes expire by. Tests move it to prove expiry. */
   signInCodeNow?: () => number;
   /** Follows short links such as `on.soundcloud.com`. Tests pass a stub to stay offline. */
@@ -360,6 +384,9 @@ export const createPortableApp = (options: {
   const { trustPath } = options;
   const { streamSecret } = options;
   const attempts = makeAttemptLimiter();
+  const relayPlayback = makePlaybackDiagnosticsRelay(
+    options.playbackDiagnostics
+  );
   const signInCodeNow = options.signInCodeNow ?? Date.now;
   const { database } = options;
   const libraryOptions = {
@@ -378,6 +405,7 @@ export const createPortableApp = (options: {
     Layer.provide(options.presence?.journal ?? PresenceJournal.unrecorded)
   );
   let presenceService: typeof Presence.Service | null = null;
+  let importerService: typeof PlaylistImporter.Service | null = null;
   const routes = Layer.effectDiscard(
     Effect.gen(function* registerRoutes() {
       const library = yield* Library;
@@ -397,6 +425,11 @@ export const createPortableApp = (options: {
             readonly kind: "changed";
             readonly topic: ChangeTopic;
             readonly reaches: (viewerId: string) => Effect.Effect<boolean>;
+          }
+        | {
+            readonly kind: "playlistImport";
+            readonly personId: string;
+            readonly playlistImport: PlaylistImport;
           }
         | { readonly kind: "access" }
       >();
@@ -431,16 +464,17 @@ export const createPortableApp = (options: {
           Effect.as(true),
           Effect.orElseSucceed(() => false)
         );
-      const announceForCaller = (
-        topic: ChangeTopic,
-        reaches: (
-          personId: string
-        ) => (viewerId: string) => Effect.Effect<boolean>
-      ) =>
-        Effect.gen(function* announceCallerChange() {
+      const announceForCaller = Effect.fn("App.announceForCaller")(
+        function* announceCallerChange(
+          topic: ChangeTopic,
+          reaches: (
+            personId: string
+          ) => (viewerId: string) => Effect.Effect<boolean>
+        ) {
           const caller = yield* SetCaller;
           yield* announce(topic, reaches(caller.person.id));
-        });
+        }
+      );
       const runningTracklists = new Set<string>();
       const startTracklist = Effect.fn("SaveSet.startTracklist")(
         (id: string, retry = false) =>
@@ -531,6 +565,18 @@ export const createPortableApp = (options: {
           Effect.asVoid
         )
       );
+      // Stores provider metadata, then reads details unless the yt-dlp fallback already did.
+      const recordMetadata = (
+        set: SavedSet,
+        personal: typeof Library.Service,
+        enriched: EnrichedMetadata
+      ) =>
+        library.recordEnrichment(set.id, enriched).pipe(
+          Effect.tap(() =>
+            enriched.extras ? startTracklist(set.id) : fillDetails(set)
+          ),
+          Effect.flatMap(() => personal.find(set.id))
+        );
       // Enrichment failure is swallowed so the save still succeeds, so it is the
       // one outcome a client cannot see. The log records which set and which reason.
       const enrichSavedSet = Effect.fn("SaveSet.enrich")((
@@ -540,29 +586,18 @@ export const createPortableApp = (options: {
         const onMetadataFailure = (error: MetadataError) =>
           Effect.logWarning("set metadata enrichment failed").pipe(
             Effect.annotateLogs({ reason: error.reason, set: set.id }),
-            Effect.andThen(library.recordEnrichmentFailure(set.id))
+            Effect.andThen(library.recordEnrichmentFailure(set.id)),
+            Effect.tap(() => fillDetails(set)),
+            Effect.flatMap(() => personal.find(set.id))
           );
         return metadata.enrich({ source: set.source, url: set.url }).pipe(
           Effect.flatMap((enriched) => reviseTitle(set, enriched)),
-          Effect.flatMap((enriched) =>
-            library
-              .recordEnrichment(set.id, enriched)
-              // The yt-dlp fallback already stored the details, so a second read is skipped.
-              .pipe(
-                Effect.tap(() =>
-                  enriched.extras ? startTracklist(set.id) : fillDetails(set)
-                )
-              )
-          ),
-          Effect.catchTag("MetadataError", (failure) =>
-            onMetadataFailure(failure).pipe(Effect.tap(() => fillDetails(set)))
-          ),
-          Effect.flatMap(() => personal.find(set.id))
+          Effect.flatMap((enriched) => recordMetadata(set, personal, enriched)),
+          Effect.catchTag("MetadataError", onMetadataFailure)
         );
       });
       const autoDownloadSaved = Effect.fn("AutoDownload.onSave")(
-        function* autoDownloadSaved(saved: SavedSet) {
-          const { person } = yield* SetCaller;
+        function* autoDownloadSaved(saved: SavedSet, person: PersonRecord) {
           const result = (
             autoDownloadResult: (typeof SaveSetResultSchema.Type)["autoDownloadResult"],
             set?: SavedSet
@@ -597,6 +632,69 @@ export const createPortableApp = (options: {
           );
         }
       );
+      const libraryFor = (personId: string) =>
+        Library.forPersonLayer(personId, libraryOptions).pipe(
+          Layer.provide(Layer.succeed(Database, db))
+        );
+      // Titles skip revision here: it is one model call per track.
+      const importTrack = Effect.fn("PlaylistImport.saveTrack")(
+        function* importTrack(personId: string, track: PlaylistTrack) {
+          const person = readTrustRegistry(trustPath).store.people.find(
+            (candidate) => candidate.id === personId && !candidate.removed
+          );
+          if (!person) {
+            return yield* Effect.fail(
+              new LibraryError({
+                message: "The Person who started this import was removed.",
+                statusCode: 404,
+              })
+            );
+          }
+          const personal = yield* Library;
+          const saved = yield* personal
+            .save({ tags: [], title: "", url: track.url })
+            .pipe(
+              Effect.catchIf(
+                (error) => error.statusCode === 409,
+                () => personal.findByUrl(track.url)
+              )
+            );
+          const known =
+            saved.titleEditedByUser || saved.metadataState === "enriched";
+          return yield* autoDownloadSaved(
+            known
+              ? saved
+              : yield* recordMetadata(saved, personal, track.metadata),
+            person
+          );
+        },
+        (effect, personId) =>
+          effect.pipe(
+            Effect.provide(libraryFor(personId)),
+            asLibraryError("Could not save a track of the playlist.")
+          )
+      );
+      const importer = Context.get(
+        yield* Layer.buildWithScope(
+          PlaylistImporter.layer({
+            ...options.playlistImports,
+            publish: (personId, playlistImport) =>
+              Effect.all([
+                PubSub.publish(changes, {
+                  kind: "playlistImport",
+                  personId,
+                  playlistImport,
+                }),
+                announce("library", ownDevices(personId)),
+                announce("playlist", seesPerson(personId)),
+              ]).pipe(Effect.asVoid),
+            saveTrack: importTrack,
+          }),
+          scope
+        ),
+        PlaylistImporter
+      );
+      importerService = importer;
       const setGroup = HttpApiBuilder.group(OrbisApi, "sets", (handlers) =>
         handlers
           .handleRaw("requestDownload", ({ params }) =>
@@ -715,6 +813,7 @@ export const createPortableApp = (options: {
                   input.url,
                   options.shortLinkFetch
                 );
+                const caller = yield* SetCaller;
                 const personal = yield* Library;
                 const saved = yield* personal.save({
                   ...(input.appleMusicAlbum && {
@@ -736,10 +835,11 @@ export const createPortableApp = (options: {
                   saved.metadataState === "enriched"
                 ) {
                   yield* fillDetails(saved);
-                  return yield* autoDownloadSaved(saved);
+                  return yield* autoDownloadSaved(saved, caller.person);
                 }
                 return yield* autoDownloadSaved(
-                  yield* enrichSavedSet(saved, personal)
+                  yield* enrichSavedSet(saved, personal),
+                  caller.person
                 );
               }).pipe(
                 Effect.tap(() => announceForCaller("library", ownDevices))
@@ -834,8 +934,7 @@ export const createPortableApp = (options: {
                 if (params.has("source")) {
                   rawFilters.source = params.get("source");
                 }
-                const filters =
-                  yield* Schema.decodeUnknownEffect(Filters)(rawFilters);
+                const filters = yield* decodeFiltersEffect(rawFilters);
                 const personal = yield* Library;
                 const sets = yield* personal.list({
                   ...filters,
@@ -846,8 +945,8 @@ export const createPortableApp = (options: {
             )
           )
       );
-      const visibleFriend = (id: string) =>
-        Effect.gen(function* resolveFriend() {
+      const visibleFriend = Effect.fn("App.visibleFriend")(
+        function* resolveFriend(id: string) {
           const caller = yield* SetCaller;
           const { people } = readTrustRegistry(trustPath).store;
           return yield* Effect.try({
@@ -860,9 +959,10 @@ export const createPortableApp = (options: {
                   }),
             try: () => resolveVisiblePerson(people, caller.person.id, id),
           });
-        });
-      const mutuallyVisibleFriend = (id: string) =>
-        Effect.gen(function* resolveMutualVisibility() {
+        }
+      );
+      const mutuallyVisibleFriend = Effect.fn("App.mutuallyVisibleFriend")(
+        function* resolveMutualVisibility(id: string) {
           const caller = yield* SetCaller;
           const target = yield* visibleFriend(id);
           const { people } = readTrustRegistry(trustPath).store;
@@ -873,9 +973,10 @@ export const createPortableApp = (options: {
               resolveVisiblePerson(people, target.id, caller.person.id),
           });
           return target;
-        });
-      const ownedPlaylist = (id: string, personId: string) =>
-        Effect.gen(function* findOwnedPlaylist() {
+        }
+      );
+      const ownedPlaylist = Effect.fn("App.ownedPlaylist")(
+        function* findOwnedPlaylist(id: string, personId: string) {
           const [row] = yield* db
             .select({
               collaborative: playlists.collaborative,
@@ -888,9 +989,10 @@ export const createPortableApp = (options: {
             return yield* Effect.fail(missingPlaylist());
           }
           return row;
-        });
-      const collaborationFor = (id: string, personId: string) =>
-        Effect.gen(function* readCollaboration() {
+        }
+      );
+      const collaborationFor = Effect.fn("App.collaborationFor")(
+        function* readCollaboration(id: string, personId: string) {
           const playlist = yield* ownedPlaylist(id, personId);
           const editors = yield* db
             .select({ editorId: playlistEditors.editorId })
@@ -900,9 +1002,10 @@ export const createPortableApp = (options: {
             collaborative: playlist.collaborative,
             editorIds: editors.map((row) => row.editorId),
           };
-        });
-      const editablePlaylistOwner = (id: string, personId: string) =>
-        Effect.gen(function* resolveEditablePlaylist() {
+        }
+      );
+      const editablePlaylistOwner = Effect.fn("App.editablePlaylistOwner")(
+        function* resolveEditablePlaylist(id: string, personId: string) {
           const [owned] = yield* db
             .select({ id: playlists.id })
             .from(playlists)
@@ -939,7 +1042,8 @@ export const createPortableApp = (options: {
             return yield* Effect.fail(missingPlaylist());
           }
           return editor.creatorId;
-        });
+        }
+      );
       const personSummary = (id: string) => {
         const { people } = readTrustRegistry(trustPath).store;
         const person = people.find((candidate) => candidate.id === id);
@@ -1058,6 +1162,47 @@ export const createPortableApp = (options: {
                 }).pipe(
                   Effect.tap(() => announceForCaller("playlist", seesPerson))
                 )
+              )
+            )
+            .handleRaw("import", () =>
+              withFailureResponse(
+                Effect.gen(function* importPlaylist() {
+                  const input = yield* HttpServerRequest.schemaBodyJson(
+                    ImportPlaylistPayload
+                  );
+                  const sourcePlaylistId = youTubePlaylistId(input.url);
+                  if (!sourcePlaylistId) {
+                    return yield* Effect.fail(
+                      new LibraryError({
+                        message:
+                          "Use a YouTube or YouTube Music playlist link.",
+                        statusCode: 400,
+                      })
+                    );
+                  }
+                  const caller = yield* SetCaller;
+                  return yield* importer
+                    .start({
+                      personId: caller.person.id,
+                      sourcePlaylistId,
+                      url: input.url,
+                    })
+                    .pipe(
+                      Effect.catchTag("MetadataError", (error) =>
+                        Effect.fail(playlistImportRefusal(error))
+                      )
+                    );
+                }).pipe(
+                  Effect.tap(() => announceForCaller("playlist", seesPerson))
+                )
+              )
+            )
+            .handleRaw("importStatus", ({ params }) =>
+              withFailureResponse(
+                Effect.gen(function* readPlaylistImport() {
+                  const caller = yield* SetCaller;
+                  return yield* importer.read(caller.person.id, params.id);
+                })
               )
             )
             .handleRaw("rename", ({ params }) =>
@@ -1359,41 +1504,42 @@ export const createPortableApp = (options: {
         Library.forPersonLayer(personId).pipe(
           Layer.provide(Layer.succeed(Database, db))
         );
-      const presenceFor = (viewerId: string) =>
-        Effect.gen(function* readPresence() {
-          const { people } = readTrustRegistry(trustPath).store;
-          const now = Date.now();
-          const found = [];
-          for (const person of people) {
-            let target;
-            try {
-              target = resolveVisiblePerson(people, viewerId, person.id);
-            } catch {
-              continue;
-            }
-            const setId = yield* presence
-              .currentSetFor(target.id, now)
-              .pipe(Effect.orElseSucceed(() => null));
-            if (setId === null) {
-              continue;
-            }
-            const [set] = yield* Effect.provide(
-              Effect.gen(function* hydratePresence() {
-                const personal = yield* Library;
-                return yield* personal.byIds([setId]);
-              }),
-              friendLibraryLayer(target.id)
-            ).pipe(Effect.orElseSucceed(() => []));
-            if (set) {
-              found.push({
-                personId: target.id,
-                set,
-                username: target.username,
-              });
-            }
+      const presenceFor = Effect.fn("App.presenceFor")(function* readPresence(
+        viewerId: string
+      ) {
+        const { people } = readTrustRegistry(trustPath).store;
+        const now = Date.now();
+        const found = [];
+        for (const person of people) {
+          let target;
+          try {
+            target = resolveVisiblePerson(people, viewerId, person.id);
+          } catch {
+            continue;
           }
-          return found;
-        });
+          const setId = yield* presence
+            .currentSetFor(target.id, now)
+            .pipe(Effect.orElseSucceed(() => null));
+          if (setId === null) {
+            continue;
+          }
+          const [set] = yield* Effect.provide(
+            Effect.gen(function* hydratePresence() {
+              const personal = yield* Library;
+              return yield* personal.byIds([setId]);
+            }),
+            friendLibraryLayer(target.id)
+          ).pipe(Effect.orElseSucceed(() => []));
+          if (set) {
+            found.push({
+              personId: target.id,
+              set,
+              username: target.username,
+            });
+          }
+        }
+        return found;
+      });
       const peopleGroup = HttpApiBuilder.group(OrbisApi, "people", (handlers) =>
         handlers
           .handle("me", () =>
@@ -1609,10 +1755,10 @@ export const createPortableApp = (options: {
         );
       // Devices act for the Person behind a key. A stream grant has no key, so
       // it is refused.
-      const deviceCall = <A>(
-        action: (storePath: string, personId: string, keyId: string) => A
-      ) =>
-        Effect.gen(function* authorizedDeviceAction() {
+      const deviceCall = Effect.fn("App.deviceCall")(
+        function* authorizedDeviceAction<A>(
+          action: (storePath: string, personId: string, keyId: string) => A
+        ) {
           const caller = yield* SetCaller;
           const { keyId } = caller;
           if (keyId === null) {
@@ -1624,7 +1770,8 @@ export const createPortableApp = (options: {
           return yield* trustCall((storePath) =>
             action(storePath, caller.person.id, keyId)
           );
-        });
+        }
+      );
       // The key is already gone, so a failed clear is logged: the next settle sweeps the
       // rows and the lease bounds how long the stale Presence can show.
       const clearRevokedPresence = (keyId: string) =>
@@ -1876,15 +2023,29 @@ export const createPortableApp = (options: {
             );
             // A null entry only makes `authorized` run, so a revoked key closes at once.
             const changeFrames = Stream.fromPubSub(changes).pipe(
-              Stream.mapEffect((change) =>
-                change.kind === "changed" && query.changes === "1"
-                  ? Effect.map(change.reaches(caller.person.id), (reached) =>
+              Stream.mapEffect((change): Effect.Effect<ChangeFrame> => {
+                if (query.changes !== "1") {
+                  return Effect.succeed(null);
+                }
+                if (change.kind === "changed") {
+                  return Effect.map(
+                    change.reaches(caller.person.id),
+                    (reached) =>
                       reached
                         ? { kind: "changed" as const, topic: change.topic }
                         : null
-                    )
-                  : Effect.succeed(null)
-              )
+                  );
+                }
+                return Effect.succeed(
+                  change.kind === "playlistImport" &&
+                    change.personId === caller.person.id
+                    ? {
+                        kind: "playlistImport" as const,
+                        playlistImport: change.playlistImport,
+                      }
+                    : null
+                );
+              })
             );
             return Stream.merge(
               Stream.merge(snapshots, presenceFrames),
@@ -1941,6 +2102,44 @@ export const createPortableApp = (options: {
             )
           )
       );
+      const diagnosticsGroup = HttpApiBuilder.group(
+        OrbisApi,
+        "diagnostics",
+        (handlers) =>
+          handlers.handleRaw("playback", ({ request }) =>
+            withFailureResponse(
+              Effect.gen(function* playbackDiagnostics() {
+                const caller = yield* SetCaller;
+                if (caller.keyId === null) {
+                  return HttpServerResponse.jsonUnsafe(
+                    { message: "A device key is required." },
+                    { status: 403 }
+                  );
+                }
+                const web = yield* HttpServerRequest.toWeb(request);
+                const body = yield* Effect.tryPromise({
+                  catch: (error) =>
+                    new LibraryError({
+                      message:
+                        error instanceof PlaybackBodyLimitError
+                          ? "Playback batch exceeds 64 KiB."
+                          : "Invalid playback batch.",
+                      statusCode:
+                        error instanceof PlaybackBodyLimitError ? 413 : 400,
+                    }),
+                  try: (signal) => readBoundedBody(web.body, 65_536, signal),
+                });
+                const batch = yield* Effect.try(() =>
+                  decodePlaybackDiagnosticsBatch(JSON.parse(body))
+                );
+                const response = yield* Effect.tryPromise((signal) =>
+                  relayPlayback(batch, signal)
+                );
+                return HttpServerResponse.fromWeb(response);
+              })
+            )
+          )
+      );
       const systemGroup = HttpApiBuilder.group(OrbisApi, "system", (handlers) =>
         handlers.handle("health", () =>
           Effect.succeed({ status: "ok" as const })
@@ -1953,6 +2152,7 @@ export const createPortableApp = (options: {
           Layer.provide(queueGroup),
           Layer.provide(libraryGroup),
           Layer.provide(systemGroup),
+          Layer.provide(diagnosticsGroup),
           Layer.provide(signInGroup),
           Layer.provide(eventsGroup),
           Layer.provide(presenceGroup),
@@ -2070,6 +2270,12 @@ export const createPortableApp = (options: {
       await initialize();
       if (presenceService) {
         await Effect.runPromise(presenceService.expire(Date.now()));
+      }
+    },
+    resumeImports: async (): Promise<void> => {
+      await initialize();
+      if (importerService) {
+        await Effect.runPromise(importerService.resume());
       }
     },
     handler: async (

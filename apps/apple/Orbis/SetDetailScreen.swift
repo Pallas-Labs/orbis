@@ -20,6 +20,7 @@ struct SetDetailScreen: View {
           showCreator: { model.showCreator(of: set) },
           length: set.durationSeconds.flatMap { $0 > 0 ? SetPresentation.length($0) : nil },
           artwork: SetPresentation.pageArtwork(set),
+          artworkStandIn: SetPresentation.row(set).artwork,
           failedToName: set.metadataState == "failed",
           dates: SetDetail.Dates(
             imported: SetPresentation.plainDate(set.createdAt),
@@ -35,7 +36,10 @@ struct SetDetailScreen: View {
         ) {
           audioSection(set)
         } tracklist: {
+          // A Tracklist that arrives after the page opened eases the facts below it down,
+          // rather than pushing them in one frame.
           TracklistSection(model: model, set: set)
+            .orbisAnimation(.tracklistArrived, value: model.tracklists[set.id]?.cues.count)
         } management: {
           SetManagementSection(model: model, set: set, isRenaming: $isRenaming)
         }
@@ -88,6 +92,10 @@ struct SetDetailScreen: View {
           playButton(set, isCurrent: isCurrent)
           if model.canPlayFromBeginning(set) { playFromBeginningButton(set) }
           queueActions(set)
+          // Where the sound goes, chosen here rather than only from Now Playing.
+          AirPlayButton(color: Color.orbis.tint)
+            .frame(width: 48, height: 48)
+            .background(Color.orbis.paperRaised, in: .rect(cornerRadius: Radius.row))
         }
         .orbisAnimation(.playbackToggled, value: model.canPlayFromBeginning(set))
         if isCurrent {
@@ -120,20 +128,13 @@ struct SetDetailScreen: View {
   /// Play, the way an album page offers it: one wide button that starts the Set, resumes it, or
   /// pauses it when it is the one playing.
   private func playButton(_ set: SavedSet, isCurrent: Bool) -> some View {
-    let player = model.audioPlayer
-    let isPlaying = isCurrent && (player.state == .playing || player.state == .loading)
+    let isPlaying = model.playbackWantsSound(for: set.id)
     let resumes = !isCurrent && set.playbackPositionSeconds > 0
     let word = isPlaying ? "Pause" : resumes ? "Resume" : "Play"
     let left = resumes ? SetPresentation.timeLeft(set) : nil
     let progress = resumes ? SetPresentation.progress(set) : nil
     return Button {
-      if !isCurrent {
-        Task { await model.playSet(set.id) }
-      } else if isPlaying {
-        player.pause()
-      } else {
-        player.resume()
-      }
+      model.togglePlayback(set.id)
     } label: {
       // The time left rides in the button it describes; it gives way first when space is short.
       ViewThatFits(in: .horizontal) {
@@ -197,8 +198,11 @@ struct SetDetailScreen: View {
       }
       .accessibilityIdentifier("detail-add-to-queue")
     } label: {
-      Label("Play Next", systemImage: "text.badge.plus")
-        .albumButton()
+      ViewThatFits(in: .horizontal) {
+        Label("Play Next", systemImage: "text.badge.plus").fixedSize()
+        Label("Play Next", systemImage: "text.badge.plus").labelStyle(.iconOnly)
+      }
+      .albumButton(fills: false)
     } primaryAction: {
       Task { await model.playNext(set.id) }
     }
@@ -303,7 +307,9 @@ private struct TracklistSection: View {
         cueContent(cue, start: start, selected: selected)
       }
       .buttonStyle(.plain)
-      .accessibilityLabel("\(cue.title), \(cue.artist), starts at \(SetPresentation.timestamp(start))")
+      .accessibilityLabel(
+        "\(cue.title), \(cue.artist), starts at \(SetPresentation.timestamp(start))"
+      )
       .accessibilityAddTraits(selected ? .isSelected : [])
       .accessibilityIdentifier("cue-\(cue.position)")
     } else {
@@ -334,10 +340,13 @@ private struct TracklistSection: View {
       VStack(alignment: .leading, spacing: 1) {
         Text(cue.title)
           .font(.body.weight(selected ? .semibold : .regular))
-        Text([cue.artist, start.map(SetPresentation.timestamp)].compactMap { $0 }.joined(separator: " · "))
-          .font(.footnote)
-          .monospacedDigit()
-          .foregroundStyle(.secondary)
+        Text(
+          [cue.artist, start.map(SetPresentation.timestamp)].compactMap { $0 }.joined(
+            separator: " · ")
+        )
+        .font(.footnote)
+        .monospacedDigit()
+        .foregroundStyle(.secondary)
       }
       .lineLimit(1)
       Spacer(minLength: 0)

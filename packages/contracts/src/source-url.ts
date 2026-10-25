@@ -35,6 +35,10 @@ const videoIdFrom = (url: URL): string | null => {
   );
 };
 
+/** The canonical Source Link for a YouTube video. */
+export const youTubeWatchUrl = (id: string) =>
+  `https://www.youtube.com/watch?v=${id}`;
+
 /**
  * The album identifier in an Apple Music album link, with or without a storefront and a slug.
  * A song link inside an album (`?i=`) names the album too: the album is what Orbis saves.
@@ -56,6 +60,35 @@ export const youTubeVideoId = (value: string): string | null => {
   }
   const id = videoIdFrom(url);
   return id && /^[\w-]{11}$/u.test(id) ? id : null;
+};
+
+const YOUTUBE_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com",
+  "m.youtube.com",
+  "music.youtube.com",
+  "youtu.be",
+]);
+
+/**
+ * The playlist identifier in a YouTube or YouTube Music link, or null. A `/playlist` page and a
+ * `/watch` link played from a playlist both name one in `list`, so either form can be imported.
+ */
+export const youTubePlaylistId = (value: string): string | null => {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  const id = url.searchParams.get("list");
+  if (
+    !["http:", "https:"].includes(url.protocol) ||
+    !YOUTUBE_HOSTS.has(url.hostname)
+  ) {
+    return null;
+  }
+  return id && /^[\w-]{2,64}$/u.test(id) ? id : null;
 };
 
 /**
@@ -81,20 +114,12 @@ export const normalizeSourceUrl = (
     throw invalid();
   }
   const host = url.hostname;
-  if (
-    [
-      "youtube.com",
-      "www.youtube.com",
-      "m.youtube.com",
-      "music.youtube.com",
-      "youtu.be",
-    ].includes(host)
-  ) {
+  if (YOUTUBE_HOSTS.has(host)) {
     const id = youTubeVideoId(value);
     if (!id) {
       throw invalid();
     }
-    return { source: "youtube", url: `https://www.youtube.com/watch?v=${id}` };
+    return { source: "youtube", url: youTubeWatchUrl(id) };
   }
   if (
     ["soundcloud.com", "www.soundcloud.com", "m.soundcloud.com"].includes(host)

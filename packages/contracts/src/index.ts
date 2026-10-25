@@ -4,6 +4,7 @@ import type {
   LibraryFiltersSchema,
   LibraryResponseSchema,
   ListeningQueueSchema,
+  PlaylistImportSchema,
   PlaylistSchema,
   PresenceActionPayload,
   PresenceActionResultSchema,
@@ -41,6 +42,7 @@ export type LibraryFilters = {
 export type LibraryResponse = typeof LibraryResponseSchema.Type;
 
 export type Playlist = typeof PlaylistSchema.Type;
+export type PlaylistImport = typeof PlaylistImportSchema.Type;
 export type Presence = typeof PresenceSchema.Type;
 export type PresenceAction = typeof PresenceActionPayload.Type;
 export type PresenceSession = typeof PresenceSessionSchema.Type;
@@ -55,7 +57,9 @@ export {
   normalizeSourceUrl,
   SOURCE_URL_MESSAGE,
   UnsupportedSourceUrlError,
+  youTubePlaylistId,
   youTubeVideoId,
+  youTubeWatchUrl,
 } from "./source-url.js";
 export {
   formatSignInCode,

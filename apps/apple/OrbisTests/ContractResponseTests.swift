@@ -12,6 +12,7 @@ final class ContractResponseTests: XCTestCase {
     let me: Me
     let playlist: Playlist
     let playlists: PlaylistsResponse
+    let playlistImports: [PlaylistImportJob]
     let queue: QueueResponse
     let savedSet: SavedSet
     let socialFilters: SocialFilters
@@ -33,5 +34,13 @@ final class ContractResponseTests: XCTestCase {
     XCTAssertTrue(samples.me.autoDownload)
     XCTAssertTrue(samples.me.host)
     XCTAssertTrue(samples.socialFilters.see)
+    XCTAssertEqual(
+      samples.playlistImports.map(\.state),
+      [
+        .running(processed: 50, total: 61),
+        .done(.init(added: 58, downloading: 20, waiting: 38, unavailable: 2, overLimit: 0)),
+        .failed(message: "YouTube is not answering. Try the import again."),
+      ])
+    XCTAssertEqual(samples.playlistImports.first?.playlist.id, samples.playlist.id)
   }
 }

@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- Ordered HTTP requests define the journey. */
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -7,6 +6,8 @@ import type { PresenceAction } from "@orbis/contracts";
 import { PresenceActionResultSchema } from "@orbis/contracts/http-api";
 import { Schema } from "effect";
 import { Miniflare } from "miniflare";
+
+import { workerModules } from "./worker-modules.js";
 
 const LEASE_MS = 30_000;
 const artifact = path.resolve(
@@ -32,8 +33,7 @@ const options = {
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 };
 let runtime = new Miniflare(options);
 const transcript: unknown[] = [];
@@ -51,6 +51,8 @@ const Snapshot = Schema.Struct({
     })
   ),
 });
+const decodeSnapshot = Schema.decodeUnknownSync(Snapshot);
+
 type Body = { setId: string } | PresenceAction;
 const call = async (route: string, method = "GET", body?: Body) => {
   const response = await runtime.dispatchFetch(`http://orbis/api${route}`, {
@@ -76,7 +78,7 @@ const call = async (route: string, method = "GET", body?: Body) => {
 const snapshot = async () => {
   const response = await call("/__presence");
   assert.equal(response.status, 200, response.text);
-  return Schema.decodeUnknownSync(Snapshot)(JSON.parse(response.text));
+  return decodeSnapshot(JSON.parse(response.text));
 };
 try {
   const seeded = await call("/__seed-presence");

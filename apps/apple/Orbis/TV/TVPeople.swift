@@ -99,7 +99,9 @@
               Button {
                 openedPerson = person.id
               } label: {
-                TVPersonDisc(username: person.username, isListening: isListening)
+                TVDisc(title: person.username) {
+                  PersonAvatar(person.username, diameter: 170, isListening: isListening)
+                }
               }
               .buttonStyle(TVBareButtonStyle())
               .accessibilityLabel(isListening ? "\(person.username), listening now" : person.username)
@@ -114,20 +116,21 @@
     }
   }
 
-  /// A Person as a large disc with their name under it. The disc grows and lifts under the remote,
-  /// the way a poster does, since the system's card lift would frame a circle in a square.
-  private struct TVPersonDisc: View {
-    let username: String
-    let isListening: Bool
+  /// Something round with its name under it: a Person, or a creator in Search. The disc grows and
+  /// lifts under the remote the way a poster does. The system's card lift and its highlight effect
+  /// both draw a rounded square, which would frame the circle.
+  struct TVDisc<Disc: View>: View {
+    let title: String
+    @ViewBuilder let disc: () -> Disc
     @Environment(\.isFocused) private var isFocused
 
     var body: some View {
       VStack(spacing: 20) {
-        PersonAvatar(username, diameter: 170, isListening: isListening)
+        disc()
           .shadow(color: .black.opacity(isFocused ? 0.5 : 0.3), radius: isFocused ? 30 : 14, y: isFocused ? 20 : 8)
           .scaleEffect(isFocused ? 1.12 : 1)
-        Text(username)
-          .font(.title3.weight(.semibold))
+        Text(title)
+          .font(.callout.weight(.semibold))
           .foregroundStyle(isFocused ? Color.primary : Color.secondary)
           .lineLimit(1)
       }
@@ -550,12 +553,12 @@
         .accessibilityHint(isReady ? "Plays this Set" : "")
         VStack(alignment: .leading, spacing: 2) {
           Text(set.title)
-            .font(.title3.weight(.semibold))
+            .font(.callout.weight(.medium))
             .lineLimit(2, reservesSpace: true)
             .foregroundStyle(isCurrent ? Color.orbis.tint : Color.primary)
           if let detail {
             Text(detail)
-              .font(.body)
+              .font(.caption)
               .foregroundStyle(.secondary)
               .lineLimit(1)
           }

@@ -201,7 +201,7 @@ public struct ArtworkBackdrop: View {
   }
 
   public var body: some View {
-    let known = field ?? url.flatMap(ArtworkFieldCache.shared.field(for:))
+    let known = url.flatMap(ArtworkFieldCache.shared.field(for:)) ?? field
     let tone = known.map { $0.color(dark: colorScheme == .dark) } ?? Color.orbis.paper
     surface(tone)
       .orbisAnimation(.pageTinted, value: known)
@@ -210,7 +210,10 @@ public struct ArtworkBackdrop: View {
           field = .brand
           return
         }
-        field = await ArtworkFieldCache.shared.load(url) ?? .brand
+        let loaded = await ArtworkFieldCache.shared.load(url) ?? .brand
+        // A read for an earlier URL can finish after the URL changed.
+        guard !Task.isCancelled else { return }
+        field = loaded
       }
       .accessibilityHidden(true)
   }

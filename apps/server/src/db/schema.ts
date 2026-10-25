@@ -116,6 +116,8 @@ export const downloadJobs = sqliteTable("download_jobs", {
   personId: text("person_id")
     .notNull()
     .references(() => downloadRequesters.personId),
+  /** When the Download was queued; null for rows queued before the column existed. */
+  queuedAt: text("queued_at"),
   sequence: integer("sequence").primaryKey({ autoIncrement: true }),
   setId: text("set_id")
     .notNull()
@@ -302,6 +304,36 @@ export const presenceLegacyReports = sqliteTable(
   ]
 );
 
+export const playlistImports = sqliteTable(
+  "playlist_imports",
+  {
+    added: integer("added").notNull().default(0),
+    createdAt: integer("created_at").notNull(),
+    downloading: integer("downloading").notNull().default(0),
+    failure: text("failure"),
+    id: text("id").primaryKey(),
+    overLimit: integer("over_limit").notNull().default(0),
+    /** The next page to read. Null before the first page is read. */
+    pageToken: text("page_token"),
+    personId: text("person_id").notNull(),
+    playlistId: text("playlist_id").notNull(),
+    processed: integer("processed").notNull().default(0),
+    sourcePlaylistId: text("source_playlist_id").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    state: text("state", { enum: ["running", "done", "failed"] }).notNull(),
+    total: integer("total"),
+    unavailable: integer("unavailable").notNull().default(0),
+    updatedAt: integer("updated_at").notNull(),
+    waiting: integer("waiting").notNull().default(0),
+  },
+  (table) => [
+    uniqueIndex("playlist_imports_running_unique")
+      .on(table.personId, table.sourcePlaylistId)
+      .where(sql`${table.state} = 'running'`),
+    index("playlist_imports_by_state").on(table.state, table.updatedAt),
+  ]
+);
+
 export const schema = {
   downloadJobs,
   downloadRequesters,
@@ -309,6 +341,7 @@ export const schema = {
   listens,
   playbackPositions,
   playlistEditors,
+  playlistImports,
   playlistSets,
   playlists,
   presenceActionResults,

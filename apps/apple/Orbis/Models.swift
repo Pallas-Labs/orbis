@@ -181,6 +181,78 @@ struct PlaylistsResponse: Decodable {
   let playlists: [Playlist]
 }
 
+struct ImportPlaylistRequest: Encodable {
+  let url: String
+}
+
+/// A YouTube playlist being read into a new Playlist in the background. The service answers the
+/// import request with one and reports it again on `/events` as each page lands.
+struct PlaylistImportJob: Decodable, Equatable {
+  /// What the finished import did. `unavailable` counts tracks YouTube no longer serves and
+  /// `overLimit` tracks past the Playlist maximum; neither was saved.
+  struct Summary: Decodable, Equatable {
+    let added: Int
+    let downloading: Int
+    /// Saved while the download queue was full, so they wait for a Download to be asked for.
+    let waiting: Int
+    let unavailable: Int
+    let overLimit: Int
+  }
+
+  enum State: Equatable {
+    /// `processed` counts the playlist's entries read so far, out of `total` when YouTube said.
+    case running(processed: Int, total: Int?)
+    case done(Summary)
+    case failed(message: String)
+  }
+
+  let id: String
+  let playlist: Playlist
+  let state: State
+
+  private enum CodingKeys: String, CodingKey {
+    case id, playlist, state
+  }
+
+  private enum StateKeys: String, CodingKey {
+    case kind, processed, total, message
+  }
+
+  init(id: String, playlist: Playlist, state: State) {
+    self.id = id
+    self.playlist = playlist
+    self.state = state
+  }
+
+  init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    playlist = try container.decode(Playlist.self, forKey: .playlist)
+    let state = try container.nestedContainer(keyedBy: StateKeys.self, forKey: .state)
+    switch try state.decode(String.self, forKey: .kind) {
+    case "running":
+      self.state = .running(
+        processed: try state.decode(Int.self, forKey: .processed),
+        total: try state.decodeIfPresent(Int.self, forKey: .total))
+    case "done":
+      self.state = .done(try container.decode(Summary.self, forKey: .state))
+    case "failed":
+      self.state = .failed(message: try state.decode(String.self, forKey: .message))
+    case let kind:
+      throw DecodingError.dataCorruptedError(
+        forKey: .kind, in: state, debugDescription: "Unknown import state \(kind)")
+    }
+  }
+}
+
+/// A finished import as its summary shows it: the Playlist, what the import did, and the first
+/// Sets of the Playlist for the artwork mosaic.
+struct ImportedPlaylist: Equatable {
+  let playlist: Playlist
+  let summary: PlaylistImportJob.Summary
+  let firstSets: [SavedSet]
+}
+
 /// The one Listening Queue, in play order. `activeSetId` is the Set playing now, and at most one
 /// entry ever matches it.
 struct ListeningQueue: Decodable, Equatable {

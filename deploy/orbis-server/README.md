@@ -26,6 +26,8 @@ The installed node keeps `ORBIS_API_FORWARD_URL=https://orbis.p11a.xyz/api` for 
 
 The node opens an outbound WebSocket and reconnects with exponential backoff, capped at 30 seconds. Its files are its only persistent state. Each connection reports validated audio files. The Group reconciles missing and unreferenced files and resumes interrupted Downloads using the existing job rows. Download commands and replies carry a Set ID and a request ID; a result from a canceled attempt cannot finish a later attempt.
 
+Set `ORBIS_OTLP_LOGS_URL` to SigNoz's local collector, `http://127.0.0.1:4318/v1/logs`, to send the node's events to SigNoz as well as the journal. When the variable is unset, the node logs only to the journal. [Send events to SigNoz](#send-events-to-signoz) lists where to set it.
+
 Run `bun run --cwd apps/api test:node` to exercise the local Group with a fake node and the built node process. The journey writes a protocol transcript and process log under `.cache/audio-node/<run>/`, including a forced process stop, recovery of the same job, progress through the API, and file deletion after removing the Library Entry. It needs ffmpeg and ffprobe on `PATH`.
 
 ## Update the installed service
@@ -73,6 +75,20 @@ systemctl --user start orbis-canary.service   # first run now; takes a few minut
 
 It downloads about 400 MB a night and keeps none of it.
 
+`last.json` records `ok`, which is true only when every check passed, and `sourcesWithoutBackend`, the sources for which no backend downloaded a fixture. The canary's event is an `error` only when `sourcesWithoutBackend` is not empty, because users then cannot download from that source. When a source still downloads through one backend but another backend fails, the event is a `warn`: the source has lost its fallback. The unit fails whenever `ok` is false.
+
+## Send events to SigNoz
+
+SigNoz runs on Vanta and accepts OTLP/HTTP logs at `127.0.0.1:4318`. Every event has `service.name=orbis` and an `orbis.component` resource attribute: `node`, `canary`, or `group`.
+
+Add this line to the environment of both `orbis-server` and `orbis-canary`, for example in `~/.config/orbis-node.env` or a drop-in, then restart each in the update window:
+
+```sh
+ORBIS_OTLP_LOGS_URL=http://127.0.0.1:4318/v1/logs
+```
+
+The Group on Cloudflare sends its events through the Access-protected endpoint that the playback relay uses, with the same `SIGNOZ_OTLP_*` bindings. [Worker configuration](../../apps/api/README.md#worker-configuration) names them. Each process sends events in batches of up to 50, at least every 5 seconds. A batch that fails three tries is dropped with one console warning and does not change the request or the download.
+
 ## Where to look when a download fails
 
 Each record below is written for an agent to read without extra setup. The service and the canary log one JSON object per line when stdout is not a terminal, as under systemd.
@@ -93,6 +109,23 @@ journalctl --user -u orbis-server --since today -o cat |
 journalctl --user -u orbis-canary --since today -o cat |
   jq -cR 'fromjson? | select(.job == "download-canary")'
 ```
+
+In SigNoz, filter the logs on `service.name = orbis` and `severity_text = ERROR` to see everything a person should look at. Filter on `event` or `job` to follow one kind of event, and on `requestId` to follow one download from the Group to the node.
+
+| Name | Component | Level | Fields |
+| --- | --- | --- | --- |
+| `job: audio-download` | node | `info`; `error` on failure | `set`, `source`, `requestId`, `outcome`, `backend`, `attempts` (`backend`, `ok`, `reason`), `logs` |
+| `event: node-link-connected` | node | `info` | `files` (inventory size), `attempt` (failed tries before this one) |
+| `event: node-link-closed` | node | `warn`; `info` at shutdown | `code`, `reason`, `heartbeatTimedOut` |
+| `event: node-link-reconnecting` | node | `info`; `error` from the fifth failed try in a row | `attempt`, `delayMs`, `connectFailed` |
+| `event: group-node-accepted` | group | `info` | `replaced` (earlier sockets closed) |
+| `event: group-node-disconnected` | group | `warn`; `info` for code 1000 | `code`, `reason` |
+| `event: group-download-started` | group | `info` | `set`, `source`, `requestId` |
+| `event: group-download-settled` | group | `info`; `warn` when the node reports a failure | `set`, `requestId`, `outcome` |
+| `event: group-downloads-waiting` | group | `warn` | `queued`, `oldestQueuedMs`, `node` (`missing` or `connecting`) |
+| `job: download-canary` | canary | `info`; `warn` when a backend failed; `error` when a source has no working backend | `ok`, `failed`, `sourcesWithoutBackend`, `logs` |
+
+`group-downloads-waiting` is the Group's sign that Downloads are queued and no node can take them. The Group checks each time it schedules work, so the event repeats while new work arrives and the node stays away. `oldestQueuedMs` is null for Downloads queued before 2026-10-20.
 
 A download's wide event (`job: audio-download`) lists every backend attempt in `logs`: bytes received, yt-dlp's exit code with the start and end of its error output, Cobalt's tunnel status and content length, and ffprobe's error output. The `stderrHead` annotation names yt-dlp's identifying error; `stderr` keeps the end, where its hint is. The canary's event (`job: download-canary`) holds the same evidence for each check. The startup line `youtube downloads use cobalt only` means `ORBIS_YTDLP_BIN` is missing; see [Check the yt-dlp configuration](#check-the-yt-dlp-configuration).
 

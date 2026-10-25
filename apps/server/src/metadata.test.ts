@@ -19,6 +19,8 @@ import { createTestApp as createApp } from "./test-app.js";
 import { request } from "./test-http.js";
 import type { SourceDetails, YtDlpMetadataService } from "./ytdlp-metadata.js";
 
+const decodeSavedSet = Schema.decodeUnknownSync(SavedSetSchema);
+
 const PROVIDER_RESULT: EnrichedMetadata = {
   artworkLargeUrl: "https://example.test/artwork.jpg",
   artworkUrl: "https://example.test/artwork.jpg",
@@ -146,7 +148,7 @@ test("records unknown creator, artwork, and duration after a failed enrichment",
 
     const library = await request(server.app, { method: "GET", url: "/sets" });
     expect(library.json()).toEqual({
-      sets: [Schema.decodeUnknownSync(SavedSetSchema)(saved.json())],
+      sets: [decodeSavedSet(saved.json())],
     });
   } finally {
     await server.dispose();
@@ -171,7 +173,7 @@ test("retry replaces the temporary title that no user edited", async () => {
     });
     expect(retried.statusCode).toBe(200);
     expect(retried.json()).toEqual({
-      ...Schema.decodeUnknownSync(SavedSetSchema)(saved.json()),
+      ...decodeSavedSet(saved.json()),
       artworkLargeUrl: "https://example.test/artwork.jpg",
       artworkUrl: "https://example.test/artwork.jpg",
       creator: "Ada Lovelace",
@@ -243,9 +245,7 @@ test("finds a set by creator through the existing text search", async () => {
       method: "GET",
       url: "/sets?q=lovelace",
     });
-    expect(byCreator.json().sets).toEqual([
-      Schema.decodeUnknownSync(SavedSetSchema)(youtube.json()),
-    ]);
+    expect(byCreator.json().sets).toEqual([decodeSavedSet(youtube.json())]);
     const caseInsensitive = await request(server.app, {
       method: "GET",
       url: "/sets?q=HOPPER&source=soundcloud",

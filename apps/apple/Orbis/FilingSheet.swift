@@ -19,6 +19,8 @@ struct FilingSheet: View {
       Form {
         if let reveal = model.reveal {
           revealSections(reveal)
+        } else if case .imported(let imported) = model.playlistImport {
+          PlaylistImportSummary(imported: imported)
         } else {
           linkSections
         }
@@ -32,20 +34,31 @@ struct FilingSheet: View {
           Color.orbis.paper.ignoresSafeArea()
         }
       }
-      .navigationTitle(model.reveal == nil ? "Add Set" : "Name Set")
+      .navigationTitle(title)
       .toolbarTitleDisplayMode(.inline)
       .toolbar { toolbar }
     }
     .presentationDetents([.medium, .large], selection: $detent)
     .sensoryFeedback(.success, trigger: model.reveal?.set.id) { _, new in new != nil }
-    .onChange(of: model.reveal != nil, initial: true) { _, hasReveal in
-      if hasReveal { detent = .large }
+    .playlistImportPresentation(model)
+    .onChange(of: model.reveal != nil || model.playlistImport.importedPlaylistId != nil, initial: true) {
+      _, hasResult in
+      if hasResult { detent = .large }
     }
   }
 
+  private var title: String {
+    if model.reveal != nil { return "Name Set" }
+    return model.playlistImport.importedPlaylistId == nil ? "Add Set" : "Playlist Imported"
+  }
+
+  private var linkKind: PlaylistLink.Kind { PlaylistLink.kind(of: model.linkToFile) }
+
   @ToolbarContentBuilder
   private var toolbar: some ToolbarContent {
-    if model.reveal == nil {
+    if model.playlistImport.importedPlaylistId != nil {
+      PlaylistImportSummaryToolbar(model: model, close: close)
+    } else if model.reveal == nil {
       ToolbarItem(placement: .cancellationAction) {
         Button("Close", systemImage: "xmark", role: .close, action: close)
       }
@@ -72,22 +85,28 @@ struct FilingSheet: View {
     Section {
       LinkField(
         link: $model.linkToFile,
-        state: SetPresentation.linkState(isFiling: model.isFiling, failure: model.fileFailure),
+        state: model.playlistImport.fieldState
+          ?? SetPresentation.linkState(isFiling: model.isFiling, failure: model.fileFailure),
+        action: linkKind == .playlist ? "Import" : "File it",
         focusRequest: $focusLink
       ) {
         Task { await model.fileLink() }
       }
+      .disabled(model.playlistImport.isImporting)
       .listRowBackground(Color.clear)
       .listRowInsets(EdgeInsets())
     } footer: {
       VStack(alignment: .leading, spacing: 10) {
-        Text("A YouTube or SoundCloud link. Orbis reads the title, artist and artwork from it.")
+        Text(
+          "A YouTube or SoundCloud link. Orbis reads the title, artist and artwork from it. A YouTube playlist link imports every Set in it."
+        )
         PasteButton(payloadType: String.self) { pasted in
           guard let text = pasted.first else { return }
           Task { await model.pasteAndFile(text) }
         }
         .labelStyle(.titleAndIcon)
         .buttonBorderShape(.capsule)
+        .disabled(model.playlistImport.isImporting)
         .accessibilityIdentifier("paste-and-file")
         if let notice = model.pasteNotice {
           Text(notice)
@@ -95,17 +114,22 @@ struct FilingSheet: View {
         }
       }
     }
+    if linkKind == .setInPlaylist, !model.playlistImport.isImporting {
+      Section {
+        Button("Import the Whole Playlist", systemImage: "music.note.list") {
+          Task { await model.importPlaylist(link: model.linkToFile) }
+        }
+        .foregroundStyle(Color.orbis.tint)
+        .disabled(model.isFiling)
+        .accessibilityIdentifier("import-whole-playlist")
+      } footer: {
+        Text("This link plays a Set from a playlist. File it to keep the one Set.")
+      }
+    }
+    PlaylistImportStatus(model: model)
     if model.isFiling {
       Section {
-        HStack(spacing: 10) {
-          Image(systemName: "waveform")
-            .font(.title3.weight(.semibold))
-            .foregroundStyle(Color.orbis.tint)
-            .orbisWorking(true)
-            .accessibilityHidden(true)
-          Text("Reading the link…")
-            .foregroundStyle(.secondary)
-        }
+        WorkingRow(title: "Reading the link…")
       }
     }
     if let confirmation = model.fileConfirmation {
@@ -185,6 +209,32 @@ struct FilingSheet: View {
         CopyFailureButton(report: FailureReport(failure: failure, context: "naming a filed set"))
       }
     }
+  }
+}
+
+/// The rippling waveform Orbis shows while the service reads a link or a playlist.
+struct WorkingRow: View {
+  let title: String
+  var detail: String?
+
+  var body: some View {
+    HStack(spacing: 10) {
+      Image(systemName: "waveform")
+        .font(.title3.weight(.semibold))
+        .foregroundStyle(Color.orbis.tint)
+        .orbisWorking(true)
+        .accessibilityHidden(true)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(title)
+          .foregroundStyle(.secondary)
+        if let detail {
+          Text(detail)
+            .font(.orbis.detail)
+            .foregroundStyle(.tertiary)
+        }
+      }
+    }
+    .accessibilityElement(children: .combine)
   }
 }
 

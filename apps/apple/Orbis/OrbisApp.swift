@@ -191,9 +191,9 @@ struct NowPlayingBar: View {
     MiniPlayer(
       title: player.currentTitle,
       subtitle: player.currentCue.map { "\($0.title) · \($0.artist)" },
-      artwork: player.currentSetId.flatMap { model.savedSet($0)?.artworkUrl }
+      artwork: model.playingSet?.artworkUrl
         .flatMap(URL.init(string:)),
-      isPlaying: player.state == .playing,
+      isPlaying: player.state == .playing || player.state == .loading,
       progress: player.duration.map { $0 > 0 ? player.elapsed / $0 : 0 },
       surface: surface,
       transition: transition,

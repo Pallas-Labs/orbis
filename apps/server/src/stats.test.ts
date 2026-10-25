@@ -32,7 +32,7 @@ test("becoming the active Set counts one Listen and dates it", async () => {
 test("pausing and resuming the active Set leaves the Listen count alone", async () => {
   await withSeededApp(ready(["a"]), async (app) => {
     for (let cycle = 0; cycle < 5; cycle += 1) {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       await play(app, "a");
     }
 

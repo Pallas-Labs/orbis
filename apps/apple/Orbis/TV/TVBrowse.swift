@@ -85,12 +85,12 @@
         .accessibilityAddTraits(isCurrent ? .isSelected : [])
         VStack(alignment: .leading, spacing: 2) {
           Text(set.title)
-            .font(.title3.weight(.semibold))
+            .font(.callout.weight(.medium))
             .lineLimit(2, reservesSpace: true)
             .foregroundStyle(isCurrent ? Color.orbis.tint : Color.primary)
           if let detail {
             Text(detail)
-              .font(.body)
+              .font(.caption)
               .foregroundStyle(.secondary)
               .lineLimit(1)
           }
@@ -645,18 +645,14 @@
               Button {
                 model.showCreator(of: set)
               } label: {
-                VStack(spacing: 16) {
+                TVDisc(title: set.creator ?? "") {
                   Artwork(url: SetPresentation.row(set).artwork, seed: set.title, size: .header)
                     .frame(width: 360)
-                    .frame(width: 200, height: 200)
+                    .frame(width: 170, height: 170)
                     .clipShape(.circle)
-                  Text(set.creator ?? "")
-                    .font(.title3.weight(.medium))
-                    .lineLimit(1)
-                    .frame(width: 220)
                 }
               }
-              .buttonStyle(.card)
+              .buttonStyle(TVBareButtonStyle())
               .accessibilityLabel("Sets by \(set.creator ?? "")")
             }
           }

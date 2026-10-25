@@ -16,16 +16,16 @@ const longYtdlpStderr = `ERROR: [youtube] aqzKEbpKQAA: Sign in to confirm you're
 // The worker runs on its own fiber, so the test polls for the job's event.
 const waitForJob = async (
   events: readonly WideEvent[],
-  deadline: number
+  attemptsLeft = 400
 ): Promise<void> => {
   if (
     events.some((event) => event.job === "audio-download") ||
-    Date.now() > deadline
+    attemptsLeft <= 0
   ) {
     return;
   }
   await Bun.sleep(25);
-  return waitForJob(events, deadline);
+  return waitForJob(events, attemptsLeft - 1);
 };
 
 // The failure from 2026-09-29: yt-dlp exits with an error and Cobalt's tunnel answers
@@ -71,7 +71,7 @@ test("a failed download emits one event that names each backend's cause", async 
     // SAFETY: the save route returns the stored set including its id.
     const id = saved.json().id as string;
     await request(app, { method: "POST", url: `/sets/${id}/audio/download` });
-    await waitForJob(events, Date.now() + 10_000);
+    await waitForJob(events);
 
     const jobs = events.filter((event) => event.job === "audio-download");
     expect(jobs).toHaveLength(1);
@@ -170,8 +170,9 @@ const cobaltFailures = [
   },
 ];
 
-for (const scenario of cobaltFailures) {
-  test(`Cobalt ${scenario.name} failure keeps its cause in the download event`, async () => {
+test.each(cobaltFailures)(
+  "Cobalt $name failure keeps its cause in the download event",
+  async (scenario) => {
     const root = await mkdtemp(path.join(tmpdir(), "orbis-cobalt-errors-"));
     const events: WideEvent[] = [];
     const app = createApp({
@@ -195,7 +196,7 @@ for (const scenario of cobaltFailures) {
       // SAFETY: the successful save route returns the stored Set's id.
       const id = saved.json().id as string;
       await request(app, { method: "POST", url: `/sets/${id}/audio/download` });
-      await waitForJob(events, Date.now() + 10_000);
+      await waitForJob(events);
       const jobs = events.filter((event) => event.job === "audio-download");
       expect(jobs).toHaveLength(1);
       const [job] = jobs;
@@ -223,5 +224,5 @@ for (const scenario of cobaltFailures) {
       await app.dispose();
       await rm(root, { force: true, recursive: true });
     }
-  });
-}
+  }
+);

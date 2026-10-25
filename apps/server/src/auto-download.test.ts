@@ -15,11 +15,17 @@ const Saved = Schema.Struct({
   downloadState: Schema.String,
   id: Schema.String,
 });
+const decodeSaved = Schema.decodeUnknownSync(Saved);
+
 const Person = Schema.Struct({
   autoDownload: Schema.Boolean,
   id: Schema.String,
 });
+const decodePerson = Schema.decodeUnknownSync(Person);
+
 const AudioState = Schema.Struct({ state: Schema.String });
+const decodeAudioState = Schema.decodeUnknownSync(AudioState);
+
 const evidence = path.resolve(import.meta.dir, "../../../.cache/auto-download");
 const failures = [
   "new Person defaults off",
@@ -37,7 +43,7 @@ const fixture = async (startWorker: boolean, hold = false) => {
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["a1", "a2", "b1"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -120,7 +126,7 @@ const fixture = async (startWorker: boolean, hold = false) => {
     const response = await send(key, "/me");
     expect(response.status).toBe(200);
     const body: unknown = await response.json();
-    return Schema.decodeUnknownSync(Person)(body);
+    return decodePerson(body);
   };
   const save = async (key: string, number: number, userAgent?: string) => {
     const response = await send(
@@ -135,18 +141,17 @@ const fixture = async (startWorker: boolean, hold = false) => {
     );
     expect(response.status).toBe(201);
     const body: unknown = await response.json();
-    return Schema.decodeUnknownSync(Saved)(body);
+    return decodeSaved(body);
   };
   const state = async (key: string, id: string) => {
     const response = await send(key, `/sets/${id}/audio/state`);
     expect(response.status).toBe(200);
     const body: unknown = await response.json();
-    return Schema.decodeUnknownSync(AudioState)(body).state;
+    return decodeAudioState(body).state;
   };
   const ready = async (key: string, id: string) => {
-    const deadline = Date.now() + 10_000;
-    while ((await state(key, id)) !== "ready") {
-      if (Date.now() > deadline) {
+    for (let attempt = 0; (await state(key, id)) !== "ready"; attempt += 1) {
+      if (attempt >= 500) {
         throw new Error("Auto Download did not become playable");
       }
       await Bun.sleep(20);
@@ -229,7 +234,7 @@ test("Auto Download defaults on and follows the Person across clients and restar
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
 
 test("saving shared ready or running audio starts no second Download", async () => {
   const lane = await fixture(true, true);
@@ -258,7 +263,7 @@ test("saving shared ready or running audio starts no second Download", async () 
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});
 
 test("the 20-job cap preserves a successful save with an explicit outcome", async () => {
   const lane = await fixture(false);
@@ -279,4 +284,4 @@ test("the 20-job cap preserves a successful save with an explicit outcome", asyn
   } finally {
     await lane.stop();
   }
-}, 20_000);
+});

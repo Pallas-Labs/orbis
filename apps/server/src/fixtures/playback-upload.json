@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "afterSequence": 0,
+  "throughSequence": 2,
+  "entries": [
+    {
+      "snapshot": {
+        "likelyToKeepUp": false,
+        "actualTime": null,
+        "bufferEmpty": false,
+        "rate": null,
+        "playbackGeneration": 0,
+        "itemState": "none",
+        "sessionReady": false,
+        "bufferFull": false,
+        "bufferRanges": [],
+        "waitingReason": "none",
+        "seekInFlight": false,
+        "state": "idle",
+        "displayedTime": null,
+        "duration": null,
+        "seekID": 0,
+        "pendingSeek": null
+      },
+      "wallTime": 1792370214414.031,
+      "sequence": 1,
+      "uptime": 1740650.922287,
+      "event": {
+        "command": {
+          "_0": { "kind": "seek", "target": 8.5, "origin": "systemRemote" }
+        }
+      }
+    },
+    {
+      "snapshot": {
+        "likelyToKeepUp": false,
+        "actualTime": null,
+        "bufferEmpty": false,
+        "rate": null,
+        "playbackGeneration": 0,
+        "itemState": "none",
+        "sessionReady": false,
+        "bufferFull": false,
+        "bufferRanges": [],
+        "waitingReason": "none",
+        "seekInFlight": false,
+        "state": "idle",
+        "displayedTime": null,
+        "duration": null,
+        "seekID": 0,
+        "pendingSeek": null
+      },
+      "wallTime": 1792370214414.035,
+      "sequence": 2,
+      "uptime": 1740650.9222901668,
+      "event": { "stalled": {} }
+    }
+  ],
+  "runId": "8C3B475C-7087-47B4-9B19-A52A70DA76A0",
+  "metadata": {
+    "appBuild": "1",
+    "appVersion": "0.1.0",
+    "osName": "iOS",
+    "osVersion": "Version 27.0 (Build 24A434)"
+  }
+}

@@ -6,6 +6,8 @@ import path from "node:path";
 import { Schema } from "effect";
 import { Miniflare } from "miniflare";
 
+import { workerModules } from "./worker-modules.js";
+
 // Versos answers a Tracklist request in seconds, long after the Group has answered the retry
 // that started it. A run that only lives as long as that request never stores its Cues.
 const READY_AFTER_MS = 3000;
@@ -27,10 +29,14 @@ const artifact = path.resolve(
 );
 await mkdir(artifact, { recursive: true });
 const TracklistRequest = Schema.Struct({ url: Schema.String });
+const decodeTracklistRequest = Schema.decodeUnknownSync(TracklistRequest);
+
 const Tracklist = Schema.Struct({
   cues: Schema.Array(Schema.Unknown),
   state: Schema.String,
 });
+const decodeTracklist = Schema.decodeUnknownSync(Tracklist);
+
 const requestedAt = new Map<string, number>();
 const calls: string[] = [];
 const versos = Bun.serve({
@@ -38,9 +44,7 @@ const versos = Bun.serve({
     const url = new URL(request.url);
     calls.push(`${Date.now()} ${request.method} ${url.pathname}`);
     if (request.method === "POST" && url.pathname === "/orbis/tracklists") {
-      const body = Schema.decodeUnknownSync(TracklistRequest)(
-        await request.json()
-      );
+      const body = decodeTracklistRequest(await request.json());
       requestedAt.set(body.url, Date.now());
       return Response.json({ requestId: body.url });
     }
@@ -78,8 +82,7 @@ const runtime = new Miniflare({
   compatibilityFlags: ["nodejs_compat"],
   durableObjects: { GROUP: { className: "Group", useSQLite: true } },
   durableObjectsPersist: path.join(artifact, "storage"),
-  modules: true,
-  script: await output.text(),
+  modules: workerModules(await output.text()),
 });
 const call = async (route: string, method = "GET") => {
   const response = await runtime.dispatchFetch(`http://orbis/api${route}`, {
@@ -98,7 +101,7 @@ const waitForReady = async (id: string) => {
     const tracklist = await call(`/sets/${id}/tracklist`);
     assert.equal(tracklist.status, 200, tracklist.text);
     last = tracklist.text;
-    const answer = Schema.decodeUnknownSync(Tracklist)(JSON.parse(last));
+    const answer = decodeTracklist(JSON.parse(last));
     if (answer.state === "ready") {
       return answer;
     }

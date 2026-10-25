@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   AudioStateSchema,
   ListeningQueueSchema,
+  PlaylistImportSchema,
   PlaylistSchema,
   SavedSetSchema,
   SaveSetResultSchema,
@@ -31,6 +32,7 @@ const Samples = Schema.Struct({
     ),
   }),
   playlist: PlaylistSchema,
+  playlistImports: Schema.Array(PlaylistImportSchema),
   playlists: Schema.Struct({ playlists: Schema.Array(PlaylistSchema) }),
   queue: Schema.Struct({ queue: ListeningQueueSchema }),
   saveResult: SaveSetResultSchema,
@@ -70,6 +72,7 @@ const OpenApiDocument = Schema.Struct({
     )
   ),
 });
+const decodeOpenApiDocument = Schema.decodeUnknownSync(OpenApiDocument);
 
 const sampleKeyFor = (operationId: string): keyof typeof samples => {
   if (operationId === "sets.save") {
@@ -128,6 +131,9 @@ const sampleKeyFor = (operationId: string): keyof typeof samples => {
 };
 
 const sampleFor = (operationId: string) => {
+  if (operationId === "diagnostics.playback") {
+    return { accepted: 2, rejected: 0 };
+  }
   if (["sets.tracklist", "sets.retryTracklist"].includes(operationId)) {
     return {
       cues: [
@@ -163,6 +169,12 @@ const sampleFor = (operationId: string) => {
       role: "editor",
       sets: [samples.savedSet],
     };
+  }
+  if (operationId === "playlists.import") {
+    return samples.playlistImports[0];
+  }
+  if (operationId === "playlists.importStatus") {
+    return samples.playlistImports[1];
   }
   if (operationId === "people.friendPlaylists") {
     return { playlists: [{ ...samples.playlist, sets: [samples.savedSet] }] };
@@ -227,9 +239,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
       "device"
     );
     expect(response.status).toBe(200);
-    const document = Schema.decodeUnknownSync(OpenApiDocument)(
-      await response.json()
-    );
+    const document = decodeOpenApiDocument(await response.json());
     expect(document.openapi).toBe("3.1.0");
     const ajv = new Ajv({ strict: false, validateFormats: false });
     let checked = 0;
@@ -276,7 +286,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(46);
+    expect(checked).toBe(49);
   } finally {
     await app.dispose();
   }

@@ -120,6 +120,8 @@ One narrow source interface, two backends, and a recorded winner.
 3. `apps/server/src/ytdlp.ts` becomes the second backend. It spawns the pinned binary with a fixed argument list, never through a shell, writes to a temporary path inside the managed media directory, streams to disk, and deletes partial output on every failure path.
 4. The worker tries the preferred backend first and the other on a retryable failure, then records which backend produced the file on the download row. Preference follows the evidence: YouTube first to yt-dlp, SoundCloud first to Cobalt. Each is proven on its source and the other is the safety net.
 
+   Update, October 2026: SoundCloud first goes to yt-dlp too. Since October 14, SoundCloud serves AAC streams only, and Cobalt accepts only Opus or MP3 from it, so Cobalt returns `error.api.fetch.empty` for every SoundCloud track ([imputnet/cobalt#1605](https://github.com/imputnet/cobalt/issues/1605)). yt-dlp stores the AAC as received.
+
 Bounds and safety.
 
 - Configuration carries `YTDLP_BIN` as an absolute path and an optional cookies path. Never resolve the binary through `PATH`, and never build an argument list from a URL and a shell string.

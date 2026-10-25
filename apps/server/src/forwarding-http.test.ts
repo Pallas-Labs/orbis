@@ -19,7 +19,7 @@ test("forwarded requests log the authenticated key label at the API without copy
     JSON.stringify({
       devices: [
         {
-          addedAt: new Date().toISOString(),
+          addedAt: "2026-01-01T00:00:00.000Z",
           id: "fixture-key",
           label: "Old Apple build",
           tokenHash: hashToken(token),

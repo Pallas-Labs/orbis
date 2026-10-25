@@ -36,6 +36,7 @@ const ProbeFormat = Schema.Struct({
 });
 
 const ProbeOutput = Schema.fromJsonString(ProbeFormat);
+const decodeProbeOutputEffect = Schema.decodeUnknownEffect(ProbeOutput);
 
 const contentTypeFor = (format: string): string | undefined => {
   if (format === "mp3") {
@@ -162,9 +163,7 @@ export class MediaStore extends Context.Service<
         "json",
         filePath,
       ]);
-      const probed = yield* Schema.decodeUnknownEffect(ProbeOutput)(
-        output
-      ).pipe(
+      const probed = yield* decodeProbeOutputEffect(output).pipe(
         Effect.tapError(() =>
           Effect.logWarning("ffprobe output did not parse").pipe(
             Effect.annotateLogs({ output: outputTail(output) })
@@ -203,38 +202,38 @@ export class MediaStore extends Context.Service<
         const totalHeader = response.headers.get("content-length");
         const total = totalHeader ? Number(totalHeader) : null;
         const writer = Bun.file(destination).writer();
-        const drain = (
+        // Recurses once per chunk; a traced span per chunk multiplied time and heap about fivefold.
+        const drain = Effect.fnUntraced(function* drainChunk(
           reader: ReadableStreamDefaultReader<Uint8Array>,
           received: number
-        ): Effect.Effect<number, LibraryError> =>
-          Effect.gen(function* drainChunk() {
-            if (signal.aborted) {
-              return yield* Effect.fail(
-                downloadFailed("The download was canceled.")
-              );
-            }
-            const { done, value } = yield* Effect.tryPromise({
-              catch: () =>
-                downloadFailed(
-                  signal.aborted
-                    ? "The download was canceled."
-                    : "The audio stream broke off."
-                ),
-              try: () => reader.read(),
-            });
-            if (done) {
-              return received;
-            }
-            const next = received + value.byteLength;
-            if (next > MAX_AUDIO_BYTES) {
-              return yield* Effect.fail(
-                downloadFailed("The audio exceeded the size bound.")
-              );
-            }
-            writer.write(value);
-            onProgress(next, Number.isFinite(total) ? total : null);
-            return yield* drain(reader, next);
+        ): Effect.fn.Return<number, LibraryError> {
+          if (signal.aborted) {
+            return yield* Effect.fail(
+              downloadFailed("The download was canceled.")
+            );
+          }
+          const { done, value } = yield* Effect.tryPromise({
+            catch: () =>
+              downloadFailed(
+                signal.aborted
+                  ? "The download was canceled."
+                  : "The audio stream broke off."
+              ),
+            try: () => reader.read(),
           });
+          if (done) {
+            return received;
+          }
+          const next = received + value.byteLength;
+          if (next > MAX_AUDIO_BYTES) {
+            return yield* Effect.fail(
+              downloadFailed("The audio exceeded the size bound.")
+            );
+          }
+          writer.write(value);
+          onProgress(next, Number.isFinite(total) ? total : null);
+          return yield* drain(reader, next);
+        });
         yield* drain(response.body.getReader(), 0).pipe(
           Effect.ensuring(Effect.sync(() => writer.end()))
         );

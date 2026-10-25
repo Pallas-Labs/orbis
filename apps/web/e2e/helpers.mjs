@@ -4,13 +4,13 @@ import { setTimeout } from "node:timers/promises";
 export const waitFor = async (url) => {
   for (let attempt = 0; attempt < 150; attempt += 1) {
     try {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
       await fetch(url);
       return;
     } catch {
       // Not listening yet.
     }
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     await setTimeout(100);
   }
   throw new Error(`${url} did not start`);
@@ -52,7 +52,7 @@ export const textOf = async (locator) => {
  */
 export const submitForm = async (form, pathname, fields) => {
   for (const [label, value] of Object.entries(fields)) {
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
     await form.getByLabel(label).fill(value);
   }
   const answer = form

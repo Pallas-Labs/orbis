@@ -144,7 +144,7 @@ test("accepts a full Playlist list and rejects one id more", async () => {
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
-}, 30_000);
+});
 
 test("accepts a Set in its hundredth Playlist and rejects one id more", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-test-"));
@@ -183,7 +183,7 @@ test("accepts a Set in its hundredth Playlist and rejects one id more", async ()
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
-}, 30_000);
+});
 
 test("keeps a Playlist full when a Set joins it through the Set-centric route", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-test-"));
@@ -222,7 +222,7 @@ test("keeps a Playlist full when a Set joins it through the Set-centric route", 
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
-}, 30_000);
+});
 
 test("keeps a Set within its Playlist limit through the Playlist-centric route", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-test-"));
@@ -262,7 +262,7 @@ test("keeps a Set within its Playlist limit through the Playlist-centric route",
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
-}, 30_000);
+});
 
 test("rejects a move into a full Playlist and keeps the source membership", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-test-"));
@@ -303,7 +303,7 @@ test("rejects a move into a full Playlist and keeps the source membership", asyn
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
-}, 30_000);
+});
 
 test("keeps an oversized Playlist readable and lets it shrink", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-test-"));
@@ -367,7 +367,7 @@ test("keeps an oversized Playlist readable and lets it shrink", async () => {
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
-}, 30_000);
+});
 
 test("keeps an oversized Set membership readable and lets it shrink", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-test-"));
@@ -423,7 +423,7 @@ test("keeps an oversized Set membership readable and lets it shrink", async () =
   } finally {
     await rm(directory, { force: true, recursive: true });
   }
-}, 30_000);
+});
 
 test("saves a set with tags and reads it after the server restarts", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-test-"));

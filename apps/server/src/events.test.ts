@@ -13,6 +13,10 @@ import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
 
+const decodeIdOnly = Schema.decodeUnknownSync(
+  Schema.Struct({ id: Schema.String })
+);
+
 // Presence has its own test; these frames are about the Queue.
 const Event = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("queue"), queue: ListeningQueueSchema }),
@@ -22,6 +26,8 @@ const Event = Schema.Union([
     presence: Schema.Array(Schema.Unknown),
   }),
 ]);
+const decodeEventJson = Schema.decodeUnknownSync(Schema.fromJsonString(Event));
+
 const frames = (response: Response) => {
   const reader = response.body?.getReader();
   if (!reader) {
@@ -45,7 +51,7 @@ const frames = (response: Response) => {
       .filter((line) => line.startsWith("data:"))
       .map((line) => line.slice(5).trimStart())
       .join("\n");
-    return Schema.decodeUnknownSync(Schema.fromJsonString(Event))(data);
+    return decodeEventJson(data);
   };
   return {
     close: () => reader.cancel(),
@@ -67,7 +73,7 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
     path.join(root, "devices.json"),
     JSON.stringify({
       keys: ["a1", "a2", "b1"].map((id) => ({
-        addedAt: new Date().toISOString(),
+        addedAt: "2026-01-01T00:00:00.000Z",
         id,
         label: id,
         lastUsedAt: null,
@@ -138,9 +144,7 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
       url: "https://www.youtube.com/watch?v=abcdefghijk",
     });
     expect(saved.status).toBe(201);
-    const set = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(
-      await saved.json()
-    );
+    const set = decodeIdOnly(await saved.json());
     const db = new Database(databasePath);
     db.run(
       "UPDATE sets SET download_state = 'ready', retained_audio_format = 'm4a', retained_audio_bytes = 100 WHERE id = ?",
@@ -150,26 +154,25 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
     const playlistResponse = await call("a2", "/playlists", "POST", {
       name: "Remote picks",
     });
-    const playlist = Schema.decodeUnknownSync(
-      Schema.Struct({ id: Schema.String })
-    )(await playlistResponse.json());
+    const playlist = decodeIdOnly(await playlistResponse.json());
     const members = await call("a2", `/playlists/${playlist.id}/sets`, "PUT", {
       setIds: [set.id],
     });
     expect(members.status).toBe(200);
-    const startedAt = Date.now();
     const start = await call("a2", "/queue/playlist", "PUT", {
       playlistId: playlist.id,
     });
     expect(start.status).toBe(200);
-    const changed = await a.next();
+    const changed = await Promise.race([a.next(), Bun.sleep(3000)]);
+    if (changed === undefined) {
+      throw new Error("The Queue snapshot did not arrive within 3 seconds");
+    }
     expect(changed.kind).toBe("queue");
     if (changed.kind !== "queue") {
       throw new Error("Expected Queue snapshot");
     }
     expect(changed.queue.activeSetId).toBe(set.id);
     expect(changed.queue.entries.map((entry) => entry.id)).toEqual([set.id]);
-    expect(Date.now() - startedAt).toBeLessThan(3000);
     const peer = frames(await call("a2", "/events"));
     opened.push(peer);
     expect(await peer.next()).toEqual(changed);
@@ -211,4 +214,4 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
     await listeners.stop();
     await rm(root, { force: true, recursive: true });
   }
-}, 15_000);
+});

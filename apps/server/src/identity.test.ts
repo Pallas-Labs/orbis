@@ -11,6 +11,12 @@ import { createApp } from "./app.js";
 import { hashToken, mutateTrustStore, readTrustStrict } from "./identity.js";
 import { request } from "./test-http.js";
 
+const decodeIdOnly = Schema.decodeUnknownSync(
+  Schema.Struct({ id: Schema.String })
+);
+
+const decodeGroupPasscode = Schema.decodeUnknownSync(GroupPasscodeSchema);
+
 const TAILNET_HOST = "vanta.example.ts.net";
 
 const withTrustStore = async (
@@ -374,9 +380,7 @@ test("an existing trust database drops Invites and keeps the passcode across res
       url: "/admin/passcode",
     });
     expect(opened.statusCode).toBe(200);
-    generated =
-      Schema.decodeUnknownSync(GroupPasscodeSchema)(opened.json()).passcode ??
-      "";
+    generated = decodeGroupPasscode(opened.json()).passcode ?? "";
   } finally {
     await first.dispose();
   }
@@ -432,9 +436,7 @@ test("a key stored as admin reports Presence after the upgrade and keeps Host po
       url: "/sets",
     });
     expect(saved.statusCode).toBe(201);
-    const set = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(
-      saved.json()
-    );
+    const set = decodeIdOnly(saved.json());
     const position = await request(app, {
       headers: host,
       method: "PUT",

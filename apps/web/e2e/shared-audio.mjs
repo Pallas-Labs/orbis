@@ -31,13 +31,13 @@ const bobsOtherLink = "https://soundcloud.com/artist/track";
 const waitFor = async (url) => {
   for (let attempt = 0; attempt < 150; attempt += 1) {
     try {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
       await fetch(url);
       return;
     } catch {
       // Not listening yet.
     }
-    // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     await setTimeout(100);
   }
   throw new Error(`${url} did not start`);
@@ -207,7 +207,7 @@ try {
     // Only a Set with audio can be in the queue.
     await callAs("bob", "POST", `/sets/${bobsSet.id}/audio/download`);
     for (let attempt = 0; ; attempt += 1) {
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
       const audio = await callAs(
         "bob",
         "GET",
@@ -217,7 +217,7 @@ try {
         break;
       }
       assert.ok(attempt < 100, `bob's Download stuck at ${audio.state}`);
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
       await setTimeout(200);
     }
     await callAs("bob", "PUT", "/queue/active", { setId: bobsSet.id });

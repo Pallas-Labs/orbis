@@ -12,7 +12,7 @@ import { hostname, tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-/* oxlint-disable func-style, anti-slop/no-runtime-typeof */
+/* oxlint-disable func-style, anti-slop/no-runtime-typeof -- plain .mjs script: function declarations keep helpers readable and typeof guards untrusted JSON */
 
 export const COBALT_IMAGE =
   "ghcr.io/imputnet/cobalt:11@sha256:df14a3b3fe4390d4e1c2d4761ed58981d34aa5fc82d0df2091bab890e7dfaa8b";
@@ -1004,7 +1004,6 @@ function runCommand(command, args, signal, toolName) {
         stdout += chunk;
       }
     });
-    // eslint-disable-next-line promise/prefer-await-to-callbacks
     child.once("error", (error) => {
       finish(
         reject,

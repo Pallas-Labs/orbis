@@ -67,6 +67,7 @@ const extrasColumns = (extras: SourceExtras) => ({
 const JsonStringArray = Schema.fromJsonString(
   Schema.mutable(Schema.Array(Schema.String))
 );
+const decodeJsonStringArrayEffect = Schema.decodeUnknownEffect(JsonStringArray);
 
 const TEMPORARY_TITLES: Record<SetSource, string> = {
   "apple-music": "Apple Music mix",
@@ -109,8 +110,7 @@ const toLibraryError = <E>(error: E) =>
 
 const execute = asLibraryError("Could not complete the library request.");
 
-const decodeJsonArray = (value: string) =>
-  Schema.decodeUnknownEffect(JsonStringArray)(value);
+const decodeJsonArray = (value: string) => decodeJsonStringArrayEffect(value);
 
 const normalizeUrl = (value: string) =>
   Effect.try({
@@ -129,6 +129,7 @@ export class Library extends Context.Service<
       input: SaveSetInput
     ) => Effect.Effect<SavedSet, LibraryError>;
     readonly find: (id: string) => Effect.Effect<SavedSet, LibraryError>;
+    readonly findByUrl: (url: string) => Effect.Effect<SavedSet, LibraryError>;
     /** The Sets with these identifiers, in the order asked for. Missing ones are left out. */
     readonly byIds: (
       ids: readonly string[]
@@ -310,8 +311,8 @@ export class Library extends Context.Service<
       const findRow = (id: string) =>
         db.select().from(sets).where(eq(sets.id, id)).limit(1);
 
-      const ensureEntry = (id: string) =>
-        Effect.gen(function* ensureEntryEffect() {
+      const ensureEntry = Effect.fn("Library.ensureEntry")(
+        function* ensureEntryEffect(id: string) {
           const [existing] = yield* entryFor(id);
           if (existing) {
             return existing;
@@ -346,17 +347,19 @@ export class Library extends Context.Service<
             return yield* Effect.fail(databaseError());
           }
           return entry;
-        });
+        }
+      );
 
-      const findSavedSet = (id: string) =>
-        Effect.gen(function* findSavedSetEffect() {
+      const findSavedSet = Effect.fn("Library.findSavedSet")(
+        function* findSavedSetEffect(id: string) {
           yield* ensureEntry(id);
           const [row] = yield* findRow(id);
           if (!row) {
             return yield* Effect.fail(setNotFound());
           }
           return yield* hydrateSet(row);
-        });
+        }
+      );
 
       const save = Effect.fn("Library.save")((input: SaveSetInput) =>
         execute(
@@ -615,6 +618,23 @@ export class Library extends Context.Service<
         execute(resolve(id).pipe(Effect.flatMap((row) => hydrateSet(row))))
       );
 
+      const findByUrl = Effect.fn("Library.findByUrl")((value: string) =>
+        execute(
+          Effect.gen(function* findByUrlEffect() {
+            const { url } = yield* normalizeUrl(value);
+            const [row] = yield* db
+              .select({ id: sets.id })
+              .from(sets)
+              .where(eq(sets.url, url))
+              .limit(1);
+            if (!row) {
+              return yield* Effect.fail(setNotFound());
+            }
+            return yield* find(row.id);
+          })
+        )
+      );
+
       // Queue order comes from the caller; each Set must resolve for this Person.
       const byIds = Effect.fn("Library.byIds")((ids: readonly string[]) =>
         execute(
@@ -812,7 +832,11 @@ export class Library extends Context.Service<
                 yield* tx
                   .delete(downloadJobs)
                   .where(eq(downloadJobs.setId, id));
-                yield* tx.insert(downloadJobs).values({ personId, setId: id });
+                yield* tx.insert(downloadJobs).values({
+                  personId,
+                  queuedAt: new Date().toISOString(),
+                  setId: id,
+                });
                 const [queued] = yield* tx
                   .update(sets)
                   .set({ downloadState: "queued" })
@@ -1432,6 +1456,7 @@ export class Library extends Context.Service<
         deletePlaylist,
         failDownload,
         find,
+        findByUrl,
         finishDownload,
         list,
         playlists: playlistsList,

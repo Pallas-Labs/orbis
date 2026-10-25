@@ -115,7 +115,7 @@ export class Ytdlp extends Context.Service<
             onFailure: () => Effect.logWarning("yt-dlp version unreadable"),
             onSuccess: (ran) =>
               Effect.logInfo("yt-dlp ready").pipe(
-                Effect.annotateLogs({ version: ran.stdout.trim() })
+                Effect.annotateLogs({ ytdlpVersion: ran.stdout.trim() })
               ),
           })
         );

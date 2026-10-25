@@ -18,6 +18,14 @@ struct LaneService {
     self.token = token
   }
 
+  /// The lane's second Person, `lane-settings`, signed in on the runner.
+  static func settingsPerson() throws -> LaneService {
+    guard let token = ProcessInfo.processInfo.environment["ORBIS_UI_TEST_SETTINGS_TOKEN"],
+      !token.isEmpty
+    else { throw XCTSkip("The lane must supply the settings Person") }
+    return try LaneService(tokenOverride: token)
+  }
+
   struct Preferences: Decodable { let autoDownload: Bool }
 
   func autoDownload() throws -> Bool {
@@ -41,6 +49,7 @@ struct LaneService {
     let title: String
     let tags: [String]
     let playbackPositionSeconds: Int
+    let finishCount: Int
   }
 
   struct AudioState: Codable {
@@ -85,12 +94,24 @@ struct LaneService {
     return saved
   }
 
+  func markAudioUnavailable(_ id: String) throws {
+    try seed("unavailable-audio/\(id)")
+  }
+
+  func restoreReadyAudio(_ id: String) throws {
+    try seed("ready-audio/\(id)")
+  }
+
   func finishSlowDownload(_ id: String) throws {
     try seed("finish-download/\(id)")
   }
 
   func seedTracklist(_ id: String) throws {
     try seed("tracklist/\(id)")
+  }
+
+  func seedLateTracklist(_ id: String) throws {
+    try seed("late-tracklist/\(id)")
   }
 
   func audioState(_ id: String) throws -> AudioState {
@@ -217,6 +238,11 @@ struct LaneService {
   /// Adds a Person without a device, for a journey that removes one. Host only.
   func addPerson(_ username: String) throws -> Person {
     try send("POST", "admin/people", ["username": username])
+  }
+
+  /// Turns on Social for this lane's Person, as People's invite does.
+  func turnOnSocial() throws {
+    let _: Preferences = try send("PATCH", "me", ["social": true])
   }
 
   func devices() throws -> [Device] {

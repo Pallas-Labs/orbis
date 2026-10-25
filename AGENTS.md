@@ -26,11 +26,15 @@ The E2E suites are the UI journeys in `apps/apple/OrbisUITests` (`node scripts/n
 
 The Effect source repository is available at `~/.local/share/effect-solutions/effect` for reference. Use it to explore APIs, find usage examples, and understand implementation details when the documentation is not enough.
 
+## Apple documentation
+
+On the Mac, read Xcode's bundled Apple docs first (the `axiom-apple-docs` skill). On Vanta, which has no Xcode, fetch Apple API docs, the Human Interface Guidelines, and WWDC transcripts as Markdown with `bunx @nshipster/sosumi fetch <developer.apple.com path or URL>`, or find a page with `bunx @nshipster/sosumi search "<query>"`.
+
 ## Agent skills
 
 ### Issue tracker
 
-Use GitHub Issues in ParthMmm/orbis. Before reading or publishing specs and tickets, read `docs/agents/issue-tracker.md`.
+Use Linear (team Pallas, project Orbis). Before reading or publishing specs and tickets, read `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
@@ -51,6 +55,14 @@ Three tools, quietest first:
 Before driving a real build by hand, read `docs/agents/ui-verification.md`. It records the traps that cost time or produce a wrong conclusion: choosing the platform and session, ref lifetime, and the system alerts that make a screenshot unusable as evidence.
 
 - If using XcodeBuildMCP, use the installed XcodeBuildMCP skill before calling XcodeBuildMCP tools.
+
+## Gardening
+
+The scheduled gardening run measures the repo with `bun run garden`, which prints one schema-1 JSON record and needs no network or secrets. Add `--with-gate` to also run and time each `bun run check` task, `--out <file>` to save the JSON, and `--compare <previous.json>` to print a Markdown summary of metric changes and new, repeated, and resolved findings. [Gardening sensor](docs/development.md#gardening-sensor) lists what it counts.
+
+- Gardening PRs carry the GitHub label `gardening` and wait for Parth's review. Never merge one yourself.
+- Only one gardening PR may be open at a time.
+- Linear issue PAL-875 ("Gardening buffer") is the loop's memory. Its "Standing feedback" section wins over a run's own judgment.
 
 ## Diagnosing the service on Vanta
 

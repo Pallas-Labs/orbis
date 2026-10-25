@@ -93,12 +93,14 @@ struct SetManagementSection: View {
       .accessibilityIdentifier("detail-remove")
     } label: {
       if style == .inline {
-        // Glass drawn on the label, not by a glass button style, which pads the circle past 44.
+        // A quiet fill, as Now Playing's other controls wear: glass on glass reads as a
+        // second layer floating over the player.
         Label("More", systemImage: "ellipsis")
           .labelStyle(.iconOnly)
           .font(.title3.weight(.semibold))
           .frame(width: 44, height: 44)
-          .glassEffect(.regular.interactive(), in: .circle)
+          .background(.white.opacity(0.12), in: .circle)
+          .contentShape(.circle)
       } else {
         Label("More", systemImage: "ellipsis")
       }
