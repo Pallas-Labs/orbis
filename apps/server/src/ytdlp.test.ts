@@ -7,6 +7,7 @@ import { Effect } from "effect";
 
 import { createTestApp as createApp } from "./test-app.js";
 import { request } from "./test-http.js";
+import { setIn } from "./test-library.js";
 import type { YtdlpRunner } from "./ytdlp.js";
 import { Ytdlp, ytdlpArgs } from "./ytdlp.js";
 
@@ -230,8 +231,7 @@ const orderFor = async (url: string) => {
       payload: { tags: [], title: "Seeded set", url },
       url: "/sets",
     });
-    // SAFETY: the save route returns the stored set including its id.
-    const id = saved.json().id as string;
+    const { id } = setIn(saved);
     await request(app, { method: "POST", url: `/sets/${id}/audio/download` });
     await waitForState(app, id);
     return calls;
@@ -290,8 +290,7 @@ testFfmpeg(
         payload: { tags: [], title: "Seeded set", url: youTubeUrl },
         url: "/sets",
       });
-      // SAFETY: the save route returns the stored set including its id.
-      const id = saved.json().id as string;
+      const { id } = setIn(saved);
       await request(app, { method: "POST", url: `/sets/${id}/audio/download` });
       const state = await waitForState(app, id);
       expect(state).toBe("ready");
