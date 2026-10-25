@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "steps": [
+    "a saved Set has playable audio and three persisted Cues",
+    "Set page shows three Cues; the untimed Cue is not a button",
+    "the latest rapid Cue tap wins and seeks audio to 12 seconds",
+    "a keyboard user can activate a Cue",
+    "Tracklist fits phone width",
+    "a failed Tracklist load can be retried without requesting a new analysis",
+    "text with no tracks shows the API's reason in the dialog",
+    "a pasted tracklist replaces the three Cues with 15 without a reload",
+    "a failed Tracklist offers a working retry action"
+  ]
+}
