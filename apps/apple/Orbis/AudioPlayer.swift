@@ -227,7 +227,8 @@ final class AudioPlayer {
       bufferEmpty: item?.isPlaybackBufferEmpty ?? false,
       bufferFull: item?.isPlaybackBufferFull ?? false,
       likelyToKeepUp: item?.isPlaybackLikelyToKeepUp ?? false,
-      bufferRanges: ranges, access: item?.accessLog()?.events.last.map(diagnosticAccessMetrics))
+      bufferRanges: ranges, access: item?.accessLog()?.events.last.map(diagnosticAccessMetrics),
+      setId: currentSetId)
   }
 
   private func diagnosticState(_ state: PlaybackState) -> PlaybackDiagnostics.PlaybackState {

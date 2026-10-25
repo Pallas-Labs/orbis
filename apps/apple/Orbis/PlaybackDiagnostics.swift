@@ -114,6 +114,7 @@ final class PlaybackDiagnostics {
     var likelyToKeepUp = false
     var bufferRanges: [BufferRange] = []
     var access: AccessMetrics?
+    var setId: String?
   }
 
   struct CommandEvent: Codable, Equatable, Sendable {

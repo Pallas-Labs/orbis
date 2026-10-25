@@ -120,6 +120,7 @@ export class Group extends DurableObject<Environment> {
       playbackDiagnostics: {
         accessClientId: env.SIGNOZ_OTLP_ACCESS_CLIENT_ID ?? "",
         accessClientSecret: env.SIGNOZ_OTLP_ACCESS_CLIENT_SECRET ?? "",
+        environment: "production",
         url: env.SIGNOZ_OTLP_URL ?? "https://otlp.parthm.me/v1/logs",
       },
       playlistImports: { heartbeat: this.alarms.slot("playlist-imports") },

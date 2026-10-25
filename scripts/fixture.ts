@@ -177,6 +177,7 @@ const app = createApp({
       process.env.ORBIS_FIXTURE_SIGNOZ_OTLP_ACCESS_CLIENT_ID ?? "",
     accessClientSecret:
       process.env.ORBIS_FIXTURE_SIGNOZ_OTLP_ACCESS_CLIENT_SECRET ?? "",
+    environment: "development",
     url:
       process.env.ORBIS_FIXTURE_SIGNOZ_OTLP_URL ??
       "https://otlp.parthm.me/v1/logs",
