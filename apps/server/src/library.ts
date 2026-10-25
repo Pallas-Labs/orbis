@@ -8,12 +8,7 @@ import type {
 import { and, asc, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { Context, Effect, Layer, Schema } from "effect";
 
-import {
-  appleMusicCues,
-  appleMusicDownloadRefused,
-  appleMusicSaveRefused,
-  appleMusicSetColumns,
-} from "./apple-music.js";
+import { albumCues, appleMusicDownloadRefused } from "./apple-music.js";
 import { releaseAudio } from "./audio-release.js";
 import { insertBatches } from "./db/batches.js";
 import {
@@ -365,8 +360,6 @@ export class Library extends Context.Service<
         execute(
           Effect.gen(function* saveSetEffect() {
             const { source, url } = yield* normalizeUrl(input.url);
-            const album =
-              source === "apple-music" ? input.appleMusicAlbum : undefined;
             const title = input.title?.trim() ?? "";
             const tags = normalizeTags(input.tags);
             const savedRow = yield* db.transaction((tx) =>
@@ -376,15 +369,6 @@ export class Library extends Context.Service<
                   .from(sets)
                   .where(eq(sets.url, url))
                   .limit(1);
-                // Only the app can read an album, so a save without one needs the Set and its
-                // Tracklist to be here already: a friend saving a mix someone filed.
-                if (
-                  source === "apple-music" &&
-                  !album &&
-                  row?.tracklistState !== "ready"
-                ) {
-                  return yield* Effect.fail(appleMusicSaveRefused());
-                }
                 if (!row) {
                   const [inserted] = yield* tx
                     .insert(sets)
@@ -397,7 +381,6 @@ export class Library extends Context.Service<
                       title: TEMPORARY_TITLES[source],
                       titleEditedByUser: false,
                       url,
-                      ...(album && appleMusicSetColumns(album)),
                     })
                     .onConflictDoNothing()
                     .returning();
@@ -411,21 +394,6 @@ export class Library extends Context.Service<
                 }
                 if (!row) {
                   return yield* Effect.fail(databaseError());
-                }
-                // A new Set, or one whose Cues went when its last saver removed it.
-                if (album && row.tracklistState !== "ready") {
-                  yield* tx.delete(setCues).where(eq(setCues.setId, row.id));
-                  yield* tx
-                    .insert(setCues)
-                    .values(appleMusicCues(row.id, album));
-                  [row] = yield* tx
-                    .update(sets)
-                    .set({ tracklistState: "ready" })
-                    .where(eq(sets.id, row.id))
-                    .returning();
-                  if (!row) {
-                    return yield* Effect.fail(databaseError());
-                  }
                 }
                 if (personId === "host" && row.hostRemoved) {
                   yield* tx
@@ -678,22 +646,36 @@ export class Library extends Context.Service<
         (id: string, metadata: EnrichedMetadata) =>
           execute(
             Effect.gen(function* recordEnrichmentEffect() {
-              const rows = yield* db
-                .update(sets)
-                .set({
-                  artworkLargeUrl: metadata.artworkLargeUrl,
-                  artworkUrl: metadata.artworkUrl,
-                  creator: metadata.creator,
-                  durationSeconds: metadata.durationSeconds,
-                  // A retry that yt-dlp could not answer keeps the details an earlier run stored.
-                  ...(metadata.extras && extrasColumns(metadata.extras)),
-                  metadataState: "enriched",
-                  releasedAt: metadata.releasedAt,
-                  title: metadata.title,
+              const { songs } = metadata;
+              const row = yield* db.transaction((tx) =>
+                Effect.gen(function* recordEnrichmentRows() {
+                  const [updated] = yield* tx
+                    .update(sets)
+                    .set({
+                      artworkLargeUrl: metadata.artworkLargeUrl,
+                      artworkUrl: metadata.artworkUrl,
+                      creator: metadata.creator,
+                      durationSeconds: metadata.durationSeconds,
+                      // A retry that yt-dlp could not answer keeps the details an earlier run stored.
+                      ...(metadata.extras && extrasColumns(metadata.extras)),
+                      // An album's songs are its Tracklist, so the Set needs no later read.
+                      ...(songs && {
+                        detailsState: "filled" as const,
+                        tracklistState: "ready" as const,
+                      }),
+                      metadataState: "enriched",
+                      releasedAt: metadata.releasedAt,
+                      title: metadata.title,
+                    })
+                    .where(eq(sets.id, id))
+                    .returning();
+                  if (updated && songs) {
+                    yield* tx.delete(setCues).where(eq(setCues.setId, id));
+                    yield* tx.insert(setCues).values(albumCues(id, songs));
+                  }
+                  return updated;
                 })
-                .where(eq(sets.id, id))
-                .returning();
-              const [row] = rows;
+              );
               if (!row) {
                 return yield* Effect.fail(setNotFound());
               }

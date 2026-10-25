@@ -1,6 +1,8 @@
 import type { SetSource } from "@orbis/contracts";
 import { Context, Effect, Layer, Option, Schema } from "effect";
 
+import type { AppleMusicCredentials } from "./apple-music-token.js";
+import { appleMusicTokens } from "./apple-music-token.js";
 import { MetadataError } from "./metadata-error.js";
 import { youTubeVideoId, youTubeWatchUrl } from "./source-url.js";
 import type { SourceDetails, YtDlpMetadataService } from "./ytdlp-metadata.js";
@@ -11,6 +13,16 @@ export type SourceExtras = Pick<
   "chapters" | "creatorId" | "creatorUrl" | "description" | "genre" | "tags"
 >;
 
+/** One song of an Apple Music album, in album order. Its length places the next song's Cue. */
+export interface AlbumSong {
+  readonly appleMusicId: string;
+  readonly artist: string;
+  readonly artworkUrl: string | null;
+  /** Null when Apple does not say; every later song then has no known start. */
+  readonly durationSeconds: number | null;
+  readonly title: string;
+}
+
 export interface EnrichedMetadata {
   readonly artworkUrl: string | null;
   readonly artworkLargeUrl: string | null;
@@ -18,6 +30,8 @@ export interface EnrichedMetadata {
   readonly durationSeconds: number | null;
   readonly extras?: SourceExtras;
   readonly releasedAt: string | null;
+  /** An Apple Music album's songs, which are its Tracklist (ADR 0021). */
+  readonly songs?: readonly AlbumSong[];
   readonly title: string;
 }
 
@@ -70,13 +84,21 @@ export interface MetadataService {
 }
 
 export interface MetadataOptions {
+  /** The Host's MusicKit key. Without it Apple Music has no provider. */
+  readonly appleMusic?: AppleMusicCredentials | undefined;
+  /** The catalog country an album is read from. Source Links carry none (ADR 0021). */
+  readonly appleMusicStorefront?: string | undefined;
   readonly fetch?: RequestFetch;
   /** Fills what the provider APIs leave out, and stands in for a YouTube API key that is not set. */
   readonly ytDlp?: YtDlpMetadataService | undefined;
   readonly youTubeApiKey?: string | undefined;
 }
 
-type RequestFetch = (url: string, signal: AbortSignal) => Promise<Response>;
+type RequestFetch = (
+  url: string,
+  signal: AbortSignal,
+  headers?: Readonly<Record<string, string>>
+) => Promise<Response>;
 
 interface Provider {
   readonly enrich: (
@@ -85,6 +107,7 @@ interface Provider {
 }
 
 interface ProviderOptions {
+  readonly headers?: Readonly<Record<string, string>>;
   readonly label: string;
   readonly request: RequestFetch;
 }
@@ -162,7 +185,7 @@ const requestJson = Effect.fn("Metadata.requestJson")(
   ): Effect.fn.Return<S["Type"], MetadataError> {
     const response = yield* Effect.tryPromise({
       catch: () => unavailable(`${options.label} is unreachable.`),
-      try: (signal) => options.request(url, signal),
+      try: (signal) => options.request(url, signal, options.headers),
     });
     if (!response.ok) {
       return yield* Effect.fail(
@@ -422,6 +445,136 @@ const soundCloudProvider = (request: RequestFetch): Provider => ({
   }),
 });
 
+const AppleMusicArtwork = Schema.Struct({ url: Schema.String });
+
+const AppleMusicAlbumResponse = Schema.Struct({
+  data: Schema.Array(
+    Schema.Struct({
+      attributes: Schema.Struct({
+        artistName: Schema.optionalKey(Schema.String),
+        artwork: Schema.optionalKey(AppleMusicArtwork),
+        name: Schema.String,
+        releaseDate: Schema.optionalKey(Schema.String),
+      }),
+      id: Schema.String,
+      relationships: Schema.optionalKey(
+        Schema.Struct({
+          tracks: Schema.Struct({
+            data: Schema.Array(
+              Schema.Struct({
+                attributes: Schema.optionalKey(
+                  Schema.Struct({
+                    artistName: Schema.optionalKey(Schema.String),
+                    artwork: Schema.optionalKey(AppleMusicArtwork),
+                    durationInMillis: Schema.optionalKey(Schema.Number),
+                    name: Schema.String,
+                  })
+                ),
+                id: Schema.String,
+                type: Schema.String,
+              })
+            ),
+          }),
+        })
+      ),
+    })
+  ),
+});
+
+type AppleMusicAlbum = (typeof AppleMusicAlbumResponse.Type)["data"][number];
+
+/** Apple's artwork address is a template with `{w}` and `{h}` for the size to serve. */
+const appleMusicArtwork = (
+  artwork: typeof AppleMusicArtwork.Type | undefined,
+  size: number
+): string | null =>
+  artwork?.url.replace("{w}", String(size)).replace("{h}", String(size)) ??
+  null;
+
+const appleMusicAlbumId = (url: string): string | null =>
+  /^https:\/\/music\.apple\.com\/album\/(?<id>\d+)$/u.exec(url)?.groups?.id ??
+  null;
+
+/** Music videos can sit in an album's track list; only songs make up the mix. */
+const appleMusicSongs = (album: AppleMusicAlbum): AlbumSong[] =>
+  (album.relationships?.tracks.data ?? []).flatMap((track) =>
+    track.type === "songs" && track.attributes
+      ? [
+          {
+            appleMusicId: track.id,
+            artist: track.attributes.artistName?.trim() ?? "",
+            artworkUrl: appleMusicArtwork(track.attributes.artwork, 300),
+            durationSeconds:
+              track.attributes.durationInMillis === undefined
+                ? null
+                : track.attributes.durationInMillis / 1000,
+            title: track.attributes.name.trim(),
+          },
+        ]
+      : []
+  );
+
+const appleMusicMetadata = (album: AppleMusicAlbum): EnrichedMetadata => {
+  const songs = appleMusicSongs(album);
+  const lengths = songs.map((song) => song.durationSeconds);
+  return {
+    artworkLargeUrl: appleMusicArtwork(album.attributes.artwork, 1200),
+    artworkUrl: appleMusicArtwork(album.attributes.artwork, 300),
+    creator: album.attributes.artistName?.trim() || null,
+    durationSeconds: lengths.every((length) => length !== null)
+      ? Math.round(lengths.reduce((total, length) => total + length, 0))
+      : null,
+    releasedAt: album.attributes.releaseDate ?? null,
+    songs,
+    title: album.attributes.name.trim(),
+  };
+};
+
+const appleMusicProvider = (
+  credentials: AppleMusicCredentials,
+  storefront: string,
+  request: RequestFetch
+): Provider => {
+  const token = appleMusicTokens(credentials);
+  return {
+    enrich: Effect.fn("Metadata.enrich")(function* enrichAppleMusic(url) {
+      const albumId = appleMusicAlbumId(url);
+      if (!albumId) {
+        return yield* Effect.fail(
+          unsupported("This URL does not name an Apple Music album.")
+        );
+      }
+      const developerToken = yield* token().pipe(
+        Effect.mapError(() =>
+          notConfigured("The Apple Music key could not sign a token.")
+        )
+      );
+      const response = yield* requestJson(
+        `https://api.music.apple.com/v1/catalog/${encodeURIComponent(storefront)}/albums/${albumId}?include=tracks`,
+        AppleMusicAlbumResponse,
+        {
+          headers: { authorization: `Bearer ${developerToken}` },
+          label: "Apple Music",
+          request,
+        }
+      );
+      const [album] = response.data;
+      if (!album) {
+        return yield* Effect.fail(
+          rejected("Apple Music does not have this album.")
+        );
+      }
+      const metadata = appleMusicMetadata(album);
+      if (!metadata.title || metadata.songs?.length === 0) {
+        return yield* Effect.fail(
+          unexpected("Apple Music returned an album without a title or songs.")
+        );
+      }
+      return metadata;
+    }),
+  };
+};
+
 const enrichedFromDetails = (details: SourceDetails): EnrichedMetadata => ({
   artworkLargeUrl: details.thumbnailUrl,
   artworkUrl: details.thumbnailUrl,
@@ -486,10 +639,20 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
   "@orbis/Metadata"
 ) {
   static layer(options: MetadataOptions = {}): Layer.Layer<Metadata> {
-    const request = options.fetch ?? ((url, signal) => fetch(url, { signal }));
+    const request: RequestFetch =
+      options.fetch ??
+      ((url, signal, headers) =>
+        fetch(url, headers ? { headers, signal } : { signal }));
     const providers: Partial<Record<SetSource, Provider>> = {
       soundcloud: soundCloudProvider(request),
     };
+    if (options.appleMusic) {
+      providers["apple-music"] = appleMusicProvider(
+        options.appleMusic,
+        options.appleMusicStorefront ?? "us",
+        request
+      );
+    }
     if (options.youTubeApiKey) {
       providers.youtube = youTubeProvider(options.youTubeApiKey, request);
     }
@@ -498,13 +661,18 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
       Metadata,
       Metadata.of({
         details: Effect.fn("Metadata.details")((input: EnrichInput) =>
-          ytDlp ? ytDlp.read(input.url) : noProviders.details(input)
+          ytDlp && input.source !== "apple-music"
+            ? ytDlp.read(input.url)
+            : noProviders.details(input)
         ),
         enrich: Effect.fn("Metadata.enrich")((input: EnrichInput) => {
           const provider =
             providers[input.source]?.enrich(input.url) ??
             noProviders.enrich(input);
-          return ytDlp ? orYtDlp(provider, ytDlp, input.url) : provider;
+          // yt-dlp cannot read the Apple Music catalog, so an Apple Music miss stays a miss.
+          return ytDlp && input.source !== "apple-music"
+            ? orYtDlp(provider, ytDlp, input.url)
+            : provider;
         }),
         playlist: Effect.fn("Metadata.playlist")((playlistId: string) =>
           youTubeApiKey

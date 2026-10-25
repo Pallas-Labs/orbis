@@ -572,9 +572,12 @@ export const createPortableApp = (options: {
         enriched: EnrichedMetadata
       ) =>
         library.recordEnrichment(set.id, enriched).pipe(
-          Effect.tap(() =>
-            enriched.extras ? startTracklist(set.id) : fillDetails(set)
-          ),
+          Effect.tap(() => {
+            if (enriched.songs) {
+              return Effect.void;
+            }
+            return enriched.extras ? startTracklist(set.id) : fillDetails(set);
+          }),
           Effect.flatMap(() => personal.find(set.id))
         );
       // Enrichment failure is swallowed so the save still succeeds, so it is the
@@ -587,11 +590,19 @@ export const createPortableApp = (options: {
           Effect.logWarning("set metadata enrichment failed").pipe(
             Effect.annotateLogs({ reason: error.reason, set: set.id }),
             Effect.andThen(library.recordEnrichmentFailure(set.id)),
-            Effect.tap(() => fillDetails(set)),
+            // yt-dlp and Versos cannot read Apple Music; a retry reads the album again.
+            Effect.tap(() =>
+              set.source === "apple-music" ? Effect.void : fillDetails(set)
+            ),
             Effect.flatMap(() => personal.find(set.id))
           );
         return metadata.enrich({ source: set.source, url: set.url }).pipe(
-          Effect.flatMap((enriched) => reviseTitle(set, enriched)),
+          // Apple names its albums cleanly; there is no upload title to tidy.
+          Effect.flatMap((enriched) =>
+            set.source === "apple-music"
+              ? Effect.succeed(enriched)
+              : reviseTitle(set, enriched)
+          ),
           Effect.flatMap((enriched) => recordMetadata(set, personal, enriched)),
           Effect.catchTag("MetadataError", onMetadataFailure)
         );
@@ -816,9 +827,6 @@ export const createPortableApp = (options: {
                 const caller = yield* SetCaller;
                 const personal = yield* Library;
                 const saved = yield* personal.save({
-                  ...(input.appleMusicAlbum && {
-                    appleMusicAlbum: input.appleMusicAlbum,
-                  }),
                   tags: [...(input.tags ?? [])],
                   title: input.title ?? "",
                   url,
@@ -826,13 +834,18 @@ export const createPortableApp = (options: {
                 yield* Effect.logInfo("set saved").pipe(
                   Effect.annotateLogs({ set: saved.id, source: saved.source })
                 );
-                // The app sent the album and its songs; there is nothing to read or ask.
-                if (saved.source === "apple-music") {
-                  return yield* autoDownloadSaved(saved);
+                // An Apple Music read brings the Tracklist with it, so a Set that has one needs
+                // no read, and one that lost it (its last saver removed it) reads the album again.
+                if (
+                  saved.source === "apple-music" &&
+                  saved.tracklistState === "ready"
+                ) {
+                  return yield* autoDownloadSaved(saved, caller.person);
                 }
                 if (
-                  saved.titleEditedByUser ||
-                  saved.metadataState === "enriched"
+                  saved.source !== "apple-music" &&
+                  (saved.titleEditedByUser ||
+                    saved.metadataState === "enriched")
                 ) {
                   yield* fillDetails(saved);
                   return yield* autoDownloadSaved(saved, caller.person);
@@ -851,10 +864,6 @@ export const createPortableApp = (options: {
               Effect.gen(function* retrySetMetadata() {
                 const personal = yield* Library;
                 const set = yield* personal.find(params.id);
-                // Only the app can read an Apple Music album, so a retry keeps what it sent.
-                if (set.source === "apple-music") {
-                  return set;
-                }
                 return yield* enrichSavedSet(set, personal);
               }).pipe(Effect.tap(() => announce("set", readsSet(params.id))))
             )
@@ -875,7 +884,9 @@ export const createPortableApp = (options: {
               Effect.gen(function* retrySetTracklist() {
                 const personal = yield* Library;
                 const saved = yield* personal.find(params.id);
+                // An Apple Music Tracklist is the album's songs, so the retry reads the album.
                 if (saved.source === "apple-music") {
+                  yield* enrichSavedSet(saved, personal);
                   return yield* readTracklist(params.id).pipe(
                     Effect.provideService(Database, db)
                   );

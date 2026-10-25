@@ -1,19 +1,5 @@
-import type { AppleMusicAlbumPayload } from "@orbis/contracts/http-api";
-
 import { LibraryError } from "./errors.js";
-
-type AppleMusicAlbum = typeof AppleMusicAlbumPayload.Type;
-
-/**
- * The service holds no Apple Music key (ADR 0021), so the album details arrive with the save
- * from the Apple app. A save without them is refused unless Orbis already holds the album with
- * its Tracklist, so an Apple Music Set never exists without one.
- */
-export const appleMusicSaveRefused = () =>
-  new LibraryError({
-    message: "Save Apple Music mixes from the Orbis app on an iPhone or Mac.",
-    statusCode: 400,
-  });
+import type { AlbumSong } from "./metadata.js";
 
 export const appleMusicDownloadRefused = () =>
   new LibraryError({
@@ -23,45 +9,26 @@ export const appleMusicDownloadRefused = () =>
   });
 
 /**
- * Where each song starts in the mix, in whole seconds. The running total is kept unrounded and
- * each start is rounded on its own, so rounding never accumulates across a long mix.
+ * One Cue per song, in album order, starting at the sum of the lengths before it. The running
+ * total is kept unrounded and each start is rounded on its own, so rounding never accumulates
+ * across a long mix. After a song Apple gives no length for, no later start is known.
  */
-const songStarts = (album: AppleMusicAlbum): number[] => {
-  let elapsed = 0;
-  return album.songs.map((song) => {
-    const startedAt = Math.round(elapsed);
-    elapsed += song.durationSeconds;
-    return startedAt;
+export const albumCues = (setId: string, songs: readonly AlbumSong[]) => {
+  let elapsed: number | null = 0;
+  return songs.map((song, position) => {
+    const startSeconds = elapsed === null ? null : Math.round(elapsed);
+    elapsed =
+      elapsed === null || song.durationSeconds === null
+        ? null
+        : elapsed + song.durationSeconds;
+    return {
+      appleMusicId: song.appleMusicId,
+      artist: song.artist,
+      artworkUrl: song.artworkUrl,
+      position,
+      setId,
+      startSeconds,
+      title: song.title,
+    };
   });
-};
-
-const mixLength = (album: AppleMusicAlbum): number =>
-  Math.round(
-    album.songs.reduce((total, song) => total + song.durationSeconds, 0)
-  );
-
-/** The shared Set's columns for a new Apple Music Set: its metadata and details are complete. */
-export const appleMusicSetColumns = (album: AppleMusicAlbum) => ({
-  artworkLargeUrl: album.artworkLargeUrl,
-  artworkUrl: album.artworkUrl,
-  creator: album.creator?.trim() || null,
-  detailsState: "filled" as const,
-  durationSeconds: mixLength(album),
-  metadataState: "enriched" as const,
-  releasedAt: album.releasedAt,
-  title: album.title.trim(),
-});
-
-/** One Cue per song, in album order. */
-export const appleMusicCues = (setId: string, album: AppleMusicAlbum) => {
-  const starts = songStarts(album);
-  return album.songs.map((song, position) => ({
-    appleMusicId: song.appleMusicId,
-    artist: song.artist.trim(),
-    artworkUrl: song.artworkUrl,
-    position,
-    setId,
-    startSeconds: starts[position] ?? null,
-    title: song.title.trim(),
-  }));
 };

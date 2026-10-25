@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { ne } from "drizzle-orm";
+import { and, ne } from "drizzle-orm";
 import { Duration, Effect, Layer, Result } from "effect";
 
 import { Database, layer as databaseLayer } from "./db/database.js";
@@ -29,7 +29,10 @@ export const backfillDetails = Effect.fn("backfillDetails")(
     const rows = yield* db
       .select({ id: sets.id, source: sets.source, url: sets.url })
       .from(sets)
-      .where(ne(sets.detailsState, "filled"));
+      // yt-dlp cannot read Apple Music; its album read fills those Sets (ADR 0021).
+      .where(
+        and(ne(sets.detailsState, "filled"), ne(sets.source, "apple-music"))
+      );
 
     const results: Result.Result<void, unknown>[] = [];
     for (const [index, row] of rows.entries()) {

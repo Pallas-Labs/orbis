@@ -104,6 +104,16 @@ export class Group extends DurableObject<Environment> {
       database,
       logging: this.logging,
       metadata: Metadata.layer({
+        appleMusic:
+          env.APPLE_MUSIC_TEAM_ID &&
+          env.APPLE_MUSIC_KEY_ID &&
+          env.APPLE_MUSIC_PRIVATE_KEY
+            ? {
+                keyId: env.APPLE_MUSIC_KEY_ID,
+                privateKey: env.APPLE_MUSIC_PRIVATE_KEY,
+                teamId: env.APPLE_MUSIC_TEAM_ID,
+              }
+            : undefined,
         youTubeApiKey: env.YOUTUBE_API_KEY,
         ytDlp: { read: this.node.readDetails },
       }),

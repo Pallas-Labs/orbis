@@ -8,6 +8,9 @@ import * as Redacted from "effect/Redacted";
 const ORBIS_API_URL = "https://orbis.p11a.xyz/api";
 
 const SECRETS = [
+  "APPLE_MUSIC_KEY_ID",
+  "APPLE_MUSIC_PRIVATE_KEY",
+  "APPLE_MUSIC_TEAM_ID",
   "IMPORT_NODE_KEY_DIGEST",
   "OPENROUTER_API_KEY",
   "STREAM_GRANT_SECRET",
