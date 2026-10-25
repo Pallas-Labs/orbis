@@ -240,6 +240,14 @@ final class PlaybackUITests: LibraryJourney {
     XCTAssertTrue(refresh.waitForExistence(timeout: 10))
     XCTAssertTrue(app.buttons["cue-1"].exists)
     capture("tracklist-after-refresh")
+
+    // While Versos scans, the page keeps the Cues and says it is looking.
+    try service.holdTracklistRun(seeded.id)
+    refresh.tap()
+    XCTAssertTrue(pending.waitForExistence(timeout: 10))
+    XCTAssertTrue(app.buttons["cue-1"].exists)
+    XCTAssertFalse(refresh.exists)
+    capture("tracklist-refreshing")
   }
 
   func testAColdCueNearTheEndStartsAtItsTimestamp() throws {

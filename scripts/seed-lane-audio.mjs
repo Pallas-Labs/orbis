@@ -325,6 +325,38 @@ const routeDiagnostics = async (route, request, response) => {
   }
 };
 
+const seedTracklist = (action, setId) => {
+  if (action === "running-tracklist") {
+    // A run that holds its lease, as one does while Versos scans, so a refresh starts
+    // nothing and the Set stays pending with its Cues.
+    db.query(
+      "UPDATE sets SET tracklist_state = 'pending', tracklist_run_id = 'lane-run', tracklist_run_started_at = ? WHERE id = ?"
+    ).run(new Date().toISOString(), setId);
+    return true;
+  }
+  if (action !== "tracklist" && action !== "late-tracklist") {
+    return false;
+  }
+  db.transaction(() => {
+    db.query(
+      "UPDATE sets SET tracklist_state = 'ready', tracklist_run_id = NULL, tracklist_run_started_at = NULL WHERE id = ?"
+    ).run(setId);
+    const insert = db.query(
+      "INSERT INTO set_cues (set_id, position, start_seconds, artist, title, apple_music_id, artwork_url) VALUES (?, ?, ?, ?, ?, NULL, NULL)"
+    );
+    insert.run(setId, 0, 0, "First Artist", "First Cue");
+    insert.run(
+      setId,
+      1,
+      action === "late-tracklist" ? 26 : 12,
+      "Second Artist",
+      "Second Cue"
+    );
+    insert.run(setId, 2, null, "Untimed Artist", "Untimed Cue");
+  })();
+  return true;
+};
+
 createServer(async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
   if (await routeDiagnostics(route, request, response)) {
@@ -344,7 +376,7 @@ createServer(async (request, response) => {
       : respond(response, 404);
   }
   const match =
-    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
+    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist|running-tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
       route
     );
   if (!match?.groups) {
@@ -388,29 +420,10 @@ createServer(async (request, response) => {
       ).run(statSync(fixture).size, setId);
       break;
     }
-    case "tracklist":
-    case "late-tracklist": {
-      db.transaction(() => {
-        db.query(
-          "UPDATE sets SET tracklist_state = 'ready', tracklist_run_id = NULL, tracklist_run_started_at = NULL WHERE id = ?"
-        ).run(setId);
-        const insert = db.query(
-          "INSERT INTO set_cues (set_id, position, start_seconds, artist, title, apple_music_id, artwork_url) VALUES (?, ?, ?, ?, ?, NULL, NULL)"
-        );
-        insert.run(setId, 0, 0, "First Artist", "First Cue");
-        insert.run(
-          setId,
-          1,
-          action === "late-tracklist" ? 26 : 12,
-          "Second Artist",
-          "Second Cue"
-        );
-        insert.run(setId, 2, null, "Untimed Artist", "Untimed Cue");
-      })();
-      break;
-    }
     default: {
-      return respond(response, 404);
+      if (!seedTracklist(action, setId)) {
+        return respond(response, 404);
+      }
     }
   }
   return respond(response, 204);
