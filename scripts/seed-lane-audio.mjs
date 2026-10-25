@@ -325,38 +325,6 @@ const routeDiagnostics = async (route, request, response) => {
   }
 };
 
-// What the Apple Music provider writes for a read album (ADR 0021): the length is the sum of the
-// song lengths, and each song is a Cue that starts where the songs before it end. The lane has no
-// MusicKit key, so the save left the metadata failed and no Tracklist.
-const seedAppleMusicAlbum = (setId) => {
-  const songs = [
-    ["First Artist", "Opening (Mixed)", "1440818840", 200.5],
-    ["Second Artist", "Middle (Mixed)", "1440818841", 310.25],
-    ["Third Artist", "Closing (Mixed)", "1440818842", 189.125],
-  ];
-  db.transaction(() => {
-    db.query(
-      "UPDATE sets SET duration_seconds = ?, tracklist_state = 'ready', tracklist_run_id = NULL, tracklist_run_started_at = NULL WHERE id = ?"
-    ).run(Math.round(songs.reduce((sum, song) => sum + song[3], 0)), setId);
-    const insert = db.query(
-      "INSERT INTO set_cues (set_id, position, start_seconds, artist, title, apple_music_id, artwork_url) VALUES (?, ?, ?, ?, ?, ?, NULL)"
-    );
-    let start = 0;
-    for (const [position, [artist, title, songId, length]] of songs.entries()) {
-      insert.run(setId, position, start, artist, title, songId);
-      start += length;
-    }
-  })();
-};
-
-// The seed actions that only change state and always succeed.
-const seeds = {
-  "apple-music-album": seedAppleMusicAlbum,
-  "slow-download": (setId, set) => slowSets.set(set.url, setId),
-  "unavailable-audio": (setId) =>
-    rmSync(path.join(audioDirectory, `${setId}.m4a`), { force: true }),
-};
-
 createServer(async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
   if (await routeDiagnostics(route, request, response)) {
@@ -376,7 +344,7 @@ createServer(async (request, response) => {
       : respond(response, 404);
   }
   const match =
-    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist|apple-music-album)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
+    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
       route
     );
   if (!match?.groups) {
@@ -395,12 +363,15 @@ createServer(async (request, response) => {
   if (request.method !== "POST") {
     return respond(response, 404);
   }
-  const seed = seeds[action];
-  if (seed) {
-    seed(setId, set);
-    return respond(response, 204);
-  }
   switch (action) {
+    case "unavailable-audio": {
+      rmSync(path.join(audioDirectory, `${setId}.m4a`), { force: true });
+      break;
+    }
+    case "slow-download": {
+      slowSets.set(set.url, setId);
+      break;
+    }
     case "finish-download": {
       const download = downloads.get(setId);
       if (!download) {

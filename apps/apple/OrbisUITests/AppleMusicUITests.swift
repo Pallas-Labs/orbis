@@ -105,7 +105,7 @@ final class AppleMusicUITests: LibraryJourney {
     XCTAssertTrue(
       thirdSong.waitForExistence(timeout: 30),
       "the page shows the album's songs as the Tracklist\n\(app.debugDescription)")
-    capture("apple-music-01-set-page")
+    capture("apple-music-play-01-set-page")
 
     play.tap()
     // The system asks for Apple Music access. The answer is no, as for a Person who refuses; a
@@ -117,7 +117,7 @@ final class AppleMusicUITests: LibraryJourney {
     var asked = false
     if refuse.waitForExistence(timeout: 15) {
       asked = true
-      capture("apple-music-02-access-prompt")
+      capture("apple-music-play-02-access-prompt")
       refuse.tap()
     }
 
@@ -128,7 +128,7 @@ final class AppleMusicUITests: LibraryJourney {
     XCTAssertFalse(play.exists, "without access the page offers no Play")
     XCTAssertTrue(app.staticTexts["detail-apple-music-note"].exists, "the page says why")
     XCTAssertTrue(thirdSong.exists, "the Tracklist stays on the page")
-    capture("apple-music-03-open-in-apple-music")
+    capture("apple-music-play-03-open-in-apple-music")
     try record("apple-music-journey", ["setId": seeded.id, "askedForAccess": asked])
   }
 }
