@@ -1,0 +1,16 @@
+{
+  "body": {
+    "errors": [
+      {
+        "id": "BU2X7QV4CCUXE6O55U7HJ52L4E",
+        "title": "Resource Not Found",
+        "detail": "Resource with requested id was not found",
+        "status": "404",
+        "code": "40400"
+      }
+    ]
+  },
+  "recordedAt": "2026-10-25T01:00:41.954Z",
+  "status": 404,
+  "url": "https://api.music.apple.com/v1/catalog/us/albums/1016775152?include=tracks"
+}

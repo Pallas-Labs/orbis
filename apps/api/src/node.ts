@@ -231,7 +231,8 @@ export class GroupAudioNode {
     const next = await this.runtime.runPromise(
       Library.pipe(Effect.flatMap((library) => library.claimDownload()))
     );
-    if (!next) {
+    // An Apple Music Set is never queued (ADR 0021), so this only narrows the source.
+    if (!next || next.source === "apple-music") {
       return;
     }
     const requestId = crypto.randomUUID();

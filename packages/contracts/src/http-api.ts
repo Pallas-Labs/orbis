@@ -60,7 +60,7 @@ export const SavedSetSchema = Schema.Struct({
   releasedAt: Schema.NullOr(Schema.String),
   retainedAudioBytes: Schema.NullOr(Schema.Number),
   retainedAudioFormat: Schema.NullOr(Schema.String),
-  source: Schema.Literals(["youtube", "soundcloud"]),
+  source: Schema.Literals(["youtube", "soundcloud", "apple-music"]),
   tags: Schema.Array(Schema.String).pipe(Schema.mutable),
   title: Schema.String,
   titleEditedByUser: Schema.Boolean,
@@ -89,7 +89,9 @@ export const LibraryFiltersSchema = Schema.Struct({
   creatorId: Schema.optionalKey(Schema.String),
   playlistId: Schema.optionalKey(Schema.String),
   q: Schema.optionalKey(Schema.String),
-  source: Schema.optionalKey(Schema.Literals(["youtube", "soundcloud"])),
+  source: Schema.optionalKey(
+    Schema.Literals(["youtube", "soundcloud", "apple-music"])
+  ),
   tags: Schema.optionalKey(Schema.Array(Schema.String).pipe(Schema.mutable)),
 });
 
@@ -462,6 +464,7 @@ export const SetsApi = HttpApi.make("orbis").add(
       }),
       HttpApiEndpoint.post("requestDownload", "/sets/:id/audio/download", {
         error: [
+          BadRequest,
           NotFound,
           Conflict,
           TooManyRequests,

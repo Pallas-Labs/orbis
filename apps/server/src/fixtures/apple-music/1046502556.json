@@ -1,0 +1,776 @@
+{
+  "body": {
+    "data": [
+      {
+        "id": "1046502556",
+        "type": "albums",
+        "href": "/v1/catalog/us/albums/1046502556",
+        "attributes": {
+          "artistName": "Seth Troxler",
+          "artwork": {
+            "bgColor": "8eafb6",
+            "height": 1448,
+            "textColor1": "160f0d",
+            "textColor2": "261a13",
+            "textColor3": "2e2f2f",
+            "textColor4": "3a3734",
+            "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+            "width": 1448
+          },
+          "copyright": "℗ 2015 !K7 Records",
+          "genreNames": [
+            "Electronica",
+            "Music",
+            "Electronic",
+            "Dance",
+            "House",
+            "Rock"
+          ],
+          "isCompilation": true,
+          "isComplete": true,
+          "isMasteredForItunes": false,
+          "isSingle": false,
+          "name": "DJ-Kicks (DJ Mix)",
+          "playParams": {
+            "id": "1046502556",
+            "kind": "album"
+          },
+          "recordLabel": "!K7 Records",
+          "releaseDate": "2015-10-16",
+          "trackCount": 18,
+          "upc": "0730003732423",
+          "url": "https://music.apple.com/us/album/dj-kicks-dj-mix/1046502556"
+        },
+        "relationships": {
+          "artists": {
+            "href": "/v1/catalog/us/albums/1046502556/artists",
+            "data": [
+              {
+                "id": "156867690",
+                "type": "artists",
+                "href": "/v1/catalog/us/artists/156867690"
+              }
+            ]
+          },
+          "tracks": {
+            "href": "/v1/catalog/us/albums/1046502556/tracks",
+            "data": [
+              {
+                "id": "1046502558",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502558",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Niki Nakazawa",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Niki Nakazawa",
+                  "discNumber": 1,
+                  "durationInMillis": 181493,
+                  "genreNames": ["Singer/Songwriter", "Music", "Rock"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591385",
+                  "name": "Would It Be (Mixed)",
+                  "playParams": {
+                    "id": "1046502558",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/7b/4e/81/7b4e81ca-9d2b-b806-1812-9bea6554b6fc/mzaf_5858488972141411787.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 1,
+                  "url": "https://music.apple.com/us/album/would-it-be-mixed/1046502556?i=1046502558"
+                }
+              },
+              {
+                "id": "1046502562",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502562",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Matthew Herbert",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "attribution": "Matthew Herbert",
+                  "composerName": "Matthew Herbert",
+                  "discNumber": 1,
+                  "durationInMillis": 193453,
+                  "genreNames": [
+                    "Classical",
+                    "Music",
+                    "Electronic",
+                    "Downtempo"
+                  ],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591386",
+                  "name": "Suddenly (Phil Parnell's Pianissimo Play Through) [Mixed]",
+                  "playParams": {
+                    "id": "1046502562",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/82/c1/e2/82c1e24c-9e9b-4249-809c-ab1177e36200/mzaf_17746545096545359386.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 2,
+                  "url": "https://music.apple.com/us/album/suddenly-phil-parnells-pianissimo-play-through-mixed/1046502556?i=1046502562"
+                }
+              },
+              {
+                "id": "1046502567",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502567",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "DJ Koze",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "attribution": "Stefan Kozalla",
+                  "composerName": "Stefan Kozalla",
+                  "discNumber": 1,
+                  "durationInMillis": 235267,
+                  "genreNames": ["Classical", "Music", "Dance", "House"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591387",
+                  "name": "Bodenweich (Mixed)",
+                  "playParams": {
+                    "id": "1046502567",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/82/41/98/82419827-ce38-a1a4-6db4-3c8978ecfdf7/mzaf_7065565639201982588.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 3,
+                  "url": "https://music.apple.com/us/album/bodenweich-mixed/1046502556?i=1046502567"
+                }
+              },
+              {
+                "id": "1046502568",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502568",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Cobblestone Jazz",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Mathew Jonson, Tyger Dhula & Danuel Tate",
+                  "discNumber": 1,
+                  "durationInMillis": 431733,
+                  "genreNames": ["Techno", "Music", "Dance", "House"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591388",
+                  "name": "Northern Lights (Mixed)",
+                  "playParams": {
+                    "id": "1046502568",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/ca/55/92/ca55926b-e9ad-858f-c63f-d577026cf7c4/mzaf_6063234800375261709.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 4,
+                  "url": "https://music.apple.com/us/album/northern-lights-mixed/1046502556?i=1046502568"
+                }
+              },
+              {
+                "id": "1046502569",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502569",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Wolfgang Haffner",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Wolfgang Haffner",
+                  "discNumber": 1,
+                  "durationInMillis": 240867,
+                  "genreNames": ["Techno", "Music", "Dance", "Jazz"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591389",
+                  "name": "Melodia Del Viento (Ricardo Villalobos & Max Loderbauer Meloopdia Remix) [Mixed]",
+                  "playParams": {
+                    "id": "1046502569",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/a8/fd/be/a8fdbe5a-79c0-e1ae-822b-795154c31593/mzaf_1600194612774141989.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 5,
+                  "url": "https://music.apple.com/us/album/melodia-del-viento-ricardo-villalobos-max-loderbauer/1046502556?i=1046502569"
+                }
+              },
+              {
+                "id": "1046502844",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502844",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Seth Troxler, Tom Trago & T&T Music Factory",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Seth Troxler & Tom Trago",
+                  "discNumber": 1,
+                  "durationInMillis": 347787,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931500761",
+                  "name": "De Natte Cel (DJ-Kicks) [Mixed]",
+                  "playParams": {
+                    "id": "1046502844",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/85/46/66/8546661c-f2cd-808c-1455-4b4e9f5a8072/mzaf_13247545037163789339.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 6,
+                  "url": "https://music.apple.com/us/album/de-natte-cel-dj-kicks-mixed/1046502556?i=1046502844"
+                }
+              },
+              {
+                "id": "1046502893",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502893",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Hauke Freer",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "H. Freer",
+                  "discNumber": 1,
+                  "durationInMillis": 282173,
+                  "genreNames": ["Dance", "Music", "R&B/Soul", "Soul"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591390",
+                  "name": "XK (Mixed)",
+                  "playParams": {
+                    "id": "1046502893",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/87/b5/45/87b545fa-243f-e396-0fad-65478659daa2/mzaf_123474571531307101.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 7,
+                  "url": "https://music.apple.com/us/album/xk-mixed/1046502556?i=1046502893"
+                }
+              },
+              {
+                "id": "1046502897",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502897",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Butch",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Bülent \"BUTCH\" Gürler",
+                  "discNumber": 1,
+                  "durationInMillis": 349160,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591391",
+                  "name": "Dope (Mixed)",
+                  "playParams": {
+                    "id": "1046502897",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/f8/f4/0b/f8f40be2-dc40-ac98-f897-7d4d48e199bb/mzaf_17870004625408526171.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 8,
+                  "url": "https://music.apple.com/us/album/dope-mixed/1046502556?i=1046502897"
+                }
+              },
+              {
+                "id": "1046502898",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502898",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Session Victim",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Hauke Freer & Matthias Reiling",
+                  "discNumber": 1,
+                  "durationInMillis": 254893,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591392",
+                  "name": "Stick Together (Mixed)",
+                  "playParams": {
+                    "id": "1046502898",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/1b/b9/67/1bb967ef-834a-73bc-f290-09456e4f31be/mzaf_13883810185127170554.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 9,
+                  "url": "https://music.apple.com/us/album/stick-together-mixed/1046502556?i=1046502898"
+                }
+              },
+              {
+                "id": "1046502899",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502899",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Club Artists United",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "LZ Love, Gerideau, Booker T, Shawn B., Erick b. & Booker T.",
+                  "discNumber": 1,
+                  "durationInMillis": 254533,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591393",
+                  "name": "Sweet Chariot (Kerri \"Kaoz 6:23\" Chandler Dramatic Dub) [Mixed]",
+                  "playParams": {
+                    "id": "1046502899",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/96/46/56/96465685-50da-1bc0-8fd7-b0bd5d8f6df2/mzaf_18002038393248527927.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 10,
+                  "url": "https://music.apple.com/us/album/sweet-chariot-kerri-kaoz-6-23-chandler-dramatic-dub-mixed/1046502556?i=1046502899"
+                }
+              },
+              {
+                "id": "1046502900",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502900",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Jasper St Company",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Tracy Hamlin, Vonita White, Thomas Roberts Jr., Teddy Douglas, Sean Spencer, Hozay Clowney, Chris Clayton & Thomas Davis",
+                  "discNumber": 1,
+                  "durationInMillis": 356947,
+                  "genreNames": ["House", "Music", "Dance", "R&B/Soul", "Soul"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591394",
+                  "name": "Reach (Basement Sessions Main Vocal Mix) [Mixed]",
+                  "playParams": {
+                    "id": "1046502900",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/68/df/84/68df8418-7c4f-6345-2fd5-66aa3fb93246/mzaf_1338091942909866772.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 11,
+                  "url": "https://music.apple.com/us/album/reach-basement-sessions-main-vocal-mix-mixed/1046502556?i=1046502900"
+                }
+              },
+              {
+                "id": "1046502902",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502902",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "K-Alexi",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "K.A. Shelby",
+                  "discNumber": 1,
+                  "durationInMillis": 138707,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591395",
+                  "name": "Sex-N-R-001 (Vocal Mixx) [Mixed]",
+                  "playParams": {
+                    "id": "1046502902",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/30/ab/f4/30abf4ac-b23d-6f8a-2268-02ff72ae5568/mzaf_2434484986029839543.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 12,
+                  "url": "https://music.apple.com/us/album/sex-n-r-001-vocal-mixx-mixed/1046502556?i=1046502902"
+                }
+              },
+              {
+                "id": "1046502903",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502903",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Mood II Swing",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "John Ciafone",
+                  "discNumber": 1,
+                  "durationInMillis": 286587,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591396",
+                  "name": "Ohh (Mixed) [feat. John Ciafone]",
+                  "playParams": {
+                    "id": "1046502903",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/e0/2e/cc/e02ecc27-f7b6-549e-f0be-dd2df4ab08ba/mzaf_8191221011685913109.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 13,
+                  "url": "https://music.apple.com/us/album/ohh-mixed-feat-john-ciafone/1046502556?i=1046502903"
+                }
+              },
+              {
+                "id": "1046502904",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502904",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Derrick L. Carter",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Derrick L. Carter & Cajmere",
+                  "discNumber": 1,
+                  "durationInMillis": 334000,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591397",
+                  "name": "Dreaming Again (Mixed)",
+                  "playParams": {
+                    "id": "1046502904",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/a6/18/29/a618291b-f7f8-8ef9-3f8e-959074bba599/mzaf_5082738140511371671.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 14,
+                  "url": "https://music.apple.com/us/album/dreaming-again-mixed/1046502556?i=1046502904"
+                }
+              },
+              {
+                "id": "1046502965",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502965",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Byron Stingily",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Byron Stingily & Danny Tenaglia",
+                  "discNumber": 1,
+                  "durationInMillis": 222107,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591398",
+                  "name": "Why Can't You Be Real (Danny's 12\" Version) [Mixed]",
+                  "playParams": {
+                    "id": "1046502965",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/d1/ce/f3/d1cef382-ec46-10ba-107b-cff01ccb9516/mzaf_1254462185576737174.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 15,
+                  "url": "https://music.apple.com/us/album/why-cant-you-be-real-dannys-12-version-mixed/1046502556?i=1046502965"
+                }
+              },
+              {
+                "id": "1046502966",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502966",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Vanessa McMillian",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Vanessa McMillian",
+                  "discNumber": 1,
+                  "durationInMillis": 285373,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591399",
+                  "name": "Stay With Me (Kevin O Remix)",
+                  "playParams": {
+                    "id": "1046502966",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/6e/3a/38/6e3a38e3-c1ed-b8e6-982b-491541c21ad2/mzaf_4525287797937083433.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 16,
+                  "url": "https://music.apple.com/us/album/stay-with-me-kevin-o-remix/1046502556?i=1046502966"
+                }
+              },
+              {
+                "id": "1046502967",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502967",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Dean Street Crew",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Danny Morales, Ricky Morrison & Candise Jordan",
+                  "discNumber": 1,
+                  "durationInMillis": 247080,
+                  "genreNames": ["House", "Music", "Dance"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591400",
+                  "name": "The Credit Card (Original Tribe Mix) [feat. Sweet P***y Pauline]",
+                  "playParams": {
+                    "id": "1046502967",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/e7/8e/6d/e78e6d6a-4ccd-4a11-e12c-0a4e856eb3a7/mzaf_17785833550750466257.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 17,
+                  "url": "https://music.apple.com/us/album/the-credit-card-original-tribe-mix-feat-sweet-p-y-pauline/1046502556?i=1046502967"
+                }
+              },
+              {
+                "id": "1046502968",
+                "type": "songs",
+                "href": "/v1/catalog/us/songs/1046502968",
+                "attributes": {
+                  "albumName": "DJ-Kicks (DJ Mix)",
+                  "artistName": "Sun Ra & Sun Ra and His Arkestra",
+                  "artwork": {
+                    "bgColor": "8eafb6",
+                    "height": 1448,
+                    "textColor1": "160f0d",
+                    "textColor2": "261a13",
+                    "textColor3": "2e2f2f",
+                    "textColor4": "3a3734",
+                    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/cf/da/f3/cfdaf3eb-1944-e868-1feb-cedeef541eb6/0730003732423_1448.jpg/{w}x{h}bb.jpg",
+                    "width": 1448
+                  },
+                  "composerName": "Sun Ra & Hobart Dotson",
+                  "discNumber": 1,
+                  "durationInMillis": 136147,
+                  "genreNames": ["Jazz", "Music", "Dance", "House"],
+                  "hasLyrics": false,
+                  "isAppleDigitalMaster": false,
+                  "isrc": "DEG931591402",
+                  "name": "Enlightenment (Mixed)",
+                  "playParams": {
+                    "id": "1046502968",
+                    "kind": "song"
+                  },
+                  "previews": [
+                    {
+                      "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/30/da/03/30da03fa-c69d-3fd6-a99e-2113ca97da2e/mzaf_4172033504651393992.plus.aac.p.m4a"
+                    }
+                  ],
+                  "releaseDate": "2015-10-16",
+                  "trackNumber": 18,
+                  "url": "https://music.apple.com/us/album/enlightenment-mixed/1046502556?i=1046502968"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "recordedAt": "2026-10-25T01:00:41.964Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/albums/1046502556?include=tracks"
+}

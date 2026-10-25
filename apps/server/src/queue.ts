@@ -1,4 +1,5 @@
 import type { ListeningQueue, QueuePlacement } from "@orbis/contracts";
+import { isPlayableSet } from "@orbis/contracts";
 import { and, asc, eq } from "drizzle-orm";
 import type { Stream } from "effect";
 import { Context, Effect, Layer } from "effect";
@@ -160,7 +161,7 @@ export class Queue extends Context.Service<
             new LibraryError({ message: "Set not found.", statusCode: 404 })
           );
         }
-        if (set.downloadState !== "ready") {
+        if (!isPlayableSet(set)) {
           return yield* Effect.fail(notPlayable());
         }
         return set;
@@ -245,9 +246,7 @@ export class Queue extends Context.Service<
             );
             const rows = yield* execute(order());
             const previousActive = activeIn(rows);
-            const playableMembers = members.filter(
-              (set) => set.downloadState === "ready"
-            );
+            const playableMembers = members.filter(isPlayableSet);
             const activeSetId = playableMembers[0]?.id ?? null;
             yield* execute(
               writeQueue(

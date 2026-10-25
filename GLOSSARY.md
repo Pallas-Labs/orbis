@@ -25,7 +25,7 @@ The provider's image for a Set. A Set holds two: the one a listing draws, and th
 _Avoid_: Thumbnail, cover, image
 
 **Source Link**:
-The original YouTube or SoundCloud address associated with a Set.
+The original YouTube, SoundCloud, or Apple Music album address associated with a Set.
 _Avoid_: Media URL, download URL
 
 **Retained Audio**:

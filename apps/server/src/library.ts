@@ -8,6 +8,7 @@ import type {
 import { and, asc, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { Context, Effect, Layer, Schema } from "effect";
 
+import { albumCues, appleMusicDownloadRefused } from "./apple-music.js";
 import { releaseAudio } from "./audio-release.js";
 import { insertBatches } from "./db/batches.js";
 import {
@@ -18,6 +19,7 @@ import {
   playbackPositions,
   playlistSets,
   playlists,
+  setCues,
   sets,
 } from "./db/schema.js";
 import { Database } from "./db/service.js";
@@ -63,6 +65,7 @@ const JsonStringArray = Schema.fromJsonString(
 const decodeJsonStringArrayEffect = Schema.decodeUnknownEffect(JsonStringArray);
 
 const TEMPORARY_TITLES: Record<SetSource, string> = {
+  "apple-music": "Apple Music mix",
   soundcloud: "SoundCloud track",
   youtube: "YouTube video",
 };
@@ -643,22 +646,36 @@ export class Library extends Context.Service<
         (id: string, metadata: EnrichedMetadata) =>
           execute(
             Effect.gen(function* recordEnrichmentEffect() {
-              const rows = yield* db
-                .update(sets)
-                .set({
-                  artworkLargeUrl: metadata.artworkLargeUrl,
-                  artworkUrl: metadata.artworkUrl,
-                  creator: metadata.creator,
-                  durationSeconds: metadata.durationSeconds,
-                  // A retry that yt-dlp could not answer keeps the details an earlier run stored.
-                  ...(metadata.extras && extrasColumns(metadata.extras)),
-                  metadataState: "enriched",
-                  releasedAt: metadata.releasedAt,
-                  title: metadata.title,
+              const { songs } = metadata;
+              const row = yield* db.transaction((tx) =>
+                Effect.gen(function* recordEnrichmentRows() {
+                  const [updated] = yield* tx
+                    .update(sets)
+                    .set({
+                      artworkLargeUrl: metadata.artworkLargeUrl,
+                      artworkUrl: metadata.artworkUrl,
+                      creator: metadata.creator,
+                      durationSeconds: metadata.durationSeconds,
+                      // A retry that yt-dlp could not answer keeps the details an earlier run stored.
+                      ...(metadata.extras && extrasColumns(metadata.extras)),
+                      // An album's songs are its Tracklist, so the Set needs no later read.
+                      ...(songs && {
+                        detailsState: "filled" as const,
+                        tracklistState: "ready" as const,
+                      }),
+                      metadataState: "enriched",
+                      releasedAt: metadata.releasedAt,
+                      title: metadata.title,
+                    })
+                    .where(eq(sets.id, id))
+                    .returning();
+                  if (updated && songs) {
+                    yield* tx.delete(setCues).where(eq(setCues.setId, id));
+                    yield* tx.insert(setCues).values(albumCues(id, songs));
+                  }
+                  return updated;
                 })
-                .where(eq(sets.id, id))
-                .returning();
-              const [row] = rows;
+              );
               if (!row) {
                 return yield* Effect.fail(setNotFound());
               }
@@ -760,6 +777,9 @@ export class Library extends Context.Service<
                   .where(eq(sets.id, id));
                 if (!current) {
                   return yield* Effect.fail(setNotFound());
+                }
+                if (current.source === "apple-music") {
+                  return yield* Effect.fail(appleMusicDownloadRefused());
                 }
                 if (
                   !["none", "failed", "canceled"].includes(

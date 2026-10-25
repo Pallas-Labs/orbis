@@ -1,4 +1,4 @@
-import { youTubePlaylistId } from "@orbis/contracts";
+import { normalizeSourceUrl, youTubePlaylistId } from "@orbis/contracts";
 import type { PlaylistImport, SavedSet } from "@orbis/contracts";
 import type {
   ChangeTopic,
@@ -37,6 +37,7 @@ import {
   Layer,
   Option,
   PubSub,
+  Result,
   Schema,
   Scope,
   Stream,
@@ -67,6 +68,7 @@ import {
   revokeDevice,
   revokeKey,
 } from "./admin.js";
+import { appleMusicDownloadRefused } from "./apple-music.js";
 import { makeAttemptLimiter } from "./attempt-limiter.js";
 import { Audio } from "./audio-service.js";
 import type { AudioFile } from "./audio-service.js";
@@ -289,7 +291,9 @@ const Filters = Schema.Struct({
   creatorId: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(100))),
   playlistId: Schema.String.check(Schema.isMaxLength(100)),
   q: Schema.String.check(Schema.isMaxLength(200)),
-  source: Schema.optionalKey(Schema.Literals(["youtube", "soundcloud"])),
+  source: Schema.optionalKey(
+    Schema.Literals(["youtube", "soundcloud", "apple-music"])
+  ),
   tags: Tags,
 });
 const decodeFiltersEffect = Schema.decodeUnknownEffect(Filters);
@@ -569,36 +573,84 @@ export const createPortableApp = (options: {
         enriched: EnrichedMetadata
       ) =>
         library.recordEnrichment(set.id, enriched).pipe(
-          Effect.tap(() =>
-            enriched.extras ? startTracklist(set.id) : fillDetails(set)
-          ),
+          Effect.tap(() => {
+            if (enriched.songs) {
+              return Effect.void;
+            }
+            return enriched.extras ? startTracklist(set.id) : fillDetails(set);
+          }),
           Effect.flatMap(() => personal.find(set.id))
         );
       // Enrichment failure is swallowed so the save still succeeds, so it is the
       // one outcome a client cannot see. The log records which set and which reason.
       const enrichSavedSet = Effect.fn("SaveSet.enrich")((
         set: SavedSet,
-        personal: typeof Library.Service
+        personal: typeof Library.Service,
+        read: Effect.Effect<EnrichedMetadata, MetadataError> = metadata.enrich({
+          source: set.source,
+          url: set.url,
+        })
       ) => {
         const onMetadataFailure = (error: MetadataError) =>
           Effect.logWarning("set metadata enrichment failed").pipe(
             Effect.annotateLogs({ reason: error.reason, set: set.id }),
             Effect.andThen(library.recordEnrichmentFailure(set.id)),
-            Effect.tap(() => fillDetails(set)),
+            // yt-dlp and Versos cannot read Apple Music; a retry reads the album again.
+            Effect.tap(() =>
+              set.source === "apple-music" ? Effect.void : fillDetails(set)
+            ),
             Effect.flatMap(() => personal.find(set.id))
           );
-        return metadata.enrich({ source: set.source, url: set.url }).pipe(
-          Effect.flatMap((enriched) => reviseTitle(set, enriched)),
+        return read.pipe(
+          // Apple names its albums cleanly; there is no upload title to tidy.
+          Effect.flatMap((enriched) =>
+            set.source === "apple-music"
+              ? Effect.succeed(enriched)
+              : reviseTitle(set, enriched)
+          ),
           Effect.flatMap((enriched) => recordMetadata(set, personal, enriched)),
           Effect.catchTag("MetadataError", onMetadataFailure)
         );
       });
+      // The one read that can refuse a save (ADR 0021): an album missing from the US catalog
+      // makes no Set, so a link no Set holds yet is read before the Set exists.
+      const readAlbumBeforeSave = Effect.fn("SaveSet.readAlbum")(
+        function* readAlbumBeforeSave(input: string) {
+          const link = Option.getOrUndefined(
+            Option.liftThrowable(normalizeSourceUrl)(input)
+          );
+          if (link?.source !== "apple-music") {
+            return null;
+          }
+          const [existing] = yield* db
+            .select({ id: setRows.id })
+            .from(setRows)
+            .where(eq(setRows.url, link.url))
+            .limit(1);
+          if (existing) {
+            return null;
+          }
+          const read = yield* Effect.result(metadata.enrich(link));
+          if (Result.isFailure(read) && read.failure.reason === "not-found") {
+            return yield* Effect.fail(
+              new LibraryError({
+                message: read.failure.message,
+                statusCode: 400,
+              })
+            );
+          }
+          return Effect.fromResult(read);
+        }
+      );
       const autoDownloadSaved = Effect.fn("AutoDownload.onSave")(
         function* autoDownloadSaved(saved: SavedSet, person: PersonRecord) {
           const result = (
             autoDownloadResult: (typeof SaveSetResultSchema.Type)["autoDownloadResult"],
             set?: SavedSet
           ) => ({ ...(set ?? saved), autoDownloadResult });
+          if (saved.source === "apple-music") {
+            return result("unavailable");
+          }
           if (person.autoDownload === false) {
             return result("disabled");
           }
@@ -695,7 +747,10 @@ export const createPortableApp = (options: {
             Effect.match(
               Effect.gen(function* requestPersonalDownload() {
                 const personal = yield* Library;
-                yield* personal.find(params.id);
+                const current = yield* personal.find(params.id);
+                if (current.source === "apple-music") {
+                  return yield* Effect.fail(appleMusicDownloadRefused());
+                }
                 const result = yield* audio.requestDownload(params.id);
                 return { ...result, set: yield* personal.find(params.id) };
               }).pipe(
@@ -806,6 +861,7 @@ export const createPortableApp = (options: {
                 );
                 const caller = yield* SetCaller;
                 const personal = yield* Library;
+                const albumRead = yield* readAlbumBeforeSave(url);
                 const saved = yield* personal.save({
                   tags: [...(input.tags ?? [])],
                   title: input.title ?? "",
@@ -814,6 +870,22 @@ export const createPortableApp = (options: {
                 yield* Effect.logInfo("set saved").pipe(
                   Effect.annotateLogs({ set: saved.id, source: saved.source })
                 );
+                if (albumRead) {
+                  return yield* autoDownloadSaved(
+                    yield* enrichSavedSet(saved, personal, albumRead),
+                    caller.person
+                  );
+                }
+                // An Apple Music read brings the Tracklist with it, so a Set that has one needs
+                // no read, and one that lost it (its last saver removed it) reads the album again.
+                if (saved.source === "apple-music") {
+                  return yield* autoDownloadSaved(
+                    saved.tracklistState === "ready"
+                      ? saved
+                      : yield* enrichSavedSet(saved, personal),
+                    caller.person
+                  );
+                }
                 if (
                   saved.titleEditedByUser ||
                   saved.metadataState === "enriched"
@@ -854,7 +926,14 @@ export const createPortableApp = (options: {
             withFailureResponse(
               Effect.gen(function* retrySetTracklist() {
                 const personal = yield* Library;
-                yield* personal.find(params.id);
+                const saved = yield* personal.find(params.id);
+                // An Apple Music Tracklist is the album's songs, so the retry reads the album.
+                if (saved.source === "apple-music") {
+                  yield* enrichSavedSet(saved, personal);
+                  return yield* readTracklist(params.id).pipe(
+                    Effect.provideService(Database, db)
+                  );
+                }
                 const [set] = yield* db
                   .select({ detailsState: setRows.detailsState })
                   .from(setRows)

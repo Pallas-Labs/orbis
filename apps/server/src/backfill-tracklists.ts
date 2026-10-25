@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { Duration, Effect, Layer } from "effect";
 
 import { Database, layer as databaseLayer } from "./db/database.js";
@@ -21,7 +21,9 @@ export const backfillTracklists = Effect.fn("backfillTracklists")(
       .where(
         and(
           eq(sets.detailsState, "filled"),
-          inArray(sets.tracklistState, ["pending", "failed"])
+          inArray(sets.tracklistState, ["pending", "failed"]),
+          // An Apple Music Tracklist is the album's songs, never a Versos answer.
+          ne(sets.source, "apple-music")
         )
       );
     let completed = 0;

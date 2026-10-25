@@ -7,6 +7,9 @@ export interface Environment {
   readonly SIGNOZ_OTLP_ACCESS_CLIENT_ID?: string;
   readonly SIGNOZ_OTLP_ACCESS_CLIENT_SECRET?: string;
   readonly YOUTUBE_API_KEY?: string;
+  readonly APPLE_MUSIC_TEAM_ID?: string;
+  readonly APPLE_MUSIC_KEY_ID?: string;
+  readonly APPLE_MUSIC_PRIVATE_KEY?: string;
   readonly OPENROUTER_API_KEY?: string;
   readonly VERSOS_URL?: string;
   readonly VERSOS_API_KEY?: string;

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import { SOURCE_URL_MESSAGE } from "@orbis/contracts";
 import {
   ACCEPTED_SOURCE_URL_CASES,
   REJECTED_SOURCE_URLS,
@@ -20,7 +21,7 @@ test("reports a rejected form as a 400 LibraryError", () => {
     expect(normalize).toThrow(LibraryError);
     expect(normalize).toThrow(
       expect.objectContaining({
-        message: "Use a direct YouTube video or SoundCloud track URL.",
+        message: SOURCE_URL_MESSAGE,
         statusCode: 400,
       })
     );
