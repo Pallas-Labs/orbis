@@ -137,7 +137,7 @@
           }
           .buttonStyle(.glass)
           .accessibilityIdentifier("detail-add-to-queue")
-        } else {
+        } else if set.source.isDownloadable {
           downloadButtons(set)
         }
       }

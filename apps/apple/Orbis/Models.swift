@@ -105,6 +105,8 @@ struct Tracklist: Decodable, Equatable {
 enum SetSource: Hashable, Decodable {
   case youtube
   case soundcloud
+  /// An Apple Music album, which plays through Apple Music and is never downloaded (ADR 0021).
+  case appleMusic
   /// The service named a source this build does not know. The Set stays readable and
   /// shows the name the service used, because a source arriving later than the app is a
   /// version skew, not a broken library.
@@ -114,11 +116,16 @@ enum SetSource: Hashable, Decodable {
     switch self {
     case .youtube: "YouTube"
     case .soundcloud: "SoundCloud"
+    case .appleMusic: "Apple Music"
     case .unknown(let name): name
     }
   }
 
-  /// Which service a link names, or nil when Orbis takes neither.
+  /// Whether the service can keep this Source's audio. Apple Music audio plays through Apple Music
+  /// and is never downloaded (ADR 0021), so nothing offers a Download for it.
+  var isDownloadable: Bool { self != .appleMusic }
+
+  /// Which service a link names, or nil when Orbis takes none of them.
   ///
   /// Only the host is judged here, so a paste is refused without asking the service. The shape of
   /// the path stays the service's judgement: it owns that rule, and its refusal reaches the field
@@ -134,6 +141,7 @@ enum SetSource: Hashable, Decodable {
       "soundcloud.com", "www.soundcloud.com", "m.soundcloud.com", "on.soundcloud.com",
     ]
     if soundCloud.contains(host) { return .soundcloud }
+    if host == "music.apple.com" { return .appleMusic }
     return nil
   }
 }
@@ -147,6 +155,7 @@ extension SetSource {
     switch raw {
     case "youtube": self = .youtube
     case "soundcloud": self = .soundcloud
+    case "apple-music": self = .appleMusic
     case let name: self = .unknown(name)
     }
   }

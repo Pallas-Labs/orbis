@@ -27,7 +27,7 @@ enum ShareCapture {
   /// reaches it: it always talks to the built-in service, or a Debug Mac's development one.
   static var serviceAddress: URL { OrbisService.address(for: []) }
 
-  /// The first supported YouTube or SoundCloud URL found in the attachment payloads.
+  /// The first supported YouTube, SoundCloud, or Apple Music URL found in the attachment payloads.
   static func sourceLink(from payloads: [String]) -> URL? {
     for payload in payloads {
       if let url = LinkField.address(of: payload), SetSource.named(by: url) != nil {

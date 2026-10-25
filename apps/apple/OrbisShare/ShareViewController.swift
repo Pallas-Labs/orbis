@@ -1,6 +1,7 @@
 import OrbisDesign
 import SwiftUI
 import UniformTypeIdentifiers
+import os
 
 #if os(iOS)
   import UIKit
@@ -81,18 +82,29 @@ import UniformTypeIdentifiers
 #endif
 
 enum ShareExtensionPayloads {
+  #if DEBUG
+    private static let log = Logger(subsystem: "app.orbis", category: "share")
+  #endif
+
   static func load(from items: [Any]?) async -> [String] {
     guard let items = items as? [NSExtensionItem] else { return [] }
     var payloads: [String] = []
     for item in items {
       guard let attachments = item.attachments else { continue }
       for provider in attachments {
-        if let url = await loadURL(from: provider) {
-          payloads.append(url.absoluteString)
-        }
-        if let text = await loadText(from: provider) {
-          payloads.append(text)
-        }
+        let url = await loadURL(from: provider)
+        let text = await loadText(from: provider)
+        #if DEBUG
+          // What a sharing app sends, for OrbisTests/Fixtures/MusicAppShares.json.
+          log.debug(
+            """
+            Attachment \(provider.registeredTypeIdentifiers, privacy: .public) \
+            url: \(url?.absoluteString ?? "none", privacy: .public) \
+            text: \(text ?? "none", privacy: .public)
+            """)
+        #endif
+        if let url { payloads.append(url.absoluteString) }
+        if let text { payloads.append(text) }
       }
     }
     return payloads
@@ -198,8 +210,8 @@ struct ShareConfirmationView: View {
       .background { TintGlow() }
     case .unsupported:
       refusal(
-        "No YouTube or SoundCloud link", symbol: "link",
-        message: "Share a link from YouTube or SoundCloud to save it.")
+        "No YouTube, SoundCloud, or Apple Music link", symbol: "link",
+        message: "Share a link from YouTube, SoundCloud, or Apple Music to save it.")
     case .playlist:
       refusal(
         "A Playlist Link", symbol: "music.note.list",
@@ -305,7 +317,9 @@ struct ShareConfirmationView: View {
             Button("Try Again") { Task { await loadPlaylists() } }
           }
         }
-        Toggle("Download after saving", isOn: $downloadAfterSaving)
+        if SetSource.named(by: link)?.isDownloadable ?? true {
+          Toggle("Download after saving", isOn: $downloadAfterSaving)
+        }
       }
     }
     .formStyle(.grouped)

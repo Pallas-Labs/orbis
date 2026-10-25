@@ -75,6 +75,7 @@ enum SetPresentation {
     switch source {
     case .youtube: "play.rectangle.fill"
     case .soundcloud: "cloud.fill"
+    case .appleMusic: "music.note"
     case .unknown: "safari"
     }
   }
