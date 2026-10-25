@@ -5,6 +5,7 @@ const { TaggedError: taggedFailure } = Schema;
 
 export const MetadataReason = Schema.Literals([
   "not-configured",
+  "not-found",
   "provider-rejected",
   "provider-unavailable",
   "unexpected-response",

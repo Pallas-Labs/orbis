@@ -77,6 +77,7 @@ export const REJECTED_SOURCE_URLS: readonly string[] = [
   "https://music.apple.com/us/playlist/example/pl.0123456789abcdef",
   "https://music.apple.com/us/artist/example-dj/123456",
   "https://music.apple.com/us/song/example-song/1700000002",
+  "https://music.apple.com/us/station/example-radio/ra.1460000000",
   "https://music.apple.com/us/album/example-dj-mix/not-an-id",
   "https://music.apple.com/us/album/example-dj-mix/1700000000/extra",
   "https://music.apple.com.evil.test/us/album/example/1700000000",

@@ -86,8 +86,6 @@ export interface MetadataService {
 export interface MetadataOptions {
   /** The Host's MusicKit key. Without it Apple Music has no provider. */
   readonly appleMusic?: AppleMusicCredentials | undefined;
-  /** The catalog country an album is read from. Source Links carry none (ADR 0021). */
-  readonly appleMusicStorefront?: string | undefined;
   readonly fetch?: RequestFetch;
   /** Fills what the provider APIs leave out, and stands in for a YouTube API key that is not set. */
   readonly ytDlp?: YtDlpMetadataService | undefined;
@@ -109,6 +107,8 @@ interface Provider {
 interface ProviderOptions {
   readonly headers?: Readonly<Record<string, string>>;
   readonly label: string;
+  /** What a 404 means for this provider, when it means more than a refusal. */
+  readonly notFound?: MetadataError;
   readonly request: RequestFetch;
 }
 
@@ -187,6 +187,9 @@ const requestJson = Effect.fn("Metadata.requestJson")(
       catch: () => unavailable(`${options.label} is unreachable.`),
       try: (signal) => options.request(url, signal, options.headers),
     });
+    if (response.status === 404 && options.notFound) {
+      return yield* Effect.fail(options.notFound);
+    }
     if (!response.ok) {
       return yield* Effect.fail(
         response.status >= 500
@@ -530,9 +533,18 @@ const appleMusicMetadata = (album: AppleMusicAlbum): EnrichedMetadata => {
   };
 };
 
+/** Every read uses the US catalog, whatever storefront the shared link named (ADR 0021). */
+export const appleMusicAlbumRead = (albumId: string): string =>
+  `https://api.music.apple.com/v1/catalog/us/albums/${albumId}?include=tracks`;
+
+const notInUsCatalog = () =>
+  new MetadataError({
+    message: "This album is not in the US Apple Music catalog.",
+    reason: "not-found",
+  });
+
 const appleMusicProvider = (
   credentials: AppleMusicCredentials,
-  storefront: string,
   request: RequestFetch
 ): Provider => {
   const token = appleMusicTokens(credentials);
@@ -550,19 +562,18 @@ const appleMusicProvider = (
         )
       );
       const response = yield* requestJson(
-        `https://api.music.apple.com/v1/catalog/${encodeURIComponent(storefront)}/albums/${albumId}?include=tracks`,
+        appleMusicAlbumRead(albumId),
         AppleMusicAlbumResponse,
         {
           headers: { authorization: `Bearer ${developerToken}` },
           label: "Apple Music",
+          notFound: notInUsCatalog(),
           request,
         }
       );
       const [album] = response.data;
       if (!album) {
-        return yield* Effect.fail(
-          rejected("Apple Music does not have this album.")
-        );
+        return yield* Effect.fail(notInUsCatalog());
       }
       const metadata = appleMusicMetadata(album);
       if (!metadata.title || metadata.songs?.length === 0) {
@@ -649,7 +660,6 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
     if (options.appleMusic) {
       providers["apple-music"] = appleMusicProvider(
         options.appleMusic,
-        options.appleMusicStorefront ?? "us",
         request
       );
     }
