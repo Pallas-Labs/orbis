@@ -19,13 +19,12 @@ private func clock(_ seconds: TimeInterval?) -> String {
   return String(format: "%.1fs", seconds)
 }
 
-/// Plays one Set's retained audio, streamed from the service with the device token.
+/// Plays one Set's retained audio through a `PlaybackEngine`.
 ///
-/// Everything here stays on the main actor: playback control is not CPU-bound, and
-/// AVPlayer does its own threading. Observers that the system can call from any thread
-/// hop back here and read the player's current values before touching state. The audio
-/// session and the artwork decode are the exceptions, and run off the main actor: see
-/// `sessionWork` and `artwork(from:)`.
+/// Everything here stays on the main actor: playback control is not CPU-bound, and the
+/// engine does its own threading. Engine events reach here on the main actor and read the
+/// engine's current values before touching state. The audio session and the artwork decode
+/// are the exceptions, and run off the main actor: see `sessionWork` and `artwork(from:)`.
 @MainActor
 @Observable
 final class AudioPlayer {
@@ -85,18 +84,16 @@ final class AudioPlayer {
 
   var settledPosition: TimeInterval? {
     guard pendingSeek == nil, !isSeeking,
-      let seconds = player?.currentTime().seconds, seconds.isFinite, seconds >= 0
+      let seconds = engine?.currentTime, seconds.isFinite, seconds >= 0
     else { return nil }
     return seconds
   }
 
-  private(set) var player: AVPlayer?
-  private var timeObserver: Any?
-  private var statusObservation: NSKeyValueObservation?
-  private var durationObservation: NSKeyValueObservation?
-  private var loadedRangesObservation: NSKeyValueObservation?
-  private var rateObservation: NSKeyValueObservation?
-  private var stallObservation: NSKeyValueObservation?
+  /// What makes the sound for the current Set; nil when nothing is loaded.
+  private var engine: (any PlaybackEngine)?
+
+  /// The AVPlayer behind the engine, for tests that read its clock and silence it.
+  var player: AVPlayer? { (engine as? AVPlayerEngine)?.player }
 
   /// The Set's length as the service measured it, used until the item reports its own. Some
   /// streams never do (an Ogg file, a VBR MP3 without a header), and a seek bar with no length
@@ -209,25 +206,22 @@ final class AudioPlayer {
   }
 
   private func diagnosticSnapshot() -> PlaybackDiagnostics.Snapshot {
-    let engine = player
-    let item = engine?.currentItem
-    let ranges =
-      item?.loadedTimeRanges.prefix(8).compactMap { value -> PlaybackDiagnostics.BufferRange? in
-        let range = value.timeRangeValue
-        guard range.start.seconds.isFinite, range.duration.seconds.isFinite else { return nil }
-        return .init(start: .init(range.start.seconds), duration: .init(range.duration.seconds))
-      } ?? []
+    let engine = self.engine
+    let buffer = engine?.buffer ?? PlaybackEngineBuffer()
+    let ranges = buffer.ranges.compactMap { range -> PlaybackDiagnostics.BufferRange? in
+      guard range.start.isFinite, range.duration.isFinite else { return nil }
+      return .init(start: .init(range.start), duration: .init(range.duration))
+    }
     return PlaybackDiagnostics.Snapshot(
-      state: diagnosticState(state), itemState: diagnosticItemState(item?.status),
-      waitingReason: diagnosticWaitingReason(engine?.reasonForWaitingToPlay),
-      actualTime: .init(engine?.currentTime().seconds), displayedTime: .init(elapsed),
+      state: diagnosticState(state), itemState: diagnosticItemState(engine?.status),
+      waitingReason: engine?.waitingReason ?? .none,
+      actualTime: .init(engine?.currentTime), displayedTime: .init(elapsed),
       duration: .init(duration), rate: .init(engine.map { Double($0.rate) }),
       sessionReady: sessionReady, pendingSeek: .init(pendingSeek), seekInFlight: isSeeking,
       playbackGeneration: playbackGeneration, seekID: latestSeek,
-      bufferEmpty: item?.isPlaybackBufferEmpty ?? false,
-      bufferFull: item?.isPlaybackBufferFull ?? false,
-      likelyToKeepUp: item?.isPlaybackLikelyToKeepUp ?? false,
-      bufferRanges: ranges, access: item?.accessLog()?.events.last.map(diagnosticAccessMetrics),
+      bufferEmpty: buffer.isEmpty, bufferFull: buffer.isFull,
+      likelyToKeepUp: buffer.isLikelyToKeepUp,
+      bufferRanges: ranges, access: engine?.access.map(diagnosticAccessMetrics),
       setId: currentSetId)
   }
 
@@ -242,51 +236,31 @@ final class AudioPlayer {
     }
   }
 
-  private func diagnosticItemState(_ status: AVPlayerItem.Status?) -> PlaybackDiagnostics.ItemState {
+  private func diagnosticItemState(_ status: PlaybackEngineStatus?) -> PlaybackDiagnostics.ItemState {
     switch status {
     case .none: .none
     case .some(.unknown): .unknown
-    case .some(.readyToPlay): .ready
+    case .some(.ready): .ready
     case .some(.failed): .failed
-    case .some: .unknown
     }
   }
 
-  private func diagnosticWaitingReason(_ reason: AVPlayer.WaitingReason?)
-    -> PlaybackDiagnostics.WaitingReason
-  {
-    switch reason?.rawValue {
-    case nil: .none
-    case "AVPlayerWaitingToMinimizeStallsReason": .minimizingStalls
-    case "AVPlayerWaitingWhileEvaluatingBufferingRateReason": .evaluatingBufferingRate
-    case "AVPlayerWaitingWithNoItemToPlayReason": .noItem
-    case "AVPlayerWaitingDuringInterstitialEventReason": .interstitial
-    default: .other
-    }
-  }
-
-  private func diagnosticAccessMetrics(_ entry: AVPlayerItemAccessLogEvent)
+  private func diagnosticAccessMetrics(_ entry: PlaybackEngineAccess)
     -> PlaybackDiagnostics.AccessMetrics
   {
     .init(
-      bytesTransferred: entry.numberOfBytesTransferred,
+      bytesTransferred: entry.bytesTransferred,
       transferDuration: .init(entry.transferDuration),
       observedBitrate: .init(entry.observedBitrate),
-      indicatedBitrate: .init(entry.indicatedBitrate), stalls: entry.numberOfStalls,
-      downloadedDuration: .init(entry.segmentsDownloadedDuration))
+      indicatedBitrate: .init(entry.indicatedBitrate), stalls: entry.stalls,
+      downloadedDuration: .init(entry.downloadedDuration))
   }
 
   deinit {
     // A nonisolated deinit cannot touch MainActor state, so everything owned here
     // is released through stop(), which every play() enters through first. What
     // remains is global, and only this player's own registrations are taken back.
-    let center = MPRemoteCommandCenter.shared()
-    let commands = [
-      center.playCommand, center.pauseCommand, center.togglePlayPauseCommand,
-      center.skipBackwardCommand, center.skipForwardCommand, center.changePlaybackPositionCommand,
-      center.nextTrackCommand, center.previousTrackCommand,
-    ]
-    for command in commands {
+    for command in Self.remoteCommands() {
       for target in commandTargets { command.removeTarget(target) }
       command.isEnabled = false
     }
@@ -468,86 +442,18 @@ final class AudioPlayer {
     soundRequestedAt = autoplay ? ProcessInfo.processInfo.systemUptime : nil
     let span = "from \(clock(start)) of \(clock(serviceDuration))"
     logger.info("Play \(set.id, privacy: .private(mask: .hash)) \(span, privacy: .public)")
-    // The asset is the Set's own audio file, not the service root: loading the
-    // root answers 404 and the player fails without ever asking for audio.
-    let item = AVPlayerItem(
-      asset: Self.asset(url: Self.fileURL(setID: set.id, baseURL: baseURL), token: token)
-    )
-    let player = AVPlayer(playerItem: item)
-    self.player = player
     playbackGeneration += 1
     let generation = playbackGeneration
+    let engine = AVPlayerEngine()
+    // The generation check drops an event that a stopped or replaced engine queued before this
+    // one took over.
+    engine.load(set, baseURL: baseURL, token: token) { [weak self] event in
+      guard let self, self.playbackGeneration == generation else { return }
+      self.engineEvent(event)
+    }
+    self.engine = engine
+    takeSystemControls(from: engine)
     record(.item(.init(phase: .installed, error: nil)))
-    // KVO can call back on any thread, so each handler only hops here. Each hop is its own
-    // task, and two of them can land in either order, so the hop reads the player's current
-    // values rather than the ones that fired it: a late hop then repeats the latest state
-    // instead of undoing it. The generation check drops a callback that a stopped or replaced
-    // player queued before this one took over.
-    statusObservation = item.observe(\.status, options: [.new]) { [weak self] _, _ in
-      Task { @MainActor in
-        guard let self, self.playbackGeneration == generation,
-          let item = self.player?.currentItem
-        else { return }
-        self.itemStatusChanged(item)
-      }
-    }
-    // The item can learn its length after it is ready, or revise it once more of a stream has
-    // arrived; the seek bar follows.
-    durationObservation = item.observe(\.duration, options: [.new]) { [weak self] _, _ in
-      Task { @MainActor in
-        guard let self, self.playbackGeneration == generation,
-          let item = self.player?.currentItem
-        else { return }
-        self.durationChanged(item.duration.seconds)
-      }
-    }
-    loadedRangesObservation = item.observe(\.loadedTimeRanges, options: [.new]) {
-      [weak self] _, _ in
-      Task { @MainActor in
-        guard let self, self.playbackGeneration == generation, self.state == .loading else {
-          return
-        }
-        // Progressive file playback can pause on starvation and needs Play when data returns.
-        self.playIfReady()
-      }
-    }
-    rateObservation = player.observe(\.rate, options: [.new]) { [weak self] _, _ in
-      Task { @MainActor in
-        guard let self, self.playbackGeneration == generation, let player = self.player
-        else { return }
-        self.rateChanged(rate: player.rate)
-      }
-    }
-    stallObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] _, _ in
-      Task { @MainActor in
-        guard let self, self.playbackGeneration == generation, let player = self.player
-        else { return }
-        self.logWaiting(player)
-        self.stallChanged(status: player.timeControlStatus)
-      }
-    }
-    timeObserver = player.addPeriodicTimeObserver(
-      forInterval: CMTime(seconds: 0.5, preferredTimescale: 600),
-      queue: .main
-    ) { [weak self] _ in
-      // Registered on the main queue, so this closure is already on the main actor; assuming it
-      // avoids a task on every tick.
-      MainActor.assumeIsolated {
-        guard let self, self.playbackGeneration == generation else { return }
-        self.recordPeriodicSnapshotIfNeeded()
-        self.sampleTimeline()
-        guard !self.isSeeking, self.pendingSeek == nil,
-          let seconds = self.player?.currentTime().seconds, seconds.isFinite
-        else { return }
-        let previousCue = self.currentCue?.position
-        self.elapsed = seconds
-        if self.currentCue?.position != previousCue {
-          self.publishNowPlaying(isPlaying: self.state == .playing)
-        }
-      }
-    }
-    observeCompletion(of: item, generation: generation)
-    observeFailures(of: item, generation: generation)
     observeInterruptions()
     // The screen already reads as loading, so the sound can wait for the session rather than
     // the screen waiting for both.
@@ -589,7 +495,7 @@ final class AudioPlayer {
         self.record(
           .session(.init(phase: .failed, requestID: start, playbackGeneration: generation)))
         logger.error("Playback not started: the audio session is unavailable")
-        self.player?.pause()
+        self.engine?.pause()
         self.state = .failed("Audio could not start on this device.")
         self.publishNowPlaying(isPlaying: false)
         return
@@ -605,10 +511,10 @@ final class AudioPlayer {
 
   private func playIfReady() {
     guard sessionReady, wantsSound, !itemNeedsReload, pendingSeek == nil, !isSeeking,
-      let player, player.currentItem?.status != .failed
+      let engine, engine.status != .failed
     else { return }
-    if player.rate == 0 { player.play() }
-    stallChanged(status: player.timeControlStatus)
+    if engine.rate == 0 { engine.play() }
+    stallChanged(status: engine.timeControl)
   }
 
   /// Which `startPlayback()` call is the newest; an older one that finishes first does nothing.
@@ -656,10 +562,10 @@ final class AudioPlayer {
     if wantsSound || state == .interrupted {
       state = .paused
     }
-    player?.pause()
+    engine?.pause()
     let delay = ProcessInfo.processInfo.systemUptime - requestedAt
     logger.debug(
-      "Pause applied generation=\(self.playbackGeneration, privacy: .public) duration=\(delay, privacy: .public) rate=\(self.player?.rate ?? 0, privacy: .public)"
+      "Pause applied generation=\(self.playbackGeneration, privacy: .public) duration=\(delay, privacy: .public) rate=\(self.engine?.rate ?? 0, privacy: .public)"
     )
     publishNowPlaying(isPlaying: false)
   }
@@ -675,11 +581,11 @@ final class AudioPlayer {
   }
 
   private func resumePlayback() {
-    if let currentSetId, itemNeedsReload || player?.currentItem?.status == .failed {
+    if let currentSetId, itemNeedsReload || engine?.status == .failed {
       onReloadNeeded?(currentSetId, elapsed)
       return
     }
-    guard let item = player?.currentItem, item.status != .failed else {
+    guard let engine, engine.status != .failed else {
       logger.notice("Resume ignored: no playable item")
       return
     }
@@ -719,16 +625,16 @@ final class AudioPlayer {
     record(.command(.init(kind: .seek, origin: origin, target: .init(seconds))))
     logger.debug("Command seek generation=\(self.playbackGeneration, privacy: .public)")
     guard seconds.isFinite, onCommand?(.seek(seconds)) != true else { return }
-    guard let player, let item = player.currentItem, state != .idle else {
+    guard let engine, state != .idle else {
       logger.notice("Seek to \(clock(seconds), privacy: .public) ignored: nothing in the player")
       return
     }
     let target = boundedPosition(seconds)
     elapsed = target
     timelineSample = nil
-    guard item.status == .readyToPlay else {
+    guard engine.status == .ready else {
       if wantsSound { state = .loading }
-      player.pause()
+      engine.pause()
       logger.debug("Seek to \(clock(target), privacy: .public) held until the item is ready")
       pendingSeek = target
       publishNowPlaying(isPlaying: false)
@@ -781,22 +687,22 @@ final class AudioPlayer {
   }
 
   func stop() {
-    let hadPlayback = player != nil || sessionWork != nil
+    let hadPlayback = engine != nil || sessionWork != nil
     let endingGeneration = playbackGeneration
     let epoch = diagnosticsEpoch
-    if player != nil { record(.command(.init(kind: .stop, origin: .internalOperation))) }
+    if engine != nil { record(.command(.init(kind: .stop, origin: .internalOperation))) }
     // Anything the player in hand still has queued belongs to a playback that is over.
     playbackGeneration += 1
     artworkFetch?.cancel()
     artworkFetch = nil
     currentArtwork = nil
     cues = []
-    if player != nil {
+    if engine != nil {
       logger.debug("Stop at \(clock(self.elapsed), privacy: .public)")
     }
-    player?.pause()
-    dropPlayerObservers()
-    player = nil
+    engine?.pause()
+    engine?.invalidate()
+    engine = nil
     pendingSeek = nil
     isSeeking = false
     sessionReady = false
@@ -837,36 +743,32 @@ final class AudioPlayer {
     }
   }
 
-  private func itemStatusChanged(_ item: AVPlayerItem) {
-    switch item.status {
-    case .readyToPlay:
-      let reported = item.duration.seconds
+  private func itemStatusChanged(_ engine: any PlaybackEngine) {
+    switch engine.status {
+    case .ready:
+      let reported = engine.duration
       let service = clock(serviceDuration)
       logger.info(
         "Item ready; length \(clock(reported), privacy: .public), service says \(service, privacy: .public)"
       )
       record(.item(.init(phase: .ready, error: nil)))
       durationChanged(reported)
-      logBuffer(item, reason: .ready)
+      logBuffer(engine, reason: .ready)
       applyPendingSeek()
       playIfReady()
       publishNowPlaying(isPlaying: state == .playing)
     case .failed:
-      let itemError =
-        item.error.map(PlaybackDiagnostics.NormalizedError.init)
-        ?? Self.normalizedLastErrorLogEntry(of: item)
+      let itemError = engine.failure
       let detail = itemError.map(Self.describe) ?? "no error"
       logger.error("Item failed: \(detail, privacy: .public)")
       record(.item(.init(phase: .failed, error: itemError)))
       capturePosition()
       itemNeedsReload = true
       timelineSample = nil
-      player?.pause()
+      engine.pause()
       state = .failed("This audio would not play.")
       publishNowPlaying(isPlaying: false)
     case .unknown:
-      break
-    @unknown default:
       break
     }
   }
@@ -898,7 +800,7 @@ final class AudioPlayer {
   private func applyPendingSeek() {
     guard let pendingSeek else { return }
     self.pendingSeek = nil
-    guard player != nil else { return }
+    guard engine != nil else { return }
     let bounded = boundedPosition(pendingSeek)
     logger.debug("Applying held seek to \(clock(bounded), privacy: .public)")
     move(to: bounded)
@@ -911,11 +813,10 @@ final class AudioPlayer {
     return min(position, duration)
   }
 
-  /// Seeks exactly. The default tolerance lets the player land seconds early on a compressed
-  /// stream, so a tapped track started inside the one before it, the bar did not show the
-  /// position asked for, and Next track found the same track again.
+  /// Moves the engine to a time in the mix. A seek that a later one interrupts calls back
+  /// unfinished and is dropped by its number.
   private func move(to seconds: TimeInterval) {
-    guard let player else { return }
+    guard let engine else { return }
     timelineSample = nil
     isSeeking = true
     latestSeek += 1
@@ -925,179 +826,130 @@ final class AudioPlayer {
     logger.debug(
       "Seek requested generation=\(generation, privacy: .public) seek=\(seekNumber, privacy: .public) target=\(seconds, privacy: .public)"
     )
-    player.seek(
-      to: CMTime(seconds: seconds, preferredTimescale: 600),
-      toleranceBefore: .zero,
-      toleranceAfter: .zero
-    ) { [weak self] finished in
-      Task { @MainActor in
-        guard let self, self.playbackGeneration == generation, self.latestSeek == seekNumber,
-          let player = self.player
-        else { return }
-        self.isSeeking = false
-        self.timelineSample = nil
-        let landed = player.currentTime().seconds
-        let outcome = finished ? "landed at" : "stopped at"
-        logger.debug(
-          "Seek to \(clock(seconds), privacy: .public) \(outcome, privacy: .public) \(clock(landed), privacy: .public)"
-        )
-        let delay = ProcessInfo.processInfo.systemUptime - requestedAt
-        logger.debug(
-          "Seek completed generation=\(generation, privacy: .public) seek=\(seekNumber, privacy: .public) finished=\(finished, privacy: .public) target=\(seconds, privacy: .public) actual=\(landed, privacy: .public) duration=\(delay, privacy: .public)"
-        )
-        self.record(
-          .seekResult(
-            .init(
-              seekID: seekNumber, target: .init(seconds), actual: .init(landed),
-              finished: finished, duration: .init(delay))))
-        if finished, landed.isFinite {
-          self.elapsed = landed
-          self.playIfReady()
-        } else {
-          self.pendingSeek = seconds
-          self.state = .failed("The audio could not move to that position.")
-          player.pause()
-        }
-        self.publishNowPlaying(isPlaying: self.state == .playing)
+    engine.seek(to: seconds) { [weak self] finished in
+      guard let self, self.playbackGeneration == generation, self.latestSeek == seekNumber,
+        let engine = self.engine
+      else { return }
+      self.isSeeking = false
+      self.timelineSample = nil
+      let landed = engine.currentTime
+      let outcome = finished ? "landed at" : "stopped at"
+      logger.debug(
+        "Seek to \(clock(seconds), privacy: .public) \(outcome, privacy: .public) \(clock(landed), privacy: .public)"
+      )
+      let delay = ProcessInfo.processInfo.systemUptime - requestedAt
+      logger.debug(
+        "Seek completed generation=\(generation, privacy: .public) seek=\(seekNumber, privacy: .public) finished=\(finished, privacy: .public) target=\(seconds, privacy: .public) actual=\(landed, privacy: .public) duration=\(delay, privacy: .public)"
+      )
+      self.record(
+        .seekResult(
+          .init(
+            seekID: seekNumber, target: .init(seconds), actual: .init(landed),
+            finished: finished, duration: .init(delay))))
+      if finished, landed.isFinite {
+        self.elapsed = landed
+        self.playIfReady()
+      } else {
+        self.pendingSeek = seconds
+        self.state = .failed("The audio could not move to that position.")
+        engine.pause()
       }
+      self.publishNowPlaying(isPlaying: self.state == .playing)
     }
   }
 
-  /// The end of the audio, which is the one way a Listen finishes. Registered per play, because
-  /// the notification names the item that ended.
-  private func observeCompletion(of item: AVPlayerItem, generation: Int) {
-    observers.append(
-      NotificationCenter.default.addObserver(
-        forName: AVPlayerItem.didPlayToEndTimeNotification,
-        object: item,
-        queue: .main
-      ) { [weak self] _ in
-        // Registered on the main queue, so this block is already on the main actor.
-        MainActor.assumeIsolated {
-          guard let self, self.playbackGeneration == generation, !self.completionReported,
-            let finished = self.currentSetId
-          else { return }
-          logger.info(
-            "Item ended generation=\(generation, privacy: .public) actual=\(self.player?.currentTime().seconds ?? 0, privacy: .public) duration=\(self.duration ?? 0, privacy: .public)"
-          )
-          // Ogg duration can be estimated from bytes; the service measured the retained file.
-          if let duration = [self.duration, self.serviceDuration].compactMap({ $0 }).min(),
-            let actual = self.player?.currentTime().seconds,
-            actual.isFinite, actual < duration - 2
-          {
-            self.record(
-              .ended(
-                .init(actual: .init(actual), expected: .init(duration), premature: true)))
-            logger.notice(
-              "Premature item end generation=\(generation, privacy: .public) actual=\(actual, privacy: .public) duration=\(duration, privacy: .public)"
-            )
-            if self.wantsSound { self.state = .loading }
-            self.publishNowPlaying(isPlaying: false)
-            return
-          }
-          self.record(
-            .ended(
-              .init(
-                actual: .init(self.player?.currentTime().seconds),
-                expected: .init(self.duration ?? self.serviceDuration), premature: false)))
-          self.completionReported = true
-          self.onFinished?(finished)
-        }
+  /// What the current engine reported. The caller has already dropped events from an engine
+  /// that is no longer current.
+  private func engineEvent(_ event: PlaybackEngineEvent) {
+    guard let engine else { return }
+    switch event {
+    case .statusChanged:
+      itemStatusChanged(engine)
+    case .durationChanged:
+      // The seek bar follows the item's length as it learns or revises it.
+      durationChanged(engine.duration)
+    case .bufferChanged:
+      // Progressive file playback can pause on starvation and needs Play when data returns.
+      guard state == .loading else { return }
+      playIfReady()
+    case .rateChanged:
+      rateChanged(rate: engine.rate)
+    case .timeControlChanged:
+      logWaiting(engine)
+      stallChanged(status: engine.timeControl)
+    case .tick:
+      recordPeriodicSnapshotIfNeeded()
+      sampleTimeline()
+      let seconds = engine.currentTime
+      guard !isSeeking, pendingSeek == nil, seconds.isFinite else { return }
+      let previousCue = currentCue?.position
+      elapsed = seconds
+      if currentCue?.position != previousCue {
+        publishNowPlaying(isPlaying: state == .playing)
       }
-    )
+    case .ended:
+      audioEnded(engine)
+    case .failed(let error):
+      // A stream that breaks after it started playing never fails the item's status, so without
+      // this the screen would wait on a spinner for good.
+      let detail = error.map(Self.describe) ?? "no error"
+      logger.error(
+        "Playback broke at \(clock(self.elapsed), privacy: .public): \(detail, privacy: .public)"
+      )
+      record(.item(.init(phase: .failed, error: error)))
+      capturePosition()
+      itemNeedsReload = true
+      timelineSample = nil
+      engine.pause()
+      state = .failed("The audio stopped loading.")
+      publishNowPlaying(isPlaying: false)
+    case .stalled:
+      // The engine's own stall notice says the network fell behind, which reads the same as a
+      // stuck load from outside.
+      timelineSample = nil
+      record(.stalled)
+      logger.notice("Playback stalled at \(clock(self.elapsed), privacy: .public)")
+      logBuffer(engine, reason: .stalled)
+    case .streamError(let entry):
+      logger.notice("Stream error\(entry.map { "; " + Self.describe($0) } ?? "", privacy: .public)")
+      if let entry { record(.error(entry)) }
+    case .timeJumped:
+      let seek = isSeeking ? String(latestSeek) : "none"
+      let actual = engine.currentTime
+      logger.debug(
+        "Time jumped generation=\(self.playbackGeneration, privacy: .public) seek=\(seek, privacy: .public) actual=\(actual, privacy: .public)"
+      )
+      record(.timeJumped(.init(actual: .init(actual), seekID: isSeeking ? latestSeek : nil)))
+    case .accessLogged:
+      logAccess(engine)
+    }
   }
 
-  /// A stream that breaks after it started playing never fails the item's status, so without this
-  /// the screen would wait on a spinner for good. The player's own stall notice is logged too:
-  /// it says the network fell behind, which reads the same as a stuck load from outside.
-  private func observeFailures(of item: AVPlayerItem, generation: Int) {
-    let center = NotificationCenter.default
-    observers.append(
-      center.addObserver(
-        forName: AVPlayerItem.failedToPlayToEndTimeNotification,
-        object: item,
-        queue: .main
-      ) { [weak self] notification in
-        let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
-        let normalized = error.map(PlaybackDiagnostics.NormalizedError.init)
-        let detail = normalized.map(Self.describe) ?? "no error"
-        MainActor.assumeIsolated {
-          guard let self, self.playbackGeneration == generation else { return }
-          logger.error(
-            "Playback broke at \(clock(self.elapsed), privacy: .public): \(detail, privacy: .public)"
-          )
-          self.record(.item(.init(phase: .failed, error: normalized)))
-          self.capturePosition()
-          self.itemNeedsReload = true
-          self.timelineSample = nil
-          self.player?.pause()
-          self.state = .failed("The audio stopped loading.")
-          self.publishNowPlaying(isPlaying: false)
-        }
-      }
+  /// The end of the audio, which is the one way a Listen finishes.
+  private func audioEnded(_ engine: any PlaybackEngine) {
+    guard !completionReported, let finished = currentSetId else { return }
+    logger.info(
+      "Item ended generation=\(self.playbackGeneration, privacy: .public) actual=\(engine.currentTime, privacy: .public) duration=\(self.duration ?? 0, privacy: .public)"
     )
-    observers.append(
-      center.addObserver(
-        forName: AVPlayerItem.playbackStalledNotification,
-        object: item,
-        queue: .main
-      ) { [weak self] _ in
-        MainActor.assumeIsolated {
-          guard let self, self.playbackGeneration == generation else { return }
-          self.timelineSample = nil
-          self.record(.stalled)
-          logger.notice("Playback stalled at \(clock(self.elapsed), privacy: .public)")
-          if let item = self.player?.currentItem { self.logBuffer(item, reason: .stalled) }
-        }
-      }
-    )
-    observers.append(
-      center.addObserver(
-        forName: AVPlayerItem.newErrorLogEntryNotification,
-        object: item,
-        queue: .main
-      ) { [weak self] notification in
-        let entry = (notification.object as? AVPlayerItem).flatMap(Self.normalizedLastErrorLogEntry)
-        logger.notice("Stream error\(entry.map { "; " + Self.describe($0) } ?? "", privacy: .public)")
-        MainActor.assumeIsolated {
-          guard let self, self.playbackGeneration == generation, let entry else { return }
-          self.record(.error(entry))
-        }
-      }
-    )
-    observers.append(
-      center.addObserver(
-        forName: AVPlayerItem.timeJumpedNotification,
-        object: item,
-        queue: .main
-      ) { [weak self] _ in
-        MainActor.assumeIsolated {
-          guard let self, self.playbackGeneration == generation else { return }
-          let seek = self.isSeeking ? String(self.latestSeek) : "none"
-          let actual = self.player?.currentTime().seconds ?? .nan
-          logger.debug(
-            "Time jumped generation=\(generation, privacy: .public) seek=\(seek, privacy: .public) actual=\(actual, privacy: .public)"
-          )
-          self.record(
-            .timeJumped(
-              .init(actual: .init(actual), seekID: self.isSeeking ? self.latestSeek : nil)))
-        }
-      }
-    )
-    observers.append(
-      center.addObserver(
-        forName: AVPlayerItem.newAccessLogEntryNotification,
-        object: item,
-        queue: .main
-      ) { [weak self] _ in
-        MainActor.assumeIsolated {
-          guard let self, self.playbackGeneration == generation,
-            let item = self.player?.currentItem
-          else { return }
-          self.logAccess(item)
-        }
-      }
-    )
+    // Ogg duration can be estimated from bytes; the service measured the retained file.
+    let actual = engine.currentTime
+    if let duration = [duration, serviceDuration].compactMap({ $0 }).min(),
+      actual.isFinite, actual < duration - 2
+    {
+      record(.ended(.init(actual: .init(actual), expected: .init(duration), premature: true)))
+      logger.notice(
+        "Premature item end generation=\(self.playbackGeneration, privacy: .public) actual=\(actual, privacy: .public) duration=\(duration, privacy: .public)"
+      )
+      if wantsSound { state = .loading }
+      publishNowPlaying(isPlaying: false)
+      return
+    }
+    record(
+      .ended(
+        .init(
+          actual: .init(actual), expected: .init(duration ?? serviceDuration), premature: false)))
+    completionReported = true
+    onFinished?(finished)
   }
 
   private func capturePosition() {
@@ -1113,15 +965,15 @@ final class AudioPlayer {
 
   private func sampleTimeline() {
     guard state == .playing, sessionReady, !isSeeking, pendingSeek == nil,
-      let player, player.timeControlStatus == .playing, player.rate > 0
+      let engine, engine.timeControl == .playing, engine.rate > 0
     else {
       timelineSample = nil
       return
     }
-    let actual = player.currentTime().seconds
+    let actual = engine.currentTime
     guard actual.isFinite else { return }
     let uptime = ProcessInfo.processInfo.systemUptime
-    let sample = TimelineSample(mediaTime: actual, uptime: uptime, rate: player.rate)
+    let sample = TimelineSample(mediaTime: actual, uptime: uptime, rate: engine.rate)
     defer { timelineSample = sample }
     if let previous = timelineSample {
       let wallDelta = uptime - previous.uptime
@@ -1141,53 +993,53 @@ final class AudioPlayer {
     if uptime - lastTimelineLog >= 5 {
       lastTimelineLog = uptime
       logger.debug(
-        "Timeline sample generation=\(self.playbackGeneration, privacy: .public) actual=\(actual, privacy: .public) uptime=\(uptime, privacy: .public) rate=\(player.rate, privacy: .public)"
+        "Timeline sample generation=\(self.playbackGeneration, privacy: .public) actual=\(actual, privacy: .public) uptime=\(uptime, privacy: .public) rate=\(engine.rate, privacy: .public)"
       )
     }
   }
 
-  private func logBuffer(_ item: AVPlayerItem, reason: PlaybackDiagnostics.BufferEvent.Reason) {
+  private func logBuffer(
+    _ engine: any PlaybackEngine, reason: PlaybackDiagnostics.BufferEvent.Reason
+  ) {
     let label =
       switch reason {
       case .ready: "ready"
       case .stalled: "stall"
       case .waiting: "wait"
       }
-    let ranges = item.loadedTimeRanges.prefix(8).map { value in
-      let range = value.timeRangeValue
-      return "\(clock(range.start.seconds))+\(clock(range.duration.seconds))"
+    let buffer = engine.buffer
+    let ranges = buffer.ranges.map { range in
+      "\(clock(range.start))+\(clock(range.duration))"
     }.joined(separator: ",")
     logger.debug(
-      "Buffer generation=\(self.playbackGeneration, privacy: .public) reason=\(label, privacy: .public) empty=\(item.isPlaybackBufferEmpty, privacy: .public) full=\(item.isPlaybackBufferFull, privacy: .public) likely=\(item.isPlaybackLikelyToKeepUp, privacy: .public) rangeCount=\(item.loadedTimeRanges.count, privacy: .public) ranges=\(ranges, privacy: .public)"
+      "Buffer generation=\(self.playbackGeneration, privacy: .public) reason=\(label, privacy: .public) empty=\(buffer.isEmpty, privacy: .public) full=\(buffer.isFull, privacy: .public) likely=\(buffer.isLikelyToKeepUp, privacy: .public) rangeCount=\(buffer.rangeCount, privacy: .public) ranges=\(ranges, privacy: .public)"
     )
     record(.buffer(.init(reason: reason)))
   }
 
-  private func logAccess(_ item: AVPlayerItem) {
-    guard let entry = item.accessLog()?.events.last else { return }
+  private func logAccess(_ engine: any PlaybackEngine) {
+    guard let entry = engine.access else { return }
     logger.debug(
-      "Access generation=\(self.playbackGeneration, privacy: .public) bytes=\(entry.numberOfBytesTransferred, privacy: .public) transferDuration=\(entry.transferDuration, privacy: .public) observedBitrate=\(entry.observedBitrate, privacy: .public) indicatedBitrate=\(entry.indicatedBitrate, privacy: .public) stalls=\(entry.numberOfStalls, privacy: .public) downloadedDuration=\(entry.segmentsDownloadedDuration, privacy: .public)"
+      "Access generation=\(self.playbackGeneration, privacy: .public) bytes=\(entry.bytesTransferred, privacy: .public) transferDuration=\(entry.transferDuration, privacy: .public) observedBitrate=\(entry.observedBitrate, privacy: .public) indicatedBitrate=\(entry.indicatedBitrate, privacy: .public) stalls=\(entry.stalls, privacy: .public) downloadedDuration=\(entry.downloadedDuration, privacy: .public)"
     )
     record(.access(.init(metrics: diagnosticAccessMetrics(entry))))
   }
 
-  /// Why the player is waiting, when it is. The reason tells a slow network from a player that
+  /// Why the engine is waiting, when it is. The reason tells a slow network from a player that
   /// was never asked to play.
-  private func logWaiting(_ player: AVPlayer) {
-    switch player.timeControlStatus {
-    case .waitingToPlayAtSpecifiedRate:
-      let reason = player.reasonForWaitingToPlay?.rawValue ?? "no reason"
+  private func logWaiting(_ engine: any PlaybackEngine) {
+    switch engine.timeControl {
+    case .waiting:
+      let reason = engine.waitingReasonName ?? "no reason"
       logger.debug(
         "Waiting at \(clock(self.elapsed), privacy: .public): \(reason, privacy: .public)")
       timelineSample = nil
-      record(.waiting(.init(reason: diagnosticWaitingReason(player.reasonForWaitingToPlay))))
-      if let item = player.currentItem { logBuffer(item, reason: .waiting) }
+      record(.waiting(.init(reason: engine.waitingReason)))
+      logBuffer(engine, reason: .waiting)
     case .playing:
       logger.debug("Playing at \(clock(self.elapsed), privacy: .public)")
     case .paused:
       logger.debug("Player paused at \(clock(self.elapsed), privacy: .public)")
-    @unknown default:
-      break
     }
   }
 
@@ -1197,13 +1049,6 @@ final class AudioPlayer {
 
   nonisolated static func describe(_ error: PlaybackDiagnostics.NormalizedError) -> String {
     "domain=\(error.domain.rawValue) code=\(error.code)"
-  }
-
-  nonisolated static func normalizedLastErrorLogEntry(of item: AVPlayerItem)
-    -> PlaybackDiagnostics.NormalizedError?
-  {
-    guard let entry = item.errorLog()?.events.last else { return nil }
-    return .init(domain: entry.errorDomain, code: entry.errorStatusCode)
   }
 
   /// A rate drop can be buffering. Only an audio-session notification marks an interruption.
@@ -1224,7 +1069,7 @@ final class AudioPlayer {
     }
   }
 
-  func stallChanged(status: AVPlayer.TimeControlStatus) {
+  func stallChanged(status: PlaybackEngineTimeControl) {
     switch status {
     case .playing:
       if state == .loading, sessionReady, pendingSeek == nil, !isSeeking, !itemNeedsReload {
@@ -1233,7 +1078,7 @@ final class AudioPlayer {
           hasStartedSound = true
           let delay = soundRequestedAt.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0
           logger.info(
-            "First playing generation=\(self.playbackGeneration, privacy: .public) actual=\(self.player?.currentTime().seconds ?? 0, privacy: .public) delay=\(delay, privacy: .public)"
+            "First playing generation=\(self.playbackGeneration, privacy: .public) actual=\(self.engine?.currentTime ?? 0, privacy: .public) delay=\(delay, privacy: .public)"
           )
         }
       }
@@ -1242,18 +1087,16 @@ final class AudioPlayer {
       if state == .playing {
         state = .loading
       }
-    case .waitingToPlayAtSpecifiedRate:
+    case .waiting:
       if state == .playing || state == .loading {
         state = .loading
       }
-    @unknown default:
-      break
     }
     publishNowPlaying(isPlaying: state == .playing)
   }
 
   private func publishNowPlaying(isPlaying: Bool) {
-    guard !currentTitle.isEmpty else { return }
+    guard !currentTitle.isEmpty, engine?.ownsNowPlaying != true else { return }
     MPNowPlayingInfoCenter.default().nowPlayingInfo = Self.nowPlayingInfo(
       title: currentTitle,
       artist: currentArtist,
@@ -1265,21 +1108,23 @@ final class AudioPlayer {
     )
   }
 
-  private func dropPlayerObservers() {
-    if let timeObserver {
-      player?.removeTimeObserver(timeObserver)
-      self.timeObserver = nil
+  /// The remote commands this player answers, in the order `setupCommands()` registers them.
+  private nonisolated static func remoteCommands() -> [MPRemoteCommand] {
+    let center = MPRemoteCommandCenter.shared()
+    return [
+      center.playCommand, center.pauseCommand, center.togglePlayPauseCommand,
+      center.skipBackwardCommand, center.skipForwardCommand, center.changePlaybackPositionCommand,
+      center.nextTrackCommand, center.previousTrackCommand,
+    ]
+  }
+
+  /// Leaves the remote commands to an engine that answers them itself, and answers them here
+  /// otherwise. Now Playing follows the same owner in `publishNowPlaying(isPlaying:)`.
+  private func takeSystemControls(from engine: any PlaybackEngine) {
+    let enabled = !engine.ownsNowPlaying
+    for command in Self.remoteCommands() where command.isEnabled != enabled {
+      command.isEnabled = enabled
     }
-    statusObservation?.invalidate()
-    durationObservation?.invalidate()
-    loadedRangesObservation?.invalidate()
-    rateObservation?.invalidate()
-    stallObservation?.invalidate()
-    statusObservation = nil
-    durationObservation = nil
-    loadedRangesObservation = nil
-    rateObservation = nil
-    stallObservation = nil
   }
 
   private func setupCommands() {
@@ -1439,8 +1284,8 @@ final class AudioPlayer {
             self.itemNeedsReload = true
             self.pendingSeek = nil
             self.isSeeking = false
-            self.dropPlayerObservers()
-            self.player = nil
+            self.engine?.invalidate()
+            self.engine = nil
             self.artworkFetch?.cancel()
             self.state = .failed("Audio was reset on this device. Press Play to resume.")
             self.publishNowPlaying(isPlaying: false)
@@ -1469,7 +1314,7 @@ final class AudioPlayer {
         guard wantsSound else { return }
         sessionReady = false
         timelineSample = nil
-        player?.pause()
+        engine?.pause()
         state = .interrupted
         publishNowPlaying(isPlaying: false)
       case .ended:
