@@ -1004,7 +1004,6 @@ function runCommand(command, args, signal, toolName) {
         stdout += chunk;
       }
     });
-    // eslint-disable-next-line promise/prefer-await-to-callbacks -- child_process reports spawn failure through an event, not a promise
     child.once("error", (error) => {
       finish(
         reject,

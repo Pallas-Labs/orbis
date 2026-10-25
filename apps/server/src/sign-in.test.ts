@@ -235,10 +235,10 @@ test("only the Host opens or closes joining, and the passcode survives a restart
   let passcode = "";
   try {
     for (const key of [FRIEND_DAILY, NODE]) {
-      // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
-      expect(await statusOf(call(first, "GET", "/admin/passcode", { key })))
+      expect(
         // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
-        .toBe(403);
+        await statusOf(call(first, "GET", "/admin/passcode", { key }))
+      ).toBe(403);
       // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
       expect(await statusOf(newPasscode(first, key))).toBe(403);
       // oxlint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
