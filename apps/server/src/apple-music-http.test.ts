@@ -1,12 +1,5 @@
 import { expect, test } from "bun:test";
-import {
-  mkdir,
-  mkdtemp,
-  readdir,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -14,6 +7,7 @@ import { SOURCE_URL_MESSAGE } from "@orbis/contracts";
 import { REJECTED_SOURCE_URLS } from "@orbis/contracts/source-url-cases";
 import { Effect } from "effect";
 
+import { appleMusicRecordings, musicKitPem } from "./apple-music-recordings.js";
 import { hashToken } from "./identity.js";
 import { Metadata } from "./metadata.js";
 import { createTestApp as createApp } from "./test-app.js";
@@ -36,6 +30,14 @@ const failures = [
   "a metadata or Tracklist retry does not read the album again",
   "removing and saving the mix again loses its Tracklist",
   "a Group without the key calls Apple at all",
+  "a search misses a DJ mix Apple labels, or marks a studio album, EP, or single as one",
+  "a search shows DJ mixes after other albums, or reorders Apple's results within a group",
+  "the same album appears twice, or the DJ Mix search adds albums that are not DJ mixes",
+  "a search reads albums one at a time, or from a storefront other than us",
+  "a result's Source Link is not the album link, so choosing it saves a second Set",
+  "an album in the Person's Library is not marked, or a friend's Set marks it",
+  "a Group without the key answers a search with anything but the not-set-up message",
+  "Apple refusing a search fails with a 500 instead of asking to try again",
 ];
 
 const record = async <Result>(name: string, result: Result) => {
@@ -51,24 +53,16 @@ interface Recording {
     readonly data?: {
       readonly relationships: { readonly tracks: { readonly data: unknown[] } };
     }[];
+    readonly results?: {
+      readonly albums?: { readonly data: { readonly id: string }[] };
+    };
   };
   readonly status: number;
   readonly url: string;
 }
 
 /** Apple's answers as `bun run record:apple-music` recorded them with the Host's MusicKit key. */
-const recordingsDirectory = new URL("fixtures/apple-music/", import.meta.url);
-const recordingNames = await readdir(recordingsDirectory);
-const recordings = new Map(
-  await Promise.all(
-    recordingNames.map(async (name) => {
-      const recording: Recording = JSON.parse(
-        await readFile(new URL(name, recordingsDirectory), "utf-8")
-      );
-      return [recording.url, recording] as const;
-    })
-  )
-);
+const recordings = await appleMusicRecordings<Recording>();
 
 const ALBUM_URL = "https://music.apple.com/album/1046502556";
 const ALBUM_READ =
@@ -149,10 +143,169 @@ const EXPECTED_CUES = (
   title,
 }));
 
-const pem = (der: ArrayBuffer) =>
-  `-----BEGIN PRIVATE KEY-----\n${btoa(
-    String.fromCodePoint(...new Uint8Array(der))
-  )}\n-----END PRIVATE KEY-----\n`;
+/**
+ * What each recorded search marks as a DJ mix, as "title / creator", in the order shown.
+ * Checked by hand against the recordings on 2026-10-25; the rest of each search is other albums.
+ */
+const EXPECTED_DJ_MIXES = [
+  [
+    "Seth Troxler",
+    [
+      "Seth Troxler at Circoloco Thailand (DJ Mix) / Seth Troxler",
+      "Seth Troxler at Circoloco Rio De Janeiro (DJ Mix) / Seth Troxler",
+      "Mochakk b2b DJ Tennis b2b Seth Troxler at Circoloco Rio De Janeiro (DJ Mix) / Seth Troxler, Mochakk & DJ Tennis",
+      "Beats In Space 099: Seth Troxler (DJ Mix) / Seth Troxler",
+      "Seth Troxler at III Points Music Festival 2024 (DJ Mix) / Seth Troxler",
+      "Seth Troxler at Kappa FuturFestival 2024 (DJ Mix) / Seth Troxler",
+      "DJ-Kicks (DJ Mix) / Seth Troxler",
+      "Seth Troxler & Derrick Carter at ARC Music Festival, 2021 (DJ Mix) / Seth Troxler & Derrick Carter",
+      "Carl Craig b2b Seth Troxler at ARC Festival, 2022 (DJ Mix) / Carl Craig & Seth Troxler",
+      "Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage (DJ Mix) / Skream & Seth Troxler",
+      "Seth Troxler at Time Warp DE, 2023 (DJ Mix) / Seth Troxler",
+      "Seth Troxler b2b Skream at Kappa FuturFestival 2024 (DJ Mix) / Skream & Seth Troxler",
+      "Seth Troxler at CRSSD Festival 2021: The Palms (DJ Mix) / Seth Troxler",
+      "Boiler Room: Seth Troxler in Warsaw, Oct 10, 2017 (DJ Mix) / Seth Troxler",
+      "Seth Troxler at Kappa FuturFestival 2023 (DJ Mix) / Seth Troxler",
+      "Seth Troxler at Movement Detroit 2023 (DJ Mix) / Seth Troxler",
+    ],
+  ],
+  [
+    "DJ-Kicks",
+    [
+      "DJ - Kicks: Djrum (DJ Mix) / Djrum",
+      "DJ-Kicks (Kruder & Dorfmeister) [DJ Mix] / Kruder & Dorfmeister",
+      "DJ-Kicks (DJ Mix) / DJ Koze",
+      "DJ-Kicks (DJ Mix) / Moodymann",
+      "DJ-Kicks (Mount Kimbie) [DJ Mix] / Mount Kimbie",
+      "DJ-Kicks (Matthew Dear) [DJ Mix] / Matthew Dear",
+      "DJ-Kicks (DJ Mix) / Mr. Scruff",
+      "DJ-Kicks (DJ Mix) / Actress",
+      "DJ-Kicks: Jayda G (DJ Mix) / Jayda G",
+      "DJ-Kicks (Laurel Halo) [DJ Mix] / Laurel Halo",
+      "DJ-Kicks (Deetron) [Mixed Tracks] / Deetron",
+      "DJ-Kicks (DJ Mix) / Gold Panda",
+      "DJ-Kicks (Maya Jane Coles) [DJ Mix] / Maya Jane Coles",
+      "DJ-Kicks (DJ Mix) / Motor City Drum Ensemble",
+      "DJ-Kicks (DJ Mix) / Peggy Gou",
+      "DJ-Kicks / Kemistry & Storm",
+      "DJ-Kicks (DJ Mix) / Scuba",
+      "DJ-Kicks (DJ Mix) / Special Request",
+      "DJ - Kicks: Sofia Kourtesis (DJ Mix) / Sofia Kourtesis",
+      "DJ-Kicks (DJ Mix) / Robert Hood",
+      "DJ-Kicks (DJ Mix) / Daniel Avery",
+      "DJ-Kicks (Avalon Emerson) [DJ Mix] / Avalon Emerson",
+      "DJ-Kicks (DJ Mix) / DJ Seinfeld",
+      "DJ-Kicks (DJ Mix) / Michael Mayer",
+      "DJ-Kicks (DJ Mix) / Nina Kraviz",
+      "DJ-Kicks (DJ Mix) / Seth Troxler",
+      "DJ-Kicks (DJ Mix) / Leon Vynehall",
+      "DJ-Kicks (DJ Mix) / Forest Swords",
+      "DJ-Kicks (DJ Mix) / James Holden",
+      "DJ-Kicks (DJ Mix) / Wolf + Lamb & Soul Clap",
+      "DJ-Kicks (DJ Mix) / DJ Tennis",
+      "DJ-Kicks: Theo Parrish (DJ Mix) / Theo Parrish",
+      "Boiler Room: Nightmares On Wax in London, Aug 28, 2013 (DJ Mix) / Nightmares On Wax",
+    ],
+  ],
+  [
+    "Defected",
+    [
+      "Defected: John Summit, We Dance As One, 2020 (DJ Mix) / John Summit",
+      "Defected: Dom Dolla, We Dance As One, NYE 2021 (DJ Mix) / Dom Dolla",
+      "Defected: Dennis Ferrer, We Dance As One, 2020 (DJ Mix) / Dennis Ferrer",
+      "Defected Malta: Groove Armada, Oct 7, 2023 (DJ Mix) / Groove Armada",
+      "Defected: Louie Vega, We Dance As One, Glitterbox Love Stream, 2020 (DJ Mix) / Louie Vega",
+      "Defected: Eats Everything, We Dance As One, NYE 2021 (DJ Mix) / Eats Everything",
+      "Defected: Vintage Culture, We Dance As One, 2020 (DJ Mix) / Vintage Culture",
+      "Defected: Jellybean Benitez at Glitterbox Virtual Festival, 2020 (DJ Mix) / Jellybean",
+      "Defected: Purple Disco Machine at Glitterbox Virtual Festival, 2020 (DJ Mix) / Purple Disco Machine",
+      "Defected: Roger Sanchez at Glitterbox Hï Ibiza, 2019 (DJ Mix) / Roger Sanchez",
+      "Defected: CamelPhat, We Dance As One, 2020 (DJ Mix) / CamelPhat",
+      "Defected: Purple Disco Machine, We Dance As One, 2020 (DJ Mix) / Purple Disco Machine",
+      "Defected: Roger Sanchez, We Dance As One, NYE 2021 (DJ Mix) / Roger Sanchez",
+      "Defected Presents TSHA In The House (DJ Mix) / TSHA",
+      "Defected Malta: Horse Meat Disco, 2025 (DJ Mix) / Horse Meat Disco",
+      "Defected: Gorgon City in Ibiza, May 26, 2019 (DJ Mix) / Gorgon City",
+      "Defected: Armand Van Helden in London, Dec 31, 2023 (DJ Mix) / Armand Van Helden",
+      "Gorgon City: Defected Pacha Ibiza, May 22, 2025 (DJ Mix) / Gorgon City",
+      "Defected presents Frankie Knuckles In The House (DJ Mix) / Frankie Knuckles",
+      "Defected: Dave Lee, We Dance As One, Glitterbox Love Stream, 2020 (DJ Mix) / Dave Lee",
+      "Defected Worldwide (DJ Mix) / Gorgon City",
+      "Defected: DJ Paulette, We Dance As One, Glitterbox Love Stream, 2020 (DJ Mix) / DJ Paulette",
+      "Kevin Saunderson b2b Dantiez at Movement Detroit 2023: KMS Records & Defected (DJ Mix) / Dantiez & Kevin Saunderson",
+      "Defected: Natasha Diggs, We Dance As One, 2020 (DJ Mix) / Natasha Diggs",
+      "Defected: Disciples, We Dance As One, 2020 (DJ Mix) / Disciples",
+      "Boys Noize at Defected Virtual Festival, 2020 (DJ Mix) / Boys Noize",
+      "Defected: Sam Divine, We Dance As One, 2020 (DJ Mix) / Sam Divine",
+      "Defected: Natasha Diggs at Glitterbox Virtual Festival, 2020 (DJ Mix) / Natasha Diggs",
+      "Defected: Sef Kombo b2b Louie Dunmore, We Dance As One, 2020 (DJ Mix) / Sef Kombo & Louie Dunmore",
+      "DJ Minx: Defected Broadcasting House (DJ Mix) / DJ Minx",
+    ],
+  ],
+  [
+    "Radiohead",
+    [
+      "Boiler Room: Thom Yorke in London, Oct 11, 2011 (DJ Mix) / Thom Yorke",
+      "Tomorrowland Around The World 2020: Lost Frequencies (DJ Mix) / Lost Frequencies",
+      "Tomorrowland Around The World 2020: Alan Walker (DJ Mix) / Alan Walker",
+      "LXM Festival: Paul Kalkbrenner in Lisbon, Dec 14, 2019 (DJ Mix) / Paul Kalkbrenner",
+    ],
+  ],
+  [
+    "Carl Cox",
+    [
+      "Boiler Room: Carl Cox in Ibiza, Aug 15, 2013 (DJ Mix) / Carl Cox",
+      "Carl Cox at Club Space, Miami, Nov 15, 2024 (DJ Mix) / Carl Cox",
+      "Cercle: Carl Cox at Château de Chambord, France (DJ Mix) / Carl Cox",
+      "Carl Cox at [UNVRS]: All Night Long, Jul 27, 2025 [DJ Mix] [DJ Mix] / Carl Cox",
+      "Carl Cox b2b Green Velvet at ARC Music Festival, 2024 (DJ Mix) / Carl Cox & Green Velvet",
+      "NYE 2021 (DJ Mix) / Carl Cox",
+      "Carl Cox b2b Nicole Moudaber at Kappa FuturFestival 2023 (DJ Mix) / Nicole Moudaber & Carl Cox",
+      "Carl Cox Mixes Awesome Soundwave (Mixed) / Carl Cox",
+      "Pure Intec 2 (Mixed by Carl Cox & Jon Rundell) / Carl Cox & Jon Rundell",
+      "Pure Intec 4 (Mixed by Carl Cox & Jon Rundell) / Carl Cox & Jon Rundell",
+      "Carl Cox: DJsounds Show, Aug 5, 2013 (DJ Mix) / Carl Cox",
+      "Tomorrowland 2018: Carl Cox (DJ Mix) / Carl Cox",
+      "Asw Is Live Mixed by Carl Cox (DJ Mix) / Carl Cox",
+      "Carl Cox at Kappa FuturFestival 2024 (DJ Mix) / Carl Cox",
+      "Carl Cox at the Roundhouse, London, Sep 8, 2024 (DJ Mix) / Carl Cox",
+      "Global Underground #38: Carl Cox - Black Rock Desert (DJ Mix) / Carl Cox",
+    ],
+  ],
+  [
+    "Essential Mix",
+    [
+      "Amapiano Essentials (DJ Mix) / DJ Phil",
+      "Rxxistance Vol. 3: Essential, Mixed by Stoned Baby (Continuous Mix) / Various Artists",
+      "Stellar Fountain's Essential Mix Volume I. (DJ Mix) / MiraculuM & Stellar Fountain",
+      "Anjunabeats Volume 16 (DJ Mix) / Above & Beyond",
+      "Today's Hits 2020 (DJ Mix) / Zedd",
+      "Uncle Snoop’s “A Black Music Story” (DJ Mix) / Snoop Dogg",
+      "Boiler Room: DJ Jazzy Jeff in London, Apr 18, 2014 (DJ Mix) / DJ Jazzy Jeff",
+      "A State of Trance Year Mix 2018 (DJ Mix) / Armin van Buuren",
+      "Boiler Room: Nightmares On Wax in London, Aug 28, 2013 (DJ Mix) / Nightmares On Wax",
+      "Kitchen Raving, Vol. 1 (DJ Mix) / Fatboy Slim",
+      "Big Beach Boutique (DJ Mix) / Fatboy Slim",
+      "ASOT 1296 - A State of Trance Episode 1296 (Unfiltered 008) [DJ Mix] / Armin van Buuren",
+      "Tomorrowland 2022: SOFI TUKKER at Crystal Garden, Weekend 1 (DJ Mix) / SOFI TUKKER",
+      "DGTL: Hot Since 82 at DGTL Amsterdam, 2018 (DJ Mix) / Hot Since 82",
+      "What Came Before: U.K. Garage (DJ Mix) / Chase & Status",
+    ],
+  ],
+] as const;
+
+/**
+ * Real DJ mixes that Apple names like any album, so the rule cannot see them. All Albums shows
+ * them (ADR 0021).
+ */
+const UNLABELLED_MIXES = [
+  ["Seth Troxler", "Seth Troxler - The Lab 03 / Various Artists"],
+  [
+    "Seth Troxler",
+    "Mixmag Presents Jamie Jones vs. Seth Troxler / Jamie Jones & Seth Troxler",
+  ],
+  ["DJ-Kicks", "DJ-Kicks / Photek"],
+] as const;
 
 const fromBase64Url = (value: string) =>
   Uint8Array.from(
@@ -167,7 +320,7 @@ const musicKitKey = async () => {
     true,
     ["sign", "verify"]
   );
-  const privateKey = pem(
+  const privateKey = musicKitPem(
     await crypto.subtle.exportKey("pkcs8", pair.privateKey)
   );
   const verify = async (token: string) => {
@@ -202,7 +355,12 @@ const withMusicVideo = (recording: Recording) => {
   return body;
 };
 
-type AppleAnswer = "recorded" | "music-video" | "refuse" | "hang";
+type AppleAnswer =
+  | "recorded"
+  | "music-video"
+  | "refuse"
+  | "hang"
+  | "rate-limit";
 
 const start = async (options: { configured?: boolean } = {}) => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-apple-music-"));
@@ -262,6 +420,9 @@ const start = async (options: { configured?: boolean } = {}) => {
         reads.push({ token: headers?.authorization, url });
         if (answer === "refuse") {
           return Promise.resolve(new Response("{}", { status: 401 }));
+        }
+        if (answer === "rate-limit") {
+          return Promise.resolve(new Response("{}", { status: 429 }));
         }
         if (answer === "hang") {
           const silence = Promise.withResolvers<Response>();
@@ -633,6 +794,175 @@ test("a Group without the MusicKit key saves the Set with failed metadata and ne
     });
     expect(server.reads).toEqual([]);
     expect(server.asked).toEqual([]);
+
+    const search = await request(server.app, {
+      method: "GET",
+      url: "/apple-music/search?q=Seth%20Troxler",
+    });
+    expect(search.statusCode).toBe(503);
+    expect(messageIn(search)).toBe(
+      "Apple Music search is not set up on this server."
+    );
+    expect(server.reads).toEqual([]);
+    await record("search-not-configured", {
+      response: { body: search.json(), status: search.statusCode },
+    });
+  } finally {
+    await server.dispose();
+  }
+});
+
+interface FoundAlbum {
+  readonly creator: string | null;
+  readonly djMix: boolean;
+  readonly inLibrary: boolean;
+  readonly title: string;
+  readonly url: string;
+}
+
+const search = async (
+  server: Awaited<ReturnType<typeof start>>,
+  words: string,
+  headers?: Record<string, string>
+) => {
+  const url = `/apple-music/search?q=${encodeURIComponent(words)}`;
+  const response = await request(
+    server.app,
+    headers ? { headers, method: "GET", url } : { method: "GET", url }
+  );
+  expect(response.statusCode).toBe(200);
+  const { albums }: { albums: FoundAlbum[] } = response.json();
+  return albums;
+};
+
+const named = (album: FoundAlbum) => `${album.title} / ${album.creator}`;
+
+test("each recorded search shows Apple's labelled DJ mixes first, in Apple's order, from two US searches and one album read", async () => {
+  const server = await start();
+  try {
+    for (const [words, mixes] of EXPECTED_DJ_MIXES) {
+      const before = server.reads.length;
+      // oxlint-disable-next-line no-await-in-loop -- Each search is checked against its own reads.
+      const albums = await search(server, words);
+      const reads = server.reads.slice(before).map((read) => new URL(read.url));
+      expect(reads.map((url) => url.pathname)).toEqual([
+        "/v1/catalog/us/search",
+        "/v1/catalog/us/search",
+        "/v1/catalog/us/albums",
+      ]);
+      expect(reads.map((url) => url.searchParams.get("term"))).toEqual([
+        words,
+        `${words} DJ Mix`,
+        null,
+      ]);
+      expect(albums.filter((album) => album.djMix).map(named)).toEqual([
+        ...mixes,
+      ]);
+      const firstOther = albums.findIndex((album) => !album.djMix);
+      expect(albums.slice(firstOther).every((album) => !album.djMix)).toBe(
+        true
+      );
+      const urls = albums.map((album) => album.url);
+      expect(new Set(urls).size).toBe(urls.length);
+      for (const url of urls) {
+        expect(url).toMatch(/^https:\/\/music\.apple\.com\/album\/\d+$/u);
+      }
+      // The DJ Mix search adds only mixes: none of its strangers' singles reach All Albums.
+      const typed = new Set(
+        recordings
+          .get(server.reads[before]?.url ?? "")
+          ?.body.results?.albums?.data.map(({ id }) => id)
+      );
+      for (const album of albums) {
+        expect(
+          album.djMix || typed.has(album.url.split("/").at(-1) ?? "")
+        ).toBe(true);
+      }
+      // oxlint-disable-next-line no-await-in-loop -- One evidence file per search.
+      await record(`search-${words.toLowerCase().replaceAll(/\W+/gu, "-")}`, {
+        albums: albums.map((album) => ({
+          djMix: album.djMix,
+          name: named(album),
+          url: album.url,
+        })),
+        reads: reads.map(String),
+      });
+    }
+    for (const [words, mix] of UNLABELLED_MIXES) {
+      // oxlint-disable-next-line no-await-in-loop -- Each known miss is read from its search.
+      const albums = await search(server, words);
+      expect(albums.find((album) => named(album) === mix)?.djMix).toBe(false);
+    }
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("a search marks the albums in the Person's Library, and choosing a result saves the same Set a shared link names", async () => {
+  const server = await start();
+  try {
+    const before = await search(server, "Seth Troxler");
+    expect(before.some((album) => album.inLibrary)).toBe(false);
+    const chosen = before.find(
+      (album) => named(album) === "DJ-Kicks (DJ Mix) / Seth Troxler"
+    );
+    expect(chosen?.url).toBe(ALBUM_URL);
+
+    const saved = await request(server.app, {
+      method: "POST",
+      payload: { url: chosen?.url },
+      url: "/sets",
+    });
+    expect(saved.statusCode).toBe(201);
+    expect(saved.json()).toMatchObject({
+      metadataState: "enriched",
+      title: "DJ-Kicks (DJ Mix)",
+      url: ALBUM_URL,
+    });
+    const shared = await request(server.app, {
+      method: "POST",
+      payload: {
+        url: "https://music.apple.com/us/album/dj-kicks-dj-mix/1046502556",
+      },
+      url: "/sets",
+    });
+    expect(shared.statusCode).toBe(409);
+
+    const after = await search(server, "Seth Troxler");
+    expect(
+      after.filter((album) => album.inLibrary).map((album) => album.url)
+    ).toEqual([ALBUM_URL]);
+    const friendSees = await search(server, "Seth Troxler", server.friend);
+    expect(friendSees.some((album) => album.inLibrary)).toBe(false);
+    await record("search-in-library", {
+      friend: friendSees.filter((album) => album.inLibrary).map(named),
+      host: after.filter((album) => album.inLibrary).map(named),
+    });
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("a blank search is refused before Apple is asked, and a refused search asks to try again", async () => {
+  const server = await start();
+  try {
+    const blank = await request(server.app, {
+      method: "GET",
+      url: "/apple-music/search?q=%20%20",
+    });
+    expect(blank.statusCode).toBe(400);
+    expect(messageIn(blank)).toBe("Type what to find on Apple Music.");
+    expect(server.reads).toEqual([]);
+
+    server.answer("rate-limit");
+    const limited = await request(server.app, {
+      method: "GET",
+      url: "/apple-music/search?q=Carl%20Cox",
+    });
+    expect(limited.statusCode).toBe(503);
+    expect(messageIn(limited)).toBe(
+      "Apple Music is not answering. Try the search again."
+    );
   } finally {
     await server.dispose();
   }

@@ -156,6 +156,35 @@ struct LibraryResponse: Decodable {
   let sets: [SavedSet]
 }
 
+/// An album an Apple Music search found. Saving its link makes it a Set (ADR 0021).
+struct AppleMusicAlbum: Decodable, Equatable, Identifiable, Sendable {
+  let url: String
+  let title: String
+  let creator: String?
+  let artworkUrl: String?
+  let releasedAt: String?
+  let songCount: Int
+  let durationSeconds: Int?
+  let djMix: Bool
+  /// Whether the Set is in this Person's Library.
+  var inLibrary: Bool
+
+  var id: String { url }
+}
+
+struct AppleMusicSearchResponse: Decodable {
+  let albums: [AppleMusicAlbum]
+}
+
+/// Where the Find on Apple Music field stands. A search in flight keeps its words, so a late
+/// answer to words since replaced is dropped.
+enum AppleMusicSearch: Equatable {
+  case idle
+  case searching(words: String)
+  case found([AppleMusicAlbum])
+  case failed(message: String)
+}
+
 /// How far a download has got. Bytes are the worker's own count, because a converted
 /// tunnel carries no content length; the format is what the worker stored, if anything.
 struct AudioState: Decodable, Equatable {

@@ -1,10 +1,18 @@
-import type { SetSource } from "@orbis/contracts";
+import type {
+  AppleMusicAlbum as AppleMusicSearchResult,
+  SetSource,
+} from "@orbis/contracts";
 import { Context, Effect, Layer, Option, Schema } from "effect";
 
 import type { AppleMusicCredentials } from "./apple-music-token.js";
 import { appleMusicTokens } from "./apple-music-token.js";
+import { isDjMix } from "./apple-music.js";
 import { MetadataError } from "./metadata-error.js";
-import { youTubeVideoId, youTubeWatchUrl } from "./source-url.js";
+import {
+  appleMusicAlbumUrl,
+  youTubeVideoId,
+  youTubeWatchUrl,
+} from "./source-url.js";
 import type { SourceDetails, YtDlpMetadataService } from "./ytdlp-metadata.js";
 
 /** What only yt-dlp reports. Absent when yt-dlp is not configured or could not read the link. */
@@ -64,6 +72,9 @@ export interface YouTubePlaylistPage {
   readonly unavailable: number;
 }
 
+/** A found album as the provider reads it; whether the Person has it is the Library's to say. */
+export type AppleMusicSearchAlbum = Omit<AppleMusicSearchResult, "inLibrary">;
+
 export interface MetadataService {
   readonly enrich: (
     input: EnrichInput
@@ -81,6 +92,10 @@ export interface MetadataService {
     playlistId: string,
     pageToken: string | null
   ) => Effect.Effect<YouTubePlaylistPage, MetadataError>;
+  /** Albums in the US catalog for these words, DJ mixes first (ADR 0021). */
+  readonly searchAppleMusic: (
+    words: string
+  ) => Effect.Effect<readonly AppleMusicSearchAlbum[], MetadataError>;
 }
 
 export interface MetadataOptions {
@@ -456,6 +471,13 @@ const AppleMusicAlbumResponse = Schema.Struct({
       attributes: Schema.Struct({
         artistName: Schema.optionalKey(Schema.String),
         artwork: Schema.optionalKey(AppleMusicArtwork),
+        editorialNotes: Schema.optionalKey(
+          Schema.Struct({
+            short: Schema.optionalKey(Schema.String),
+            standard: Schema.optionalKey(Schema.String),
+          })
+        ),
+        isSingle: Schema.optionalKey(Schema.Boolean),
         name: Schema.String,
         releaseDate: Schema.optionalKey(Schema.String),
       }),
@@ -534,8 +556,85 @@ const appleMusicMetadata = (album: AppleMusicAlbum): EnrichedMetadata => {
 };
 
 /** Every read uses the US catalog, whatever storefront the shared link named (ADR 0021). */
+const APPLE_MUSIC_CATALOG = "https://api.music.apple.com/v1/catalog/us";
+
 export const appleMusicAlbumRead = (albumId: string): string =>
-  `https://api.music.apple.com/v1/catalog/us/albums/${albumId}?include=tracks`;
+  `${APPLE_MUSIC_CATALOG}/albums/${albumId}?include=tracks`;
+
+/** Apple's largest page of search results. */
+const APPLE_MUSIC_SEARCH_LIMIT = "25";
+const DJ_MIX_WORDS = /\bdj mix\b/iu;
+
+/**
+ * The words as typed, and the words with "DJ Mix", so a DJ's own mixes rise above their studio
+ * albums. Only ids are read here; the albums come from one batched read.
+ */
+export const appleMusicSearchReads = (words: string): string[] =>
+  (DJ_MIX_WORDS.test(words) ? [words] : [words, `${words} DJ Mix`]).map(
+    (term) =>
+      `${APPLE_MUSIC_CATALOG}/search?${new URLSearchParams({
+        "fields[albums]": "name",
+        limit: APPLE_MUSIC_SEARCH_LIMIT,
+        term,
+        types: "albums",
+      })}`
+  );
+
+/** The found albums with their songs, trimmed to the fields a search result shows. */
+export const appleMusicAlbumsRead = (albumIds: readonly string[]): string =>
+  `${APPLE_MUSIC_CATALOG}/albums?${new URLSearchParams({
+    "fields[albums]":
+      "artistName,artwork,editorialNotes,isSingle,name,releaseDate",
+    "fields[songs]": "durationInMillis,name",
+    ids: albumIds.join(","),
+    include: "tracks",
+  })}`;
+
+export const AppleMusicSearchResponse = Schema.Struct({
+  results: Schema.Struct({
+    albums: Schema.optionalKey(
+      Schema.Struct({
+        data: Schema.Array(Schema.Struct({ id: Schema.String })),
+      })
+    ),
+  }),
+});
+
+/** Each search's ids in Apple's order, the first search's first, each album once. */
+export const mergedAlbumIds = (
+  searches: readonly (typeof AppleMusicSearchResponse.Type)[]
+): string[] => [
+  ...new Set(
+    searches.flatMap((search) =>
+      (search.results.albums?.data ?? []).map((album) => album.id)
+    )
+  ),
+];
+
+const appleMusicSearchAlbum = (
+  album: AppleMusicAlbum
+): AppleMusicSearchAlbum => {
+  const metadata = appleMusicMetadata(album);
+  const songs = metadata.songs ?? [];
+  const notes = album.attributes.editorialNotes;
+  return {
+    artworkUrl: metadata.artworkUrl,
+    creator: metadata.creator,
+    djMix: isDjMix({
+      editorialNotes: [notes?.short, notes?.standard]
+        .filter(Boolean)
+        .join("\n"),
+      isSingle: album.attributes.isSingle ?? false,
+      songTitles: songs.map((song) => song.title),
+      title: metadata.title,
+    }),
+    durationSeconds: metadata.durationSeconds,
+    releasedAt: metadata.releasedAt,
+    songCount: songs.length,
+    title: metadata.title,
+    url: appleMusicAlbumUrl(album.id),
+  };
+};
 
 const notInUsCatalog = () =>
   new MetadataError({
@@ -546,8 +645,18 @@ const notInUsCatalog = () =>
 const appleMusicProvider = (
   credentials: AppleMusicCredentials,
   request: RequestFetch
-): Provider => {
+): Provider & {
+  readonly search: MetadataService["searchAppleMusic"];
+} => {
   const token = appleMusicTokens(credentials);
+  const authorization = token().pipe(
+    Effect.mapError(() =>
+      notConfigured("The Apple Music key could not sign a token.")
+    ),
+    Effect.map((developerToken) => ({
+      authorization: `Bearer ${developerToken}`,
+    }))
+  );
   return {
     enrich: Effect.fn("Metadata.enrich")(function* enrichAppleMusic(url) {
       const albumId = appleMusicAlbumId(url);
@@ -556,16 +665,11 @@ const appleMusicProvider = (
           unsupported("This URL does not name an Apple Music album.")
         );
       }
-      const developerToken = yield* token().pipe(
-        Effect.mapError(() =>
-          notConfigured("The Apple Music key could not sign a token.")
-        )
-      );
       const response = yield* requestJson(
         appleMusicAlbumRead(albumId),
         AppleMusicAlbumResponse,
         {
-          headers: { authorization: `Bearer ${developerToken}` },
+          headers: yield* authorization,
           label: "Apple Music",
           notFound: notInUsCatalog(),
           request,
@@ -582,6 +686,38 @@ const appleMusicProvider = (
         );
       }
       return metadata;
+    }),
+    search: Effect.fn("Metadata.searchAppleMusic")(function* searchAppleMusic(
+      words: string
+    ) {
+      const headers = yield* authorization;
+      const options = { headers, label: "Apple Music", request };
+      const searches = yield* Effect.forEach(
+        appleMusicSearchReads(words),
+        (url) => requestJson(url, AppleMusicSearchResponse, options),
+        { concurrency: "unbounded" }
+      );
+      const ids = mergedAlbumIds(searches);
+      if (ids.length === 0) {
+        return [];
+      }
+      const typed = new Set(mergedAlbumIds(searches.slice(0, 1)));
+      const read = yield* requestJson(
+        appleMusicAlbumsRead(ids),
+        AppleMusicAlbumResponse,
+        options
+      );
+      const albums = new Map(read.data.map((album) => [album.id, album]));
+      // The "DJ Mix" search only exists to find mixes; its other albums are strangers' singles.
+      const found = ids.flatMap((id) => {
+        const album = albums.get(id);
+        const result = album ? appleMusicSearchAlbum(album) : null;
+        return result && (typed.has(id) || result.djMix) ? [result] : [];
+      });
+      return [
+        ...found.filter((album) => album.djMix),
+        ...found.filter((album) => !album.djMix),
+      ];
     }),
   };
 };
@@ -644,6 +780,10 @@ const noProviders: MetadataService = {
     Effect.fail(
       notConfigured("YouTube playlists are not configured on this server.")
     ),
+  searchAppleMusic: () =>
+    Effect.fail(
+      notConfigured("Apple Music search is not set up on this server.")
+    ),
 };
 
 export class Metadata extends Context.Service<Metadata, MetadataService>()(
@@ -657,11 +797,11 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
     const providers: Partial<Record<SetSource, Provider>> = {
       soundcloud: soundCloudProvider(request),
     };
-    if (options.appleMusic) {
-      providers["apple-music"] = appleMusicProvider(
-        options.appleMusic,
-        request
-      );
+    const appleMusic = options.appleMusic
+      ? appleMusicProvider(options.appleMusic, request)
+      : null;
+    if (appleMusic) {
+      providers["apple-music"] = appleMusic;
     }
     if (options.youTubeApiKey) {
       providers.youtube = youTubeProvider(options.youTubeApiKey, request);
@@ -700,6 +840,7 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
                 )
               : noProviders.playlistPage(playlistId, pageToken)
         ),
+        searchAppleMusic: appleMusic?.search ?? noProviders.searchAppleMusic,
       })
     );
   }
@@ -714,7 +855,12 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
 
   static layerOf(
     metadata: Pick<MetadataService, "enrich"> &
-      Partial<Pick<MetadataService, "details" | "playlist" | "playlistPage">>
+      Partial<
+        Pick<
+          MetadataService,
+          "details" | "playlist" | "playlistPage" | "searchAppleMusic"
+        >
+      >
   ): Layer.Layer<Metadata> {
     return Layer.succeed(
       Metadata,
@@ -722,6 +868,7 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
         details: noProviders.details,
         playlist: noProviders.playlist,
         playlistPage: noProviders.playlistPage,
+        searchAppleMusic: noProviders.searchAppleMusic,
         ...metadata,
       })
     );

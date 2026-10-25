@@ -1,0 +1,196 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=Carl+Cox&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=Carl+Cox&types=albums",
+        "data": [
+          {
+            "id": "1510032736",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1510032736",
+            "attributes": {
+              "name": "Boiler Room: Carl Cox in Ibiza, Aug 15, 2013 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1783924951",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1783924951",
+            "attributes": {
+              "name": "Carl Cox at Club Space, Miami, Nov 15, 2024 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1571392911",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1571392911",
+            "attributes": {
+              "name": "Cercle: Carl Cox at Château de Chambord, France (DJ Mix)"
+            }
+          },
+          {
+            "id": "1587497423",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1587497423",
+            "attributes": {
+              "name": "I Want You (Forever) [Josh Butler Remix] - Single"
+            }
+          },
+          {
+            "id": "1587494805",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1587494805",
+            "attributes": {
+              "name": "I Want You (Forever) [Josh Butler Remix - Shorter Edit] - Single"
+            }
+          },
+          {
+            "id": "1843992312",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1843992312",
+            "attributes": {
+              "name": "Carl Cox at [UNVRS]: All Night Long, Jul 27, 2025 [DJ Mix] [DJ Mix]"
+            }
+          },
+          {
+            "id": "1465064421",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1465064421",
+            "attributes": { "name": "Dr. Funk (Riva Starr Remixes) - Single" }
+          },
+          {
+            "id": "1582037292",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1582037292",
+            "attributes": { "name": "We Are One - Single" }
+          },
+          {
+            "id": "1778511807",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1778511807",
+            "attributes": {
+              "name": "Carl Cox b2b Green Velvet at ARC Music Festival, 2024 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1543282062",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1543282062",
+            "attributes": { "name": "NYE 2021 (DJ Mix)" }
+          },
+          {
+            "id": "1733115568",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1733115568",
+            "attributes": {
+              "name": "Carl Cox b2b Nicole Moudaber at Kappa FuturFestival 2023 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1622189527",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1622189527",
+            "attributes": {
+              "name": "Speed Trials On Acid (feat. Dan Diamond) [LF SYSTEM Remix] - Single"
+            }
+          },
+          {
+            "id": "1650193348",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1650193348",
+            "attributes": { "name": "Electronic Generations" }
+          },
+          {
+            "id": "1876669866",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1876669866",
+            "attributes": {
+              "name": "I’m Black And I’m Proud - Say It Loud (Carl Cox Techno Mix) - Single"
+            }
+          },
+          {
+            "id": "1742740963",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1742740963",
+            "attributes": { "name": "Carl Cox Mixes Awesome Soundwave (Mixed)" }
+          },
+          {
+            "id": "508022731",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/508022731",
+            "attributes": { "name": "All Roads Lead to the Dancefloor" }
+          },
+          {
+            "id": "1736190810",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1736190810",
+            "attributes": { "name": "Concentrate - Single" }
+          },
+          {
+            "id": "619924762",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/619924762",
+            "attributes": {
+              "name": "Pure Intec 2 (Mixed by Carl Cox & Jon Rundell)"
+            }
+          },
+          {
+            "id": "1459674350",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1459674350",
+            "attributes": {
+              "name": "Pure Intec 4 (Mixed by Carl Cox & Jon Rundell)"
+            }
+          },
+          {
+            "id": "1502506541",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1502506541",
+            "attributes": { "name": "PURE (El Rancho Mix) - Single" }
+          },
+          {
+            "id": "1791718778",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1791718778",
+            "attributes": { "name": "Road Runner - Single" }
+          },
+          {
+            "id": "1803213262",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1803213262",
+            "attributes": {
+              "name": "Carl Cox: DJsounds Show, Aug 5, 2013 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1705700520",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1705700520",
+            "attributes": {
+              "name": "International Techno Vol 1 (feat. Umek, Nicole Moudaber, Matt Sassari, Jim Rivers & Harvey McKay)"
+            }
+          },
+          {
+            "id": "1691167961",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1691167961",
+            "attributes": {
+              "name": "In My Heart (Carl Cox Remix) [feat. Gregory Porter] - Single"
+            }
+          },
+          {
+            "id": "1435352375",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1435352375",
+            "attributes": { "name": "Lost (Carl Cox Remix Edit) - Single" }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:41.653Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=Carl+Cox&types=albums"
+}

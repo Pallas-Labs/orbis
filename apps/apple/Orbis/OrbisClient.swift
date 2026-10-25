@@ -484,6 +484,17 @@ struct OrbisClient: Sendable {
     return try Self.decode(LibraryResponse.self, from: response).sets
   }
 
+  /// DJ mixes in the US Apple Music catalog for these words, then other albums.
+  func searchAppleMusic(_ words: String) async throws -> [AppleMusicAlbum] {
+    var components = URLComponents()
+    components.queryItems = [URLQueryItem(name: "q", value: words)]
+    // URLComponents leaves "+" as it is, and the service reads a query "+" as a space.
+    let query = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B") ?? ""
+    let path = "apple-music/search?\(query)"
+    let response = try await send(path: path, method: "GET", body: nil)
+    return try Self.decode(AppleMusicSearchResponse.self, from: response).albums
+  }
+
   func tracklist(_ id: String) async throws -> Tracklist {
     let response = try await send(path: "sets/\(id)/tracklist", method: "GET", body: nil)
     return try Self.decode(Tracklist.self, from: response)

@@ -1,0 +1,192 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=Essential+Mix+DJ+Mix&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=Essential+Mix+DJ+Mix&types=albums",
+        "data": [
+          {
+            "id": "76025603",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/76025603",
+            "attributes": { "name": "Essential Mix" }
+          },
+          {
+            "id": "1637375183",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1637375183",
+            "attributes": { "name": "Amapiano Essentials (DJ Mix)" }
+          },
+          {
+            "id": "1523923810",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1523923810",
+            "attributes": { "name": "GREECE (feat. Drake) - Single" }
+          },
+          {
+            "id": "1451154051",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1451154051",
+            "attributes": {
+              "name": "7 rings (Remix) [feat. 2 Chainz] - Single"
+            }
+          },
+          {
+            "id": "1545497924",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1545497924",
+            "attributes": { "name": "Today's Hits 2020 (DJ Mix)" }
+          },
+          {
+            "id": "1519112496",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1519112496",
+            "attributes": {
+              "name": "Uncle Snoop’s “A Black Music Story” (DJ Mix)"
+            }
+          },
+          {
+            "id": "1631267560",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1631267560",
+            "attributes": { "name": "Anjunabeats Volume 16 (DJ Mix)" }
+          },
+          {
+            "id": "1464024147",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1464024147",
+            "attributes": { "name": "Father of Asahd" }
+          },
+          {
+            "id": "1505417386",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1505417386",
+            "attributes": {
+              "name": "Boiler Room: DJ Jazzy Jeff in London, Apr 18, 2014 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1445026840",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1445026840",
+            "attributes": { "name": "A State of Trance Year Mix 2018 (DJ Mix)" }
+          },
+          {
+            "id": "1500933343",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1500933343",
+            "attributes": {
+              "name": "Boiler Room: Nightmares On Wax in London, Aug 28, 2013 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1506633554",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1506633554",
+            "attributes": { "name": "Kitchen Raving, Vol. 1 (DJ Mix)" }
+          },
+          {
+            "id": "1637377113",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1637377113",
+            "attributes": { "name": "Big Beach Boutique (DJ Mix)" }
+          },
+          {
+            "id": "6815691844",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/6815691844",
+            "attributes": {
+              "name": "ASOT 1296 - A State of Trance Episode 1296 (Unfiltered 008) [DJ Mix]"
+            }
+          },
+          {
+            "id": "1639997453",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1639997453",
+            "attributes": {
+              "name": "Tomorrowland 2022: SOFI TUKKER at Crystal Garden, Weekend 1 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1272209538",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1272209538",
+            "attributes": {
+              "name": "Bodak Yellow (feat. Messiah) [Latin Trap Remix] - Single"
+            }
+          },
+          {
+            "id": "1560023039",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1560023039",
+            "attributes": {
+              "name": "DGTL: Hot Since 82 at DGTL Amsterdam, 2018 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1436781851",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1436781851",
+            "attributes": {
+              "name": "Taki Taki (feat. Selena Gomez, Ozuna & Cardi B) - Single"
+            }
+          },
+          {
+            "id": "1474182253",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1474182253",
+            "attributes": {
+              "name": "Old Town Road (feat. RM of BTS) [Seoul Town Road Remix] - Single"
+            }
+          },
+          {
+            "id": "1369095282",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1369095282",
+            "attributes": {
+              "name": "Te Boté (Remix) [feat. Darell, Nicky Jam & Ozuna] - Single"
+            }
+          },
+          {
+            "id": "1639198630",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1639198630",
+            "attributes": { "name": "What Came Before: U.K. Garage (DJ Mix)" }
+          },
+          {
+            "id": "1534209957",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1534209957",
+            "attributes": { "name": "SAVAGE MODE II" }
+          },
+          {
+            "id": "1712388490",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1712388490",
+            "attributes": { "name": "Roses (Imanbek Remix) - Single" }
+          },
+          {
+            "id": "1467816521",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1467816521",
+            "attributes": {
+              "name": "Easy (Remix) [feat. Chris Brown] - Single"
+            }
+          },
+          {
+            "id": "1529160405",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1529160405",
+            "attributes": {
+              "name": "Heartless (feat. Morgan Wallen) [Wallen Album Mix] - Single"
+            }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:43.610Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=Essential+Mix+DJ+Mix&types=albums"
+}

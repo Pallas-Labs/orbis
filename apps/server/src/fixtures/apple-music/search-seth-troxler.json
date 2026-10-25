@@ -1,0 +1,198 @@
+{
+  "body": {
+    "results": {
+      "albums": {
+        "href": "/v1/catalog/us/search?limit=25&term=Seth+Troxler&types=albums",
+        "next": "/v1/catalog/us/search?offset=25&term=Seth+Troxler&types=albums",
+        "data": [
+          {
+            "id": "1814380376",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1814380376",
+            "attributes": {
+              "name": "Seth Troxler at Circoloco Thailand (DJ Mix)"
+            }
+          },
+          {
+            "id": "1740220229",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1740220229",
+            "attributes": {
+              "name": "Seth Troxler at Circoloco Rio De Janeiro (DJ Mix)"
+            }
+          },
+          {
+            "id": "1740215220",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1740215220",
+            "attributes": {
+              "name": "Mochakk b2b DJ Tennis b2b Seth Troxler at Circoloco Rio De Janeiro (DJ Mix)"
+            }
+          },
+          {
+            "id": "1718111764",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1718111764",
+            "attributes": {
+              "name": "Beats In Space 099: Seth Troxler (DJ Mix)"
+            }
+          },
+          {
+            "id": "1790753112",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1790753112",
+            "attributes": {
+              "name": "Seth Troxler at III Points Music Festival 2024 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1768124185",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1768124185",
+            "attributes": {
+              "name": "Seth Troxler at Kappa FuturFestival 2024 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1046502556",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1046502556",
+            "attributes": { "name": "DJ-Kicks (DJ Mix)" }
+          },
+          {
+            "id": "1677680660",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1677680660",
+            "attributes": { "name": "Lumartes (Extended) - Single" }
+          },
+          {
+            "id": "1588318323",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1588318323",
+            "attributes": {
+              "name": "Seth Troxler & Derrick Carter at ARC Music Festival, 2021 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1652545734",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1652545734",
+            "attributes": {
+              "name": "Carl Craig b2b Seth Troxler at ARC Festival, 2022 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1677704509",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1677704509",
+            "attributes": { "name": "Play in the Dark - Single" }
+          },
+          {
+            "id": "1679444317",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1679444317",
+            "attributes": {
+              "name": "Sex & The City (feat. Paul Johnson) [MK Remix] - Single"
+            }
+          },
+          {
+            "id": "1718337819",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1718337819",
+            "attributes": {
+              "name": "Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage (DJ Mix)"
+            }
+          },
+          {
+            "id": "1896402681",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1896402681",
+            "attributes": { "name": "(still) WON'T4GETU - Single" }
+          },
+          {
+            "id": "462459415",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/462459415",
+            "attributes": { "name": "Seth Troxler - The Lab 03" }
+          },
+          {
+            "id": "6778772993",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/6778772993",
+            "attributes": { "name": "CircoLoco (feat. Luna) - Single" }
+          },
+          {
+            "id": "1695907018",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1695907018",
+            "attributes": { "name": "Pills - Single" }
+          },
+          {
+            "id": "1329214811",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1329214811",
+            "attributes": {
+              "name": "Mixmag Presents Jamie Jones vs. Seth Troxler"
+            }
+          },
+          {
+            "id": "1703143144",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1703143144",
+            "attributes": {
+              "name": "Seth Troxler at Time Warp DE, 2023 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1797215412",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1797215412",
+            "attributes": {
+              "name": "Seth Troxler b2b Skream at Kappa FuturFestival 2024 (DJ Mix)"
+            }
+          },
+          {
+            "id": "1683160399",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1683160399",
+            "attributes": { "name": "Sex & The City EP (feat. Paul Johnson)" }
+          },
+          {
+            "id": "1678613694",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1678613694",
+            "attributes": {
+              "name": "Me, You, Us (feat. Seth Troxler) - Single"
+            }
+          },
+          {
+            "id": "1526651401",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1526651401",
+            "attributes": { "name": "Panic, Stop. Repeat! - EP" }
+          },
+          {
+            "id": "1610169948",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1610169948",
+            "attributes": {
+              "name": "Seth Troxler at CRSSD Festival 2021: The Palms (DJ Mix)"
+            }
+          },
+          {
+            "id": "1530979669",
+            "type": "albums",
+            "href": "/v1/catalog/us/albums/1530979669",
+            "attributes": {
+              "name": "Boiler Room: Seth Troxler in Warsaw, Oct 10, 2017 (DJ Mix)"
+            }
+          }
+        ]
+      }
+    },
+    "meta": { "results": { "order": ["albums"], "rawOrder": ["albums"] } }
+  },
+  "recordedAt": "2026-10-25T02:59:37.134Z",
+  "status": 200,
+  "url": "https://api.music.apple.com/v1/catalog/us/search?fields%5Balbums%5D=name&limit=25&term=Seth+Troxler&types=albums"
+}

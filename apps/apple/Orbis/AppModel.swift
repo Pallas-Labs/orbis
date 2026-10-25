@@ -197,6 +197,13 @@ final class AppModel {
 
   var playlistImport: PlaylistImport = .idle
   private var importFollow: Task<Void, Never>?
+
+  /// The Find on Apple Music field in Add Set, and what its last search found.
+  var appleMusicWords = ""
+  var appleMusicSearch: AppleMusicSearch = .idle
+  var showsAllAlbums = false
+  /// What refused the last album chosen from the results, said beside them.
+  var appleMusicSaveFailure: String?
   /// While the event stream is open it brings the import's progress, so the poll stands down.
   private var isImportStreamOpen = false
   private static let importPollInterval: Duration = .seconds(2)
@@ -517,6 +524,10 @@ final class AppModel {
     revealFailure = nil
     stopFollowingImport()
     playlistImport = .idle
+    appleMusicWords = ""
+    appleMusicSearch = .idle
+    showsAllAlbums = false
+    appleMusicSaveFailure = nil
     // Recent Tags, filters, searches, and Playlists are the last Person's habits, not this
     // device's.
     recentTags = []
@@ -581,25 +592,7 @@ final class AppModel {
       // Signed out while it was filed: the Set belongs to a library this device no longer holds.
       guard self.client?.token == client.token else { return }
       linkToFile = ""
-      // A failed enrichment leaves a placeholder title, so the field starts empty rather
-      // than inviting the placeholder to be kept.
-      reveal = Reveal(
-        set: saved,
-        title: saved.metadataState == "failed" ? "" : saved.title,
-        tags: saved.tags
-      )
-      if case .loaded(let sets) = library {
-        // Filing moves the stream on, so a load that was already out cannot arrive later
-        // and erase the Set that was just filed.
-        libraryGeneration += 1
-        // While the Library is showing one playlist, a filed Set joins the list only when
-        // it belongs there; anything else would say the view holds what it does not.
-        let belongs = selectedPlaylistId.map(saved.playlistIds.contains) ?? true
-        library = .loaded(
-          belongs ? [saved] + sets.filter { $0.id != saved.id } : sets.filter { $0.id != saved.id })
-      } else {
-        await loadLibrary()
-      }
+      await reveal(filed: saved)
     } catch OrbisError.cancelled {
       return
     } catch let error as OrbisError {
@@ -608,6 +601,29 @@ final class AppModel {
     } catch {
       guard self.client?.token == client.token else { return }
       fileFailure = .unreachable
+    }
+  }
+
+  /// Opens the naming step for a Set just filed and puts it at the top of the list it belongs in.
+  func reveal(filed saved: SavedSet) async {
+    // A failed enrichment leaves a placeholder title, so the field starts empty rather
+    // than inviting the placeholder to be kept.
+    reveal = Reveal(
+      set: saved,
+      title: saved.metadataState == "failed" ? "" : saved.title,
+      tags: saved.tags
+    )
+    if case .loaded(let sets) = library {
+      // Filing moves the stream on, so a load that was already out cannot arrive later
+      // and erase the Set that was just filed.
+      libraryGeneration += 1
+      // While the Library is showing one playlist, a filed Set joins the list only when
+      // it belongs there; anything else would say the view holds what it does not.
+      let belongs = selectedPlaylistId.map(saved.playlistIds.contains) ?? true
+      library = .loaded(
+        belongs ? [saved] + sets.filter { $0.id != saved.id } : sets.filter { $0.id != saved.id })
+    } else {
+      await loadLibrary()
     }
   }
 
