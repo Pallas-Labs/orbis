@@ -241,6 +241,94 @@ try {
   } finally {
     await app.dispose();
   }
+  const approvalCall = (
+    route: string,
+    body: Record<string, string>,
+    client: string,
+    token?: string
+  ) => {
+    const headers = new Headers({
+      "CF-Connecting-IP": client,
+      "content-type": "application/json",
+    });
+    if (token) {
+      headers.set("authorization", `Bearer ${token}`);
+    }
+    return runtime.dispatchFetch(`http://orbis/api${route}`, {
+      body: JSON.stringify(body),
+      headers,
+      method: "POST",
+      signal: AbortSignal.timeout(90_000),
+    });
+  };
+  const tvAddress = "192.0.2.20";
+  const phoneAddress = "192.0.2.21";
+  const startApproval = async () => {
+    const response = await approvalCall(
+      "/sign-in/requests",
+      { label: "Group journey TV", platform: "tvOS" },
+      tvAddress
+    );
+    assert.equal(response.status, 201, await response.clone().text());
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    const started = await response.json();
+    assert.match(started.code, /^\d{6}$/u);
+    return started;
+  };
+  const waitApproval = (secret: string) =>
+    approvalCall("/sign-in/requests/wait", { secret }, tvAddress);
+  const approvalRequest = await startApproval();
+  const waitStarted = performance.now();
+  const pendingWait = await waitApproval(approvalRequest.secret);
+  const approvalRequestPendingAfterMs = Math.round(
+    performance.now() - waitStarted
+  );
+  assert.equal(pendingWait.status, 200, await pendingWait.clone().text());
+  assert.deepEqual(await pendingWait.json(), { status: "pending" });
+  assert.ok(
+    approvalRequestPendingAfterMs >= 24_500 &&
+      approvalRequestPendingAfterMs <= 27_000,
+    `pending after ${approvalRequestPendingAfterMs} ms`
+  );
+  let openWaitSettled = false;
+  const openWait = (async () => {
+    const response = await waitApproval(approvalRequest.secret);
+    openWaitSettled = true;
+    return response;
+  })();
+  const found = await approvalCall(
+    "/me/sign-in-requests/find",
+    { code: approvalRequest.code },
+    phoneAddress,
+    "smoke-token"
+  );
+  assert.equal(found.status, 200, await found.clone().text());
+  const foundRequest = await found.json();
+  assert.equal(foundRequest.label, "Group journey TV");
+  assert.equal(openWaitSettled, false, "the wait is open during approval");
+  const approvedAt = performance.now();
+  const approval = await approvalCall(
+    "/me/sign-in-requests/approve",
+    { code: approvalRequest.code },
+    phoneAddress,
+    "smoke-token"
+  );
+  assert.equal(approval.status, 200, await approval.clone().text());
+  const collected = await openWait;
+  const approvalApprovedWithinMs = Math.round(performance.now() - approvedAt);
+  assert.equal(collected.status, 200, await collected.clone().text());
+  assert.ok(
+    approvalApprovedWithinMs < 1000,
+    `approved after ${approvalApprovedWithinMs} ms`
+  );
+  const approved = await collected.json();
+  assert.equal(approved.status, "approved");
+  assert.deepEqual(approved.person, { id: "host", username: "host" });
+  const tvMe = await call("/me", "GET", undefined, approved.key);
+  assert.equal(tvMe.status, 200, await tvMe.clone().text());
+  const tvPerson = await tvMe.json();
+  assert.equal(tvPerson.id, "host");
+  const droppedRequest = await startApproval();
   const written = await runtime.dispatchFetch("http://orbis/api/__write");
   assert.equal(written.status, 200);
   await runtime.dispose();
@@ -253,10 +341,15 @@ try {
   assert.equal(persistedSets.status, 200, await persistedSets.clone().text());
   const restoredLibrary = await persistedSets.json();
   assert.equal(restoredLibrary.sets[0].id, saved.id);
+  const dropped = await waitApproval(droppedRequest.secret);
+  assert.equal(dropped.status, 404, await dropped.clone().text());
   await writeFile(
     path.join(artifact, "result.json"),
     `${JSON.stringify(
       {
+        approvalApprovedWithinMs,
+        approvalDroppedOnRestart: true,
+        approvalRequestPendingAfterMs,
         authenticatedApi: true,
         downloadsQueued: true,
         editedPlaylist: playlist.id,
