@@ -138,6 +138,9 @@ import { Presence } from "./presence.js";
 import type { PresenceOptions } from "./presence.js";
 import { QueueSignals } from "./queue-signals.js";
 import { Queue } from "./queue.js";
+import { loadArtwork } from "./share-image/artwork.js";
+import { renderShareImage } from "./share-image/render.js";
+import { renderSharePage, sharePagePolicy } from "./share-page.js";
 import { sharedSet } from "./share.js";
 import { expandShortLink } from "./short-link.js";
 import { Stats } from "./stats.js";
@@ -320,7 +323,7 @@ const EXPIRED_APPROVAL = "That sign-in request expired. Start again.";
 const expiredApproval = () =>
   new LibraryError({ message: EXPIRED_APPROVAL, statusCode: 404 });
 /** An Orbis Link's routes, which anyone may read without a key (ADR 0022). */
-const SHARE_ROUTE = /^\/share\/sets\/[^/]+$/u;
+const SHARE_ROUTE = /^\/share\/sets\/[^/]+(?:\/page|\/image\.png)?$/u;
 const isShareRoute = (request: Request): boolean =>
   (request.method === "GET" || request.method === "HEAD") &&
   SHARE_ROUTE.test(routePath(request.url));
@@ -433,6 +436,11 @@ export const createPortableApp = (options: {
   presenceWindowMs?: number;
   presence?: PresenceOptions & { journal?: Layer.Layer<PresenceJournal> };
   playlistImports?: Pick<PlaylistImporterOptions, "heartbeat" | "retry">;
+  /**
+   * The path the public API answers under, such as `/api` behind the Worker, which strips
+   * it before the Group sees a request. A share page puts it in its absolute image address.
+   */
+  publicApiPath?: string;
   /** The clock Sign-in Codes and Approval Requests expire by. Tests move it to prove expiry. */
   signInCodeNow?: () => number;
   /** How long a wait on an Approval Request stays open; 25 seconds by default. */
@@ -2406,14 +2414,83 @@ export const createPortableApp = (options: {
             )
           )
       );
+      const readShared = (id: string) =>
+        sharedSet(id).pipe(Effect.provideService(Database, db));
+      /** The Orbis Link and the absolute image address, as a client outside the Group sees them. */
+      const shareLinks = (
+        request: HttpServerRequest.HttpServerRequest,
+        id: string
+      ) => {
+        const { origin } = new URL(request.originalUrl);
+        const path = encodeURIComponent(id);
+        return {
+          image: `${origin}${options.publicApiPath ?? ""}/share/sets/${path}/image.png`,
+          orbisLink: `${origin}/s/${path}`,
+        };
+      };
+      const shareCache = { "cache-control": "public, max-age=3600" };
       const shareGroup = HttpApiBuilder.group(OrbisApi, "share", (handlers) =>
-        handlers.handleRaw("set", ({ params }) =>
-          withFailureResponse(
-            Effect.map(sharedSet(params.id), (shared) =>
-              HttpServerResponse.jsonUnsafe(shared)
-            ).pipe(Effect.provideService(Database, db))
+        handlers
+          .handleRaw("set", ({ params }) =>
+            withFailureResponse(
+              Effect.map(readShared(params.id), ({ set }) =>
+                HttpServerResponse.jsonUnsafe(set)
+              )
+            )
           )
-        )
+          .handleRaw("page", ({ params, request }) =>
+            withFailureResponse(
+              Effect.gen(function* sharePage() {
+                const { set } = yield* readShared(params.id);
+                const policy = yield* Effect.promise(sharePagePolicy);
+                return HttpServerResponse.text(
+                  renderSharePage(set, shareLinks(request, set.id)),
+                  {
+                    contentType: "text/html; charset=utf-8",
+                    headers: {
+                      ...shareCache,
+                      "content-security-policy": policy,
+                    },
+                  }
+                );
+              })
+            )
+          )
+          .handleRaw("image", ({ params }) =>
+            withFailureResponse(
+              Effect.gen(function* shareImage() {
+                const { artwork, set } = yield* readShared(params.id);
+                const picture = yield* Effect.promise(() =>
+                  loadArtwork(artwork)
+                );
+                const started = performance.now();
+                const png = yield* Effect.tryPromise({
+                  catch: () =>
+                    new LibraryError({
+                      message: "Could not draw the preview image.",
+                      statusCode: 500,
+                    }),
+                  try: () =>
+                    renderShareImage({
+                      artwork: picture,
+                      creator: set.creator,
+                      source: set.source,
+                      title: set.title,
+                    }),
+                });
+                yield* annotateWideEvent({
+                  share: {
+                    artwork: picture !== null,
+                    renderMs: Math.round(performance.now() - started),
+                  },
+                });
+                return HttpServerResponse.uint8Array(png, {
+                  contentType: "image/png",
+                  headers: shareCache,
+                });
+              })
+            )
+          )
       );
       const systemGroup = HttpApiBuilder.group(OrbisApi, "system", (handlers) =>
         handlers.handle("health", () =>

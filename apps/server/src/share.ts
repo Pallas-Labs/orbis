@@ -34,7 +34,7 @@ export const sharedSet = Effect.fn("Share.sharedSet")(function* readSharedSet(
       statusCode: 404,
     });
   }
-  const shared: SharedSet = {
+  const set: SharedSet = {
     artworkUrl: row.artworkLargeUrl ?? row.artworkUrl,
     creator: row.creator,
     id: row.id,
@@ -42,5 +42,7 @@ export const sharedSet = Effect.fn("Share.sharedSet")(function* readSharedSet(
     title: row.title,
     url: row.url,
   };
-  return shared;
+  /** Where the preview image reads Artwork from, sharpest first. */
+  const artwork = [row.artworkLargeUrl, row.artworkUrl];
+  return { artwork, set };
 });

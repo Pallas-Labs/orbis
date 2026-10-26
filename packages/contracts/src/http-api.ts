@@ -924,6 +924,20 @@ export const OrbisApi = PlaylistApi.add(
         error: [NotFound, InternalError],
         params: SetId,
         success: SharedSetSchema,
+      }),
+      HttpApiEndpoint.get("page", "/share/sets/:id/page", {
+        error: [NotFound, InternalError],
+        params: SetId,
+        success: Schema.String.pipe(
+          HttpApiSchema.asText({ contentType: "text/html; charset=utf-8" })
+        ),
+      }),
+      HttpApiEndpoint.get("image", "/share/sets/:id/image.png", {
+        error: [NotFound, InternalError],
+        params: SetId,
+        success: Schema.Uint8Array.pipe(
+          HttpApiSchema.asUint8Array({ contentType: "image/png" })
+        ),
       })
     )
   )

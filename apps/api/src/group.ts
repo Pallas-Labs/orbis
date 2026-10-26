@@ -125,6 +125,7 @@ export class Group extends DurableObject<Environment> {
       },
       playlistImports: { heartbeat: this.alarms.slot("playlist-imports") },
       presence: { alarm: this.alarms.slot("presence") },
+      publicApiPath: "/api",
       releaseAudio: release,
       streamSecret,
       titleReviser: TitleReviser.layer({ apiKey: env.OPENROUTER_API_KEY }),

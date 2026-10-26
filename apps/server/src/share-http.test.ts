@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { inflateSync } from "node:zlib";
 
 import { Effect } from "effect";
 
@@ -13,10 +14,10 @@ import { Metadata } from "./metadata.js";
 const HOST_TOKEN = "share-host-key";
 const FRIEND_TOKEN = "share-friend-key";
 const FRIEND_ID = "friend-7f3c";
-const SOURCE_LINK = "https://www.youtube.com/watch?v=Zx9QpLm2Rt0";
-const PROVIDER_TITLE = "Peggy Gou | Boiler Room Seoul";
+const ORIGIN = "http://127.0.0.1:4310";
+const SOURCE_LINK = "https://www.youtube.com/watch?v=goodArtwork";
+const PROVIDER_TITLE = "Peggy Gou & Friends | Boiler Room Seoul";
 const CREATOR = "Boiler Room";
-const ARTWORK = "https://i.ytimg.com/vi/Zx9QpLm2Rt0/maxresdefault.jpg";
 /** Everything a Library holds about the Set beyond its shared facts. */
 const PRIVATE = {
   override: "Kept for the drive to Busan",
@@ -24,8 +25,42 @@ const PRIVATE = {
   tags: ["warmup-pick", "rooftop"],
   usernames: ["marguerite", "theodora"],
 };
+const ARTWORK = await Bun.file(
+  path.join(import.meta.dir, "fixtures/share-artwork.jpg")
+).bytes();
 
-const startApp = async () => {
+/**
+ * Serves Artwork by the video id in its path: `goodArtwork` answers with a JPEG and the
+ * others fail the ways a provider's image host can.
+ */
+const startArtworkHost = () =>
+  Bun.serve({
+    async fetch(request) {
+      const [, video] = new URL(request.url).pathname.split("/");
+      if (video === "goodArtwork") {
+        return new Response(ARTWORK, {
+          headers: { "content-type": "image/jpeg" },
+        });
+      }
+      if (video === "slowArtwork") {
+        await Bun.sleep(10_000);
+        return new Response(ARTWORK);
+      }
+      if (video === "hugeArtwork") {
+        const huge = new Uint8Array(5 * 1024 * 1024);
+        huge.set(ARTWORK);
+        return new Response(huge);
+      }
+      if (video === "corruptJpeg") {
+        return new Response(Uint8Array.of(0xff, 0xd8, 0xff, 0xe0, 1, 2, 3));
+      }
+      return new Response("missing", { status: 404 });
+    },
+    hostname: "127.0.0.1",
+    port: 0,
+  });
+
+const startApp = async (artworkHost: string) => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-share-"));
   const devicesPath = path.join(directory, "devices.json");
   const databasePath = path.join(directory, "library.sqlite");
@@ -54,16 +89,22 @@ const startApp = async () => {
   const app = createApp({
     databasePath,
     devicesPath,
+    logging: { silent: true },
     metadata: Metadata.layerOf({
-      enrich: () =>
-        Effect.succeed({
-          artworkLargeUrl: ARTWORK,
-          artworkUrl: "https://i.ytimg.com/vi/Zx9QpLm2Rt0/mqdefault.jpg",
+      enrich: ({ url }) => {
+        const video = new URL(url).searchParams.get("v");
+        return Effect.succeed({
+          artworkLargeUrl:
+            video === "localFileXX"
+              ? "file:///etc/hostname"
+              : `${artworkHost}/${video}/maxresdefault.jpg`,
+          artworkUrl: `${artworkHost}/${video}/mqdefault.jpg`,
           creator: CREATOR,
           durationSeconds: 3600,
           releasedAt: null,
           title: PROVIDER_TITLE,
-        }),
+        });
+      },
     }),
   });
   const call = async (
@@ -73,7 +114,7 @@ const startApp = async () => {
     payload?: Readonly<Record<string, string | readonly string[]>>
   ) => {
     const response = await app.handler(
-      new Request(`http://127.0.0.1:4310${url}`, {
+      new Request(`${ORIGIN}${url}`, {
         body: payload === undefined ? null : JSON.stringify(payload),
         headers: {
           authorization: `Bearer ${token}`,
@@ -89,12 +130,11 @@ const startApp = async () => {
   };
   const open = (url: string, headers: Record<string, string> = {}) =>
     app.handler(
-      new Request(`http://127.0.0.1:4310${url}`, { headers }),
+      new Request(`${ORIGIN}${url}`, { headers }),
       "device",
       "198.51.100.7"
     );
   return {
-    app,
     call,
     databasePath,
     dispose: async () => {
@@ -105,8 +145,52 @@ const startApp = async () => {
   };
 };
 
+/** Width, height, and RGB pixels of an 8-bit RGB PNG with Paeth-filtered rows. */
+const readPng = (png: Uint8Array) => {
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+  expect([...png.subarray(0, 8)]).toEqual([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+  ]);
+  expect(new TextDecoder().decode(png.subarray(12, 16))).toBe("IHDR");
+  const width = view.getUint32(16);
+  const height = view.getUint32(20);
+  const idatLength = view.getUint32(33);
+  const raw = inflateSync(png.subarray(41, 41 + idatLength));
+  const stride = width * 3;
+  const pixels = new Uint8Array(stride * height);
+  for (let row = 0; row < height; row += 1) {
+    for (let index = 0; index < stride; index += 1) {
+      const left = index >= 3 ? (pixels[row * stride + index - 3] ?? 0) : 0;
+      const up = row > 0 ? (pixels[(row - 1) * stride + index] ?? 0) : 0;
+      const upLeft =
+        row > 0 && index >= 3
+          ? (pixels[(row - 1) * stride + index - 3] ?? 0)
+          : 0;
+      const estimate = left + up - upLeft;
+      const [toLeft, toUp, toUpLeft] = [left, up, upLeft].map((value) =>
+        Math.abs(estimate - value)
+      );
+      let predicted = upLeft;
+      if ((toLeft ?? 0) <= (toUp ?? 0) && (toLeft ?? 0) <= (toUpLeft ?? 0)) {
+        predicted = left;
+      } else if ((toUp ?? 0) <= (toUpLeft ?? 0)) {
+        predicted = up;
+      }
+      pixels[row * stride + index] =
+        ((raw[row * (stride + 1) + 1 + index] ?? 0) + predicted) % 256;
+    }
+  }
+  return { height, pixels, width };
+};
+
+const metaContent = (page: string, key: string) =>
+  new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)">`, "u").exec(
+    page
+  )?.[1];
+
 test("an Orbis Link shows the Set's shared facts and nothing from any Library", async () => {
-  const server = await startApp();
+  const artworkHost = startArtworkHost();
+  const server = await startApp(artworkHost.url.origin);
   try {
     const saved = await server.call(HOST_TOKEN, "POST", "/sets", {
       url: SOURCE_LINK,
@@ -142,22 +226,55 @@ test("an Orbis Link shows the Set's shared facts and nothing from any Library", 
     sqlite.close();
     const hostView = await server.call(HOST_TOKEN, "GET", "/sets");
     expect(hostView.sets[0]).toMatchObject({
-      listenCount: 0,
       tags: PRIVATE.tags,
       title: PRIVATE.override,
     });
 
-    const response = await server.open(`/share/sets/${id}`);
-    expect(response.status).toBe(200);
-    const body = await response.text();
+    const json = await server.open(`/share/sets/${id}`);
+    expect(json.status).toBe(200);
+    const body = await json.text();
     expect(JSON.parse(body)).toEqual({
-      artworkUrl: ARTWORK,
+      artworkUrl: `${artworkHost.url.origin}/goodArtwork/maxresdefault.jpg`,
       creator: CREATOR,
       id,
       source: "youtube",
       title: PROVIDER_TITLE,
       url: SOURCE_LINK,
     });
+
+    const pageResponse = await server.open(`/share/sets/${id}/page`);
+    expect(pageResponse.status).toBe(200);
+    expect(pageResponse.headers.get("content-type")).toBe(
+      "text/html; charset=utf-8"
+    );
+    expect(pageResponse.headers.get("cache-control")).toBe(
+      "public, max-age=3600"
+    );
+    expect(pageResponse.headers.get("content-security-policy")).toMatch(
+      /default-src 'none'.*style-src 'sha256-[A-Za-z0-9+/=]+'/u
+    );
+    const page = await pageResponse.text();
+    const escapedTitle = "Peggy Gou &amp; Friends | Boiler Room Seoul";
+    expect(metaContent(page, "og:title")).toBe(escapedTitle);
+    expect(metaContent(page, "twitter:title")).toBe(escapedTitle);
+    expect(metaContent(page, "og:description")).toBe(CREATOR);
+    expect(metaContent(page, "og:url")).toBe(`${ORIGIN}/s/${id}`);
+    expect(metaContent(page, "og:image")).toBe(
+      `${ORIGIN}/share/sets/${id}/image.png`
+    );
+    expect(metaContent(page, "twitter:image")).toBe(
+      `${ORIGIN}/share/sets/${id}/image.png`
+    );
+    expect(metaContent(page, "og:image:width")).toBe("1200");
+    expect(metaContent(page, "og:image:height")).toBe("630");
+    expect(metaContent(page, "twitter:card")).toBe("summary_large_image");
+    expect(page).toContain(`href="orbis://s/${id}">Open in Orbis</a>`);
+    expect(page).toContain(
+      `href="${SOURCE_LINK}" rel="noopener">Open on YouTube</a>`
+    );
+    expect(page).not.toContain("<script");
+    expect(page).not.toContain(" style=");
+
     for (const secret of [
       PRIVATE.override,
       PRIVATE.playlist,
@@ -170,15 +287,30 @@ test("an Orbis Link shows the Set's shared facts and nothing from any Library", 
       "listen",
       "finish",
     ]) {
-      expect(body.toLowerCase()).not.toContain(secret.toLowerCase());
+      expect({
+        body: body.toLowerCase().includes(secret.toLowerCase()),
+        secret,
+      }).toEqual({
+        body: false,
+        secret,
+      });
+      expect({
+        page: page.toLowerCase().includes(secret.toLowerCase()),
+        secret,
+      }).toEqual({
+        page: false,
+        secret,
+      });
     }
   } finally {
     await server.dispose();
+    await artworkHost.stop(true);
   }
 });
 
 test("an Orbis Link answers without a key, under any spelling the router accepts, and never counts as a failed key", async () => {
-  const server = await startApp();
+  const artworkHost = startArtworkHost();
+  const server = await startApp(artworkHost.url.origin);
   try {
     const { id } = await server.call(HOST_TOKEN, "POST", "/sets", {
       url: SOURCE_LINK,
@@ -189,6 +321,8 @@ test("an Orbis Link answers without a key, under any spelling the router accepts
       `//share//sets/${id}`,
       `/SHARE/Sets/${id}`,
       `/share/%73ets/${id}`,
+      `/share/sets/${id}/page/`,
+      `/share/sets/${id}//PAGE`,
     ];
     const answers = await Promise.all(
       spellings.map(async (spelling) => {
@@ -197,9 +331,20 @@ test("an Orbis Link answers without a key, under any spelling the router accepts
       })
     );
     expect(answers).toEqual(spellings.map((spelling) => [spelling, 200]));
-    const unknown = await server.open(`/share/sets/${crypto.randomUUID()}`);
-    expect(unknown.status).toBe(404);
-    expect(await unknown.json()).toEqual({ message: "Set not found." });
+    const unknown = crypto.randomUUID();
+    const missing = await Promise.all(
+      ["", "/page", "/image.png"].map(async (suffix) => {
+        const response = await server.open(`/share/sets/${unknown}${suffix}`);
+        return [suffix, response.status, await response.json()] as const;
+      })
+    );
+    expect(missing).toEqual(
+      ["", "/page", "/image.png"].map((suffix) => [
+        suffix,
+        404,
+        { message: "Set not found." },
+      ])
+    );
     const attempts = await Promise.all(
       Array.from({ length: 30 }, () =>
         server.open(`/share/sets/${id}`, { authorization: "Bearer wrong" })
@@ -212,7 +357,57 @@ test("an Orbis Link answers without a key, under any spelling the router accepts
     expect(guess.status).toBe(401);
     const library = await server.open("/sets");
     expect(library.status).toBe(403);
+    const write = await server.open(`/share/sets/${id}/../../sets`);
+    expect(write.status).toBe(403);
   } finally {
     await server.dispose();
+    await artworkHost.stop(true);
+  }
+});
+
+test("the preview image is a 1200x630 PNG that draws the Artwork, and draws without it when the Artwork cannot load", async () => {
+  const artworkHost = startArtworkHost();
+  const server = await startApp(artworkHost.url.origin);
+  try {
+    const videos = [
+      "goodArtwork",
+      "brokenImage",
+      "slowArtwork",
+      "hugeArtwork",
+      "corruptJpeg",
+      "localFileXX",
+    ];
+    const ids: string[] = [];
+    for (const video of videos) {
+      // oxlint-disable-next-line no-await-in-loop -- Saves run in order so the ids line up.
+      const saved = await server.call(HOST_TOKEN, "POST", "/sets", {
+        url: `https://www.youtube.com/watch?v=${video}`,
+      });
+      ids.push(saved.id);
+    }
+    const images = await Promise.all(
+      ids.map(async (id) => {
+        const response = await server.open(`/share/sets/${id}/image.png`);
+        expect(response.status).toBe(200);
+        expect(response.headers.get("content-type")).toBe("image/png");
+        expect(response.headers.get("cache-control")).toBe(
+          "public, max-age=3600"
+        );
+        return readPng(await response.bytes());
+      })
+    );
+    for (const image of images) {
+      expect([image.width, image.height]).toEqual([1200, 630]);
+    }
+    const [drawn, ...fallbacks] = images.map((image) =>
+      Buffer.from(image.pixels).toString("base64")
+    );
+    // The slow host answers with good Artwork after 10 seconds, so it joins the fallbacks
+    // only because the image stops waiting for it.
+    expect(new Set(fallbacks).size).toBe(1);
+    expect(fallbacks[0]).not.toBe(drawn);
+  } finally {
+    await server.dispose();
+    await artworkHost.stop(true);
   }
 });
