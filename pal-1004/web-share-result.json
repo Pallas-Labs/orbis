@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "steps": [
+    {
+      "name": "apple-app-site-association names the app and /s/*",
+      "body": "{\"applinks\":{\"details\":[{\"appIDs\":[\"JR398S689Z.app.orbis.client\"],\"components\":[{\"/\":\"/s/*\",\"comment\":\"Orbis Links open the Set in Orbis\"}]}]}}",
+      "contentType": "application/json",
+      "status": 200
+    },
+    {
+      "name": "an Orbis Link redirects to the Group's page",
+      "location": "http://127.0.0.1:4551/share/sets/a94d04c1-aa12-4188-ae60-260340fa25be/page",
+      "status": 302
+    },
+    {
+      "name": "Copy Orbis link puts the Orbis Link on the clipboard",
+      "clipboard": "http://127.0.0.1:3451/s/a94d04c1-aa12-4188-ae60-260340fa25be"
+    },
+    {
+      "name": "Copy YouTube link puts the Source Link on the clipboard",
+      "clipboard": "https://www.youtube.com/watch?v=abcdefghijk"
+    }
+  ]
+}

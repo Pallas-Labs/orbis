@@ -1,0 +1,12 @@
+{
+  "elapsedSeconds": 165.053,
+  "requestedWorkers": 1,
+  "simulator": "Orbis Lanes",
+  "simulatorUdid": "36A249F7-9611-47C1-A23F-A5F70130AB1E",
+  "workers": [
+    {
+      "directory": "worker-1",
+      "name": "PAL-1004 iPhone"
+    }
+  ]
+}

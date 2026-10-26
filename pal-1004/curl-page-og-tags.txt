@@ -1,0 +1,4 @@
+<meta property="og:title" content="Fred again.. | Boiler Room London, Live from Printworks">
+<meta property="og:description" content="Boiler Room">
+<meta property="og:url" content="http://127.0.0.1:36235/s/d780cd94-7cc8-4829-b693-836c080eb4c1">
+<meta property="og:image" content="http://127.0.0.1:36235/share/sets/d780cd94-7cc8-4829-b693-836c080eb4c1/image.png">

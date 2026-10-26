@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Date: Mon, 26 Oct 2026 03:26:13 GMT
+Content-Length: 277
+
+{"artworkUrl":"http://127.0.0.1:42613/vi/fredAgainBR/maxresdefault.jpg","creator":"Boiler Room","id":"d780cd94-7cc8-4829-b693-836c080eb4c1","source":"youtube","title":"Fred again.. | Boiler Room London, Live from Printworks","url":"https://www.youtube.com/watch?v=fredAgainBR"}

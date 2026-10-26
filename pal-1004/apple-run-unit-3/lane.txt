@@ -1,0 +1,2 @@
+service=http://127.0.0.1:60721
+simulator=Orbis Lanes

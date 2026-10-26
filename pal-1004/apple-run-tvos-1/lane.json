@@ -1,0 +1,12 @@
+{
+  "elapsedSeconds": 313.421,
+  "requestedWorkers": 1,
+  "simulator": "Apple TV",
+  "simulatorUdid": "DDA27B37-BA12-4DA7-A6BF-5FE224993AB0",
+  "workers": [
+    {
+      "directory": "worker-1",
+      "name": "PAL-1004 Apple TV"
+    }
+  ]
+}

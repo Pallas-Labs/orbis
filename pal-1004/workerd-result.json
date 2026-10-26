@@ -1,0 +1,262 @@
+{
+  "authenticatedApi": true,
+  "downloadsQueued": true,
+  "editedPlaylist": "621d839c-8936-46ee-a5a0-acd1bbb09c5e",
+  "events": true,
+  "health": "ok",
+  "heartbeat": true,
+  "injectedDatabaseUsed": true,
+  "persistsAcrossRestart": true,
+  "rateLimitByClientAddress": true,
+  "revokedStreamClosed": true,
+  "savedSet": "39fd7371-bcf6-42c9-8977-b00b7f6a7098",
+  "schema": [
+    {
+      "type": "index",
+      "name": "library_entries_by_set",
+      "tbl_name": "library_entries",
+      "sql": "CREATE INDEX `library_entries_by_set` ON `library_entries` (`set_id`)"
+    },
+    {
+      "type": "index",
+      "name": "listens_by_person_set",
+      "tbl_name": "listens",
+      "sql": "CREATE INDEX `listens_by_person_set` ON `listens` (`person_id`, `set_id`, `id`)"
+    },
+    {
+      "type": "index",
+      "name": "listens_by_set",
+      "tbl_name": "listens",
+      "sql": "CREATE INDEX `listens_by_set` ON `listens` (`set_id`)"
+    },
+    {
+      "type": "index",
+      "name": "playback_positions_by_set",
+      "tbl_name": "playback_positions",
+      "sql": "CREATE INDEX `playback_positions_by_set` ON `playback_positions` (`set_id`)"
+    },
+    {
+      "type": "index",
+      "name": "playlist_editors_by_editor",
+      "tbl_name": "playlist_editors",
+      "sql": "CREATE INDEX `playlist_editors_by_editor` ON `playlist_editors` (`editor_id`, `playlist_id`)"
+    },
+    {
+      "type": "index",
+      "name": "playlist_imports_by_state",
+      "tbl_name": "playlist_imports",
+      "sql": "CREATE INDEX `playlist_imports_by_state` ON `playlist_imports` (`state`,`updated_at`)"
+    },
+    {
+      "type": "index",
+      "name": "playlist_imports_running_unique",
+      "tbl_name": "playlist_imports",
+      "sql": "CREATE UNIQUE INDEX `playlist_imports_running_unique` ON `playlist_imports` (`person_id`,`source_playlist_id`) WHERE `state` = 'running'"
+    },
+    {
+      "type": "index",
+      "name": "playlist_sets_by_set",
+      "tbl_name": "playlist_sets",
+      "sql": "CREATE INDEX `playlist_sets_by_set` ON `playlist_sets` (`set_id`, `playlist_id`)"
+    },
+    {
+      "type": "index",
+      "name": "playlist_sets_position_unique",
+      "tbl_name": "playlist_sets",
+      "sql": "CREATE UNIQUE INDEX `playlist_sets_position_unique` ON `playlist_sets` (`playlist_id`, `position`)"
+    },
+    {
+      "type": "index",
+      "name": "playlists_creator_name_unique",
+      "tbl_name": "playlists",
+      "sql": "CREATE UNIQUE INDEX `playlists_creator_name_unique` ON `playlists` (`creator_id`, `name` COLLATE NOCASE)"
+    },
+    {
+      "type": "index",
+      "name": "presence_action_results_by_age",
+      "tbl_name": "presence_action_results",
+      "sql": "CREATE INDEX `presence_action_results_by_age` ON `presence_action_results` (`key_id`,`recorded_at`)"
+    },
+    {
+      "type": "index",
+      "name": "presence_legacy_reports_by_person",
+      "tbl_name": "presence_legacy_reports",
+      "sql": "CREATE INDEX `presence_legacy_reports_by_person` ON `presence_legacy_reports` (`person_id`,`reported_at`)"
+    },
+    {
+      "type": "index",
+      "name": "presence_sessions_by_person",
+      "tbl_name": "presence_sessions",
+      "sql": "CREATE INDEX `presence_sessions_by_person` ON `presence_sessions` (`person_id`,`state`)"
+    },
+    {
+      "type": "index",
+      "name": "presence_sessions_owner_unique",
+      "tbl_name": "presence_sessions",
+      "sql": "CREATE UNIQUE INDEX `presence_sessions_owner_unique` ON `presence_sessions` (`person_id`) WHERE `state` IN ('playing', 'paused')"
+    },
+    {
+      "type": "index",
+      "name": "queue_entries_active_unique",
+      "tbl_name": "queue_entries",
+      "sql": "CREATE UNIQUE INDEX `queue_entries_active_unique` ON `queue_entries` (`person_id`) WHERE `is_active` = 1"
+    },
+    {
+      "type": "index",
+      "name": "queue_entries_by_set",
+      "tbl_name": "queue_entries",
+      "sql": "CREATE INDEX `queue_entries_by_set` ON `queue_entries` (`set_id`)"
+    },
+    {
+      "type": "index",
+      "name": "queue_entries_position_unique",
+      "tbl_name": "queue_entries",
+      "sql": "CREATE UNIQUE INDEX `queue_entries_position_unique` ON `queue_entries` (`person_id`, `position`)"
+    },
+    {
+      "type": "table",
+      "name": "__drizzle_migrations",
+      "tbl_name": "__drizzle_migrations",
+      "sql": "CREATE TABLE \"__drizzle_migrations\" (\n\t\t\t\tid INTEGER PRIMARY KEY,\n\t\t\t\thash text NOT NULL,\n\t\t\t\tcreated_at numeric,\n\t\t\t\tname text,\n\t\t\t\tapplied_at TEXT\n\t\t\t)"
+    },
+    {
+      "type": "table",
+      "name": "api_keys",
+      "tbl_name": "api_keys",
+      "sql": "CREATE TABLE \"api_keys\" (\n  id TEXT PRIMARY KEY NOT NULL, digest TEXT NOT NULL UNIQUE, label TEXT NOT NULL,\n  scope TEXT NOT NULL CHECK (scope IN ('daily', 'admin', 'node')),\n  person_id TEXT NOT NULL REFERENCES people(id), added_at TEXT NOT NULL, last_used_at TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "download_jobs",
+      "tbl_name": "download_jobs",
+      "sql": "CREATE TABLE `download_jobs` (\n  `sequence` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n  `set_id` text NOT NULL UNIQUE REFERENCES `sets`(`id`) ON DELETE CASCADE,\n  `person_id` text NOT NULL REFERENCES `download_requesters`(`person_id`)\n, `queued_at` text)"
+    },
+    {
+      "type": "table",
+      "name": "download_requesters",
+      "tbl_name": "download_requesters",
+      "sql": "CREATE TABLE `download_requesters` (\n  `person_id` text PRIMARY KEY NOT NULL,\n  `last_served` integer DEFAULT 0 NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "group_settings",
+      "tbl_name": "group_settings",
+      "sql": "CREATE TABLE group_settings (\n  id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1), passcode TEXT\n)"
+    },
+    {
+      "type": "table",
+      "name": "library_entries",
+      "tbl_name": "library_entries",
+      "sql": "CREATE TABLE `library_entries` (\n  `person_id` text NOT NULL,\n  `set_id` text NOT NULL REFERENCES `sets`(`id`),\n  `saved_at` text NOT NULL,\n  `title_override` text,\n  `tags` text NOT NULL,\n  PRIMARY KEY (`person_id`, `set_id`)\n)"
+    },
+    {
+      "type": "table",
+      "name": "listens",
+      "tbl_name": "listens",
+      "sql": "CREATE TABLE `listens` (\n  `id` integer PRIMARY KEY AUTOINCREMENT,\n  `person_id` text NOT NULL,\n  `set_id` text NOT NULL REFERENCES `sets`(`id`),\n  `started_at` text NOT NULL,\n  `finished_at` text,\n  `start_known` integer NOT NULL DEFAULT 1\n)"
+    },
+    {
+      "type": "table",
+      "name": "people",
+      "tbl_name": "people",
+      "sql": "CREATE TABLE people (\n  id TEXT PRIMARY KEY NOT NULL, username TEXT NOT NULL, removed INTEGER NOT NULL,\n  social INTEGER NOT NULL DEFAULT 0, auto_download INTEGER NOT NULL DEFAULT 1,\n  filters TEXT NOT NULL DEFAULT '[]'\n)"
+    },
+    {
+      "type": "table",
+      "name": "playback_positions",
+      "tbl_name": "playback_positions",
+      "sql": "CREATE TABLE `playback_positions` (\n  `person_id` text NOT NULL,\n  `set_id` text NOT NULL REFERENCES `sets`(`id`),\n  `seconds` integer NOT NULL DEFAULT 0,\n  PRIMARY KEY (`person_id`, `set_id`)\n)"
+    },
+    {
+      "type": "table",
+      "name": "playlist_editors",
+      "tbl_name": "playlist_editors",
+      "sql": "CREATE TABLE `playlist_editors` (\n  `playlist_id` text NOT NULL REFERENCES `playlists`(`id`) ON DELETE CASCADE,\n  `creator_id` text NOT NULL,\n  `editor_id` text NOT NULL,\n  PRIMARY KEY (`playlist_id`, `editor_id`)\n)"
+    },
+    {
+      "type": "table",
+      "name": "playlist_imports",
+      "tbl_name": "playlist_imports",
+      "sql": "CREATE TABLE `playlist_imports` (\n  `id` text PRIMARY KEY,\n  `person_id` text NOT NULL,\n  `playlist_id` text NOT NULL,\n  `source_playlist_id` text NOT NULL,\n  `source_url` text NOT NULL,\n  `state` text NOT NULL CHECK (`state` IN ('running', 'done', 'failed')),\n  `page_token` text,\n  `processed` integer NOT NULL DEFAULT 0,\n  `total` integer,\n  `added` integer NOT NULL DEFAULT 0,\n  `unavailable` integer NOT NULL DEFAULT 0,\n  `over_limit` integer NOT NULL DEFAULT 0,\n  `downloading` integer NOT NULL DEFAULT 0,\n  `waiting` integer NOT NULL DEFAULT 0,\n  `failure` text,\n  `created_at` integer NOT NULL,\n  `updated_at` integer NOT NULL,\n  CHECK ((`state` = 'failed') = (`failure` IS NOT NULL))\n)"
+    },
+    {
+      "type": "table",
+      "name": "playlist_sets",
+      "tbl_name": "playlist_sets",
+      "sql": "CREATE TABLE \"playlist_sets\" (\n  `playlist_id` text NOT NULL REFERENCES \"playlists\"(`id`),\n  `set_id` text NOT NULL REFERENCES `sets`(`id`),\n  `position` integer NOT NULL,\n  PRIMARY KEY (`playlist_id`, `set_id`)\n)"
+    },
+    {
+      "type": "table",
+      "name": "playlists",
+      "tbl_name": "playlists",
+      "sql": "CREATE TABLE \"playlists\" (\n  `id` text PRIMARY KEY NOT NULL,\n  `creator_id` text NOT NULL DEFAULT 'host',\n  `name` text NOT NULL,\n  `created_at` text NOT NULL\n, `collaborative` integer NOT NULL DEFAULT 0)"
+    },
+    {
+      "type": "table",
+      "name": "presence_action_results",
+      "tbl_name": "presence_action_results",
+      "sql": "CREATE TABLE `presence_action_results` (\n  `key_id` text NOT NULL,\n  `session_id` text NOT NULL,\n  `action_id` text NOT NULL,\n  `input` text NOT NULL,\n  `result` text NOT NULL,\n  `recorded_at` integer NOT NULL,\n  PRIMARY KEY(`key_id`, `session_id`, `action_id`)\n)"
+    },
+    {
+      "type": "table",
+      "name": "presence_keys",
+      "tbl_name": "presence_keys",
+      "sql": "CREATE TABLE `presence_keys` (\n  `key_id` text PRIMARY KEY,\n  `person_id` text NOT NULL,\n  `opted_in_at` integer NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "presence_legacy_reports",
+      "tbl_name": "presence_legacy_reports",
+      "sql": "CREATE TABLE `presence_legacy_reports` (\n  `key_id` text PRIMARY KEY,\n  `person_id` text NOT NULL,\n  `set_id` text NOT NULL,\n  `reported_at` integer NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "presence_sessions",
+      "tbl_name": "presence_sessions",
+      "sql": "CREATE TABLE `presence_sessions` (\n  `key_id` text NOT NULL,\n  `session_id` text NOT NULL,\n  `person_id` text NOT NULL,\n  `set_id` text NOT NULL,\n  `state` text NOT NULL CHECK (`state` IN ('playing', 'paused', 'stopped', 'superseded')),\n  `owner_generation` integer NOT NULL,\n  `action_number` integer NOT NULL,\n  `lease_expires_at` integer,\n  `updated_at` integer NOT NULL,\n  PRIMARY KEY(`key_id`, `session_id`)\n)"
+    },
+    {
+      "type": "table",
+      "name": "queue_entries",
+      "tbl_name": "queue_entries",
+      "sql": "CREATE TABLE \"queue_entries\" (\n  `person_id` text NOT NULL,\n  `set_id` text NOT NULL REFERENCES `sets`(`id`),\n  `position` integer NOT NULL,\n  `is_active` integer NOT NULL DEFAULT 0,\n  PRIMARY KEY (`person_id`, `set_id`)\n)"
+    },
+    {
+      "type": "table",
+      "name": "set_cues",
+      "tbl_name": "set_cues",
+      "sql": "CREATE TABLE `set_cues` (\n  `set_id` text NOT NULL REFERENCES `sets`(`id`) ON DELETE CASCADE,\n  `position` integer NOT NULL,\n  `start_seconds` integer,\n  `artist` text NOT NULL,\n  `title` text NOT NULL,\n  `apple_music_id` text,\n  `artwork_url` text,\n  PRIMARY KEY(`set_id`, `position`)\n)"
+    },
+    {
+      "type": "table",
+      "name": "sets",
+      "tbl_name": "sets",
+      "sql": "CREATE TABLE `sets` (\n\t`id` text PRIMARY KEY,\n\t`url` text NOT NULL UNIQUE,\n\t`title` text NOT NULL,\n\t`source` text NOT NULL,\n\t`tags` text NOT NULL,\n\t`created_at` text NOT NULL,\n\t`creator` text,\n\t`artwork_url` text,\n\t`duration_seconds` integer,\n\t`metadata_state` text DEFAULT 'pending' NOT NULL,\n\t`title_edited_by_user` integer DEFAULT true NOT NULL,\n\t`download_state` text DEFAULT 'none' NOT NULL,\n\t`retained_audio_bytes` integer,\n\t`retained_audio_format` text,\n\t`playback_position_seconds` integer DEFAULT 0 NOT NULL,\n\t`listen_count` integer DEFAULT 0 NOT NULL,\n\t`finish_count` integer DEFAULT 0 NOT NULL,\n\t`last_listened_at` text\n, `artwork_large_url` text, `released_at` text, `creator_id` text, `creator_url` text, `description` text, `genre` text, `source_chapters` text, `source_tags` text, `details_state` text DEFAULT 'pending' NOT NULL, `host_removed` integer NOT NULL DEFAULT 0, `tracklist_state` text DEFAULT 'pending' NOT NULL, `tracklist_run_id` text, `tracklist_run_started_at` text)"
+    },
+    {
+      "type": "table",
+      "name": "sign_in_codes",
+      "tbl_name": "sign_in_codes",
+      "sql": "CREATE TABLE sign_in_codes (\n  code TEXT PRIMARY KEY NOT NULL, person_id TEXT NOT NULL REFERENCES people(id),\n  expires_at TEXT NOT NULL\n)"
+    },
+    {
+      "type": "table",
+      "name": "trust_migrations",
+      "tbl_name": "trust_migrations",
+      "sql": "CREATE TABLE trust_migrations (id INTEGER PRIMARY KEY CHECK (id = 1))"
+    }
+  ],
+  "schemaMatchesBun": true,
+  "share": {
+    "imageMilliseconds": [
+      660,
+      592,
+      399,
+      363,
+      319
+    ],
+    "page": true,
+    "png": 267214
+  },
+  "singleton": true
+}
