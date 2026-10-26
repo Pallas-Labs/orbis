@@ -60,8 +60,11 @@ Before driving a real build by hand, read `docs/agents/ui-verification.md`. It r
 
 The scheduled gardening run measures the repo with `bun run garden`, which runs `garden sense` and prints one schema-2 JSON report. `garden` is the garden-cli app of Pallas-Labs/factory. It has no release yet, so Orbis pins no package: `scripts/garden` runs `$GARDEN_BIN` when it is set, or else the `garden` on `PATH`, and exits 2 with build steps when it finds neither. On Vanta, both come from the factory checkout's `main`. `garden.config.json` sets what each probe reads; [Gardening sensor](docs/development.md#gardening-sensor) lists the probes.
 
+- In a fresh worktree, run `bun install --frozen-lockfile` before `bun run garden`. Without it, `lint.oxlint` and `deadcode.oxlint` skip as a missing tool.
 - `bun run garden --with-gate` also runs each `bun run check` task alone and records its time. `--out <dir>` also writes the report to a new UTC-named file in that directory.
 - `bun run garden --compare <previous.json>` keeps the report on stdout and writes the comparison to stderr. `scripts/garden compare --format markdown <before> <after>` compares two saved reports. A finding whose probe was skipped, failed, or changed scope on either side is `unverified`, never resolved.
+- `scripts/garden report --finding <ID> --history <dir> --baseline <before> <current>` drafts one finding's PR evidence: where it is, how long it has repeated, and the fix options with their costs. It never picks a fix.
+- The schema-2 baseline is the report of `7b7b9c9`, which PAL-875 links. Schema-1 reports from before it compare only with `scripts/garden compare --legacy-repo orbis`, and every change reads `unverified`.
 - A finding ID is `g2:` and a SHA-256 of its repo, probe, rule, path, and normalized text, not its line. A missing tool or a macOS-only probe on Linux skips; missing observations never count as zero.
 - Gardening PRs carry the GitHub label `gardening` and wait for Parth's review. Never merge one yourself.
 - Only one gardening PR may be open at a time.
