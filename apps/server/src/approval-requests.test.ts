@@ -1,4 +1,4 @@
-// Pairing a device by Approval Request through `createApp` over HTTP with a
+// Signing in a device by Approval Request through `createApp` over HTTP with a
 // real database.
 //
 // Ways it could fail, each covered below:
