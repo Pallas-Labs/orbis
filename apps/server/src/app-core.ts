@@ -2460,6 +2460,7 @@ export const createPortableApp = (options: {
             withFailureResponse(
               Effect.gen(function* shareImage() {
                 const { artwork, set } = yield* readShared(params.id);
+                const requested = performance.now();
                 const picture = yield* Effect.promise(() =>
                   loadArtwork(artwork)
                 );
@@ -2481,6 +2482,7 @@ export const createPortableApp = (options: {
                 yield* annotateWideEvent({
                   share: {
                     artwork: picture !== null,
+                    artworkMs: Math.round(started - requested),
                     renderMs: Math.round(performance.now() - started),
                   },
                 });

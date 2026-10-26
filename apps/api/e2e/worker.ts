@@ -34,6 +34,17 @@ export class Group extends ProductionGroup {
       );
       return new Response("seeded");
     }
+    if (pathname === "/__share") {
+      const query = new URL(request.url).searchParams;
+      this.ctx.storage.sql.exec(
+        "UPDATE sets SET title = ?, creator = ?, artwork_url = ?, artwork_large_url = ?",
+        query.get("title"),
+        query.get("creator"),
+        query.get("artwork"),
+        query.get("artwork")
+      );
+      return new Response("shared");
+    }
     if (pathname === "/__jobs") {
       return Response.json(
         this.ctx.storage.sql

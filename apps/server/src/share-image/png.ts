@@ -27,32 +27,17 @@ const chunk = (type: string, body: Uint8Array): Uint8Array => {
   return bytes;
 };
 
-const paeth = (left: number, up: number, upLeft: number): number => {
-  const estimate = left + up - upLeft;
-  const toLeft = Math.abs(estimate - left);
-  const toUp = Math.abs(estimate - up);
-  const toUpLeft = Math.abs(estimate - upLeft);
-  if (toLeft <= toUp && toLeft <= toUpLeft) {
-    return left;
-  }
-  return toUp <= toUpLeft ? up : upLeft;
-};
-
-/** An 8-bit RGB PNG. Every row uses the Paeth filter, which suits gradients and text alike. */
+/** An 8-bit RGB PNG. Every row uses the Up filter, which suits the smooth glow behind the text. */
 export const encodePng = async (image: Bitmap): Promise<Uint8Array> => {
   const stride = image.width * 3;
   const raw = new Uint8Array((stride + 1) * image.height);
   for (let row = 0; row < image.height; row += 1) {
     const target = row * (stride + 1);
-    raw[target] = 4;
+    raw[target] = 2;
     for (let index = 0; index < stride; index += 1) {
       const at = row * stride + index;
-      const left = index >= 3 ? (image.data[at - 3] ?? 0) : 0;
       const up = row > 0 ? (image.data[at - stride] ?? 0) : 0;
-      const upLeft =
-        row > 0 && index >= 3 ? (image.data[at - stride - 3] ?? 0) : 0;
-      raw[target + 1 + index] =
-        ((image.data[at] ?? 0) - paeth(left, up, upLeft)) & 0xff;
+      raw[target + 1 + index] = ((image.data[at] ?? 0) - up) & 0xff;
     }
   }
   const compressed = new Uint8Array(

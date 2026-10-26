@@ -145,7 +145,18 @@ const startApp = async (artworkHost: string) => {
   };
 };
 
-/** Width, height, and RGB pixels of an 8-bit RGB PNG with Paeth-filtered rows. */
+const paeth = (left: number, up: number, upLeft: number) => {
+  const estimate = left + up - upLeft;
+  const [toLeft = 0, toUp = 0, toUpLeft = 0] = [left, up, upLeft].map((value) =>
+    Math.abs(estimate - value)
+  );
+  if (toLeft <= toUp && toLeft <= toUpLeft) {
+    return left;
+  }
+  return toUp <= toUpLeft ? up : upLeft;
+};
+
+/** Width, height, and RGB pixels of an 8-bit RGB PNG with a single IDAT chunk. */
 const readPng = (png: Uint8Array) => {
   const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
   expect([...png.subarray(0, 8)]).toEqual([
@@ -154,30 +165,26 @@ const readPng = (png: Uint8Array) => {
   expect(new TextDecoder().decode(png.subarray(12, 16))).toBe("IHDR");
   const width = view.getUint32(16);
   const height = view.getUint32(20);
-  const idatLength = view.getUint32(33);
-  const raw = inflateSync(png.subarray(41, 41 + idatLength));
+  expect([png[24], png[25]]).toEqual([8, 2]);
+  const raw = inflateSync(png.subarray(41, 41 + view.getUint32(33)));
   const stride = width * 3;
   const pixels = new Uint8Array(stride * height);
   for (let row = 0; row < height; row += 1) {
+    const filter = raw[row * (stride + 1)];
     for (let index = 0; index < stride; index += 1) {
-      const left = index >= 3 ? (pixels[row * stride + index - 3] ?? 0) : 0;
-      const up = row > 0 ? (pixels[(row - 1) * stride + index] ?? 0) : 0;
-      const upLeft =
-        row > 0 && index >= 3
-          ? (pixels[(row - 1) * stride + index - 3] ?? 0)
-          : 0;
-      const estimate = left + up - upLeft;
-      const [toLeft, toUp, toUpLeft] = [left, up, upLeft].map((value) =>
-        Math.abs(estimate - value)
-      );
-      let predicted = upLeft;
-      if ((toLeft ?? 0) <= (toUp ?? 0) && (toLeft ?? 0) <= (toUpLeft ?? 0)) {
-        predicted = left;
-      } else if ((toUp ?? 0) <= (toUpLeft ?? 0)) {
-        predicted = up;
-      }
-      pixels[row * stride + index] =
-        ((raw[row * (stride + 1) + 1 + index] ?? 0) + predicted) % 256;
+      const at = row * stride + index;
+      const left = index >= 3 ? (pixels[at - 3] ?? 0) : 0;
+      const up = row > 0 ? (pixels[at - stride] ?? 0) : 0;
+      const upLeft = row > 0 && index >= 3 ? (pixels[at - stride - 3] ?? 0) : 0;
+      const predicted = [
+        0,
+        left,
+        up,
+        Math.floor((left + up) / 2),
+        paeth(left, up, upLeft),
+      ][filter ?? 0];
+      pixels[at] =
+        ((raw[row * (stride + 1) + 1 + index] ?? 0) + (predicted ?? 0)) % 256;
     }
   }
   return { height, pixels, width };
