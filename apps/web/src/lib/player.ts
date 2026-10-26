@@ -32,13 +32,28 @@ export const sendPresence = (
   credentials: Credentials,
   action: PresenceAction
 ) =>
-  callOrbis(credentials, (client) =>
-    // SAFETY: `action` is a PresenceAction, and the client accepts each member as
-    // a payload; its overloads just do not accept the union in one call.
-    client.presence.act({ payload: action } as Parameters<
-      typeof client.presence.act
-    >[0])
-  );
+  callOrbis(credentials, (client) => {
+    // The generated client types each payload member as its own request object,
+    // so the action dispatches on its kind before the call.
+    switch (action.kind) {
+      case "play": {
+        return client.presence.act({ payload: action });
+      }
+      case "pause": {
+        return client.presence.act({ payload: action });
+      }
+      case "stop": {
+        return client.presence.act({ payload: action });
+      }
+      case "renew": {
+        return client.presence.act({ payload: action });
+      }
+      default: {
+        const exhaustive: never = action;
+        return exhaustive;
+      }
+    }
+  });
 
 export const reportPosition = (
   credentials: Credentials,

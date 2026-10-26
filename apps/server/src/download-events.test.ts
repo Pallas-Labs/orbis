@@ -6,8 +6,7 @@ import path from "node:path";
 import type { WideEvent } from "evlog";
 
 import { createTestApp as createApp } from "./test-app.js";
-import { request } from "./test-http.js";
-import { setIn } from "./test-library.js";
+import { idIn, request } from "./test-http.js";
 
 const youTubeUrl = "https://www.youtube.com/watch?v=aqzKEbpKQAA";
 
@@ -69,7 +68,8 @@ test("a failed download emits one event that names each backend's cause", async 
       payload: { tags: [], title: "Seeded set", url: youTubeUrl },
       url: "/sets",
     });
-    const { id } = setIn(saved);
+    // The save route returns the stored set including its id; idIn checks it.
+    const id = idIn(saved);
     await request(app, { method: "POST", url: `/sets/${id}/audio/download` });
     await waitForJob(events);
 
@@ -193,7 +193,8 @@ test.each(cobaltFailures)(
         url: "/sets",
       });
       expect(saved.statusCode).toBe(201);
-      const { id } = setIn(saved);
+      // The successful save route returns the stored Set's id; idIn checks it.
+      const id = idIn(saved);
       await request(app, { method: "POST", url: `/sets/${id}/audio/download` });
       await waitForJob(events);
       const jobs = events.filter((event) => event.job === "audio-download");

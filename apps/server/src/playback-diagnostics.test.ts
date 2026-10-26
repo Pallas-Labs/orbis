@@ -124,6 +124,11 @@ interface OtlpBody {
     }[];
   }[];
 }
+const isOtlpBody = (body: unknown): body is OtlpBody =>
+  typeof body === "object" &&
+  body !== null &&
+  "resourceLogs" in body &&
+  Array.isArray(body.resourceLogs);
 type Entry = (typeof fixture.entries)[number];
 const attributeMap = (attributes: OtlpAttribute[]) =>
   Object.fromEntries(attributes.map(({ key, value }) => [key, value]));
@@ -180,8 +185,12 @@ test("OTLP records carry resource attributes, event attributes, and the Set ID",
     };
     const response = await s.send(JSON.stringify(body));
     expect(response.status).toBe(200);
-    // SAFETY: the loopback collector stores the JSON body the relay posted.
-    const sent = s.requests[0]?.body as OtlpBody;
+    // The loopback collector stores the JSON body the relay posted; isOtlpBody
+    // narrows it to the OTLP shape the assertions read.
+    const sent = s.requests[0]?.body;
+    if (!isOtlpBody(sent)) {
+      throw new Error("the relay did not post an OTLP body");
+    }
     expect(
       attributeMap(sent.resourceLogs[0]?.resource.attributes ?? [])
     ).toEqual({

@@ -3,10 +3,11 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { Schema } from "effect";
+
 import type { AudioOptions } from "./audio.js";
 import { createTestApp as createApp, storedKey } from "./test-app.js";
-import { request } from "./test-http.js";
-import { setIn } from "./test-library.js";
+import { idIn, request } from "./test-http.js";
 
 const youTubeUrl = "https://www.youtube.com/watch?v=aqzKEbpKQAA";
 const haveFfmpeg =
@@ -14,10 +15,12 @@ const haveFfmpeg =
 const testFfmpeg = test.skipIf(!haveFfmpeg);
 
 // The stub only routes on the URL; Cobalt's full request shape is asserted by the
-// worker's Schema decode, so the stub names just the field it reads.
-interface CobaltProbeBody {
-  readonly url?: string;
-}
+// worker's Schema decode, so the stub decodes just the field its handlers may read.
+const CobaltProbeBodySchema = Schema.Struct({
+  url: Schema.optionalKey(Schema.String),
+});
+type CobaltProbeBody = typeof CobaltProbeBodySchema.Type;
+const decodeCobaltProbeBody = Schema.decodeUnknownSync(CobaltProbeBodySchema);
 
 interface StubHandlers {
   cobalt: (body: CobaltProbeBody) => Response;
@@ -39,12 +42,13 @@ const stubFetch =
   (url: string | URL, init?: RequestInit): Promise<Response> => {
     const target = String(url);
     if (target.startsWith("http://cobalt.test/")) {
-      // SAFETY: the stub only reads url for routing; the worker Schema-decodes the rest.
-      const body = JSON.parse(String(init?.body)) as CobaltProbeBody;
-      return Promise.resolve(handlers.cobalt(body));
+      // The stub only reads url for routing; the worker Schema-decodes the rest.
+      return Promise.resolve(
+        handlers.cobalt(decodeCobaltProbeBody(JSON.parse(String(init?.body))))
+      );
     }
-    // SAFETY: route handlers always pass a signal; the stub forwards it to paced tunnels.
-    const signal = init?.signal as AbortSignal;
+    // Route handlers always pass a signal; the stub forwards it to paced tunnels.
+    const signal = init?.signal ?? new AbortController().signal;
     return Promise.resolve(handlers.tunnel(target, signal));
   };
 
@@ -94,7 +98,8 @@ const seedSet = async (
     url: "/sets",
   });
   expect(saved.statusCode).toBe(201);
-  return setIn(saved).id;
+  // The save route returns the stored set including its id; idIn checks it.
+  return idIn(saved);
 };
 
 const rawRequest = (
@@ -470,7 +475,8 @@ test("a restart re-queues a download stuck mid-flight", async () => {
   await boot.dispose();
   const { Database } = await import("bun:sqlite");
   const database = new Database(databasePath);
-  const savedId = setIn(saved).id;
+  // The save route returns the stored set including its id; idIn checks it.
+  const savedId = idIn(saved);
   database
     .query("UPDATE sets SET download_state = 'downloading' WHERE id = ?")
     .run(savedId);
@@ -605,7 +611,8 @@ test("only the Person who asked for a Download, or the Host, can cancel it", asy
   try {
     const saved = await as("ann-key", "POST", "/sets");
     expect(saved.statusCode).toBe(201);
-    const { id } = setIn(saved);
+    // The save route returns the stored set including its id; idIn checks it.
+    const id = idIn(saved);
     const bobSaved = await as("bob-key", "POST", "/sets");
     expect(bobSaved.statusCode).toBe(201);
     const asked = await as("ann-key", "POST", `/sets/${id}/audio/download`);

@@ -48,7 +48,6 @@ type ValueOf<E, K extends EventKind> = E extends { [P in K]: infer V }
   ? V
   : never;
 type EventValue<K extends EventKind> = ValueOf<Event, K>;
-type EventValues = { [K in EventKind]: EventValue<K> };
 interface ErrorValue {
   code: number;
   domain: string;
@@ -102,21 +101,102 @@ const eventAttributes: EventAttributes = {
   waiting: ({ _0 }) => [text("playback.reason", _0.reason)],
 };
 
-const attributesFor = (kind: EventKind, event: Event): Attribute[] => {
-  // SAFETY: `kind` is the key of `event`, so the registry entry for `kind` takes that key's value.
-  const attributes = eventAttributes[kind] as (
-    value: EventValues[EventKind]
-  ) => Attribute[];
-  // SAFETY: `kind` is a key present on `event`.
-  return attributes((event as EventValues)[kind]);
+/**
+ * The attributes and event name a log entry carries. The schema accepts only
+ * single-key events, so the first key each member matches names its kind; the
+ * unreachable tail keeps a new event kind a compile error until it is handled.
+ */
+const factsFor = (event: Event) => {
+  if ("access" in event) {
+    return { attributes: eventAttributes.access(event.access), kind: "access" };
+  }
+  if ("activation" in event) {
+    return {
+      attributes: eventAttributes.activation(event.activation),
+      kind: "activation",
+    };
+  }
+  if ("buffer" in event) {
+    return { attributes: eventAttributes.buffer(event.buffer), kind: "buffer" };
+  }
+  if ("command" in event) {
+    return {
+      attributes: eventAttributes.command(event.command),
+      kind: "command",
+    };
+  }
+  if ("discontinuity" in event) {
+    return {
+      attributes: eventAttributes.discontinuity(event.discontinuity),
+      kind: "discontinuity",
+    };
+  }
+  if ("ended" in event) {
+    return { attributes: eventAttributes.ended(event.ended), kind: "ended" };
+  }
+  if ("error" in event) {
+    return { attributes: eventAttributes.error(event.error), kind: "error" };
+  }
+  if ("interruption" in event) {
+    return {
+      attributes: eventAttributes.interruption(event.interruption),
+      kind: "interruption",
+    };
+  }
+  if ("item" in event) {
+    return { attributes: eventAttributes.item(event.item), kind: "item" };
+  }
+  if ("reset" in event) {
+    return { attributes: eventAttributes.reset(event.reset), kind: "reset" };
+  }
+  if ("route" in event) {
+    return { attributes: eventAttributes.route(event.route), kind: "route" };
+  }
+  if ("sample" in event) {
+    return { attributes: eventAttributes.sample(event.sample), kind: "sample" };
+  }
+  if ("seekResult" in event) {
+    return {
+      attributes: eventAttributes.seekResult(event.seekResult),
+      kind: "seekResult",
+    };
+  }
+  if ("session" in event) {
+    return {
+      attributes: eventAttributes.session(event.session),
+      kind: "session",
+    };
+  }
+  if ("stalled" in event) {
+    return {
+      attributes: eventAttributes.stalled(event.stalled),
+      kind: "stalled",
+    };
+  }
+  if ("state" in event) {
+    return { attributes: eventAttributes.state(event.state), kind: "state" };
+  }
+  if ("timeJumped" in event) {
+    return {
+      attributes: eventAttributes.timeJumped(event.timeJumped),
+      kind: "timeJumped",
+    };
+  }
+  if ("waiting" in event) {
+    return {
+      attributes: eventAttributes.waiting(event.waiting),
+      kind: "waiting",
+    };
+  }
+  const exhaustive: never = event;
+  return exhaustive;
 };
 
 const logsFor = (batch: PlaybackDiagnosticsPayload, environment: string) => {
   const shared = [text("session.id", batch.runId)];
   const logs = batch.entries.map((entry) => {
     const { event } = entry;
-    // SAFETY: the schema accepts only single-key events named by EventKind.
-    const kind = Object.keys(event)[0] as EventKind;
+    const { attributes, kind } = factsFor(event);
     const warning =
       "stalled" in event ||
       "error" in event ||
@@ -140,7 +220,7 @@ const logsFor = (batch: PlaybackDiagnosticsPayload, environment: string) => {
       ...(entry.snapshot.setId
         ? [text("orbis.set_id", entry.snapshot.setId)]
         : []),
-      ...attributesFor(kind, event),
+      ...attributes,
     ];
     return {
       attributes: facts,

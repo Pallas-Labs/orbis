@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 
 import { Metadata } from "./metadata.js";
 import { createTestApp as createApp } from "./test-app.js";
@@ -177,15 +177,17 @@ interface SchemaState {
   readonly version: number;
 }
 
+const decodeUserVersion = Schema.decodeUnknownSync(
+  Schema.Struct({ user_version: Schema.Number })
+);
+
 const readSchemaState = (databasePath: string): SchemaState => {
   const database = new Database(databasePath, { readonly: true });
   try {
-    // SAFETY: SQLite returns one row with an integer user_version column on every build.
-    const { user_version: version } = database
-      .query("PRAGMA user_version")
-      .get() as {
-      user_version: number;
-    };
+    // SQLite answers PRAGMA user_version with exactly one row carrying an integer.
+    const { user_version: version } = decodeUserVersion(
+      database.query("PRAGMA user_version").get()
+    );
     const indexes = database
       .query<{ name: string }, []>("PRAGMA index_list('playlist_sets')")
       .all();

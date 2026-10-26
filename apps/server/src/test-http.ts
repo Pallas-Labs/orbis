@@ -1,3 +1,5 @@
+import { Schema } from "effect";
+
 import type { createApp } from "./app.js";
 import type { AccessMode } from "./identity.js";
 
@@ -35,3 +37,12 @@ export const request = async (
   const body = await response.json();
   return { json: () => body, statusCode: response.status };
 };
+
+export type TestResponse = Awaited<ReturnType<typeof request>>;
+
+const SavedId = Schema.Struct({ id: Schema.String });
+const decodeSavedId = Schema.decodeUnknownSync(SavedId);
+
+/** The `id` field a JSON response carried, decoded here so a bad shape fails the test. */
+export const idIn = (response: TestResponse): string =>
+  decodeSavedId(response.json()).id;
