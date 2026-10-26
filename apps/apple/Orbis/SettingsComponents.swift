@@ -17,7 +17,7 @@ struct FailureRows: View {
   }
 }
 
-/// A Sign-in Code, large enough to read across a room, with when it stops working.
+/// A Sign-in Code in the same slots the other device types it into, with when it stops working.
 struct SignInCodeView: View {
   let code: SignInCode
   let identifier: String
@@ -25,11 +25,7 @@ struct SignInCodeView: View {
   var body: some View {
     VStack(spacing: 6) {
       HStack(spacing: 12) {
-        Text(code.formatted)
-          .font(.system(.largeTitle, design: .monospaced).weight(.semibold))
-          #if !os(tvOS)
-            .textSelection(.enabled)
-          #endif
+        CodeSlots(code: code.code, format: .signInCode)
           .accessibilityIdentifier(identifier)
         #if !os(tvOS)
           CopyButton(title: "Copy Code", text: code.code, identifier: "\(identifier)-copy")
