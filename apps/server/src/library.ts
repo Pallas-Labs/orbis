@@ -697,7 +697,12 @@ export class Library extends Context.Service<
                     .returning();
                   if (updated && songs) {
                     yield* tx.delete(setCues).where(eq(setCues.setId, id));
-                    yield* tx.insert(setCues).values(albumCues(id, songs));
+                    for (const batch of insertBatches(
+                      setCues,
+                      albumCues(id, songs)
+                    )) {
+                      yield* tx.insert(setCues).values(batch);
+                    }
                   }
                   return updated;
                 })
