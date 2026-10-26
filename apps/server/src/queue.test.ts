@@ -13,6 +13,7 @@ import {
   play,
   playNext,
   putPosition,
+  queueIn,
   queueOf,
   ready,
   seedSets,
@@ -119,11 +120,8 @@ test("playing a Playlist replaces the queue in Playlist order, with its playable
       });
 
       expect(replaced.statusCode).toBe(200);
-      // SAFETY: the route answers with the whole queue, which is asserted by field here.
-      const queue = replaced.json().queue as {
-        activeSetId: string | null;
-        entries: { id: string }[];
-      };
+      // The route answers with the whole queue, which is asserted by field here.
+      const queue = queueIn(replaced);
       expect(queue.entries.map((entry) => entry.id)).toEqual(["c", "a", "b"]);
       expect(queue.activeSetId).toBe("c");
     }

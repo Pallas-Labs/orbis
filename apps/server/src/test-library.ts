@@ -5,12 +5,24 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type { SavedSet } from "@orbis/contracts";
+import { SavedSetSchema } from "@orbis/contracts/http-api";
+import { Schema } from "effect";
 
 import { createTestApp as createApp } from "./test-app.js";
 import { request } from "./test-http.js";
 
 export const SET_SECONDS = 600;
 const CREATED_AT = "2026-04-01T00:00:00.000Z";
+
+const decodeLibraryResponse = Schema.decodeUnknownSync(
+  Schema.Struct({
+    sets: Schema.optionalKey(
+      Schema.NullOr(Schema.Array(SavedSetSchema).pipe(Schema.mutable))
+    ),
+  })
+);
+const Refusal = Schema.Struct({ message: Schema.String });
+const decodeRefusal = Schema.decodeUnknownSync(Refusal);
 
 export type App = ReturnType<typeof createApp>;
 export type Response = Awaited<ReturnType<typeof request>>;
@@ -93,19 +105,19 @@ export const withSeededApp = async (
 };
 
 /** The queue a response carried. Every queue route answers with the whole queue. */
-const queueIn = (response: Response): Queue =>
-  // SAFETY: the queue contract is { queue: { activeSetId, entries: SavedSet[] } }, which the
-  // tests then assert field by field.
+export const queueIn = (response: Response): Queue =>
+  // SAFETY: every queue route answers with the whole queue, which the tests then
+  // assert field by field; a refusal body passes through unread.
   response.json().queue as Queue;
 
 /** The sentence a refused request carried. */
 export const messageIn = (response: Response): string =>
-  // SAFETY: a refusal answers with { message } from the application's failure response.
-  response.json().message as string;
+  decodeRefusal(response.json()).message;
 
 /** The Set a response carried. */
 export const setIn = (response: Response): SavedSet =>
-  // SAFETY: the Set routes answer with the SavedSet contract, which the tests read by field.
+  // SAFETY: the Set routes answer with the SavedSet contract, which the tests read
+  // by field; a refusal body passes through unread.
   response.json() as SavedSet;
 
 export const queueOf = async (app: App): Promise<Queue> => {
@@ -168,14 +180,18 @@ export const putPosition = async (app: App, setId: string, seconds: number) => {
 export const setsInLibrary = async (app: App): Promise<SavedSet[]> => {
   const response = await request(app, { method: "GET", url: "/sets" });
   expect(response.statusCode).toBe(200);
-  // SAFETY: the library route answers with the SavedSet contract, read here by field.
-  return (response.json().sets as SavedSet[]) ?? [];
+  const { sets } = decodeLibraryResponse(response.json());
+  return sets ?? [];
 };
 
 export const savedSet = async (app: App, id: string): Promise<SavedSet> => {
   const sets = await setsInLibrary(app);
   const found = sets.find((set) => set.id === id);
   expect(found).toBeDefined();
-  // SAFETY: the expectation above fails the test when the Set is missing.
-  return found as SavedSet;
+  // The expectation above fails the test when the Set is missing; this guard
+  // narrows the type without an assertion.
+  if (found === undefined) {
+    throw new Error(`Set ${id} is in no library`);
+  }
+  return found;
 };

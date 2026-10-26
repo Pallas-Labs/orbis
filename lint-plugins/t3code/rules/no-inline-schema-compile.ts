@@ -4,7 +4,7 @@ import * as Schema from "effect/Schema";
 
 import { getPropertyName, isIdentifier, unwrapExpression } from "../utils.ts";
 
-const COMPILER_METHODS = new Set<keyof typeof Schema>([
+const COMPILER_METHODS: ReadonlySet<string> = new Set<keyof typeof Schema>([
   "is",
   "asserts",
   "decodeEffect",
@@ -47,7 +47,7 @@ const getSchemaCompilerMethod = (callee: unknown): Option.Option<string> => {
   if (!isIdentifier(object, "Schema")) return Option.none();
 
   return Option.filter(getPropertyName(expression.value.property), (method) =>
-    COMPILER_METHODS.has(method as keyof typeof Schema)
+    COMPILER_METHODS.has(method)
   );
 };
 

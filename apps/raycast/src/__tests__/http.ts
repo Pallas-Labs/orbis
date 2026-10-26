@@ -21,20 +21,21 @@ export type FetchHandler = (
  */
 export const mockFetch = (handler: FetchHandler) => {
   const implementation = (
-    input: string,
-    init: RequestInit
-  ): Promise<Response> | Response => {
+    input: string | URL | Request,
+    init: RequestInit = {}
+  ): Promise<Response> => {
     const request: RecordedRequest = {
       body: String(init.body ?? ""),
       headers: Object.fromEntries(new Headers(init.headers).entries()),
-      url: input,
+      url: String(input),
     };
     requests.push(request);
-    return handler(request, init);
+    return Promise.resolve(handler(request, init));
   };
-  // SAFETY: every call this extension makes passes a string URL and a JSON string body, so
-  // the narrower implementation stands in for the global fetch during a test.
-  globalThis.fetch = implementation as typeof fetch;
+  // Raycast's fetch carries a preconnect hint; pass the original's through.
+  globalThis.fetch = Object.assign(implementation, {
+    preconnect: fetch.preconnect,
+  });
 };
 
 export const httpStatus = (status: number): Response =>

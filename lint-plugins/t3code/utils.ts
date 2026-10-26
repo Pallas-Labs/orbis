@@ -10,13 +10,15 @@ type ExpressionWrapper =
 
 type AstNode = ESTree.Node;
 
-const asAstNode = (node: unknown): Option.Option<AstNode> =>
+/** Every ESTree node carries a string `type`, the one field narrowing relies on. */
+const isNode = (node: unknown): node is AstNode =>
   typeof node === "object" &&
   node !== null &&
   "type" in node &&
-  typeof node.type === "string"
-    ? Option.some(node as AstNode)
-    : Option.none();
+  typeof node.type === "string";
+
+const asAstNode = (node: unknown): Option.Option<AstNode> =>
+  isNode(node) ? Option.some(node) : Option.none();
 
 const isExpressionWrapper = (node: AstNode): node is ExpressionWrapper =>
   node.type === "ChainExpression" ||
