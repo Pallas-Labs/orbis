@@ -56,7 +56,7 @@ final class ShareCaptureTests: XCTestCase {
     XCTAssertNil(ShareCapture.sourceLink(from: ["https://music.apple.com.example.test/us/album/x/1"]))
   }
 
-  func testSaveReportsDuplicateWithoutTouchingClipboardPath() async {
+  func testSaveReportsDuplicateWithoutTouchingClipboardPath() async throws {
     let settings = MemoryClientSettings()
     XCTAssertTrue(settings.store(deviceToken: "synthetic-token"))
     let session = StubProtocol.session { request in
@@ -64,12 +64,12 @@ final class ShareCaptureTests: XCTestCase {
       return (409, #"{"message":"This set is already in your library."}"#)
     }
     let client = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!,
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
       token: "synthetic-token",
       session: session
     )
     let outcome = await ShareCapture.save(
-      url: URL(string: "https://www.youtube.com/watch?v=abcdefghijk")!,
+      url: try XCTUnwrap(URL(string: "https://www.youtube.com/watch?v=abcdefghijk")),
       tags: [],
       playlistId: nil,
       downloadAfterSaving: false,
@@ -79,17 +79,17 @@ final class ShareCaptureTests: XCTestCase {
     XCTAssertEqual(outcome, .duplicate)
   }
 
-  func testSaveReportsUnreachable() async {
+  func testSaveReportsUnreachable() async throws {
     let settings = MemoryClientSettings()
     XCTAssertTrue(settings.store(deviceToken: "synthetic-token"))
     let session = StubProtocol.session(failure: URLError(.notConnectedToInternet))
     let client = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!,
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
       token: "synthetic-token",
       session: session
     )
     let outcome = await ShareCapture.save(
-      url: URL(string: "https://www.youtube.com/watch?v=abcdefghijk")!,
+      url: try XCTUnwrap(URL(string: "https://www.youtube.com/watch?v=abcdefghijk")),
       tags: [],
       playlistId: nil,
       downloadAfterSaving: false,
@@ -101,7 +101,7 @@ final class ShareCaptureTests: XCTestCase {
     }
   }
 
-  func testSaveSucceedsAndCanRequestDownload() async {
+  func testSaveSucceedsAndCanRequestDownload() async throws {
     let settings = MemoryClientSettings()
     XCTAssertTrue(settings.store(deviceToken: "synthetic-token"))
     let session = StubProtocol.session { request in
@@ -121,12 +121,12 @@ final class ShareCaptureTests: XCTestCase {
       }
     }
     let client = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!,
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
       token: "synthetic-token",
       session: session
     )
     let outcome = await ShareCapture.save(
-      url: URL(string: "https://www.youtube.com/watch?v=abcdefghijk")!,
+      url: try XCTUnwrap(URL(string: "https://www.youtube.com/watch?v=abcdefghijk")),
       tags: ["techno"],
       playlistId: nil,
       downloadAfterSaving: true,
@@ -139,10 +139,10 @@ final class ShareCaptureTests: XCTestCase {
     XCTAssertEqual(set.title, "Night")
   }
 
-  func testNotConfiguredWhenPairingMissing() async {
+  func testNotConfiguredWhenPairingMissing() async throws {
     let settings = MemoryClientSettings()
     let outcome = await ShareCapture.save(
-      url: URL(string: "https://www.youtube.com/watch?v=abcdefghijk")!,
+      url: try XCTUnwrap(URL(string: "https://www.youtube.com/watch?v=abcdefghijk")),
       tags: [],
       playlistId: nil,
       downloadAfterSaving: false,
