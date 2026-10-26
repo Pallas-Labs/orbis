@@ -229,6 +229,16 @@ const sampleFor = (operationId: string) => {
       requestedAt: "2026-09-29T00:00:00.000Z",
     };
   }
+  if (operationId === "share.set") {
+    return {
+      artworkUrl: null,
+      creator: "Boiler Room",
+      id: "a1b2c3d4e5f6",
+      source: "youtube",
+      title: "Peggy Gou | Boiler Room Seoul",
+      url: "https://www.youtube.com/watch?v=abcdefghijk",
+    };
+  }
   if (operationId === "presence.act") {
     return {
       outcome: "accepted",
@@ -302,7 +312,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(52);
+    expect(checked).toBe(53);
   } finally {
     await app.dispose();
   }

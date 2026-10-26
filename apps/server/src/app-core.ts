@@ -138,6 +138,7 @@ import { Presence } from "./presence.js";
 import type { PresenceOptions } from "./presence.js";
 import { QueueSignals } from "./queue-signals.js";
 import { Queue } from "./queue.js";
+import { sharedSet } from "./share.js";
 import { expandShortLink } from "./short-link.js";
 import { Stats } from "./stats.js";
 import { checkStreamGrant, issueStreamGrant } from "./stream-grant-core.js";
@@ -318,6 +319,11 @@ const refusalFor = (
 const EXPIRED_APPROVAL = "That sign-in request expired. Start again.";
 const expiredApproval = () =>
   new LibraryError({ message: EXPIRED_APPROVAL, statusCode: 404 });
+/** An Orbis Link's routes, which anyone may read without a key (ADR 0022). */
+const SHARE_ROUTE = /^\/share\/sets\/[^/]+$/u;
+const isShareRoute = (request: Request): boolean =>
+  (request.method === "GET" || request.method === "HEAD") &&
+  SHARE_ROUTE.test(routePath(request.url));
 const invalidSignInCode = () =>
   new LibraryError({
     message: "That code is not valid. Get a new one.",
@@ -2400,6 +2406,15 @@ export const createPortableApp = (options: {
             )
           )
       );
+      const shareGroup = HttpApiBuilder.group(OrbisApi, "share", (handlers) =>
+        handlers.handleRaw("set", ({ params }) =>
+          withFailureResponse(
+            Effect.map(sharedSet(params.id), (shared) =>
+              HttpServerResponse.jsonUnsafe(shared)
+            ).pipe(Effect.provideService(Database, db))
+          )
+        )
+      );
       const systemGroup = HttpApiBuilder.group(OrbisApi, "system", (handlers) =>
         handlers.handle("health", () =>
           Effect.succeed({ status: "ok" as const })
@@ -2413,6 +2428,7 @@ export const createPortableApp = (options: {
           Layer.provide(queueGroup),
           Layer.provide(libraryGroup),
           Layer.provide(systemGroup),
+          Layer.provide(shareGroup),
           Layer.provide(diagnosticsGroup),
           Layer.provide(signInGroup),
           Layer.provide(eventsGroup),
@@ -2523,6 +2539,12 @@ export const createPortableApp = (options: {
       >
     );
   };
+  // SAFETY: the share handlers read no caller-bound service.
+  const shareRoute = (request: Request): Promise<Response> =>
+    app.handler(
+      request,
+      Context.empty() as Context.Context<Library | Queue | ClientAddress>
+    );
   const initialize = () =>
     // SAFETY: The health route reads no caller-bound service.
     app.handler(
@@ -2568,6 +2590,9 @@ export const createPortableApp = (options: {
           : undefined;
       if (open) {
         return openRoute(request, clientAddress, open);
+      }
+      if (isShareRoute(request)) {
+        return shareRoute(request);
       }
       const registry = readTrustRegistry(trustPath);
       const logRefusal = (status: number, fields: LoggedRecord) => {

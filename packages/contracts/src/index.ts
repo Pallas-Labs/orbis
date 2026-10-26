@@ -15,6 +15,7 @@ import type {
   QueueEntryPayload,
   SaveSetPayload,
   SavedSetSchema,
+  SharedSetSchema,
   TracklistSchema,
   UpdateTitlePayload,
 } from "./http-api.js";
@@ -23,6 +24,7 @@ export type HealthResponse = typeof HealthResponseSchema.Type;
 export type AppleMusicAlbum = typeof AppleMusicAlbumSchema.Type;
 export type AudioState = typeof AudioStateSchema.Type;
 export type SavedSet = typeof SavedSetSchema.Type;
+export type SharedSet = typeof SharedSetSchema.Type;
 export type Tracklist = typeof TracklistSchema.Type;
 export type Cue = Tracklist["cues"][number];
 export type SetSource = SavedSet["source"];
