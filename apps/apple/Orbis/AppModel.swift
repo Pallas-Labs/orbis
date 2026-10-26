@@ -446,7 +446,7 @@ final class AppModel {
           passcode: passcode.trimmingCharacters(in: .whitespacesAndNewlines), label: label)
         joinedAs = username
       case .code(let typed):
-        key = try await signedOut.redeem(code: SignInCode.normalized(typed), label: label)
+        key = try await signedOut.redeem(code: typed, label: label)
       }
     } catch {
       signInFailure = OrbisFailure.explaining(error, at: serviceAddress)

@@ -12,9 +12,14 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 import {
+  answerTo,
+  boxedCode,
+  boxGroups,
+  VALID_GROUP_PASSCODE,
   keyRecord,
+  paste,
+  VALID_SIGN_IN_CODE,
   signInWithKey,
-  submitForm,
   textOf,
   waitFor,
 } from "./helpers.mjs";
@@ -27,7 +32,6 @@ const apiUrl = `http://127.0.0.1:${devicePort}`;
 const webUrl = `http://127.0.0.1:${webPort}`;
 const hostKey = randomBytes(24).toString("base64url");
 const aliceKey = randomBytes(24).toString("base64url");
-const PASSCODE_FORM = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{12}$/u;
 
 // What the API itself says, outside the browser.
 const callApi = async (pathname, key) => {
@@ -37,14 +41,16 @@ const callApi = async (pathname, key) => {
   return { body: await response.json(), status: response.status };
 };
 
-const tryJoin = async (page, username, value) => {
+// The username first, so the full passcode submits the form by itself.
+const tryJoin = async (page, username, enterPasscode) => {
   const form = page.getByRole("form", { name: "Join with the Group Passcode" });
-  const answer = await submitForm(form, "/sign-in/join", {
-    "Group Passcode": value,
-    Username: username,
+  const answer = await answerTo(page, "/sign-in/join", async () => {
+    await form.getByLabel("Username").fill(username);
+    await enterPasscode(form.getByLabel("Group Passcode"));
   });
   return { ...answer, form };
 };
+const typed = (passcode) => (field) => field.pressSequentially(passcode);
 
 const dataDirectory = await mkdtemp(path.join(tmpdir(), "orbis-admin-"));
 await writeFile(
@@ -119,9 +125,10 @@ try {
       });
       return context;
     };
+    const clipboard = { permissions: ["clipboard-read", "clipboard-write"] };
     // A browser with no key, at the sign-in page.
     const freshBrowser = async () => {
-      const context = await openContext();
+      const context = await openContext(clipboard);
       const page = await context.newPage();
       await page.goto(webUrl);
       await page.getByRole("heading", { name: "Sign in to Orbis" }).waitFor();
@@ -149,9 +156,7 @@ try {
     await friend.close();
     step("a friend sees no Admin link, and /admin sends them to the Library");
 
-    const host = await openContext({
-      permissions: ["clipboard-read", "clipboard-write"],
-    });
+    const host = await openContext(clipboard);
     const page = await host.newPage();
     const shot = (name) =>
       page.screenshot({ path: path.join(artifacts, `${name}.png`) });
@@ -175,8 +180,9 @@ try {
     await passcodeSection.getByRole("button", { name: "Open joining" }).click();
     const passcodeCode = passcodeSection.getByLabel("Group Passcode");
     await passcodeCode.waitFor();
-    const passcode = await textOf(passcodeCode);
-    assert.match(passcode, PASSCODE_FORM);
+    const passcode = await boxedCode(passcodeCode);
+    assert.match(passcode, VALID_GROUP_PASSCODE);
+    assert.equal(await boxGroups(passcodeCode), 3);
     const stored = await callApi("/admin/passcode", hostKey);
     assert.deepEqual(stored.body, { passcode });
     await passcodeSection
@@ -187,12 +193,14 @@ try {
     assert.equal(copied, passcode);
     await shot("passcode");
     step(
-      "Open joining makes a random 12-character passcode, and Copy puts it on the clipboard",
+      "Open joining shows a random 12-character passcode in three groups of four boxes, and Copy puts it on the clipboard",
       { passcode }
     );
 
     const carol = await freshBrowser();
-    const joined = await tryJoin(carol.page, "carol", copied);
+    const joined = await tryJoin(carol.page, "carol", (field) =>
+      paste(field, copied)
+    );
     assert.equal(joined.status, 201);
     await carol.page.getByText("Signed in as carol").waitFor();
     await carol.context.close();
@@ -200,7 +208,7 @@ try {
     await page.reload();
     await people.getByRole("heading", { name: "carol" }).waitFor();
     step(
-      "a new browser joins as carol with the copied passcode, and People lists her"
+      "a new browser joins as carol by pasting the copied passcode, and People lists her"
     );
 
     await passcodeSection.getByRole("button", { name: "New passcode" }).click();
@@ -209,11 +217,11 @@ try {
       .getByRole("button", { name: "New passcode" })
       .click();
     await passcodeCode.filter({ hasNotText: passcode }).waitFor();
-    const replaced = await textOf(passcodeCode);
-    assert.match(replaced, PASSCODE_FORM);
+    const replaced = await boxedCode(passcodeCode);
+    assert.match(replaced, VALID_GROUP_PASSCODE);
     assert.notEqual(replaced, passcode);
     const erin = await freshBrowser();
-    const stale = await tryJoin(erin.page, "erin", passcode);
+    const stale = await tryJoin(erin.page, "erin", typed(passcode));
     assert.equal(stale.status, 403);
     await erin.context.close();
     step(
@@ -225,7 +233,7 @@ try {
       .click();
     await passcodeSection.getByText("Joining is closed.").waitFor();
     const dave = await freshBrowser();
-    const refused = await tryJoin(dave.page, "dave", replaced);
+    const refused = await tryJoin(dave.page, "dave", typed(replaced));
     assert.equal(refused.status, 403);
     assert.equal(
       await textOf(refused.form.getByRole("alert")),
@@ -255,19 +263,31 @@ try {
     await aliceCode.waitFor();
     page.off("request", watchReload);
     assert.deepEqual(reloads, []);
-    const code = await textOf(aliceCode);
-    assert.match(code, /^[A-Z0-9]{4}-[A-Z0-9]{4}$/u);
+    const code = await boxedCode(aliceCode);
+    assert.match(code, VALID_SIGN_IN_CODE);
+    assert.equal(await boxGroups(aliceCode), 2);
+    const aliceRow = page
+      .getByRole("listitem")
+      .filter({ has: page.getByRole("heading", { name: "alice" }) });
+    await aliceRow.getByRole("button", { name: "Copy code" }).click();
+    await aliceRow.getByRole("button", { name: "Copied" }).waitFor();
+    assert.equal(
+      await page.evaluate(() => navigator.clipboard.readText()),
+      code
+    );
     await shot("people");
     const recovered = await freshBrowser();
     const codeForm = recovered.page.getByRole("form", {
-      name: "Sign in with a login code",
+      name: "Sign in with a Sign-in Code",
     });
-    await codeForm.getByLabel("Sign-in Code").fill(code);
-    await codeForm.getByRole("button", { name: "Sign in" }).click();
+    const redeemed = await answerTo(recovered.page, "/sign-in/code", () =>
+      codeForm.getByLabel("Sign-in Code").pressSequentially(code.toLowerCase())
+    );
+    assert.equal(redeemed.status, 200);
     await recovered.page.getByText("Signed in as alice").waitFor();
     await recovered.context.close();
     step(
-      "the Host shows a Sign-in Code for alice without reloading the page, and it signs a new browser in as alice",
+      "the Host shows a Sign-in Code for alice in boxes without reloading the page, Copy copies it, and typing it in lower case signs a new browser in as alice without pressing Sign in",
       {
         code,
       }

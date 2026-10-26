@@ -47,22 +47,16 @@ export const textOf = async (locator) => {
 };
 
 /**
- * Fills a form's fields by label, submits it, and returns the API's answer to
- * the POST it sends, so a step can compare the page with what the API said.
+ * Runs `act` and returns the API's answer to the POST to `pathname` that it
+ * causes, so a step can compare the page with what the API said.
  */
-export const submitForm = async (form, pathname, fields) => {
-  for (const [label, value] of Object.entries(fields)) {
-    // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
-    await form.getByLabel(label).fill(value);
-  }
-  const answer = form
-    .page()
-    .waitForResponse(
-      (response) =>
-        new URL(response.url()).pathname === pathname &&
-        response.request().method() === "POST"
-    );
-  await form.getByRole("button").click();
+export const answerTo = async (page, pathname, act) => {
+  const answer = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === pathname &&
+      response.request().method() === "POST"
+  );
+  await act();
   const response = await answer;
   return {
     body: await response.json(),
@@ -70,3 +64,45 @@ export const submitForm = async (form, pathname, fields) => {
     status: response.status(),
   };
 };
+
+/** Fills a form's fields by label, submits it, and returns the API's answer. */
+export const submitForm = (form, pathname, fields) =>
+  answerTo(form.page(), pathname, async () => {
+    for (const [label, value] of Object.entries(fields)) {
+      // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
+      await form.getByLabel(label).fill(value);
+    }
+    await form.getByRole("button").click();
+  });
+
+export const VALID_SIGN_IN_CODE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/u;
+export const VALID_GROUP_PASSCODE = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{12}$/u;
+
+/**
+ * Pastes `text` into a field the way Ctrl+V does, through the real clipboard.
+ * The browser context needs the clipboard permissions.
+ */
+export const paste = async (field, text) => {
+  const page = field.page();
+  await page.evaluate((value) => navigator.clipboard.writeText(value), text);
+  await field.focus();
+  await page.keyboard.press("ControlOrMeta+V");
+};
+
+/** Empties a code field with the keyboard, as a person would. */
+export const clearCode = async (field) => {
+  await field.press("ControlOrMeta+A");
+  await field.press("Backspace");
+};
+
+/** The characters a code field or a shown code holds, read from its boxes. */
+export const boxedCode = async (locator) => {
+  const boxes = await locator
+    .locator('[data-slot="input-otp-slot"]')
+    .allTextContents();
+  return boxes.join("");
+};
+
+/** How many groups of boxes a code field or a shown code has. */
+export const boxGroups = (locator) =>
+  locator.locator('[data-slot="input-otp-group"]').count();

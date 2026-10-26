@@ -12,10 +12,14 @@ import { setTimeout } from "node:timers/promises";
 import { chromium } from "playwright";
 
 import {
+  answerTo,
+  clearCode,
+  boxedCode,
+  boxGroups,
   keyRecord,
+  paste,
   signInWithKey,
   storedKey,
-  submitForm,
   textOf,
   waitFor,
 } from "./helpers.mjs";
@@ -94,7 +98,9 @@ try {
   await mkdir(artifacts, { recursive: true });
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({
+      permissions: ["clipboard-read", "clipboard-write"],
+    });
     const violations = [];
     await page.exposeFunction("reportViolation", (text) =>
       violations.push(text)
@@ -109,34 +115,64 @@ try {
     const shot = (name) =>
       page.screenshot({ path: path.join(artifacts, `${name}.png`) });
     const codeForm = page.getByRole("form", {
-      name: "Sign in with a login code",
+      name: "Sign in with a Sign-in Code",
     });
+    const codeField = codeForm.getByLabel("Sign-in Code");
     const joinForm = page.getByRole("form", {
       name: "Join with the Group Passcode",
     });
-    const join = (username, value) =>
-      submitForm(joinForm, "/sign-in/join", {
-        "Group Passcode": value,
-        Username: username,
+    const passcodeField = joinForm.getByLabel("Group Passcode");
+    // A full passcode submits the form by itself once the username is there.
+    const join = (username, keys) =>
+      answerTo(page, "/sign-in/join", async () => {
+        await joinForm.getByLabel("Username").fill(username);
+        await clearCode(passcodeField);
+        await passcodeField.pressSequentially(keys);
       });
-    const redeem = (code) =>
-      submitForm(codeForm, "/sign-in/code", { "Sign-in Code": code });
+    const typeCode = (keys) =>
+      answerTo(page, "/sign-in/code", async () => {
+        await clearCode(codeField);
+        await codeField.pressSequentially(keys);
+      });
     const expectRefusal = async (form, answer, status) => {
       assert.equal(answer.status, status);
       assert.notEqual(answer.body.message ?? "", "");
       assert.equal(await textOf(form.getByRole("alert")), answer.body.message);
       assert.equal(await storedKey(page), null);
     };
+    const sentTo = (pathname) => {
+      const sent = { value: false };
+      const watch = (request) => {
+        sent.value ||= new URL(request.url()).pathname === pathname;
+      };
+      page.on("request", watch);
+      return {
+        stop: () => {
+          page.off("request", watch);
+          return sent.value;
+        },
+      };
+    };
 
     await page.goto(webUrl);
     await page.getByRole("heading", { name: "Sign in to Orbis" }).waitFor();
     assert.equal(new URL(page.url()).pathname, "/sign-in");
-    await codeForm.getByLabel("Sign-in Code").waitFor();
-    await joinForm.getByLabel("Group Passcode").waitFor();
+    await codeField.waitFor();
+    await passcodeField.waitFor();
+    assert.equal(await boxGroups(codeForm), 2);
+    assert.equal(await boxGroups(joinForm), 3);
+    assert.equal(await codeField.getAttribute("autocomplete"), "one-time-code");
+    assert.equal(await codeField.getAttribute("inputmode"), "text");
     await shot("signed-out");
-    step("a signed-out visit to / shows a code form and a join form");
+    step(
+      "a signed-out visit to / shows a Sign-in Code field of 4+4 boxes and a Group Passcode field of 4+4+4 boxes"
+    );
 
-    const closed = await join("bob", "anything");
+    const closed = await answerTo(page, "/sign-in/join", async () => {
+      await joinForm.getByLabel("Username").fill("bob");
+      await passcodeField.pressSequentially("zzzz");
+      await joinForm.getByRole("button", { name: "Join" }).click();
+    });
     await expectRefusal(joinForm, closed, 403);
     await shot("join-closed");
     step("joining while the Host has no passcode shows the API's refusal", {
@@ -144,24 +180,43 @@ try {
     });
 
     assert.equal(await openJoining(), 200);
-    const wrong = await join("bob", "wrong passcode");
+    const wrong = await join("bob", "zzzz-zzzz-zzzz");
+    assert.equal(wrong.payload.passcode, "ZZZZZZZZZZZZ");
     await expectRefusal(joinForm, wrong, 403);
-    step("a wrong passcode shows the API's refusal and stores nothing", {
-      message: wrong.body.message,
-    });
+    step(
+      "a wrong passcode typed with dashes fills 12 boxes, submits by itself, and shows the API's refusal",
+      { message: wrong.body.message }
+    );
 
-    const taken = await join("host", passcode);
+    const taken = await join("host", passcode.toLowerCase());
+    assert.equal(taken.payload.passcode, passcode);
     await expectRefusal(joinForm, taken, 409);
     step("a taken username shows the API's refusal", {
       message: taken.body.message,
     });
 
-    // A pasted passcode with spaces and lower case still joins.
-    const joined = await join(
-      "bob",
-      `  ${passcode.slice(0, 6).toLowerCase()} ${passcode.slice(6)}  `
+    await page.reload();
+    await joinForm.getByLabel("Username").fill("");
+    await clearCode(passcodeField);
+    const joinLink = `https://orbis.p11a.xyz/join#${passcode}`;
+    const linkWatch = sentTo("/sign-in/join");
+    await paste(passcodeField, joinLink);
+    assert.equal(await passcodeField.inputValue(), passcode);
+    assert.equal(await boxedCode(joinForm), passcode);
+    assert.equal(await joinForm.getByRole("alert").count(), 0);
+    assert.equal(linkWatch.stop(), false);
+    await shot("join-link-pasted");
+    step(
+      "a pasted Join Link keeps only the passcode, and a full passcode before the username neither submits nor complains",
+      { joinLink }
     );
+
+    const joined = await answerTo(page, "/sign-in/join", async () => {
+      await joinForm.getByLabel("Username").fill("bob");
+      await joinForm.getByRole("button", { name: "Join" }).click();
+    });
     assert.equal(joined.status, 201);
+    assert.equal(joined.payload.passcode, passcode);
     await page.getByRole("heading", { name: "Library" }).waitFor();
     await page.getByText("Signed in as bob").waitFor();
     assert.equal(await storedKey(page), joined.body.key);
@@ -170,7 +225,7 @@ try {
     await page.getByRole("heading", { name: "Library" }).waitFor();
     await shot("joined");
     step(
-      "the right passcode creates bob, stores the returned key, and survives a reload",
+      "the passcode from the Join Link creates bob, stores the returned key, and survives a reload",
       { label: joined.payload.label }
     );
 
@@ -179,28 +234,55 @@ try {
     assert.equal(await storedKey(page), null);
     step("sign out clears the key");
 
-    let sentCode = false;
-    const watchCode = (request) => {
-      sentCode ||= new URL(request.url()).pathname === "/sign-in/code";
-    };
-    page.on("request", watchCode);
-    await codeForm.getByLabel("Sign-in Code").fill("abc");
-    await codeForm.getByRole("button").click();
+    const shortWatch = sentTo("/sign-in/code");
+    await codeField.pressSequentially("a- O0I1Loilb");
+    assert.equal(await codeField.inputValue(), "AB");
+    assert.equal(await boxedCode(codeForm), "AB");
+    await shot("rejected-characters");
+    await codeForm.getByRole("button", { name: "Sign in" }).click();
     await codeForm
       .getByRole("alert")
       .getByText("Enter the eight-character code")
       .waitFor();
-    page.off("request", watchCode);
-    assert.equal(sentCode, false);
-    step("a code that is too short is refused without calling the API");
-
-    const unknown = await redeem("zzzz-zzzz");
-    assert.equal(unknown.payload.code, "ZZZZZZZZ");
-    await expectRefusal(codeForm, unknown, 404);
-    await shot("unknown-code");
+    assert.equal(shortWatch.stop(), false);
     step(
-      "an unknown code is sent without its dash, in capitals, and the API's refusal shows",
-      { message: unknown.body.message }
+      "a dash, a space, O, 0, I, 1, and L in either case enter nothing, and a short code is refused without calling the API",
+      { kept: "AB", typed: "a- O0I1Loilb" }
+    );
+
+    const typed = await typeCode("zzzz-zzzz");
+    assert.equal(typed.payload.code, "ZZZZZZZZ");
+    assert.equal(await boxedCode(codeForm), "ZZZZZZZZ");
+    await expectRefusal(codeForm, typed, 404);
+    await shot("typed-code");
+    step(
+      "typing zzzz-zzzz fills 8 boxes with ZZZZZZZZ and submits by itself, and the API's refusal shows",
+      { message: typed.body.message }
+    );
+
+    await clearCode(codeField);
+    const pasted = await answerTo(page, "/sign-in/code", () =>
+      paste(codeField, "abcd-efgh")
+    );
+    assert.equal(pasted.payload.code, "ABCDEFGH");
+    assert.equal(await boxedCode(codeForm), "ABCDEFGH");
+    await expectRefusal(codeForm, pasted, 404);
+    await shot("pasted-code");
+    step(
+      "pasting abcd-efgh fills 8 boxes with ABCDEFGH and submits by itself",
+      { message: pasted.body.message }
+    );
+
+    const repasted = await answerTo(page, "/sign-in/code", () =>
+      paste(codeField, "wxyz-wxyz")
+    );
+    assert.equal(repasted.payload.code, "WXYZWXYZ");
+    assert.equal(await boxedCode(codeForm), "WXYZWXYZ");
+    await expectRefusal(codeForm, repasted, 404);
+    await shot("repasted-code");
+    step(
+      "pasting a new code over a full field replaces every box and submits again",
+      { message: repasted.body.message }
     );
 
     await page.evaluate(() => localStorage.setItem("orbis.apiKey", "revoked"));
@@ -237,7 +319,7 @@ try {
       // eslint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
       await guessCode();
     }
-    const limited = await redeem("zzzzzzzz");
+    const limited = await typeCode("zzzzzzzz");
     await expectRefusal(codeForm, limited, 429);
     step("after many wrong guesses the API's rate-limit message shows", {
       message: limited.body.message,

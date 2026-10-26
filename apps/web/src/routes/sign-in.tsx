@@ -1,4 +1,4 @@
-import { normalizeSignInCode, SIGN_IN_CODE_LENGTH } from "@orbis/contracts";
+import { GROUP_PASSCODE, SIGN_IN_CODE } from "@orbis/contracts";
 import {
   createFileRoute,
   getRouteApi,
@@ -6,8 +6,10 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { Schema } from "effect";
+import { useRef } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { CodeField } from "@/components/code-field";
 import { Problem } from "@/components/problem";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,12 +34,11 @@ const SignInSearch = Schema.Struct({
 
 const signInRoute = getRouteApi("/sign-in");
 
-const typedCode = (form: FormData) =>
-  normalizeSignInCode(formField(form, "code"));
-
 /**
  * One way in: its fields, its own problem line, and one submit button. `check`
- * names what is missing before any call.
+ * names what is missing before any call. `children` gets `submitWhenReady`,
+ * which a code field calls when its last slot fills: it submits only when
+ * `check` passes, so a passcode typed before the username raises no problem.
  */
 const SignInForm = ({
   call,
@@ -52,7 +53,7 @@ const SignInForm = ({
     form: FormData
   ) => Promise<ApiResult<{ readonly key: string }>>;
   readonly check: (form: FormData) => string | null;
-  readonly children: ReactNode;
+  readonly children: (submitWhenReady: () => void) => ReactNode;
   readonly description: string;
   readonly pendingLabel: string;
   readonly submitLabel: string;
@@ -60,6 +61,13 @@ const SignInForm = ({
 }) => {
   const navigate = useNavigate();
   const { busy, problem, refuse, run } = useApiCall();
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitWhenReady = () => {
+    const form = formRef.current;
+    if (form !== null && !busy && check(new FormData(form)) === null) {
+      form.requestSubmit();
+    }
+  };
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -75,12 +83,17 @@ const SignInForm = ({
     }
   };
   return (
-    <form aria-label={title} className="flex flex-col gap-4" onSubmit={submit}>
+    <form
+      aria-label={title}
+      className="flex flex-col gap-4"
+      onSubmit={submit}
+      ref={formRef}
+    >
       <div className="flex flex-col gap-1">
         <h2 className="font-medium">{title}</h2>
         <p className="text-muted-foreground text-sm">{description}</p>
       </div>
-      {children}
+      {children(submitWhenReady)}
       <Problem message={problem} />
       <Button disabled={busy} type="submit">
         {busy ? pendingLabel : submitLabel}
@@ -107,30 +120,29 @@ const SignIn = () => {
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <SignInForm
-            call={(form) => redeemSignInCode(apiUrl, typedCode(form))}
+            call={(form) => redeemSignInCode(apiUrl, formField(form, "code"))}
             check={(form) =>
-              typedCode(form).length === SIGN_IN_CODE_LENGTH
+              formField(form, "code").length === SIGN_IN_CODE.length
                 ? null
                 : "Enter the eight-character code from your other device."
             }
             description="On a device where you use Orbis, open Devices and choose Sign in another device."
             pendingLabel="Signing in…"
             submitLabel="Sign in"
-            title="Sign in with a login code"
+            title="Sign in with a Sign-in Code"
           >
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="sign-in-code">Sign-in Code</Label>
-              <Input
-                autoCapitalize="characters"
-                autoComplete="one-time-code"
-                className="font-mono tracking-widest uppercase"
-                id="sign-in-code"
-                maxLength={20}
-                name="code"
-                placeholder="ABCD-EFGH"
-                spellCheck={false}
-              />
-            </div>
+            {(submitWhenReady) => (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="sign-in-code">Sign-in Code</Label>
+                <CodeField
+                  format={SIGN_IN_CODE}
+                  id="sign-in-code"
+                  label="Sign-in Code"
+                  name="code"
+                  onComplete={submitWhenReady}
+                />
+              </div>
+            )}
           </SignInForm>
           <Separator />
           <SignInForm
@@ -152,30 +164,31 @@ const SignIn = () => {
             submitLabel="Join"
             title="Join with the Group Passcode"
           >
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                autoCapitalize="none"
-                autoComplete="username"
-                id="username"
-                maxLength={40}
-                name="username"
-                spellCheck={false}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="passcode">Group Passcode</Label>
-              <Input
-                autoCapitalize="characters"
-                autoComplete="off"
-                autoCorrect="off"
-                className="font-mono tracking-widest uppercase"
-                id="passcode"
-                maxLength={100}
-                name="passcode"
-                spellCheck={false}
-              />
-            </div>
+            {(submitWhenReady) => (
+              <>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    autoCapitalize="none"
+                    autoComplete="username"
+                    id="username"
+                    maxLength={40}
+                    name="username"
+                    spellCheck={false}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="passcode">Group Passcode</Label>
+                  <CodeField
+                    format={GROUP_PASSCODE}
+                    id="passcode"
+                    label="Group Passcode"
+                    name="passcode"
+                    onComplete={submitWhenReady}
+                  />
+                </div>
+              </>
+            )}
           </SignInForm>
         </CardContent>
       </Card>

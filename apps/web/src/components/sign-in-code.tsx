@@ -1,5 +1,6 @@
-import { formatSignInCode } from "@orbis/contracts";
+import { SIGN_IN_CODE } from "@orbis/contracts";
 
+import { ShownCode } from "@/components/code-field";
 import type { IssuedSignInCode } from "@/lib/sign-in";
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { timeStyle: "short" });
@@ -12,13 +13,14 @@ export const SignInCode = ({
   readonly issued: IssuedSignInCode;
   readonly label: string;
 }) => (
-  <div className="bg-muted flex flex-col items-center gap-1 rounded-2xl p-4">
-    <output
-      aria-label={label}
-      className="font-mono text-3xl font-medium tracking-widest"
-    >
-      {formatSignInCode(issued.code)}
-    </output>
+  <div className="bg-muted flex flex-col items-center gap-2 rounded-2xl p-4">
+    <ShownCode
+      code={issued.code}
+      copyLabel="Copy code"
+      format={SIGN_IN_CODE}
+      key={issued.code}
+      label={label}
+    />
     <p className="text-muted-foreground text-sm">
       Works once, until {timeFormat.format(new Date(issued.expiresAt))}.
     </p>

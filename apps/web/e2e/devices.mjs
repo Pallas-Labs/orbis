@@ -12,10 +12,15 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 import {
+  answerTo,
+  boxedCode,
+  boxGroups,
+  clearCode,
   keyRecord,
+  paste,
+  VALID_SIGN_IN_CODE,
   signInWithKey,
   storedKey,
-  submitForm,
   textOf,
   waitFor,
 } from "./helpers.mjs";
@@ -94,7 +99,8 @@ try {
   await mkdir(artifacts, { recursive: true });
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage();
+    const clipboard = { permissions: ["clipboard-read", "clipboard-write"] };
+    const page = await browser.newPage(clipboard);
     const violations = [];
     await page.exposeFunction("reportViolation", (text) =>
       violations.push(text)
@@ -164,37 +170,52 @@ try {
     const shownCode = page.getByRole("status", { name: "Your Sign-in Code" });
     await page.getByRole("button", { name: "Sign in another device" }).click();
     await shownCode.waitFor();
-    const firstCode = await textOf(shownCode);
-    assert.match(firstCode, /^[A-Z0-9]{4}-[A-Z0-9]{4}$/u);
+    const firstCode = await boxedCode(shownCode);
+    assert.match(firstCode, VALID_SIGN_IN_CODE);
     await page.getByText("Works once, until").waitFor();
     await page.getByRole("button", { name: "Get a new code" }).click();
     await page.waitForFunction(
       (previous) =>
-        document
-          .querySelector('[aria-label="Your Sign-in Code"]')
-          ?.textContent.trim() !== previous,
+        [
+          ...document.querySelectorAll(
+            '[aria-label="Your Sign-in Code"] [data-slot="input-otp-slot"]'
+          ),
+        ]
+          .map((box) => box.textContent)
+          .join("") !== previous,
       firstCode
     );
-    const code = await textOf(shownCode);
-    assert.match(code, /^[A-Z0-9]{4}-[A-Z0-9]{4}$/u);
+    const code = await boxedCode(shownCode);
+    assert.match(code, VALID_SIGN_IN_CODE);
+    assert.equal(await boxGroups(shownCode), 2);
+    assert.doesNotMatch(await shownCode.textContent(), /-/u);
+    assert.equal(
+      await textOf(shownCode.locator(".sr-only")),
+      `${code.slice(0, 4)}, ${code.slice(4)}`.replaceAll(/(?<=\w)(?=\w)/gu, " ")
+    );
+    await page.getByRole("button", { name: "Copy code" }).click();
+    await page.getByRole("button", { name: "Copied" }).waitFor();
+    assert.equal(
+      await page.evaluate(() => navigator.clipboard.readText()),
+      code
+    );
     await page.screenshot({ path: path.join(artifacts, "sign-in-code.png") });
     step(
-      "Sign in another device shows a code as ABCD-EFGH, and Get a new code replaces it",
-      {
-        code,
-      }
+      "Sign in another device shows a code in two groups of four boxes with no dash, read aloud one character at a time, Copy copies it, and Get a new code replaces it",
+      { code }
     );
 
-    const newDevice = await browser.newContext();
+    const newDevice = await browser.newContext(clipboard);
     const other = await newDevice.newPage();
     await other.goto(webUrl);
     const codeForm = other.getByRole("form", {
-      name: "Sign in with a login code",
+      name: "Sign in with a Sign-in Code",
     });
-    await codeForm
-      .getByLabel("Sign-in Code")
-      .fill(code.toLowerCase().replace("-", " "));
-    await codeForm.getByRole("button", { name: "Sign in" }).click();
+    const dashed = `${code.slice(0, 4)}-${code.slice(4)}`.toLowerCase();
+    const redeemed = await answerTo(other, "/sign-in/code", () =>
+      paste(codeForm.getByLabel("Sign-in Code"), dashed)
+    );
+    assert.equal(redeemed.payload.code, code);
     await other.getByRole("heading", { name: "Library" }).waitFor();
     await other.getByText("Signed in as host").waitFor();
     assert.notEqual(await storedKey(other), null);
@@ -204,26 +225,29 @@ try {
     const namesAfterRedeem = await deviceNames();
     assert.equal(namesAfterRedeem.length, 3);
     step(
-      "another browser types the code in lower case with a space, signs in as host, and appears on Devices under its browser name"
+      "another browser pastes the code in lower case with a dash, signs in as host without pressing Sign in, and appears on Devices under its browser name",
+      { pasted: dashed }
     );
 
     const thirdDevice = await browser.newContext();
     const third = await thirdDevice.newPage();
     await third.goto(webUrl);
     const thirdForm = third.getByRole("form", {
-      name: "Sign in with a login code",
+      name: "Sign in with a Sign-in Code",
     });
-    const reused = await submitForm(thirdForm, "/sign-in/code", {
-      "Sign-in Code": code,
-    });
+    const thirdField = thirdForm.getByLabel("Sign-in Code");
+    const reused = await answerTo(third, "/sign-in/code", () =>
+      thirdField.pressSequentially(code)
+    );
     assert.equal(reused.status, 404);
     assert.equal(
       await textOf(thirdForm.getByRole("alert")),
       reused.body.message
     );
-    const replaced = await submitForm(thirdForm, "/sign-in/code", {
-      "Sign-in Code": firstCode,
-    });
+    await clearCode(thirdField);
+    const replaced = await answerTo(third, "/sign-in/code", () =>
+      thirdField.pressSequentially(firstCode)
+    );
     assert.equal(replaced.status, 404);
     await thirdDevice.close();
     await newDevice.close();
