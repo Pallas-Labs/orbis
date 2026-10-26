@@ -80,12 +80,22 @@ struct SetManagementSection: View {
         open()
       }
       .accessibilityIdentifier("detail-open")
-      if let link = SetPresentation.sourceURL(set) {
-        ShareLink(item: link, subject: Text(set.title)) {
-          Label("Share", systemImage: "square.and.arrow.up")
+      Menu {
+        // The Orbis Link first: it opens the Set in Orbis for a friend who has it (ADR 0022).
+        ShareLink(item: OrbisLink.url(forSet: set.id), subject: Text(set.title)) {
+          Label("Orbis Link", systemImage: "link")
         }
-        .accessibilityIdentifier("detail-share")
+        .accessibilityIdentifier("share-orbis-link")
+        if let link = SetPresentation.sourceURL(set) {
+          ShareLink(item: link, subject: Text(set.title)) {
+            Label("\(set.source.label) Link", systemImage: SetPresentation.sourceSymbol(set.source))
+          }
+          .accessibilityIdentifier("share-source-link")
+        }
+      } label: {
+        Label("Share", systemImage: "square.and.arrow.up")
       }
+      .accessibilityIdentifier("detail-share")
       Divider()
       Button("Remove from Library", systemImage: "trash", role: .destructive) {
         isConfirmingRemoval = true
