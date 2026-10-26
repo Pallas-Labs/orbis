@@ -16,8 +16,8 @@ import {
   shadow,
 } from "./raster.js";
 
-export const WIDTH = 1200;
-export const HEIGHT = 630;
+const WIDTH = 1200;
+const HEIGHT = 630;
 const PADDING = 72;
 const MARK_SIZE = 34;
 /** Where the card and the text block center, below the Orbis mark. */
@@ -161,6 +161,7 @@ const paintCard = (canvas: Bitmap, artwork: Bitmap, source: SetSource) => {
     height - 2,
     radius - 1
   );
+  // The inner outline, wound the other way, cuts the fill down to a 1px ring.
   const reversed: number[] = [];
   for (let index = inner.length - 2; index >= 0; index -= 2) {
     reversed.push(inner[index] ?? 0, inner[index + 1] ?? 0);
@@ -198,14 +199,13 @@ export const renderShareImage = (card: ShareCard): Promise<Uint8Array> => {
   const textWidth = WIDTH - PADDING - textLeft;
   const sizes = card.artwork ? [64, 56, 48] : [84, 72, 60];
   const creatorSize = card.artwork ? 30 : 36;
-  const fitted =
-    sizes
-      .map((size) => ({ size, ...wrap(bold, size, card.title, textWidth, 3) }))
-      .find((candidate) => !candidate.truncated) ??
-    (() => {
-      const size = sizes.at(-1) ?? 48;
-      return { size, ...wrap(bold, size, card.title, textWidth, 3) };
-    })();
+  const smallest = sizes.at(-1) ?? 48;
+  const fitted = sizes
+    .map((size) => ({ size, ...wrap(bold, size, card.title, textWidth, 3) }))
+    .find((candidate) => !candidate.truncated) ?? {
+    size: smallest,
+    ...wrap(bold, smallest, card.title, textWidth, 3),
+  };
   const lineHeight = Math.round(fitted.size * 1.12);
   const creator = card.creator
     ? (wrap(medium, creatorSize, card.creator, textWidth, 1).lines[0] ?? "")
