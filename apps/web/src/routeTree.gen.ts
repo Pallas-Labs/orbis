@@ -18,6 +18,7 @@ import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppDevicesRouteImport } from './routes/_app/devices'
 import { Route as AppQueueRouteImport } from './routes/_app/queue'
 import { Route as BrowserPairRouteImport } from './routes/_browser/pair'
+import { Route as SIdRouteImport } from './routes/s/$id'
 import { Route as AppPeopleIndexRouteImport } from './routes/_app/people/index'
 import { Route as AppPeopleIdRouteImport } from './routes/_app/people/$id'
 import { Route as AppPlaylistsIndexRouteImport } from './routes/_app/playlists/index'
@@ -68,6 +69,11 @@ const BrowserPairRoute = BrowserPairRouteImport.update({
   path: '/pair',
   getParentRoute: () => BrowserRoute,
 } as any)
+const SIdRoute = SIdRouteImport.update({
+  id: '/s/$id',
+  path: '/s/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppPeopleIndexRoute = AppPeopleIndexRouteImport.update({
   id: '/people/',
   path: '/people/',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/devices': typeof AppDevicesRoute
   '/queue': typeof AppQueueRoute
   '/pair': typeof BrowserPairRoute
+  '/s/$id': typeof SIdRoute
   '/people/$id': typeof AppPeopleIdRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
   '/sets/$id': typeof AppSetsIdRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/devices': typeof AppDevicesRoute
   '/queue': typeof AppQueueRoute
   '/pair': typeof BrowserPairRoute
+  '/s/$id': typeof SIdRoute
   '/people/$id': typeof AppPeopleIdRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
   '/sets/$id': typeof AppSetsIdRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/_app/devices': typeof AppDevicesRoute
   '/_app/queue': typeof AppQueueRoute
   '/_browser/pair': typeof BrowserPairRoute
+  '/s/$id': typeof SIdRoute
   '/_app/': typeof AppIndexRoute
   '/_app/people/$id': typeof AppPeopleIdRoute
   '/_app/playlists/$id': typeof AppPlaylistsIdRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/devices'
     | '/queue'
     | '/pair'
+    | '/s/$id'
     | '/people/$id'
     | '/playlists/$id'
     | '/sets/$id'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/devices'
     | '/queue'
     | '/pair'
+    | '/s/$id'
     | '/people/$id'
     | '/playlists/$id'
     | '/sets/$id'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/_app/devices'
     | '/_app/queue'
     | '/_browser/pair'
+    | '/s/$id'
     | '/_app/'
     | '/_app/people/$id'
     | '/_app/playlists/$id'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   BrowserRoute: typeof BrowserRouteWithChildren
   SignInRoute: typeof SignInRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
+  SIdRoute: typeof SIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pair'
       preLoaderRoute: typeof BrowserPairRouteImport
       parentRoute: typeof BrowserRoute
+    }
+    '/s/$id': {
+      id: '/s/$id'
+      path: '/s/$id'
+      fullPath: '/s/$id'
+      preLoaderRoute: typeof SIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/people/': {
       id: '/_app/people/'
@@ -339,6 +359,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
+  SIdRoute: SIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

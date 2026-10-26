@@ -20,6 +20,10 @@ export const Route = createFileRoute("/.well-known/apple-app-site-association")(
                       "/": "/join",
                       comment: "A Join Link opens joining the Group",
                     },
+                    {
+                      "/": "/s/*",
+                      comment: "Orbis Links open the Set in Orbis",
+                    },
                   ],
                 },
               ],
