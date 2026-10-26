@@ -99,7 +99,8 @@ struct RootView: View {
       await model.loadQueue()
       await model.refreshLibraryQuietly()
     }
-    // A TV's QR code opens `/pair#<code>` here, as a universal link or as `orbis://` (ADR 0022).
+    // A TV's QR code opens `/pair#<code>` here (ADR 0022), and an Orbis Link opens `/s/<id>`
+    // (ADR 0023), each as a universal link or as `orbis://`.
     .onOpenURL { url in Task { await model.open(url) } }
     #if !os(tvOS)
       // A window already open takes the link. Otherwise SwiftUI opens a new window for each one.

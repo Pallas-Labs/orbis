@@ -39,6 +39,12 @@ struct SignInView: View {
           }
           .buttonStyle(.orbisSecondary)
           .accessibilityIdentifier("signin-have-code")
+          if model.openedLink?.state == .awaitingSignIn {
+            Text("Sign in to open the shared set.")
+              .font(.orbis.detail)
+              .foregroundStyle(.secondary)
+              .accessibilityIdentifier("signin-link-waiting")
+          }
         }
         .controlSize(.extraLarge)
         .frame(maxWidth: 360)

@@ -64,16 +64,24 @@ struct SetDetailScreen: View {
           }
           .accessibilityIdentifier("detail-load-error")
         case .loaded:
-          ContentUnavailableView {
-            Label("This set is gone", systemImage: "questionmark.folder")
-          } description: {
-            Text("It was removed from your library.")
+          if let link = model.openedLink, link.setId == setId {
+            LinkedSetPage(model: model, state: link.state)
+          } else {
+            missing
           }
-          .accessibilityIdentifier("detail-missing")
         }
       }
     }
     .setChangeStatus(model)
+  }
+
+  private var missing: some View {
+    ContentUnavailableView {
+      Label("This set is gone", systemImage: "questionmark.folder")
+    } description: {
+      Text("It was removed from your library.")
+    }
+    .accessibilityIdentifier("detail-missing")
   }
 
   /// Download, progress, and playback for this Set. Each state shows exactly one
@@ -238,6 +246,56 @@ struct SetDetailScreen: View {
     .buttonStyle(.plain)
     .accessibilityHint("Hold for Add to Queue")
     .accessibilityIdentifier("detail-queue-actions")
+  }
+}
+
+/// The page an Orbis Link opens on a Set outside this Library (ADR 0022): the Set's shared facts
+/// on the Set page's own header, with Save in place of Play.
+private struct LinkedSetPage: View {
+  let model: AppModel
+  let state: AppModel.OpenedLink.State
+
+  var body: some View {
+    switch state {
+    case .awaitingSignIn, .opening:
+      LoadingState()
+        .accessibilityIdentifier("detail-loading")
+    case .shared(let set):
+      let artwork = set.artworkUrl.flatMap(URL.init(string:))
+      SetDetail(
+        title: set.title,
+        source: set.source.label,
+        creator: set.creator,
+        artwork: artwork,
+        artworkStandIn: artwork,
+        transport: {
+          Button {
+            Task { await model.saveOpenedLink() }
+          } label: {
+            Label("Save", systemImage: "plus").albumButton()
+          }
+          .buttonStyle(.plain)
+          .disabled(model.isWorkingOnSet)
+          .accessibilityHint("Saves this set to your library")
+          .accessibilityIdentifier("linked-save")
+        },
+        management: { EmptyView() }
+      )
+      .toolbarTitleDisplayMode(.inline)
+      .accessibilityIdentifier("linked-set")
+    case .unavailable:
+      ContentUnavailableView {
+        Label("This set is not available", systemImage: "link")
+      } description: {
+        Text("Orbis has no set at this link.")
+      }
+      .accessibilityIdentifier("linked-unavailable")
+    case .failed(let failure):
+      UnavailableState(failure: failure, context: "opening a shared set") {
+        Task { await model.retryOpenedLink() }
+      }
+      .accessibilityIdentifier("linked-error")
+    }
   }
 }
 

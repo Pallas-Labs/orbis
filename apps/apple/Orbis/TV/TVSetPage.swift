@@ -25,6 +25,8 @@
               if set.source == .appleMusic { await model.checkAppleMusicAccess() }
               if set.tracklistState != .none { await model.loadTracklist(setId) }
             }
+        } else if case .loaded = model.library, let link = model.openedLink, link.setId == setId {
+          linked(link.state)
         } else if case .loaded = model.library {
           ContentUnavailableView {
             Label("This set is gone", systemImage: "questionmark.folder")
@@ -100,6 +102,43 @@
       .scrollClipDisabled()
       .background { ArtworkGlow(url: SetPresentation.pageArtwork(set)) }
       .defaultFocus($focus, isDownloading(set) ? .cancel : .play)
+    }
+
+    /// The page an Orbis Link opens on a Set outside this Library (ADR 0022): its shared facts,
+    /// with Save.
+    @ViewBuilder private func linked(_ state: AppModel.OpenedLink.State) -> some View {
+      switch state {
+      case .awaitingSignIn, .opening:
+        TVLoading()
+      case .shared(let set):
+        ContentUnavailableView {
+          Label(set.title, systemImage: SetPresentation.sourceSymbol(set.source))
+        } description: {
+          Text([set.creator, set.source.label].compactMap { $0 }.joined(separator: " · "))
+        } actions: {
+          Button("Save", systemImage: "plus") { Task { await model.saveOpenedLink() } }
+            .disabled(model.isWorkingOnSet)
+            .accessibilityIdentifier("linked-save")
+          if let failure = model.setFailure {
+            Text(failure.message)
+              .foregroundStyle(OrbisColor.destructive)
+              .accessibilityIdentifier("detail-error")
+          }
+        }
+        .accessibilityIdentifier("linked-set")
+      case .unavailable:
+        ContentUnavailableView {
+          Label("This set is not available", systemImage: "link")
+        } description: {
+          Text("Orbis has no set at this link.")
+        }
+        .accessibilityIdentifier("linked-unavailable")
+      case .failed(let failure):
+        UnavailableState(failure: failure, context: "opening a shared set") {
+          Task { await model.retryOpenedLink() }
+        }
+        .accessibilityIdentifier("linked-error")
+      }
     }
 
     private func isDownloading(_ set: SavedSet) -> Bool {

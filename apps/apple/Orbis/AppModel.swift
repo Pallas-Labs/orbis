@@ -471,6 +471,7 @@ final class AppModel {
     if approval?.step == .awaitingSignIn {
       await findApproval()
     }
+    if let link = openedLink, link.state == .awaitingSignIn { showLinkedSet(link.setId) }
     await loadLibrary()
     await loadPlaylists()
     await loadQueue()
@@ -538,6 +539,7 @@ final class AppModel {
     activeTags = []
     activeCreator = nil
     openedSets = [:]
+    openedLink = nil
     reveal = nil
     revealFailure = nil
     stopFollowingImport()
@@ -564,6 +566,7 @@ final class AppModel {
       guard generation == libraryGeneration, !Task.isCancelled else { return }
       library = .loaded(sets)
       reloadsAfterCancellation = 0
+      if openedLink?.state == .opening { await readOpenedLink() }
       // A download the service is still running is watched from here, which is what resumes a
       // watch after a relaunch and catches one another device started.
       for set in sets where isDownloading(set.id) {
@@ -631,6 +634,11 @@ final class AppModel {
       title: saved.metadataState == "failed" ? "" : saved.title,
       tags: saved.tags
     )
+    await insert(saved)
+  }
+
+  /// Puts a Set just saved at the top of the list it belongs in.
+  private func insert(_ saved: SavedSet) async {
     if case .loaded(let sets) = library {
       // Filing moves the stream on, so a load that was already out cannot arrive later
       // and erase the Set that was just filed.
@@ -1683,6 +1691,116 @@ final class AppModel {
     // before the page finishes zooming open, instead of pushing the page down once it lands.
     if let set = savedSet(id), set.tracklistState != .none {
       Task { [weak self] in await self?.loadTracklist(id) }
+    }
+  }
+
+  // MARK: - An Orbis Link
+
+  /// An Orbis Link the app was asked to open (ADR 0022), and what is known of the Set it names.
+  struct OpenedLink: Equatable {
+    let setId: String
+    var state: State
+
+    enum State: Equatable {
+      /// The device is signed out. The Set opens once sign-in completes.
+      case awaitingSignIn
+      /// The Set's page is open and waits for the Library, or the shared facts, to say what it
+      /// shows.
+      case opening
+      /// The Set is outside this Library: its shared facts, with Save.
+      case shared(SharedSet)
+      /// The service knows no Set by this id.
+      case unavailable
+      case failed(OrbisFailure)
+    }
+  }
+
+  var openedLink: OpenedLink?
+
+  /// Opens a link the system handed the app: an Approval link or an Orbis Link. Any other address
+  /// is ignored.
+  func open(_ url: URL) async {
+    if let code = ApprovalLink.code(in: url) {
+      await openApproval(code)
+    } else if let id = OrbisLink.setId(in: url) {
+      await openLinkedSet(id)
+    }
+  }
+
+  /// Opens the Set an Orbis Link names. A Set in the Library opens its own page. Whether it is in
+  /// the Library is decided only once the Library has arrived.
+  private func openLinkedSet(_ id: String) async {
+    guard isConfigured else {
+      openedLink = OpenedLink(setId: id, state: .awaitingSignIn)
+      return
+    }
+    showLinkedSet(id)
+    switch library {
+    case .idle: await loadLibrary()
+    case .loaded: await readOpenedLink()
+    // The load in flight, or the page's own retry, reads the link when the Library arrives.
+    case .loading, .failed: break
+    }
+  }
+
+  private func showLinkedSet(_ id: String) {
+    openedLink = OpenedLink(setId: id, state: .opening)
+    // People holds no Set pages, so a link opened there opens on Home.
+    if destination == .people { destination = .home }
+    openSet(id)
+  }
+
+  func retryOpenedLink() async {
+    guard let link = openedLink, link.state != .awaitingSignIn else { return }
+    openedLink?.state = .opening
+    await readOpenedLink()
+  }
+
+  /// With the Library loaded, a saved Set needs nothing more: its page shows it. Any other Set's
+  /// page shows the shared facts.
+  private func readOpenedLink() async {
+    guard let client, let link = openedLink, link.state == .opening, case .loaded = library else {
+      return
+    }
+    guard savedSet(link.setId) == nil else {
+      openedLink = nil
+      return
+    }
+    let state: OpenedLink.State
+    do {
+      state = .shared(try await client.sharedSet(link.setId))
+    } catch OrbisError.server(status: 404, _) {
+      state = .unavailable
+    } catch {
+      state = .failed((error as? OrbisError ?? .unreachable).failure(at: client.address))
+    }
+    // A newer link, or a sign-out, replaced this one while it was read.
+    guard openedLink == link else { return }
+    openedLink?.state = state
+  }
+
+  /// Saves the linked Set's Source Link through the same request as filing, and the page becomes
+  /// the Set's own.
+  func saveOpenedLink() async {
+    guard let client, let link = openedLink, case .shared(let shared) = link.state else { return }
+    isWorkingOnSet = true
+    setFailure = nil
+    defer { isWorkingOnSet = false }
+    do {
+      let saved = try await client.save(url: shared.url)
+      guard self.client?.token == client.token else { return }
+      await insert(saved)
+      if openedLink == link { openedLink = nil }
+      // One Set exists per Source Link, so the id is the link's; a page on any other id would
+      // say the Set is gone.
+      if saved.id != link.setId { openSet(saved.id) }
+    } catch OrbisError.duplicate {
+      // Saved from another device since the page opened, so the Library is read again.
+      guard openedLink == link else { return }
+      openedLink?.state = .opening
+      await loadLibrary()
+    } catch {
+      setFailure = (error as? OrbisError ?? .unreachable).failure(at: client.address)
     }
   }
 
