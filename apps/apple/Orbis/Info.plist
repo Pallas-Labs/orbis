@@ -44,6 +44,21 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!--
+	The lane opens an Approval link as orbis://pair#<code>, because a simulator cannot verify the
+	orbis.p11a.xyz domain (ADR 0022). An array, so it lives here.
+	-->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.orbis.client</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>orbis</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

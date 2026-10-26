@@ -1,3 +1,5 @@
+import type { ApprovalRequestSchema } from "@orbis/contracts/http-api";
+
 import { callOrbis } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
 
@@ -17,3 +19,18 @@ export const requestSignInCode = (credentials: Credentials) =>
 /** Revokes one of the Person's own keys. Revoking the current one signs this browser out. */
 export const revokeDevice = (credentials: Credentials, id: string) =>
   callOrbis(credentials, (client) => client.devices.revoke({ params: { id } }));
+
+/** A signed-out device's Approval Request, as the Person who may approve it sees it (ADR 0022). */
+export type ApprovalRequest = typeof ApprovalRequestSchema.Type;
+
+/** The Approval Request that shows this Approval Code. 404 when none is waiting. */
+export const findSignInRequest = (credentials: Credentials, code: string) =>
+  callOrbis(credentials, (client) =>
+    client.devices.findSignInRequest({ payload: { code } })
+  );
+
+/** Signs the requesting device in as this Person. 404 when none is waiting. */
+export const approveSignInRequest = (credentials: Credentials, code: string) =>
+  callOrbis(credentials, (client) =>
+    client.devices.approveSignInRequest({ payload: { code } })
+  );

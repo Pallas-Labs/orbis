@@ -14,6 +14,9 @@ final class SettingsModel {
   /// it.
   var username = ""
   var people: Loadable<[GroupPerson]> = .idle
+  /// The Person's keys, newest first, so a device just approved is at the top.
+  var devices: Loadable<[Device]> = .idle
+  var devicesFailure: OrbisFailure?
   var code: SignInCode?
   var accountFailure: OrbisFailure?
   var groupFailure: OrbisFailure?
@@ -47,10 +50,14 @@ final class SettingsModel {
     else { return }
     me = .loaded(person)
     username = person.username
-    guard person.host else { return }
+    guard person.host else {
+      await loadDevices()
+      return
+    }
+    async let devicesLoad: Void = loadDevices()
     async let passcodeLoad: Void = loadPasscode()
     async let peopleLoad: Void = loadPeople()
-    _ = await (passcodeLoad, peopleLoad)
+    _ = await (devicesLoad, passcodeLoad, peopleLoad)
   }
 
   private func forgetPerson() {
@@ -58,6 +65,8 @@ final class SettingsModel {
     passcode = nil
     username = ""
     people = .idle
+    devices = .idle
+    devicesFailure = nil
     accountFailure = nil
     groupFailure = nil
     downloadsFailure = nil
@@ -99,6 +108,22 @@ final class SettingsModel {
     me = .loaded(person)
     username = person.username
     return true
+  }
+
+  func loadDevices() async {
+    if case .loaded = devices {} else { devices = .loading }
+    let list = await settingsRequest(
+      app, { if let failure = $0 { self.devices = .failed(failure) } }, { try await $0.devices() })
+    if let list { devices = .loaded(list.sorted { $0.addedAt > $1.addedAt }) }
+  }
+
+  /// Signs another device out and takes it off the list.
+  func revoke(_ device: Device) async {
+    guard
+      await settingsRequest(app, { self.devicesFailure = $0 }, { try await $0.revokeDevice(device.id) })
+        != nil
+    else { return }
+    if case .loaded(let list) = devices { devices = .loaded(list.filter { $0.id != device.id }) }
   }
 
   func makeCode() async {

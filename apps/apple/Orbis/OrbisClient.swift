@@ -233,6 +233,29 @@ extension CodeFormat {
   static let groupPasscode = CodeFormat(alphabet: typable, groups: [4, 4, 4])
 }
 
+/// One of the Person's own keys, as Settings lists it.
+struct Device: Decodable, Equatable, Identifiable, Sendable {
+  let id: String
+  let label: String
+  let addedAt: String
+  let lastUsedAt: String?
+  /// The key this device signs its requests with.
+  let current: Bool
+}
+
+/// A signed-out device waiting for a signed-in Person to approve it (ADR 0022).
+struct ApprovalRequest: Decodable, Equatable, Sendable {
+  let code: String
+  let label: String
+  /// `tvOS`, `iOS`, `macOS`, or `web`.
+  let platform: String
+  let requestedAt: String
+}
+
+private struct Devices: Decodable {
+  let devices: [Device]
+}
+
 private struct SignedIn: Decodable {
   let key: String
 }
@@ -484,6 +507,31 @@ struct OrbisClient: Sendable {
   func signInCode() async throws -> SignInCode {
     let response = try await send(path: "me/sign-in-codes", method: "POST", body: nil)
     return try Self.decode(SignInCode.self, from: response)
+  }
+
+  /// The Person's keys, one per device.
+  func devices() async throws -> [Device] {
+    let response = try await send(path: "me/devices", method: "GET", body: nil)
+    return try Self.decode(Devices.self, from: response).devices
+  }
+
+  /// Signs another of the Person's devices out. It is refused on its next request.
+  func revokeDevice(_ id: String) async throws {
+    _ = try await send(path: "me/devices/\(id)", method: "DELETE", body: nil)
+  }
+
+  /// The device waiting with `code`, so the Person can match it to the one in front of them.
+  func findSignInRequest(code: String) async throws -> ApprovalRequest {
+    let body = try Self.encoder.encode(["code": code])
+    let response = try await send(path: "me/sign-in-requests/find", method: "POST", body: body)
+    return try Self.decode(ApprovalRequest.self, from: response)
+  }
+
+  /// Signs the device waiting with `code` in as this Person.
+  func approveSignInRequest(code: String) async throws -> ApprovalRequest {
+    let body = try Self.encoder.encode(["code": code])
+    let response = try await send(path: "me/sign-in-requests/approve", method: "POST", body: body)
+    return try Self.decode(ApprovalRequest.self, from: response)
   }
 
   // MARK: - The Host's controls

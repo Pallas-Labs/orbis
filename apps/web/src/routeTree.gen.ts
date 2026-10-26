@@ -10,11 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as BrowserRouteImport } from './routes/_browser'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
 import { Route as AppDevicesRouteImport } from './routes/_app/devices'
 import { Route as AppQueueRouteImport } from './routes/_app/queue'
+import { Route as BrowserPairRouteImport } from './routes/_browser/pair'
 import { Route as AppPeopleIndexRouteImport } from './routes/_app/people/index'
 import { Route as AppPeopleIdRouteImport } from './routes/_app/people/$id'
 import { Route as AppPlaylistsIndexRouteImport } from './routes/_app/playlists/index'
@@ -25,11 +28,21 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BrowserRoute = BrowserRouteImport.update({
+  id: '/_browser',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownAppleAppSiteAssociationRoute =
+  DotwellKnownAppleAppSiteAssociationRouteImport.update({
+    id: '/.well-known/apple-app-site-association',
+    path: '/.well-known/apple-app-site-association',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +62,11 @@ const AppQueueRoute = AppQueueRouteImport.update({
   id: '/queue',
   path: '/queue',
   getParentRoute: () => AppRoute,
+} as any)
+const BrowserPairRoute = BrowserPairRouteImport.update({
+  id: '/pair',
+  path: '/pair',
+  getParentRoute: () => BrowserRoute,
 } as any)
 const AppPeopleIndexRoute = AppPeopleIndexRouteImport.update({
   id: '/people/',
@@ -79,9 +97,11 @@ const AppSetsIdRoute = AppSetsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/admin': typeof AppAdminRoute
   '/devices': typeof AppDevicesRoute
   '/queue': typeof AppQueueRoute
+  '/pair': typeof BrowserPairRoute
   '/people/$id': typeof AppPeopleIdRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
   '/sets/$id': typeof AppSetsIdRoute
@@ -89,11 +109,13 @@ export interface FileRoutesByFullPath {
   '/playlists/': typeof AppPlaylistsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof AppIndexRoute
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/admin': typeof AppAdminRoute
   '/devices': typeof AppDevicesRoute
   '/queue': typeof AppQueueRoute
-  '/': typeof AppIndexRoute
+  '/pair': typeof BrowserPairRoute
   '/people/$id': typeof AppPeopleIdRoute
   '/playlists/$id': typeof AppPlaylistsIdRoute
   '/sets/$id': typeof AppSetsIdRoute
@@ -103,10 +125,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_browser': typeof BrowserRouteWithChildren
   '/sign-in': typeof SignInRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/_app/admin': typeof AppAdminRoute
   '/_app/devices': typeof AppDevicesRoute
   '/_app/queue': typeof AppQueueRoute
+  '/_browser/pair': typeof BrowserPairRoute
   '/_app/': typeof AppIndexRoute
   '/_app/people/$id': typeof AppPeopleIdRoute
   '/_app/playlists/$id': typeof AppPlaylistsIdRoute
@@ -119,9 +144,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/admin'
     | '/devices'
     | '/queue'
+    | '/pair'
     | '/people/$id'
     | '/playlists/$id'
     | '/sets/$id'
@@ -129,11 +156,13 @@ export interface FileRouteTypes {
     | '/playlists/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/admin'
     | '/devices'
     | '/queue'
-    | '/'
+    | '/pair'
     | '/people/$id'
     | '/playlists/$id'
     | '/sets/$id'
@@ -142,10 +171,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/_browser'
     | '/sign-in'
+    | '/.well-known/apple-app-site-association'
     | '/_app/admin'
     | '/_app/devices'
     | '/_app/queue'
+    | '/_browser/pair'
     | '/_app/'
     | '/_app/people/$id'
     | '/_app/playlists/$id'
@@ -156,7 +188,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  BrowserRoute: typeof BrowserRouteWithChildren
   SignInRoute: typeof SignInRoute
+  DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -168,11 +202,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_browser': {
+      id: '/_browser'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof BrowserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign-in': {
       id: '/sign-in'
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/apple-app-site-association': {
+      id: '/.well-known/apple-app-site-association'
+      path: '/.well-known/apple-app-site-association'
+      fullPath: '/.well-known/apple-app-site-association'
+      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -202,6 +250,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/queue'
       preLoaderRoute: typeof AppQueueRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_browser/pair': {
+      id: '/_browser/pair'
+      path: '/pair'
+      fullPath: '/pair'
+      preLoaderRoute: typeof BrowserPairRouteImport
+      parentRoute: typeof BrowserRoute
     }
     '/_app/people/': {
       id: '/_app/people/'
@@ -267,9 +322,23 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface BrowserRouteChildren {
+  BrowserPairRoute: typeof BrowserPairRoute
+}
+
+const BrowserRouteChildren: BrowserRouteChildren = {
+  BrowserPairRoute: BrowserPairRoute,
+}
+
+const BrowserRouteWithChildren =
+  BrowserRoute._addFileChildren(BrowserRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  BrowserRoute: BrowserRouteWithChildren,
   SignInRoute: SignInRoute,
+  DotwellKnownAppleAppSiteAssociationRoute:
+    DotwellKnownAppleAppSiteAssociationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

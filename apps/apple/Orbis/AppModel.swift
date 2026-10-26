@@ -43,6 +43,9 @@ final class AppModel {
   /// scene instead.
   var isShowingSettings = false
 
+  /// Another device this Person was asked to approve (ADR 0022), from a link or a typed code.
+  var approval: Approval?
+
   var library: Loadable<[SavedSet]> = .idle {
     didSet {
       refreshDerivedState()
@@ -464,6 +467,10 @@ final class AppModel {
     welcome = greeting
     client = OrbisClient(address: serviceAddress, token: key, session: session)
     startDiagnosticsSender()
+    // A link that arrived while signed out is shown now, if its request is still live.
+    if approval?.step == .awaitingSignIn {
+      await findApproval()
+    }
     await loadLibrary()
     await loadPlaylists()
     await loadQueue()
@@ -514,6 +521,7 @@ final class AppModel {
     client = nil
     signInFailure = nil
     isShowingSettings = false
+    approval = nil
     // The next sign-in starts on Home, so the first Set opened lands in the stack on screen.
     destination = .home
     library = .idle

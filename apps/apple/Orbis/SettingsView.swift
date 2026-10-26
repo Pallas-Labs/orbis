@@ -29,6 +29,15 @@ struct SettingsScreen: View {
     }
     // Keyed on the key, so signing in as someone else reloads the Person this shows.
     .task(id: model.client?.token) { await settings.load() }
+    // A code typed in Add a Device opens the sheet over Settings. On iOS Settings is itself a
+    // sheet, so a link that arrives while it is open opens there too.
+    .approvalSheet(model) { approval in
+      #if os(iOS)
+        return true
+      #else
+        return approval.origin == .typed
+      #endif
+    }
   }
 }
 
@@ -65,13 +74,13 @@ struct SettingsView: View {
         }
       case .loaded(let person):
         account(person)
+        devices
         group(person)
         if person.host {
           HostSections(settings: settings, hostId: person.id)
         }
         downloads(person)
       }
-      devices
       playbackSection
       Section {
         Button("Sign Out", role: .destructive) { isConfirmingSignOut = true }
@@ -178,25 +187,31 @@ struct SettingsView: View {
     return sets.filter { $0.downloadState == "ready" }.count
   }
 
+  /// Add a Device first, then every key the Person holds, newest first.
   private var devices: some View {
     Section {
-      if let code = settings.code {
-        SignInCodeView(code: code, identifier: "settings-sign-in-code")
-        Button("New Code") { Task { await settings.makeCode() } }
-          .accessibilityIdentifier("settings-sign-in-code-new")
-      } else {
-        Button("Sign In Another Device") { Task { await settings.makeCode() } }
-          .accessibilityIdentifier("settings-sign-in-another")
+      NavigationLink {
+        AddDeviceView(model: model, settings: settings)
+      } label: {
+        Text("Add a Device").foregroundStyle(Color.orbis.tint)
+      }
+      .accessibilityIdentifier("settings-add-device")
+      switch settings.devices {
+      case .idle, .loading:
+        ProgressView()
+      case .failed(let failure):
+        FailureRows(failure: failure, context: "loading devices", identifier: "settings-devices-error")
+        Button("Try Again") { Task { await settings.loadDevices() } }
+      case .loaded(let list):
+        ForEach(list) { device in
+          DeviceRow(device: device, settings: settings)
+        }
       }
       FailureRows(
-        failure: settings.codeFailure, context: "making a Sign-in Code",
-        identifier: "settings-code-error")
+        failure: settings.devicesFailure, context: "signing out a device",
+        identifier: "settings-device-error")
     } header: {
       Text("Devices")
-    } footer: {
-      if settings.code != nil {
-        Text("On the new device, choose I Have a Sign-in Code and type this.")
-      }
     }
   }
 
@@ -207,6 +222,121 @@ struct SettingsView: View {
     Binding(
       get: { value },
       set: { enabled in Task { await settings.save(update(enabled), failure: failure) } })
+  }
+}
+
+/// One of the Person's keys: its label, when it was last used or added, and whether it is this
+/// device. Any other device signs out with a swipe, or from its menu on a Mac.
+private struct DeviceRow: View {
+  let device: Device
+  let settings: SettingsModel
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      HStack(spacing: 6) {
+        Text(device.label)
+        if device.current {
+          Text("This Device")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .overlay { RoundedRectangle(cornerRadius: 6).stroke(.secondary.opacity(0.5)) }
+        }
+      }
+      Text(usage)
+        .font(.orbis.detail)
+        .foregroundStyle(.secondary)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityIdentifier("device-\(device.id)")
+    .swipeActions {
+      if !device.current { signOut }
+    }
+    .contextMenu {
+      if !device.current { signOut }
+    }
+  }
+
+  private var signOut: some View {
+    Button("Sign Out", role: .destructive) { Task { await settings.revoke(device) } }
+      .accessibilityIdentifier("device-sign-out")
+  }
+
+  private var usage: String {
+    guard let used = device.lastUsedAt else {
+      return "Added \(SetPresentation.plainDate(device.addedAt))"
+    }
+    return "Used \(SetPresentation.date(from: used).formatted(.relative(presentation: .named)))"
+  }
+}
+
+/// Add a Device: the six digits another device shows, or, for a device that cannot show them, a
+/// Sign-in Code to type there.
+private struct AddDeviceView: View {
+  let model: AppModel
+  @Bindable var settings: SettingsModel
+  @State private var code = ""
+  @FocusState private var isFocused: Bool
+  @Environment(\.dismiss) private var dismiss
+
+  var body: some View {
+    Form {
+      Section {
+        TextField("Code", text: $code, prompt: Text("000 000"))
+          .font(.system(.largeTitle, design: .monospaced).weight(.semibold))
+          .multilineTextAlignment(.center)
+          .plainEntry()
+          #if os(iOS)
+            .keyboardType(.numberPad)
+            .textContentType(.oneTimeCode)
+          #endif
+          .focused($isFocused)
+          .accessibilityIdentifier("add-device-code")
+      } header: {
+        Text("Enter the code on the other device.")
+          .textCase(nil)
+      }
+      Section {
+        if let shown = settings.code {
+          SignInCodeView(code: shown, identifier: "settings-sign-in-code")
+          Button("New Code") { Task { await settings.makeCode() } }
+            .accessibilityIdentifier("settings-sign-in-code-new")
+        } else {
+          Button("Show a Code Instead") { Task { await settings.makeCode() } }
+            .accessibilityIdentifier("settings-sign-in-another")
+        }
+        FailureRows(
+          failure: settings.codeFailure, context: "making a Sign-in Code",
+          identifier: "settings-code-error")
+      } footer: {
+        if settings.code != nil {
+          Text("On the new device, choose I Have a Sign-in Code and type this.")
+        }
+      }
+    }
+    .settingsPage()
+    .navigationTitle("Add a Device")
+    .onAppear { isFocused = settings.code == nil }
+    .onChange(of: code) { _, typed in
+      let digits = String(typed.filter { $0.isASCII && $0.isNumber }.prefix(6))
+      guard digits == typed else {
+        code = digits
+        return
+      }
+      if digits.count == 6 { Task { await model.findApproval(typed: digits) } }
+    }
+    // The sheet closed. After an approval the new device leads the list Settings goes back to;
+    // otherwise the field empties for the next try.
+    .onChange(of: model.approval) { old, new in
+      guard new == nil, let old, old.origin == .typed else { return }
+      guard case .approved = old.step else {
+        code = ""
+        return
+      }
+      dismiss()
+      Task { await settings.loadDevices() }
+    }
   }
 }
 
