@@ -76,7 +76,7 @@ const validUsername = (input: string) => {
   return username;
 };
 
-const validLabel = (input: string) => {
+export const validLabel = (input: string) => {
   const label = input.trim();
   if (!label || label.length > 100) {
     throw new AdminError(400, "Choose a label with 1 to 100 characters.");
@@ -272,6 +272,36 @@ export const redeemSignInCode = (
     }
   );
 };
+
+/**
+ * Adds a daily key for the Person who approved an Approval Request. Null when
+ * that Person was removed after approving.
+ */
+export const collectApprovalKey = (
+  path: string,
+  personId: string,
+  label: string
+) =>
+  mutateTrustStore(
+    path,
+    () => read(path),
+    (store) => {
+      const person = store.people.find(
+        (candidate) => candidate.id === personId && !candidate.removed
+      );
+      if (!person) {
+        return { value: null };
+      }
+      const key = newDailyKey(person.id, label);
+      return {
+        store: { ...store, keys: [...store.keys, key.record] },
+        value: {
+          key: key.created.token,
+          person: { id: person.id, username: person.username },
+        },
+      };
+    }
+  );
 
 export const readPasscode = (path: string) => ({
   passcode: read(path).passcode ?? null,

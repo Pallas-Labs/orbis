@@ -90,6 +90,14 @@ _Avoid_: Invite code, password
 A short, one-time code that a signed-in device, or the Host, shows so another device can sign in as the same Person.
 _Avoid_: Device Link, pairing code, Invite
 
+**Approval Request**:
+A signed-out device's request to sign in. It shows an Approval Code until a signed-in Person approves it or it expires, and the device then receives its own key for that Person.
+_Avoid_: Pairing, device link
+
+**Approval Code**:
+The 6-digit code an Approval Request shows. A signed-in Person types it or scans it to approve.
+_Avoid_: Pairing code, PIN
+
 **Social**:
 A Person's switch, off by default. Off hides them from others and others from them.
 _Avoid_: Sharing mode, public mode

@@ -8,6 +8,7 @@ import {
   decodePlaybackDiagnosticsBatch,
   AdminKeyPayload,
   AdminPersonPayload,
+  ApprovalCodePayload,
   CollaborationPayload,
   ImportPlaylistPayload,
   JoinPayload,
@@ -26,13 +27,16 @@ import {
   SetCaller,
   SetPlaylistsPayload,
   SocialFiltersPayload,
+  StartApprovalRequestPayload,
   TagsPayload,
   UpdateTitlePayload,
   UpdateMePayload,
+  WaitApprovalRequestPayload,
 } from "@orbis/contracts/http-api";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import {
   Context,
+  Deferred,
   Effect,
   Layer,
   Option,
@@ -55,6 +59,7 @@ import {
   addKey,
   addPerson,
   AdminError,
+  collectApprovalKey,
   issueSignInCode,
   joinGroup,
   listDevices,
@@ -72,9 +77,11 @@ import {
   appleMusicDownloadRefused,
   appleMusicSearchRefusal,
 } from "./apple-music.js";
+import { makeApprovalRequests } from "./approval-requests.js";
 import { makeAttemptLimiter } from "./attempt-limiter.js";
 import { Audio } from "./audio-service.js";
 import type { AudioFile } from "./audio-service.js";
+import { ClientAddress } from "./client-address.js";
 import { insertBatches } from "./db/batches.js";
 import {
   listens,
@@ -255,23 +262,37 @@ const meBody = (person: PersonRecord) => ({
 });
 
 const PRESENCE_WINDOW_MS = 30_000;
+const TOO_MANY_ATTEMPTS = "Too many invalid keys.";
 const tooManyAttempts = () =>
-  Response.json({ message: "Too many invalid keys." }, { status: 429 });
+  Response.json({ message: TOO_MANY_ATTEMPTS }, { status: 429 });
+const tooManyAttemptsFailure = () =>
+  new LibraryError({ message: TOO_MANY_ATTEMPTS, statusCode: 429 });
 /**
  * Routes a new device calls before it has a key (ADR 0020). They run whatever
  * the Authorization header says, so a key cannot skip the failed-key limit.
+ * Most count as a sign-in attempt before they run. A wait counts only when its
+ * secret is unknown, so a device waiting on its own Approval Request never
+ * locks itself out.
  */
-const OPEN_ROUTES: ReadonlySet<string> = new Set([
-  "/sign-in/code",
-  "/sign-in/join",
+const OPEN_ROUTES: ReadonlyMap<string, "counted" | "counts-failures"> = new Map(
+  [
+    ["/sign-in/code", "counted"],
+    ["/sign-in/join", "counted"],
+    ["/sign-in/requests", "counted"],
+    ["/sign-in/requests/wait", "counts-failures"],
+  ]
+);
+const APPROVER_ROUTES: ReadonlySet<string> = new Set([
+  "/me/sign-in-requests/approve",
+  "/me/sign-in-requests/find",
 ]);
 /**
  * The router also matches a path with repeated or trailing slashes, other
- * casing, or percent-encoding, so the open-route lookup sees the same
+ * casing, or percent-encoding, so the route lookups see the same
  * spelling the router does. Otherwise a guess on `/sign-in/code/` would run
  * without being counted.
  */
-const isOpenRoute = (url: string): boolean => {
+const routePath = (url: string): string => {
   const raw = new URL(url).pathname;
   let decoded: string;
   try {
@@ -279,12 +300,24 @@ const isOpenRoute = (url: string): boolean => {
   } catch {
     decoded = raw;
   }
-  const pathname = decoded
+  return decoded
     .toLowerCase()
     .replaceAll(/\/+/gu, "/")
     .replace(/(?<=.)\/$/u, "");
-  return OPEN_ROUTES.has(pathname);
 };
+/** A signed-out approver gets 401, so the app knows to sign in first. */
+const refusalFor = (
+  request: Request,
+  decision: { readonly message: string; readonly statusCode: number }
+) =>
+  request.headers.get("authorization") === null &&
+  request.method === "POST" &&
+  APPROVER_ROUTES.has(routePath(request.url))
+    ? { message: "Sign in to approve a device.", statusCode: 401 }
+    : decision;
+const EXPIRED_APPROVAL = "That sign-in request expired. Start again.";
+const expiredApproval = () =>
+  new LibraryError({ message: EXPIRED_APPROVAL, statusCode: 404 });
 const invalidSignInCode = () =>
   new LibraryError({
     message: "That code is not valid. Get a new one.",
@@ -336,6 +369,22 @@ const failureResponse = <E>(error: E) => {
   );
 };
 
+const fromAdminError = (cause: unknown) =>
+  new LibraryError({
+    message:
+      cause instanceof AdminError
+        ? cause.message
+        : "The trust store is unavailable.",
+    statusCode: cause instanceof AdminError ? cause.statusCode : 500,
+  });
+
+/** Approval Codes and secrets are credentials: no proxy or browser may keep them. */
+const uncached = <A>(body: A, status = 200) =>
+  HttpServerResponse.jsonUnsafe(body, {
+    headers: { "cache-control": "no-store" },
+    status,
+  });
+
 const trustUnavailable = () =>
   new LibraryError({
     message: "The trust store is unavailable.",
@@ -378,8 +427,10 @@ export const createPortableApp = (options: {
   presenceWindowMs?: number;
   presence?: PresenceOptions & { journal?: Layer.Layer<PresenceJournal> };
   playlistImports?: Pick<PlaylistImporterOptions, "heartbeat" | "retry">;
-  /** The clock Sign-in Codes expire by. Tests move it to prove expiry. */
+  /** The clock Sign-in Codes and Approval Requests expire by. Tests move it to prove expiry. */
   signInCodeNow?: () => number;
+  /** How long a wait on an Approval Request stays open; 25 seconds by default. */
+  approvalWaitMs?: number;
   /** Follows short links such as `on.soundcloud.com`. Tests pass a stub to stay offline. */
   shortLinkFetch?: (url: string, signal: AbortSignal) => Promise<Response>;
   titleReviser?: Layer.Layer<TitleReviser>;
@@ -393,6 +444,8 @@ export const createPortableApp = (options: {
     options.playbackDiagnostics
   );
   const signInCodeNow = options.signInCodeNow ?? Date.now;
+  const approvals = makeApprovalRequests(signInCodeNow);
+  const approvalWaitMs = options.approvalWaitMs ?? 25_000;
   const { database } = options;
   const libraryOptions = {
     people: () => readTrustRegistry(trustPath).store.people,
@@ -1852,19 +1905,7 @@ export const createPortableApp = (options: {
             throw new AdminError(500, "The trust store is unavailable.");
           }
           return action(trustPath);
-        }).pipe(
-          Effect.mapError(
-            ({ cause }) =>
-              new LibraryError({
-                message:
-                  cause instanceof AdminError
-                    ? cause.message
-                    : "The trust store is unavailable.",
-                statusCode:
-                  cause instanceof AdminError ? cause.statusCode : 500,
-              })
-          )
-        );
+        }).pipe(Effect.mapError(({ cause }) => fromAdminError(cause)));
       const adminCall = <A>(action: (storePath: string) => A) =>
         Effect.andThen(requireHost, trustCall(action));
       const issueCodeFor = (personId: string) =>
@@ -1891,6 +1932,45 @@ export const createPortableApp = (options: {
           return yield* trustCall((storePath) =>
             action(storePath, caller.person.id, keyId)
           );
+        }
+      );
+      // An unknown code or secret counts as a failed sign-in attempt, and the
+      // attempt that takes a client over the limit already answers 429.
+      const failedApproval = (client: string, message: string) =>
+        attempts.signInAttempt(client)
+          ? tooManyAttemptsFailure()
+          : new LibraryError({ message, statusCode: 404 });
+      // Only a signed-in device approves, and a client or Group over the
+      // failed-attempt limit is refused before the lookup, so it cannot learn
+      // that a guess was right.
+      const approverCall = Effect.fn("App.approverCall")(
+        function* approverAction(
+          action: (
+            code: string,
+            personId: string
+          ) => ReturnType<typeof approvals.find>
+        ) {
+          const caller = yield* SetCaller;
+          if (caller.keyId === null) {
+            return yield* new LibraryError({
+              message: "Sign in with a device key.",
+              statusCode: 403,
+            });
+          }
+          const client = yield* ClientAddress;
+          if (attempts.refusing(client)) {
+            return yield* tooManyAttemptsFailure();
+          }
+          const input =
+            yield* HttpServerRequest.schemaBodyJson(ApprovalCodePayload);
+          const found = action(input.code, caller.person.id);
+          if (found === null) {
+            return yield* failedApproval(
+              client,
+              "No device is waiting with that code."
+            );
+          }
+          return HttpServerResponse.jsonUnsafe(found);
         }
       );
       // The key is already gone, so a failed clear is logged: the next settle sweeps the
@@ -1928,6 +2008,12 @@ export const createPortableApp = (options: {
                   return yield* issueCodeFor(person.id);
                 })
               )
+            )
+            .handleRaw("findSignInRequest", () =>
+              withFailureResponse(approverCall(approvals.find))
+            )
+            .handleRaw("approveSignInRequest", () =>
+              withFailureResponse(approverCall(approvals.approve))
             )
       );
       const adminGroup = HttpApiBuilder.group(OrbisApi, "admin", (handlers) =>
@@ -2094,6 +2180,54 @@ export const createPortableApp = (options: {
                   joinGroup(storePath, input)
                 );
                 return HttpServerResponse.jsonUnsafe(joined, { status: 201 });
+              })
+            )
+          )
+          .handleRaw("startRequest", () =>
+            withFailureResponse(
+              Effect.gen(function* startApprovalRequest() {
+                const input = yield* HttpServerRequest.schemaBodyJson(
+                  StartApprovalRequestPayload
+                );
+                const client = yield* ClientAddress;
+                const started = yield* Effect.try({
+                  catch: fromAdminError,
+                  try: () => approvals.start(input, client),
+                });
+                return uncached(started, 201);
+              })
+            )
+          )
+          .handleRaw("waitRequest", () =>
+            withFailureResponse(
+              Effect.gen(function* waitForApproval() {
+                const { secret } = yield* HttpServerRequest.schemaBodyJson(
+                  WaitApprovalRequestPayload
+                );
+                const watched = approvals.watch(secret);
+                if (watched === null) {
+                  return yield* failedApproval(
+                    yield* ClientAddress,
+                    EXPIRED_APPROVAL
+                  );
+                }
+                yield* Deferred.await(watched.approved).pipe(
+                  Effect.timeoutOption(Math.min(approvalWaitMs, watched.msLeft))
+                );
+                const outcome = approvals.collect(secret);
+                if (outcome === null) {
+                  return yield* expiredApproval();
+                }
+                if (outcome.status === "pending") {
+                  return uncached({ status: "pending" });
+                }
+                const signedIn = yield* trustCall((storePath) =>
+                  collectApprovalKey(storePath, outcome.personId, outcome.label)
+                );
+                if (signedIn === null) {
+                  return yield* expiredApproval();
+                }
+                return uncached({ status: "approved", ...signedIn });
               })
             )
           )
@@ -2368,21 +2502,27 @@ export const createPortableApp = (options: {
    * client over the limit is refused before any lookup, so it cannot spend a
    * code.
    */
-  const openRoute = (request: Request, client: string): Promise<Response> => {
-    if (attempts.signInAttempt(client)) {
+  const openRoute = (
+    request: Request,
+    client: string,
+    counting: "counted" | "counts-failures"
+  ): Promise<Response> => {
+    if (counting === "counted" && attempts.signInAttempt(client)) {
       return Promise.resolve(tooManyAttempts());
     }
     // SAFETY: the sign-in handlers read no caller-bound service.
     return app.handler(
       request,
-      Context.empty() as Context.Context<Library | Queue>
+      Context.make(ClientAddress, client) as Context.Context<
+        Library | Queue | ClientAddress
+      >
     );
   };
   const initialize = () =>
     // SAFETY: The health route reads no caller-bound service.
     app.handler(
       new Request("http://orbis.internal/health"),
-      Context.empty() as Context.Context<Library | Queue>
+      Context.empty() as Context.Context<Library | Queue | ClientAddress>
     );
   // oxlint-disable-next-line eslint/sort-keys -- Lifecycle methods precede the request boundary.
   return {
@@ -2417,8 +2557,12 @@ export const createPortableApp = (options: {
       };
       const host = request.headers.get("host") ?? new URL(request.url).host;
       const authorization = request.headers.get("authorization");
-      if (request.method === "POST" && isOpenRoute(request.url)) {
-        return openRoute(request, clientAddress);
+      const open =
+        request.method === "POST"
+          ? OPEN_ROUTES.get(routePath(request.url))
+          : undefined;
+      if (open) {
+        return openRoute(request, clientAddress, open);
       }
       const registry = readTrustRegistry(trustPath);
       const logRefusal = (status: number, fields: LoggedRecord) => {
@@ -2472,16 +2616,17 @@ export const createPortableApp = (options: {
         return withOrigin(tooManyAttempts());
       }
       if (decision.kind === "rejected") {
+        const refusal = refusalFor(request, decision);
         // A damaged trust store refuses every device. Without `trustStore` the
         // only visible symptom is a sudden run of 401 responses.
-        logRefusal(decision.statusCode, {
-          reason: decision.message,
+        logRefusal(refusal.statusCode, {
+          reason: refusal.message,
           trustStore: registry.storeError,
         });
         return withOrigin(
           Response.json(
-            { message: decision.message },
-            { status: decision.statusCode }
+            { message: refusal.message },
+            { status: refusal.statusCode }
           )
         );
       }
@@ -2495,11 +2640,10 @@ export const createPortableApp = (options: {
       // SAFETY: SetAccess provides the caller-bound Library and Queue before handlers read them.
       const response = await app.handler(
         request,
-        Context.add(
-          Context.make(SetCaller, decision),
-          AcceptedAccess,
-          decision
-        ) as Context.Context<Library | Queue | SetCaller>
+        Context.make(SetCaller, decision).pipe(
+          Context.add(AcceptedAccess, decision),
+          Context.add(ClientAddress, clientAddress)
+        ) as Context.Context<Library | Queue | SetCaller | ClientAddress>
       );
       return withOrigin(
         forwardedResponse(request, response, registry.store, decision.keyId)

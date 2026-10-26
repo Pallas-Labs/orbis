@@ -1,6 +1,6 @@
 # Sign in with a Group Passcode or a Sign-in Code
 
-This replaces ADR 0016 and the recovery sections of ADRs 0008 and 0018.
+This replaces ADR 0016 and the recovery sections of ADRs 0008 and 0018. Amended on 2026-10-26 by ADR 0022, which adds a third way in: a signed-in Person approves a new device's Approval Request.
 
 Orbis serves the Host and a few friends. The Host found Invites, Device Links, QR codes, Cloudflare Access recovery, a separate admin key, and an editable service address too hard to use. On 2026-10-10 a fresh iPhone could not sign in. Every way in needed a device that was already signed in, and the only way to mint a first key ran through Access. The Host accepts that a leaked key is a small loss for this Group. That allows a simpler model with two ways in and one credential.
 
