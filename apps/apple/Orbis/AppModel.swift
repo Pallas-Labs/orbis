@@ -448,7 +448,7 @@ final class AppModel {
           passcode: passcode.trimmingCharacters(in: .whitespacesAndNewlines), label: label)
         greeting = "Welcome, \(username)"
       case .code(let typed):
-        key = try await signedOut.redeem(code: SignInCode.normalized(typed), label: label)
+        key = try await signedOut.redeem(code: typed, label: label)
       case .approved(let approvedKey, let username):
         key = approvedKey
         greeting = "Signed in as \(username)"

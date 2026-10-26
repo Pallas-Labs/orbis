@@ -29,7 +29,7 @@ struct SignInView: View {
           Button {
             choice = .code
           } label: {
-            Text("I Have a Login Code").font(.orbis.body.weight(.semibold)).frame(maxWidth: .infinity)
+            Text("I Have a Sign-in Code").font(.orbis.body.weight(.semibold)).frame(maxWidth: .infinity)
           }
           .buttonStyle(.orbisSecondary)
           .accessibilityIdentifier("signin-have-code")
@@ -135,7 +135,7 @@ struct JoinForm: View {
   }
 
   private var canJoin: Bool {
-    !username.isEmpty && !passcode.isEmpty && !model.isSigningIn
+    !username.isEmpty && passcode.count == CodeFormat.groupPasscode.length && !model.isSigningIn
   }
 
   var body: some View {
@@ -151,21 +151,16 @@ struct JoinForm: View {
             .multilineTextAlignment(.trailing)
             .accessibilityIdentifier("signin-username")
         }
-        LabeledContent("Passcode") {
-          // A generated code the Host shares, so it is shown as typed or pasted, like a
-          // Sign-in Code, rather than hidden like a password.
-          TextField("Group Passcode", text: $passcode, prompt: Text("Required"))
-            .autocorrectionDisabled()
-            #if os(iOS)
-              .textInputAutocapitalization(.characters)
-            #endif
-            .font(.body.monospaced())
-            .focused($focus, equals: .passcode)
-            .submitLabel(.join)
-            .onSubmit(join)
-            .multilineTextAlignment(.trailing)
-            .accessibilityIdentifier("signin-passcode")
-        }
+      }
+      Section("Group Passcode") {
+        // A generated code the Host shares, so it is shown as typed or pasted, like a
+        // Sign-in Code, rather than hidden like a password.
+        CodeField(
+          "Group Passcode", code: $passcode, format: .groupPasscode, focus: $focus,
+          equals: .passcode, submit: join
+        )
+        .accessibilityIdentifier("signin-passcode")
+        .codeRow()
       }
       SignInFailureSection(failure: model.signInFailure)
     }
@@ -189,25 +184,18 @@ struct CodeForm: View {
   @FocusState private var focus: Bool?
 
   private var canRedeem: Bool {
-    SignInCode.normalized(code).count == SignInCode.length && !model.isSigningIn
+    code.count == CodeFormat.signInCode.length && !model.isSigningIn
   }
 
   var body: some View {
     Form {
-      Section {
-        LabeledContent("Code") {
-          TextField("Sign-in Code", text: $code, prompt: Text("ABCD-EFGH"))
-            #if os(iOS)
-              .textInputAutocapitalization(.characters)
-            #endif
-            .plainEntry()
-            .font(.body.monospaced())
-            .focused($focus, equals: true)
-            .submitLabel(.go)
-            .onSubmit(redeem)
-            .multilineTextAlignment(.trailing)
-            .accessibilityIdentifier("signin-code")
-        }
+      Section("Sign-in Code") {
+        CodeField(
+          "Sign-in Code", code: $code, format: .signInCode, focus: $focus, equals: true,
+          submit: redeem
+        )
+        .accessibilityIdentifier("signin-code")
+        .codeRow()
       }
       SignInFailureSection(failure: model.signInFailure)
     }
@@ -298,6 +286,13 @@ extension View {
       #if os(iOS)
         .textInputAutocapitalization(.never)
       #endif
+  }
+
+  /// A code field's row: the slots centred on the page, without a row's card behind them.
+  fileprivate func codeRow() -> some View {
+    self
+      .frame(maxWidth: .infinity)
+      .listRowBackground(Color.clear)
   }
 
   fileprivate func signInForm<Field: Hashable>(

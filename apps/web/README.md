@@ -8,8 +8,10 @@ The [API Worker and Group](../api/README.md) own the application API and product
 
 The sign-in page offers two ways in ([ADR 0020](../../docs/adr/0020-sign-in-by-group-passcode-and-sign-in-code.md)):
 
-- **Sign in with a login code.** On a device that is already signed in, open Devices and choose Sign in another device. Type the eight-character code on the new browser. The page accepts lower case, spaces, and the dash. A code works once and expires after 10 minutes.
+- **Sign in with a Sign-in Code.** On a device that is already signed in, open Devices and choose Sign in another device. Type or paste the eight-character code on the new browser. A code works once and expires after 10 minutes.
 - **Join with the Group Passcode.** A new Person chooses a username and types the Group Passcode. On the Admin page the Host opens joining, which makes a random passcode, and can copy it, make a new one, or close joining. While joining is closed, there is no passcode.
+
+Both codes use one code field (`src/components/code-field.tsx`), with one box per character in groups of four. The field turns lower case into capitals and drops any character outside the code alphabet, such as a dash, a space, `O`, `0`, `I`, `1`, or `L`. A pasted `abcd-efgh` fills every box, and a pasted Join Link such as `https://orbis.p11a.xyz/join#K7Q2M9XH4RPA` keeps only the passcode. The form submits when the last box fills, unless another field is still empty. The Devices and Admin pages show a code in the same boxes, with no dash, and a button that copies it.
 
 The API returns a daily key, which the browser keeps in `localStorage` and labels with the browser and system, such as "Chrome on Mac". The page shows the API's own message when it refuses a passcode, a username, or a code.
 
