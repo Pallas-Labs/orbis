@@ -1,0 +1,21 @@
+@orbis/api:test: Recovery journey passed. /home/parth/.t3/worktrees/orbis/rework-pal-1011-7e14285-10260516/.cache/api-recovery/b0ac6e33-168b-4670-ab0d-d654830ef705/result.json
+@orbis/api:test: Presence lease journey passed. /home/parth/.t3/worktrees/orbis/rework-pal-1011-7e14285-10260516/.cache/api-presence/3e030d1f-fe60-417c-9d13-73595e8743c6/result.json
+@orbis/api:test: Playlist import alarm journey passed. /home/parth/.t3/worktrees/orbis/rework-pal-1011-7e14285-10260516/.cache/api-imports/30064eec-e8bb-42bf-bbf0-8eee2e0cef79/result.json
+@orbis/api:test: Tracklist journey passed. /home/parth/.t3/worktrees/orbis/rework-pal-1011-7e14285-10260516/.cache/api-tracklists/f43ca240-5b53-45cb-bde1-a89c6e74faa5/result.json
+@orbis/api:test: Large list journey passed. /home/parth/.t3/worktrees/orbis/rework-pal-1011-7e14285-10260516/.cache/api-large-lists/2240079d-5629-42ca-ad70-8a31e00f759d/result.json
+@orbis/api:test: Apple Music save journey passed. /home/parth/.t3/worktrees/orbis/rework-pal-1011-7e14285-10260516/.cache/api-apple-music/5f7f3708-65cb-454d-8981-164e50c967a4/result.json
+@orbis/web:test: sign-in journey passed: 16 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-sign-in
+@orbis/web:test: library journey passed: 14 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-library
+@orbis/web:test: admin journey passed: 11 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-admin
+@orbis/web:test: devices journey passed: 9 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-devices
+@orbis/web:test: pair journey passed: 10 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-pair
+@orbis/web:test: player journey passed: 10 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-player
+@orbis/web:test: social journey passed: 15 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-social
+@orbis/web:test: playlists journey passed: 25 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-playlists
+@orbis/web:test: tracklist journey passed: 8 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-tracklist
+@orbis/web:test: presence journey passed: 8 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-presence
+@orbis/web:test: apple music journey passed: 9 steps, artifacts in /home/parth/.t3/worktrees/orbis/rework-pal-1011-9b9967f-10260630/.cache/web-apple-music
+ Tasks:    15 successful, 15 total
+Cached:    11 cached, 15 total
+  Time:    1m34.315s 
+exit=0

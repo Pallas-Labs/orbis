@@ -1,0 +1,154 @@
+LaneService-merged-before.swift:249:55: error: 'ApprovalRequest' is ambiguous for type lookup in this context
+239 |   }
+240 | 
+241 |   struct ApprovalRequest: Decodable {
+    |          `- note: found this candidate
+242 |     let code: String
+243 |     let label: String
+    :
+247 |   /// Approves the Approval Request showing `code`, as this lane's Person, the way Add a Device
+248 |   /// on a signed-in phone does (ADR 0022).
+249 |   func approveSignInRequest(_ code: String) throws -> ApprovalRequest {
+    |                                                       `- error: 'ApprovalRequest' is ambiguous for type lookup in this context
+250 |     try send("POST", "me/sign-in-requests/approve", ["code": code])
+251 |   }
+    :
+300 |   }
+301 | 
+302 |   struct ApprovalRequest: Decodable {
+    |          `- note: found this candidate
+303 |     let code: String
+304 |     let secret: String
+
+LaneService-merged-before.swift:302:10: error: invalid redeclaration of 'ApprovalRequest'
+239 |   }
+240 | 
+241 |   struct ApprovalRequest: Decodable {
+    |          `- note: 'ApprovalRequest' previously declared here
+242 |     let code: String
+243 |     let label: String
+    :
+300 |   }
+301 | 
+302 |   struct ApprovalRequest: Decodable {
+    |          `- error: invalid redeclaration of 'ApprovalRequest'
+303 |     let code: String
+304 |     let secret: String
+
+LaneService-merged-before.swift:313:54: error: 'ApprovalRequest' is ambiguous for type lookup in this context
+239 |   }
+240 | 
+241 |   struct ApprovalRequest: Decodable {
+    |          `- note: found this candidate
+242 |     let code: String
+243 |     let label: String
+    :
+300 |   }
+301 | 
+302 |   struct ApprovalRequest: Decodable {
+    |          `- note: found this candidate
+303 |     let code: String
+304 |     let secret: String
+    :
+311 | 
+312 |   /// Starts an Approval Request the way a signed-out TV does, with no key (ADR 0022).
+313 |   func startApprovalRequest(label: String) throws -> ApprovalRequest {
+    |                                                      `- error: 'ApprovalRequest' is ambiguous for type lookup in this context
+314 |     try send("POST", "sign-in/requests", ["label": label, "platform": "tvOS"], signed: false)
+315 |   }
+
+LaneService-merged-before.swift:384:8: error: cannot find type 'XCUIApplication' in scope
+382 |   func launchOrbis(
+383 |     address: String, token: String? = nil, keychain: Bool = false, arguments: [String] = []
+384 |   ) -> XCUIApplication {
+    |        `- error: cannot find type 'XCUIApplication' in scope
+385 |     let app = XCUIApplication()
+386 |     app.launchArguments = ["-orbisServiceAddress", address] + arguments
+
+LaneService-merged-before.swift:149:19: error: cannot find 'URLRequest' in scope
+147 |       throw URLError(.badURL)
+148 |     }
+149 |     var request = URLRequest(url: endpoint)
+    |                   `- error: cannot find 'URLRequest' in scope
+150 |     request.httpMethod = "POST"
+151 |     var status = 0
+
+LaneService-merged-before.swift:153:16: error: type 'URLSession' (aka 'AnyObject') has no member 'shared'
+151 |     var status = 0
+152 |     let done = DispatchSemaphore(value: 0)
+153 |     URLSession.shared.dataTask(with: request) { _, response, _ in
+    |                `- error: type 'URLSession' (aka 'AnyObject') has no member 'shared'
+154 |       status = (response as? HTTPURLResponse)?.statusCode ?? 0
+155 |       done.signal()
+
+LaneService-merged-before.swift:329:19: error: cannot find 'URLRequest' in scope
+327 | 
+328 |   private func status(_ method: String, _ path: String, _ body: [String: Any]?) throws -> Int {
+329 |     var request = URLRequest(url: URL(string: "\(address)/\(path)")!)
+    |                   `- error: cannot find 'URLRequest' in scope
+330 |     request.httpMethod = method
+331 |     request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
+
+LaneService-merged-before.swift:338:16: error: type 'URLSession' (aka 'AnyObject') has no member 'shared'
+336 |     var status = 0
+337 |     let done = DispatchSemaphore(value: 0)
+338 |     URLSession.shared.dataTask(with: request) { _, response, _ in
+    |                `- error: type 'URLSession' (aka 'AnyObject') has no member 'shared'
+339 |       status = (response as? HTTPURLResponse)?.statusCode ?? 0
+340 |       done.signal()
+
+LaneService-merged-before.swift:350:19: error: cannot find 'URLRequest' in scope
+348 |     timeout: TimeInterval = 20
+349 |   ) throws -> Response {
+350 |     var request = URLRequest(url: URL(string: "\(address)/\(path)")!)
+    |                   `- error: cannot find 'URLRequest' in scope
+351 |     request.httpMethod = method
+352 |     request.timeoutInterval = timeout
+
+LaneService-merged-before.swift:362:16: error: type 'URLSession' (aka 'AnyObject') has no member 'shared'
+360 |     var result: Result<Data, Error> = .failure(URLError(.timedOut))
+361 |     let done = DispatchSemaphore(value: 0)
+362 |     URLSession.shared.dataTask(with: request) { data, response, error in
+    |                `- error: type 'URLSession' (aka 'AnyObject') has no member 'shared'
+363 |       let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+364 |       if let error {
+
+LaneService-merged-before.swift:385:15: error: cannot find 'XCUIApplication' in scope
+383 |     address: String, token: String? = nil, keychain: Bool = false, arguments: [String] = []
+384 |   ) -> XCUIApplication {
+385 |     let app = XCUIApplication()
+    |               `- error: cannot find 'XCUIApplication' in scope
+386 |     app.launchArguments = ["-orbisServiceAddress", address] + arguments
+387 |     if let token {
+
+LaneService-merged-before.swift:404:22: error: cannot find 'XCTAttachment' in scope
+402 | 
+403 |   func capture(_ name: String) {
+404 |     let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    |                      `- error: cannot find 'XCTAttachment' in scope
+405 |     attachment.name = name
+406 |     attachment.lifetime = .keepAlways
+
+LaneService-merged-before.swift:404:48: error: cannot find 'XCUIScreen' in scope
+402 | 
+403 |   func capture(_ name: String) {
+404 |     let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+    |                                                `- error: cannot find 'XCUIScreen' in scope
+405 |     attachment.name = name
+406 |     attachment.lifetime = .keepAlways
+
+LaneService-merged-before.swift:406:28: error: cannot infer contextual base in reference to member 'keepAlways'
+404 |     let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+405 |     attachment.name = name
+406 |     attachment.lifetime = .keepAlways
+    |                            `- error: cannot infer contextual base in reference to member 'keepAlways'
+407 |     add(attachment)
+408 |   }
+
+LaneService-merged-before.swift:407:5: error: cannot find 'add' in scope
+405 |     attachment.name = name
+406 |     attachment.lifetime = .keepAlways
+407 |     add(attachment)
+    |     `- error: cannot find 'add' in scope
+408 |   }
+409 | }

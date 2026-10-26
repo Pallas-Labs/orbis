@@ -1,0 +1,33 @@
+# head
+5798bd0 test(apple): name the started lane request StartedApprovalRequest so it does not clash with main's ApprovalRequest (PAL-1011)
+# exits
+setup exit 0
+format exit 0
+ios journeys exit 0
+tv journey exit 0
+done
+# native:format
+$ xcrun swift-format lint --strict --recursive apps/apple/Orbis apps/apple/OrbisTests apps/apple/OrbisUITests apps/apple/OrbisTVUITests apps/apple/OrbisDesign/Sources apps/apple/OrbisDesign/Tests apps/apple/OrbisDesign/Package.swift
+# iOS journeys
+Test Case '-[OrbisUITests.ApprovalUITests testALinkApprovesATVAndSettingsSignsItOut]' passed (27.252 seconds).
+Test Case '-[OrbisUITests.ApprovalUITests testASignedOutPhoneKeepsTheCodeThroughSignIn]' passed (24.601 seconds).
+Test Case '-[OrbisUITests.ApprovalUITests testCancelLeavesTheRequestAndAnUnknownCodeHasExpired]' passed (25.819 seconds).
+	 Executed 3 tests, with 0 failures (0 unexpected) in 77.673 (77.693) seconds
+Test Case '-[OrbisUITests.SignInUITests testACodeFromAnotherDeviceSignsIn]' passed (62.731 seconds).
+Test Case '-[OrbisUITests.SignInUITests testAFriendsSettingsKeepAutoDownloadAndHaveNoHostSections]' passed (23.651 seconds).
+Test Case '-[OrbisUITests.SignInUITests testANewPersonJoinsWithThePasscodeAndAddsADevice]' passed (75.390 seconds).
+Test Case '-[OrbisUITests.SignInUITests testAnUnreachableServiceNamesTheRecoveryAction]' passed (70.233 seconds).
+Test Case '-[OrbisUITests.SignInUITests testTheHostManagesThePasscodeAndPeople]' passed (36.855 seconds).
+	 Executed 5 tests, with 0 failures (0 unexpected) in 268.859 (268.864) seconds
+	 Executed 8 tests, with 0 failures (0 unexpected) in 346.532 (346.560) seconds
+	 Executed 8 tests, with 0 failures (0 unexpected) in 346.532 (346.561) seconds
+** TEST SUCCEEDED **
+# tvOS journey
+Test Case '-[OrbisTVUITests.TVSignInJourney testApprovingTheCodeOnAPhoneSignsTheTVIn]' passed (23.333 seconds).
+Test Case '-[OrbisTVUITests.TVSignInJourney testOtherWaysReachTheGroupPasscodeAndSignInCodeForms]' passed (18.921 seconds).
+Test Case '-[OrbisTVUITests.TVSignInJourney testSignsInWithTypedCodes]' passed (68.831 seconds).
+Test Case '-[OrbisTVUITests.TVSignInJourney testStopsAfterTheLimitAndShowsANewCodeOnRequest]' passed (40.316 seconds).
+	 Executed 4 tests, with 0 failures (0 unexpected) in 151.402 (151.405) seconds
+	 Executed 4 tests, with 0 failures (0 unexpected) in 151.402 (151.406) seconds
+	 Executed 4 tests, with 0 failures (0 unexpected) in 151.402 (151.407) seconds
+** TEST SUCCEEDED **
