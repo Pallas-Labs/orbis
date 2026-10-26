@@ -1,10 +1,10 @@
 import { randomBytes, randomInt } from "node:crypto";
 
 import {
-  GROUP_PASSCODE_LENGTH,
+  GROUP_PASSCODE,
   normalizeSignInCode,
+  SIGN_IN_CODE,
   SIGN_IN_CODE_ALPHABET,
-  SIGN_IN_CODE_LENGTH,
 } from "@orbis/contracts";
 
 import {
@@ -218,9 +218,9 @@ export const issueSignInCode = (path: string, personId: string, now: number) =>
       const others = liveSignInCodes(store, now).filter(
         (code) => code.personId !== personId
       );
-      let code = randomCode(SIGN_IN_CODE_LENGTH);
+      let code = randomCode(SIGN_IN_CODE.length);
       while (others.some((other) => other.code === code)) {
-        code = randomCode(SIGN_IN_CODE_LENGTH);
+        code = randomCode(SIGN_IN_CODE.length);
       }
       const issued = {
         code,
@@ -290,7 +290,7 @@ const storePasscode = (path: string, passcode: string | null) =>
  * stands between the public API and open sign-up.
  */
 export const newPasscode = (path: string) =>
-  storePasscode(path, randomCode(GROUP_PASSCODE_LENGTH));
+  storePasscode(path, randomCode(GROUP_PASSCODE.length));
 
 export const closeJoining = (path: string) => storePasscode(path, null);
 
