@@ -4,7 +4,7 @@ This amends ADR 0020, which named two ways in, and ADR 0012, which had the TV ty
 
 The Host found the eight-character Sign-in Code too slow to type on the Siri Remote. ADR 0012 said it was short enough. It is not. The TV is the device that cannot type, so the new way in starts on the TV and asks nothing of its keyboard.
 
-**Approval Request.** A signed-out device starts an Approval Request with its label and platform. The Group answers with a 6-digit Approval Code, a secret, and an expiry. The device shows the code, and a QR code for the same code, until a signed-in Person approves it or it expires. Then it starts a new one. This is the OAuth Device Authorization Grant (RFC 8628) with Orbis daily keys.
+**Approval Request.** A signed-out device starts an Approval Request with its label and platform. The Group answers with a 6-digit Approval Code, a secret, and an expiry. The device shows the code, and a QR code for the same code, until a signed-in Person approves it or it expires. Then it starts a new one. A TV that no one approves for 15 minutes stops and offers Show a New Code. This is the OAuth Device Authorization Grant (RFC 8628) with Orbis daily keys.
 
 **Approve.** A Person with a daily key enters or scans the code. The Group shows the request's platform, label, and age, so the Person can match it to the device in front of them. Approving signs the device in as that Person, never as anyone else. The Host has no extra power here. A node key and a stream grant cannot approve. There is no decline: the request expires by itself.
 

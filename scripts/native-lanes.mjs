@@ -180,6 +180,10 @@ try {
         ...process.env,
         ORBIS_COBALT_API_KEY: "lane",
         ORBIS_COBALT_URL: `${seedAddress}/cobalt`,
+        // The TV journey watches a code expire and the TV replace it, so a request lives 12
+        // seconds rather than 2 minutes. Each new request counts as a sign-in attempt, and the
+        // journeys stay under the 20 a minute one client may make.
+        ORBIS_FIXTURE_APPROVAL_LIFETIME_MS: tvos ? "12000" : "",
         ORBIS_FIXTURE_DATA_DIR: dataDirectory,
         ORBIS_FIXTURE_PORT: String(port),
         ORBIS_FIXTURE_SETTINGS_TOKEN: settingsToken,

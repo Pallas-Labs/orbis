@@ -123,7 +123,7 @@ struct SignInField: View {
   }
 }
 
-private struct JoinForm: View {
+struct JoinForm: View {
   @Bindable var model: AppModel
   @State private var username = ""
   @State private var passcode = ""
@@ -178,7 +178,7 @@ private struct JoinForm: View {
   }
 }
 
-private struct CodeForm: View {
+struct CodeForm: View {
   @Bindable var model: AppModel
   @State private var code = ""
   @FocusState private var focus: Bool?
@@ -255,13 +255,13 @@ private struct SignInFailureSection: View {
   }
 }
 
-/// The moment after a new Person joins: their name under the orb, before the library they just
-/// joined takes its place.
+/// The moment after a device signs in by joining or by approval: a greeting under the orb, before
+/// the library takes its place.
 struct WelcomeView: View {
-  let username: String
+  let title: String
 
   var body: some View {
-    SignInMark(title: "Welcome, \(username)")
+    SignInMark(title: title)
       .padding(.horizontal, 24)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
       .background { SignInField(moves: true) }

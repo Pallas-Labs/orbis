@@ -238,6 +238,18 @@ struct LaneService {
     return code.code
   }
 
+  struct ApprovalRequest: Decodable {
+    let code: String
+    let label: String
+    let platform: String
+  }
+
+  /// Approves the Approval Request showing `code`, as this lane's Person, the way Add a Device
+  /// on a signed-in phone does (ADR 0022).
+  func approveSignInRequest(_ code: String) throws -> ApprovalRequest {
+    try send("POST", "me/sign-in-requests/approve", ["code": code])
+  }
+
   /// The Group Passcode. Host only.
   func passcode() throws -> String? {
     let answer: Passcode = try send("GET", "admin/passcode", nil)

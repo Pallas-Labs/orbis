@@ -251,11 +251,22 @@ final class TVJourney: XCTestCase {
       "tv-apple-music-journey", ["setId": seeded.id, "askedForAccess": asked, "note": note.label])
   }
 
-  private func moveFocus(to element: XCUIElement, pressing button: XCUIRemote.Button, limit: Int) -> Bool {
+  private func labelled(_ element: XCUIElement, _ label: String) -> XCTNSPredicateExpectation {
+    XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", label), object: element)
+  }
+
+  private static func seconds(_ label: String) -> Int {
+    label.split(separator: ":").compactMap { Int($0) }.reduce(0) { $0 * 60 + $1 }
+  }
+}
+
+/// Driving the TV with the Siri Remote, shared by the TV's journeys.
+extension XCTestCase {
+  func moveFocus(to element: XCUIElement, pressing button: XCUIRemote.Button, limit: Int) -> Bool {
     pressUntil(button, limit: limit) { element.exists && element.hasFocus }
   }
 
-  private func pressUntil(_ button: XCUIRemote.Button, limit: Int, _ reached: () -> Bool) -> Bool {
+  func pressUntil(_ button: XCUIRemote.Button, limit: Int, _ reached: () -> Bool) -> Bool {
     for _ in 0..<limit {
       if reached() { return true }
       XCUIRemote.shared.press(button)
@@ -264,14 +275,14 @@ final class TVJourney: XCTestCase {
     return reached()
   }
 
-  private func waitUntil(timeout: TimeInterval = 10, _ condition: @escaping () -> Bool) -> Bool {
+  func waitUntil(timeout: TimeInterval = 10, _ condition: @escaping () -> Bool) -> Bool {
     let met = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in condition() }, object: nil)
     return XCTWaiter.wait(for: [met], timeout: timeout) == .completed
   }
 
   /// Waits until the element is in the same place on two reads in a row, so a capture shows the
   /// screen at rest and not partway through a transition.
-  private func waitUntilSettled(_ element: XCUIElement) -> Bool {
+  func waitUntilSettled(_ element: XCUIElement) -> Bool {
     var last = CGRect.null
     return waitUntil {
       let frame = element.frame
@@ -280,15 +291,7 @@ final class TVJourney: XCTestCase {
     }
   }
 
-  private func labelled(_ element: XCUIElement, _ label: String) -> XCTNSPredicateExpectation {
-    XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", label), object: element)
-  }
-
-  private static func seconds(_ label: String) -> Int {
-    label.split(separator: ":").compactMap { Int($0) }.reduce(0) { $0 * 60 + $1 }
-  }
-
-  private func record(_ name: String, _ values: [String: Any]) throws {
+  func record(_ name: String, _ values: [String: Any]) throws {
     let data = try JSONSerialization.data(withJSONObject: values, options: [.prettyPrinted, .sortedKeys])
     let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
     attachment.name = "\(name).json"
