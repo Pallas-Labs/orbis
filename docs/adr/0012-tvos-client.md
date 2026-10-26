@@ -1,6 +1,6 @@
 # tvOS is a destination of the existing Apple app
 
-Amended on 2026-10-14 by PR #249. The TV signs in as ADR 0020 describes, and its screens live in `apps/apple/Orbis/TV`. Amended again on 2026-10-17: People joined the root destinations.
+Amended on 2026-10-14 by PR #249. The TV signs in as ADR 0020 describes, and its screens live in `apps/apple/Orbis/TV`. Amended again on 2026-10-17: People joined the root destinations. Amended on 2026-10-26 by ADR 0022: a Sign-in Code is too slow to type on the Siri Remote, so the TV signs in by an Approval Request that a signed-in device approves.
 
 The SwiftUI app in `apps/apple` builds for iOS and macOS (`supportedDestinations: [iOS, macOS]`). An Apple TV app should reuse it rather than start again. Unlike CarPlay (ADR 0011), the Apple TV runs Orbis itself and plays audio on its own output, streaming Retained Audio from Vanta.
 
