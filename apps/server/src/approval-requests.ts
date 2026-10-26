@@ -9,7 +9,6 @@ import { hashToken, matchesTokenHash } from "./identity.js";
 
 type ApprovalPlatform = (typeof StartApprovalRequestPayload.Type)["platform"];
 
-const LIFETIME_MS = 2 * 60 * 1000;
 const CLIENT_LIVE_LIMIT = 3;
 const GROUP_LIVE_LIMIT = 20;
 
@@ -41,7 +40,10 @@ const newCode = () => String(randomInt(1_000_000)).padStart(6, "0");
  * requests are pruned on every call. An approved request stays until its
  * device collects the key, and counts toward the live limits until then.
  */
-export const makeApprovalRequests = (now: () => number = Date.now) => {
+export const makeApprovalRequests = (
+  now: () => number = Date.now,
+  lifetimeMs = 2 * 60 * 1000
+) => {
   const requests = new Map<string, ApprovalRequest>();
   const live = () => {
     const time = now();
@@ -119,7 +121,7 @@ export const makeApprovalRequests = (now: () => number = Date.now) => {
       }
       const secret = Buffer.from(randomBytes(32)).toString("base64url");
       const requestedAt = now();
-      const expiresAt = requestedAt + LIFETIME_MS;
+      const expiresAt = requestedAt + lifetimeMs;
       requests.set(code, {
         approved: Deferred.makeUnsafe(),
         approvedBy: null,

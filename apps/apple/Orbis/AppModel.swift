@@ -35,9 +35,9 @@ final class AppModel {
   var isSigningIn = false
   /// Why the last sign-in failed, said under the button.
   var signInFailure: OrbisFailure?
-  /// The name a new Person just joined with, greeted over the library while it loads. Cleared
-  /// once the greeting has faded.
-  var welcomedUsername: String?
+  /// The greeting over the library while it loads, after a new Person joins or another device
+  /// approves this one. Cleared once the greeting has faded.
+  var welcome: String?
 
   /// iOS presents Settings as a sheet from the gear on Home and Library. The Mac has a Settings
   /// scene instead.
@@ -421,12 +421,14 @@ final class AppModel {
     activeCreator = nil
   }
 
-  /// The two ways a device signs in (ADR 0020).
+  /// The ways a device signs in (ADR 0020, ADR 0022).
   enum SignIn {
     /// A new Person joins the Group with the Group Passcode.
     case join(username: String, passcode: String)
     /// A Sign-in Code another device, or the Host, showed.
     case code(String)
+    /// The key a signed-in Person's approval of this device's Approval Request delivered.
+    case approved(key: String, username: String)
   }
 
   /// Signs this device in and stores the key it receives. The key goes to the keychain before
@@ -436,10 +438,10 @@ final class AppModel {
     signInFailure = nil
     isSigningIn = true
     defer { isSigningIn = false }
-    let signedOut = OrbisClient(address: serviceAddress, token: "", session: session)
+    let signedOut = signedOutClient
     let label = String(Self.deviceLabel.prefix(100))
     let key: String
-    var joinedAs: String?
+    var greeting: String?
     do {
       switch request {
       case .join(let username, let passcode):
@@ -447,9 +449,12 @@ final class AppModel {
         key = try await signedOut.join(
           username: username,
           passcode: passcode.trimmingCharacters(in: .whitespacesAndNewlines), label: label)
-        joinedAs = username
+        greeting = "Welcome, \(username)"
       case .code(let typed):
         key = try await signedOut.redeem(code: typed, label: label)
+      case .approved(let approvedKey, let username):
+        key = approvedKey
+        greeting = "Signed in as \(username)"
       }
     } catch {
       signInFailure = OrbisFailure.explaining(error, at: serviceAddress)
@@ -459,7 +464,7 @@ final class AppModel {
       signInFailure = OrbisError.storageRefused.failure(at: serviceAddress)
       return
     }
-    welcomedUsername = joinedAs
+    welcome = greeting
     client = OrbisClient(address: serviceAddress, token: key, session: session)
     startDiagnosticsSender()
     // A link that arrived while signed out is shown now, if its request is still live.
@@ -476,8 +481,13 @@ final class AppModel {
     diagnosticsSender = client.map { PlaybackDiagnosticsSender(player: audioPlayer, client: $0) }
   }
 
+  /// A client with no key, for the calls a signed-out device makes.
+  var signedOutClient: OrbisClient {
+    OrbisClient(address: serviceAddress, token: "", session: session)
+  }
+
   /// The name this device has on the Person's Devices list.
-  private static var deviceLabel: String {
+  static var deviceLabel: String {
     #if canImport(UIKit)
       "Orbis on \(UIDevice.current.name)"
     #else

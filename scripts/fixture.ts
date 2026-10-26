@@ -151,7 +151,10 @@ const laneYouTube = async (url: string) => {
 };
 const appleMusic = await appleMusicReplay();
 
+// The tvOS lane shortens an Approval Request's life, so its journey sees the TV replace a code.
+const approvalLifetime = process.env.ORBIS_FIXTURE_APPROVAL_LIFETIME_MS;
 const app = createApp({
+  approvalLifetimeMs: approvalLifetime ? Number(approvalLifetime) : undefined,
   audio: {
     audioDir: path.join(dataDirectory, "audio"),
     cobaltApiKey: process.env.ORBIS_COBALT_API_KEY,

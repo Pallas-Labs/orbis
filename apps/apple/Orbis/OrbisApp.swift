@@ -58,8 +58,8 @@ struct RootView: View {
   var body: some View {
     ZStack {
       content
-      if let username = model.welcomedUsername {
-        WelcomeView(username: username)
+      if let welcome = model.welcome {
+        WelcomeView(title: welcome)
           .opacity(isWelcomeLeaving ? 0 : 1)
           .animation(timing.fadeAnimation, value: isWelcomeLeaving)
           .task { await fadeWelcome() }
@@ -120,7 +120,7 @@ struct RootView: View {
     try? await Task.sleep(for: timing.welcomeHold)
     isWelcomeLeaving = true
     try? await Task.sleep(for: timing.fade)
-    model.welcomedUsername = nil
+    model.welcome = nil
     isWelcomeLeaving = false
   }
 
@@ -139,7 +139,11 @@ struct RootView: View {
         }
       #endif
     } else {
-      SignInView(model: model)
+      #if os(tvOS)
+        TVSignIn(model: model)
+      #else
+        SignInView(model: model)
+      #endif
     }
   }
 
