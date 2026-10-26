@@ -1,0 +1,44 @@
+{
+  "apiUrl": "http://127.0.0.1:4561",
+  "steps": [
+    {
+      "name": "apple-app-site-association names the app, /pair, and /join",
+      "body": "{\"applinks\":{\"details\":[{\"appIDs\":[\"JR398S689Z.app.orbis.client\"],\"components\":[{\"/\":\"/pair\",\"comment\":\"An Approval Request opens the approve sheet\"},{\"/\":\"/join\",\"comment\":\"A Join Link opens joining the Group\"}]}]}}",
+      "contentType": "application/json",
+      "status": 200
+    },
+    {
+      "name": "a TV starts an Approval Request",
+      "code": "574583"
+    },
+    {
+      "name": "the link opens the approve card and leaves no code in the address",
+      "asked": "Asked 1 second ago · code 574 583",
+      "url": "http://127.0.0.1:3461/pair"
+    },
+    {
+      "name": "Sign In as host approves, and the TV's wait collects a host key"
+    },
+    {
+      "name": "Devices lists Orbis on Living Room"
+    },
+    {
+      "name": "Cancel goes home and leaves the request waiting",
+      "code": "293876"
+    },
+    {
+      "name": "an unknown code says the code has expired",
+      "code": "788781"
+    },
+    {
+      "name": "a malformed fragment says the code has expired"
+    },
+    {
+      "name": "a signed-out browser is asked to sign in, with no code in the address"
+    },
+    {
+      "name": "no Content Security Policy violations"
+    }
+  ],
+  "webUrl": "http://127.0.0.1:3461"
+}
