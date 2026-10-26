@@ -136,12 +136,14 @@ final class ApprovalUITests: XCTestCase {
     XCTAssertTrue(field.waitForExistence(timeout: 10))
     field.tap()
     // One key at a time, as SignInUITests types: a burst can lose a key while the slots
-    // rewrite, and the form submits when the last slot fills.
-    for character in try lane.signInCode() {
+    // rewrite. The last key fills the slots, which submits the form and removes the field.
+    let signInCode = try lane.signInCode()
+    for character in signInCode.dropLast() {
       let before = field.value as? String
       field.typeText(String(character))
       _ = waitUntil(timeout: 2) { field.value as? String != before }
     }
+    field.typeText(String(signInCode.suffix(1)))
 
     let approve = app.buttons["approval-approve"]
     XCTAssertTrue(

@@ -104,11 +104,12 @@ final class SignInUITests: XCTestCase {
     copy.tap()
     XCTAssertTrue(waitUntil(timeout: 5) { copy.label == "Copied" }, "copying says so: \(copy.label)")
     capture("04-settings-sign-in-code")
+    let shownCode = code.label
     app.navigationBars["Add a Device"].buttons.element(boundBy: 0).tap()
     assertNoHostSections(app)
     step(
       "Settings shows the Person's name and a Sign-in Code in slots, copies it, and shows no Host sections",
-      ["code": code.label])
+      ["code": shownCode])
 
     let signOut = app.buttons["settings-sign-out"]
     reveal(signOut, in: app)
