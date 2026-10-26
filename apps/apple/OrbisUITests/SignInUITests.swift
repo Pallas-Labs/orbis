@@ -79,8 +79,11 @@ final class SignInUITests: XCTestCase {
     let account = app.buttons["settings-account"]
     XCTAssertTrue(account.waitForExistence(timeout: 15))
     XCTAssertTrue(account.label.contains(username), "the account card names the Person: \(account.label)")
+    let addDevice = app.buttons["settings-add-device"]
+    reveal(addDevice, in: app)
+    addDevice.tap()
     let another = app.buttons["settings-sign-in-another"]
-    reveal(another, in: app)
+    XCTAssertTrue(another.waitForExistence(timeout: 10), "Add a Device offers a Sign-in Code instead")
     another.tap()
     let code = app.staticTexts["settings-sign-in-code"]
     XCTAssertTrue(code.waitForExistence(timeout: 15), "Settings must show a Sign-in Code")
@@ -88,6 +91,7 @@ final class SignInUITests: XCTestCase {
       code.label.range(of: Self.codePattern, options: .regularExpression),
       "the code is eight characters without look-alikes, shown in halves: \(code.label)")
     capture("04-settings-sign-in-code")
+    app.navigationBars["Add a Device"].buttons.element(boundBy: 0).tap()
     assertNoHostSections(app)
     step("Settings shows the Person's name and a Sign-in Code, and no Host sections")
 

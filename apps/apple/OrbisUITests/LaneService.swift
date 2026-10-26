@@ -276,6 +276,43 @@ struct LaneService {
     try status("DELETE", "me/devices/\(id)", nil)
   }
 
+  struct Me: Decodable { let username: String }
+
+  func me() throws -> Me {
+    try send("GET", "me", nil)
+  }
+
+  /// What `/me` answers this key: 200 while it works, 401 once it is revoked.
+  func meStatus() throws -> Int {
+    try status("GET", "me", nil)
+  }
+
+  struct ApprovalRequest: Decodable {
+    let code: String
+    let secret: String
+  }
+
+  struct ApprovalWait: Decodable {
+    let status: String
+    let key: String?
+  }
+
+  /// Starts an Approval Request the way a signed-out TV does, with no key (ADR 0022).
+  func startApprovalRequest(label: String) throws -> ApprovalRequest {
+    try send("POST", "sign-in/requests", ["label": label, "platform": "tvOS"], signed: false)
+  }
+
+  /// The TV's wait: `approved` with its key once a Person approved the request, or `pending` after
+  /// up to 25 seconds.
+  func waitForApproval(_ secret: String) throws -> ApprovalWait {
+    try send("POST", "sign-in/requests/wait", ["secret": secret], signed: false, timeout: 40)
+  }
+
+  /// 200 while a request with `code` is still waiting, 404 once it is not.
+  func findApprovalRequest(_ code: String) throws -> Int {
+    try status("POST", "me/sign-in-requests/find", ["code": code])
+  }
+
   private func status(_ method: String, _ path: String, _ body: [String: Any]?) throws -> Int {
     var request = URLRequest(url: URL(string: "\(address)/\(path)")!)
     request.httpMethod = method
@@ -295,11 +332,15 @@ struct LaneService {
   }
 
   private func send<Response: Decodable>(
-    _ method: String, _ path: String, _ body: [String: Any]?
+    _ method: String, _ path: String, _ body: [String: Any]?, signed: Bool = true,
+    timeout: TimeInterval = 20
   ) throws -> Response {
     var request = URLRequest(url: URL(string: "\(address)/\(path)")!)
     request.httpMethod = method
-    request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
+    request.timeoutInterval = timeout
+    if signed {
+      request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
+    }
     if let body {
       request.setValue("application/json", forHTTPHeaderField: "content-type")
       request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -317,7 +358,7 @@ struct LaneService {
       }
       done.signal()
     }.resume()
-    guard done.wait(timeout: .now() + 20) == .success else { throw URLError(.timedOut) }
+    guard done.wait(timeout: .now() + timeout) == .success else { throw URLError(.timedOut) }
     return try JSONDecoder().decode(Response.self, from: result.get())
   }
 }

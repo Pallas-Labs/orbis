@@ -19,6 +19,12 @@ struct SignInView: View {
         SignInMark(title: "Orbis")
         Spacer()
         VStack(spacing: 12) {
+          if model.approval?.step == .awaitingSignIn {
+            Text("Sign in to approve the other device.")
+              .font(.orbis.body)
+              .multilineTextAlignment(.center)
+              .accessibilityIdentifier("signin-approval-notice")
+          }
           Button {
             choice = .join
           } label: {
