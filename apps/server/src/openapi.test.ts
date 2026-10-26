@@ -218,6 +218,17 @@ const sampleFor = (operationId: string) => {
   if (operationId === "devices.signInCode") {
     return { code: "ABCD2345", expiresAt: "2026-09-29T00:10:00.000Z" };
   }
+  if (
+    operationId === "devices.findSignInRequest" ||
+    operationId === "devices.approveSignInRequest"
+  ) {
+    return {
+      code: "482719",
+      label: "Living room TV",
+      platform: "tvOS",
+      requestedAt: "2026-09-29T00:00:00.000Z",
+    };
+  }
   if (operationId === "presence.act") {
     return {
       outcome: "accepted",
@@ -291,7 +302,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(50);
+    expect(checked).toBe(52);
   } finally {
     await app.dispose();
   }

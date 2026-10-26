@@ -33,5 +33,9 @@ export const request = async (
     options.clientAddress
   );
   const body = await response.json();
-  return { json: () => body, statusCode: response.status };
+  return {
+    headers: response.headers,
+    json: () => body,
+    statusCode: response.status,
+  };
 };

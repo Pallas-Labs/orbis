@@ -428,6 +428,43 @@ export const SignedInSchema = Schema.Struct({
   key: Schema.String,
   person: VisiblePerson,
 });
+const ApprovalPlatform = Schema.Literals(["tvOS", "iOS", "macOS", "web"]);
+/** A signed-out device asks a signed-in Person to approve it. */
+export const StartApprovalRequestPayload = Schema.Struct({
+  label: Schema.String.check(Schema.isMaxLength(100)),
+  platform: ApprovalPlatform,
+});
+/**
+ * The Approval Code the device shows, and the secret only the device holds.
+ * The secret collects the key once the request is approved.
+ */
+export const StartedApprovalRequestSchema = Schema.Struct({
+  code: Schema.String,
+  expiresAt: Schema.String,
+  secret: Schema.String,
+});
+export const WaitApprovalRequestPayload = Schema.Struct({
+  secret: Schema.String.check(Schema.isMaxLength(100)),
+});
+/** `approved` comes once: the request is gone after it answers. */
+export const ApprovalWaitSchema = Schema.Union([
+  Schema.Struct({ status: Schema.Literal("pending") }),
+  Schema.Struct({
+    status: Schema.Literal("approved"),
+    ...SignedInSchema.fields,
+  }),
+]);
+/** The server ignores every character but the digits, so `482 719` finds `482719`. */
+export const ApprovalCodePayload = Schema.Struct({
+  code: Schema.String.check(Schema.isMaxLength(20)),
+});
+/** A pending Approval Request as the approving Person sees it. */
+export const ApprovalRequestSchema = Schema.Struct({
+  code: Schema.String,
+  label: Schema.String,
+  platform: ApprovalPlatform,
+  requestedAt: Schema.String,
+});
 /** `null` while joining is closed. */
 export const GroupPasscodeSchema = Schema.Struct({
   passcode: Schema.NullOr(Schema.String),
@@ -793,6 +830,16 @@ export const OrbisApi = PlaylistApi.add(
         ],
         payload: JoinPayload,
         success: SignedInSchema.pipe(HttpApiSchema.status(201)),
+      }),
+      HttpApiEndpoint.post("startRequest", "/sign-in/requests", {
+        error: [BadRequest, TooManyRequests, InternalError],
+        payload: StartApprovalRequestPayload,
+        success: StartedApprovalRequestSchema.pipe(HttpApiSchema.status(201)),
+      }),
+      HttpApiEndpoint.post("waitRequest", "/sign-in/requests/wait", {
+        error: [BadRequest, NotFound, TooManyRequests, InternalError],
+        payload: WaitApprovalRequestPayload,
+        success: ApprovalWaitSchema,
       })
     )
   )
@@ -811,7 +858,21 @@ export const OrbisApi = PlaylistApi.add(
         HttpApiEndpoint.post("signInCode", "/me/sign-in-codes", {
           error: InternalError,
           success: SignInCodeSchema.pipe(HttpApiSchema.status(201)),
-        })
+        }),
+        HttpApiEndpoint.post("findSignInRequest", "/me/sign-in-requests/find", {
+          error: [BadRequest, NotFound, TooManyRequests, InternalError],
+          payload: ApprovalCodePayload,
+          success: ApprovalRequestSchema,
+        }),
+        HttpApiEndpoint.post(
+          "approveSignInRequest",
+          "/me/sign-in-requests/approve",
+          {
+            error: [BadRequest, NotFound, TooManyRequests, InternalError],
+            payload: ApprovalCodePayload,
+            success: ApprovalRequestSchema,
+          }
+        )
       )
       .middleware(SetAccess)
   )

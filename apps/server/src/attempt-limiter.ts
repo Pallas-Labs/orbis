@@ -75,25 +75,24 @@ export const makeAttemptLimiter = (now: () => number = Date.now) => {
     clients.set(bucket, next);
     return next.count > FAILED_KEY_LIMIT;
   };
+  const refusing = (address: string): boolean =>
+    over(clients.get(clientBucket(address)), FAILED_KEY_LIMIT) ||
+    over(group, FAILED_SIGN_IN_LIMIT);
+  const failed = (address: string): boolean => {
+    group = bump(group);
+    const clientOver = bumpBucket(clientBucket(address));
+    return clientOver || group.count > FAILED_SIGN_IN_LIMIT;
+  };
   return {
     /** Counts a request with a wrong key; true once the client is over its limit. */
     badKey: (address: string): boolean => bumpBucket(clientBucket(address)),
     /**
-     * True when the attempt must be refused. A client or Group already over
-     * its limit is refused without being counted, so refusals do not extend
-     * the lockout.
+     * True when a client or Group is already over its limit. A refused
+     * attempt is not counted, so refusals do not extend the lockout.
      */
-    signInAttempt: (address: string): boolean => {
-      const bucket = clientBucket(address);
-      if (
-        over(clients.get(bucket), FAILED_KEY_LIMIT) ||
-        over(group, FAILED_SIGN_IN_LIMIT)
-      ) {
-        return true;
-      }
-      group = bump(group);
-      const clientOver = bumpBucket(bucket);
-      return clientOver || group.count > FAILED_SIGN_IN_LIMIT;
-    },
+    refusing,
+    /** True when the attempt must be refused; otherwise counts it as a failure. */
+    signInAttempt: (address: string): boolean =>
+      refusing(address) || failed(address),
   };
 };

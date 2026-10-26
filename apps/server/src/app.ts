@@ -101,8 +101,10 @@ export const createApp = (
     presenceWindowMs?: number;
     presence?: PresenceOptions & { journal?: Layer.Layer<PresenceJournal> };
     playlistImports?: Pick<PlaylistImporterOptions, "retry">;
-    /** The clock Sign-in Codes expire by. Tests move it to prove expiry. */
+    /** The clock Sign-in Codes and Approval Requests expire by. Tests move it to prove expiry. */
     signInCodeNow?: () => number;
+    /** How long a wait on an Approval Request stays open; 25 seconds by default. */
+    approvalWaitMs?: number;
     /** Follows short links such as `on.soundcloud.com`. Tests pass a stub to stay offline. */
     shortLinkFetch?: (url: string, signal: AbortSignal) => Promise<Response>;
     titleReviser?: Layer.Layer<TitleReviser>;
