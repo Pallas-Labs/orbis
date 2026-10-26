@@ -1,0 +1,151 @@
+{
+  "repo": "orbis",
+  "probes": {
+    "enabled": [
+      "deadcode.oxlint",
+      "docs.stale-refs",
+      "format.swift-format",
+      "gate",
+      "history",
+      "lint.oxlint",
+      "source.focused-tests",
+      "source.markers",
+      "source.skipped-tests",
+      "source.suppressions",
+      "source.unsafe-operations"
+    ]
+  },
+  "source": {
+    "exclude": [
+      ".audit/**",
+      "docs/plans/**",
+      "docs/audits/**",
+      "docs/research/**",
+      "apps/web/src/components/ui/**",
+      "apps/web/src/components/ai-elements/**"
+    ],
+    "markersNeedDelimiter": true,
+    "rules": [
+      "oxlint-disable",
+      "eslint-disable",
+      "biome-ignore",
+      "ts-ignore",
+      "ts-expect-error",
+      "ts-nocheck",
+      "effect-diagnostics",
+      "formatter-ignore",
+      "swiftlint-disable",
+      "swift-format-ignore",
+      "periphery-ignore",
+      "shellcheck-disable",
+      "ts-cast",
+      "ts-non-null",
+      "swift-force-cast",
+      "swift-force-try",
+      "swift-force-unwrap",
+      "ts-skip",
+      "swift-skip",
+      "ts-only"
+    ],
+    "testFiles": [
+      "**/*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}",
+      "**/e2e/**",
+      "**/*Tests/**"
+    ]
+  },
+  "docs": {
+    "exclude": [
+      ".audit/**",
+      "docs/plans/**",
+      "docs/audits/**",
+      "docs/research/**"
+    ],
+    "ignoreReferences": ["apps/apple/*.xcodeproj", "apps/apple/DerivedData*"]
+  },
+  "gate": {
+    "steps": [
+      {
+        "id": "lint",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "lint",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "format:check",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "format:check",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "tokens:check",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "tokens:check",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "typecheck",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "typecheck",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "test",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "test",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "diagnostics",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "diagnostics",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      }
+    ]
+  },
+  "tools": {
+    "format.swift-format": {
+      "argv": [
+        "xcrun",
+        "swift-format",
+        "lint",
+        "--strict",
+        "--recursive",
+        "apps/apple/Orbis",
+        "apps/apple/OrbisTests",
+        "apps/apple/OrbisUITests",
+        "apps/apple/OrbisTVUITests",
+        "apps/apple/OrbisDesign/Sources",
+        "apps/apple/OrbisDesign/Tests",
+        "apps/apple/OrbisDesign/Package.swift"
+      ],
+      "platforms": ["darwin"]
+    }
+  },
+  "signoz": {
+    "service": "orbis"
+  }
+}

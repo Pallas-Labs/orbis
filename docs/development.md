@@ -75,25 +75,22 @@ bun run format:check
 
 ## Gardening sensor
 
-`bun run garden` runs `scripts/garden.mjs`, which measures the working tree of the current checkout and prints one schema-1 JSON record: the commit, the time, `metrics`, `skipped`, and `findings`. It needs no network, secrets, or env files and takes a few seconds on Vanta. A metric whose tool is missing or that needs macOS goes in `skipped` with a reason and never fails the run.
+`bun run garden` runs `scripts/garden sense`, which starts the `garden` CLI (see AGENTS.md "Gardening") on the current checkout and prints one schema-2 JSON report: the run context, then one entry per probe that is `complete`, `skipped` with a reason, or `error`. It needs no network, secrets, or env files and takes a few seconds on Vanta. `garden.config.json` enables these probes:
 
-| Metric | What it counts |
+| Probe | What it counts |
 | --- | --- |
-| `lint.errors`, `lint.warnings` | oxlint diagnostics with the repo's configuration |
-| `deadcode.unused` | oxlint unused-code diagnostics (`no-unused-vars` and its kin); TypeScript's `noUnusedLocals` runs in the gate |
-| `suppressions` | `eslint-disable`, `oxlint-disable`, `biome-ignore`, `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`, `@effect-diagnostics`, `oxfmt-ignore`, `prettier-ignore`, `swiftlint:disable`, `swift-format-ignore`, `periphery:ignore`, and `shellcheck disable` comments |
-| `typescript.assertions` | each `as` cast other than `as const`, and each `!` non-null assertion, in TypeScript code |
-| `swift.force-operations` | each `try!`, `as!`, and force unwrap in Swift code |
-| `tests.skipped`, `tests.focused` | `.skip`, `.todo`, and `.only` tests, `XCTSkip`, and `.disabled` traits in test files |
-| `docs.stale-refs` | backticked repository paths and `bun run` scripts in Markdown that no longer exist; gitignored build output is not stale, and the repo has no Makefile |
-| `markers` | `TODO`, `FIXME`, `HACK`, and `XXX` markers followed by a colon or a parenthesis |
-| `history.reverts`, `history.workarounds` | commits in the 14 days before `HEAD` whose subject starts with "Revert" or names a workaround or a flaky test |
-| `swift.format` | swift-format lint warnings; macOS only, and skipped when swift-format exits nonzero with no diagnostics |
-| `gate.<task>.seconds`, `gate.failures` | with `--with-gate`, the wall time of each `bun run check` task run alone with `--force`, and the tasks that failed |
+| `lint.oxlint` | oxlint diagnostics with the repo's configuration |
+| `deadcode.oxlint` | oxlint unused-code diagnostics (`no-unused-vars` and its kin); TypeScript's `noUnusedLocals` runs in the gate |
+| `source.suppressions` | `eslint-disable`, `oxlint-disable`, `biome-ignore`, `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`, `@effect-diagnostics`, `oxfmt-ignore`, `prettier-ignore`, `swiftlint:disable`, `swift-format-ignore`, `periphery:ignore`, and `shellcheck disable` comments |
+| `source.unsafe-operations` | each `as` cast other than `as const`, and each `!` non-null assertion, in TypeScript code; each `try!`, `as!`, and force unwrap in Swift code |
+| `source.skipped-tests`, `source.focused-tests` | `.skip`, `.todo`, and `.only` tests, `XCTSkip`, `withKnownIssue`, and `.disabled` traits in test files |
+| `source.markers` | `TODO`, `FIXME`, `HACK`, and `XXX` markers followed by a colon or a parenthesis |
+| `docs.stale-refs` | backticked repository paths whose parent directory exists but which do not, and `bun run` scripts that no `package.json` defines; the gitignored Xcode project and DerivedData are not stale |
+| `history` | commits in the 14 days before `HEAD` that revert a commit, or whose subject or body names a workaround or a flaky test |
+| `format.swift-format` | the `native:format` command's diagnostics; macOS only, so Vanta reports it skipped |
+| `gate` | with `--with-gate`, the time and exit code of each `bun run check` task run alone with `--force` |
 
-`swift.unused` is always skipped, because the repo configures no Swift dead-code tool. The source scans are line patterns, so they can miss or misread unusual code; the counts are for comparing runs, not proof. The scans skip `.audit`, `docs/plans`, `docs/audits`, `docs/research`, generated route trees and shadcn components, and the sensor and its test.
-
-A finding's `id` hashes its kind, file, and normalized text, so a finding that only moves keeps its id; identical findings in one file are numbered in line order. `--compare <previous.json>` prints a Markdown table of metric changes, then the new, repeated, and resolved findings; `--out <file>` also saves the JSON for the next run.
+The source probes read comments, code, and syntax by language, so prose, strings, and examples do not count. They skip `.audit`, `docs/plans`, `docs/audits`, `docs/research`, the shadcn components that `oxlint.config.ts` also ignores, and garden's default exclusions: dependencies, fixtures, generated files, and lock files. `scripts/garden-launcher.test.mjs` keeps the swift-format command and the gate steps equal to `native:format` and `check` in `package.json`.
 
 ## Verification lanes
 

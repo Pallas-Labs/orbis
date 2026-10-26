@@ -1,0 +1,24 @@
+#!/bin/sh
+# Runs the garden CLI (apps/garden-cli in Pallas-Labs/factory) with these arguments.
+# garden-cli has no release yet, so Orbis pins no package: it runs $GARDEN_BIN when that
+# is set, or else the `garden` on PATH. On Vanta, both come from the factory checkout's main.
+set -eu
+
+if [ -n "${GARDEN_BIN:-}" ]; then
+  if [ ! -x "$GARDEN_BIN" ]; then
+    echo "garden: GARDEN_BIN is $GARDEN_BIN, which is not an executable file" >&2
+    exit 2
+  fi
+  exec "$GARDEN_BIN" "$@"
+fi
+
+if command -v garden >/dev/null 2>&1; then
+  exec garden "$@"
+fi
+
+cat >&2 <<'MESSAGE'
+garden: no garden CLI found. Set GARDEN_BIN to its path, or put `garden` on PATH.
+To build it from Pallas-Labs/factory main, run `bun install` at the factory root, then
+`bun run build` in apps/garden-cli. The binaries are in apps/garden-cli/dist/bin/.
+MESSAGE
+exit 2

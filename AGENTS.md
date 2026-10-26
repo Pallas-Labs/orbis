@@ -58,8 +58,11 @@ Before driving a real build by hand, read `docs/agents/ui-verification.md`. It r
 
 ## Gardening
 
-The scheduled gardening run measures the repo with `bun run garden`, which prints one schema-1 JSON record and needs no network or secrets. Add `--with-gate` to also run and time each `bun run check` task, `--out <file>` to save the JSON, and `--compare <previous.json>` to print a Markdown summary of metric changes and new, repeated, and resolved findings. [Gardening sensor](docs/development.md#gardening-sensor) lists what it counts.
+The scheduled gardening run measures the repo with `bun run garden`, which runs `garden sense` and prints one schema-2 JSON report. `garden` is the garden-cli app of Pallas-Labs/factory. It has no release yet, so Orbis pins no package: `scripts/garden` runs `$GARDEN_BIN` when it is set, or else the `garden` on `PATH`, and exits 2 with build steps when it finds neither. On Vanta, both come from the factory checkout's `main`. `garden.config.json` sets what each probe reads; [Gardening sensor](docs/development.md#gardening-sensor) lists the probes.
 
+- `bun run garden --with-gate` also runs each `bun run check` task alone and records its time. `--out <dir>` also writes the report to a new UTC-named file in that directory.
+- `bun run garden --compare <previous.json>` keeps the report on stdout and writes the comparison to stderr. `scripts/garden compare --format markdown <before> <after>` compares two saved reports. A finding whose probe was skipped, failed, or changed scope on either side is `unverified`, never resolved.
+- A finding ID is `g2:` and a SHA-256 of its repo, probe, rule, path, and normalized text, not its line. A missing tool or a macOS-only probe on Linux skips; missing observations never count as zero.
 - Gardening PRs carry the GitHub label `gardening` and wait for Parth's review. Never merge one yourself.
 - Only one gardening PR may be open at a time.
 - Linear issue PAL-875 ("Gardening buffer") is the loop's memory. Its "Standing feedback" section wins over a run's own judgment.
