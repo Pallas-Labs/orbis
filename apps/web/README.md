@@ -13,6 +13,8 @@ The sign-in page offers two ways in ([ADR 0020](../../docs/adr/0020-sign-in-by-g
 
 The API returns a daily key, which the browser keeps in `localStorage` and labels with the browser and system, such as "Chrome on Mac". The page shows the API's own message when it refuses a passcode, a username, or a code.
 
+A signed-in browser can also let another device in ([ADR 0022](../../docs/adr/0022-approve-a-new-device-from-a-signed-in-one.md)). A signed-out device, such as the TV, starts an Approval Request and shows the link `/pair#<code>`. The `/pair` page shows the device's platform, label, and age with the code. A button that names the account, such as Sign In as host, approves it. The code is in the fragment, so the browser never sends it to the web Worker, and the page removes it from the address bar as soon as it reads it. A signed-out browser is asked to sign in first. `/.well-known/apple-app-site-association` lets the Apple apps open `/pair` and `/join` links themselves.
+
 The Admin page appears only when `/me` reports `host: true`, and it uses the Host's own key. To let in a friend who lost every device, the Host chooses Show sign-in code next to that Person.
 
 ## Sign in to Cloudflare
@@ -78,6 +80,7 @@ The four original journey groups keep their entrypoint names. Their assertions n
 | `shared-audio` | `e2e/shared-audio.mjs` | Shared playback without saving, the caller's Playback Position, a save without the friend's title, and a shared Download that plays | `.cache/web-social` |
 | `presence` | `e2e/presence.mjs` | Presence actions from real audio events: a failed play sends none, play shows Presence to another Person, renew, pause clears it, and a Library change from a second browser appears without a reload ([#212](https://github.com/ParthMmm/orbis/issues/212)) | `.cache/web-presence` |
 | `apple-music` | `e2e/apple-music.mjs` | Apple Music Sets ([ADR 0021](../../docs/adr/0021-apple-music-mixes.md)) against recorded Apple Music answers: the search with its All Albums switch, a search save, a pasted song link that saves its album, refused links, and the Library row and Set page with Artwork, length, Tracklist, and Open in Apple Music instead of Play or Download | `.cache/web-apple-music` |
+| `pair` | `e2e/pair.mjs` | Approving a device from its Approval Request ([ADR 0022](../../docs/adr/0022-approve-a-new-device-from-a-signed-in-one.md)): the `apple-app-site-association` file with the app ID, `/pair`, and `/join`, the approve card with the code removed from the address bar, the device's wait collecting a key, Cancel leaving the request alone, an unknown code, and a signed-out browser | `.cache/web-pair` |
 
 The migration spec [#137](https://github.com/ParthMmm/orbis/issues/137) has thirteen child issues. The table records the code verification for each child. A passing local journey does not verify a live deployment.
 
