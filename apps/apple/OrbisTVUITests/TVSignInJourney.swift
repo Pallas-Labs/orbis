@@ -37,7 +37,7 @@ final class TVSignInJourney: XCTestCase {
     XCTAssertTrue(app.staticTexts["or"].exists, "The code sits beside the QR with \"or\"")
     XCTAssertTrue(app.buttons["signin-other-ways"].exists, "Other Ways to Sign In is on the screen")
     XCTAssertFalse(app.buttons["signin-new"].exists, "No choice comes before the code")
-    let texts = app.staticTexts.allElementsBoundByIndex.map(\.label)
+    let texts = app.staticTexts.allElementsBoundByIndex.map { $0.label }
     XCTAssertFalse(
       texts.contains { $0.range(of: #"\d+:\d\d"#, options: .regularExpression) != nil },
       "The screen shows no countdown: \(texts)")

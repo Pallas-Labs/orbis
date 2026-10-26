@@ -197,7 +197,7 @@
           let request = try await client.startApprovalRequest(label: label, platform: "tvOS")
           phase = .showing(code: request.code)
           failure = nil
-          if let approval = try await approval(of: request, client) {
+          if let approval = try await waitForApproval(of: request, client) {
             return approval
           }
         } catch OrbisError.cancelled {
@@ -214,7 +214,7 @@
     }
 
     /// Waits on one request: the approval, or nil once it expires.
-    private func approval(
+    private func waitForApproval(
       of request: StartedApprovalRequest, _ client: OrbisClient
     ) async throws -> Approval? {
       while true {
