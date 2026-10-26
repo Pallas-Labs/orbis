@@ -311,7 +311,7 @@ private struct AddDeviceView: View {
           identifier: "settings-code-error")
       } footer: {
         if settings.code != nil {
-          Text("On the new device, choose I Have a Login Code and type this.")
+          Text("On the new device, choose I Have a Sign-in Code and type this.")
         }
       }
     }
@@ -502,7 +502,7 @@ private struct PersonView: View {
           failure: settings.personFailures[person.id], context: "managing a Person",
           identifier: "person-error")
       } footer: {
-        Text("On their new device, choose I Have a Login Code and type this.")
+        Text("On their new device, choose I Have a Sign-in Code and type this.")
       }
       Section {
         Button("Remove \(person.username)", role: .destructive) { isConfirmingRemoval = true }

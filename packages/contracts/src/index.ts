@@ -65,12 +65,13 @@ export {
   youTubeWatchUrl,
 } from "./source-url.js";
 export {
-  formatSignInCode,
-  GROUP_PASSCODE_LENGTH,
+  codeFromText,
+  GROUP_PASSCODE,
   normalizeSignInCode,
+  SIGN_IN_CODE,
   SIGN_IN_CODE_ALPHABET,
-  SIGN_IN_CODE_LENGTH,
 } from "./sign-in-code.js";
+export type { CodeFormat } from "./sign-in-code.js";
 
 /**
  * Whether a Set can enter the Listening Queue and be played: it has Retained Audio, or it is

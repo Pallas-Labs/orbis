@@ -135,8 +135,13 @@ final class ApprovalUITests: XCTestCase {
     let field = app.textFields["signin-code"]
     XCTAssertTrue(field.waitForExistence(timeout: 10))
     field.tap()
-    field.typeText(try lane.signInCode())
-    app.buttons["signin-redeem"].tap()
+    // One key at a time, as SignInUITests types: a burst can lose a key while the slots
+    // rewrite, and the form submits when the last slot fills.
+    for character in try lane.signInCode() {
+      let before = field.value as? String
+      field.typeText(String(character))
+      _ = waitUntil(timeout: 2) { field.value as? String != before }
+    }
 
     let approve = app.buttons["approval-approve"]
     XCTAssertTrue(

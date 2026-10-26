@@ -111,16 +111,6 @@ final class SignInTests: XCTestCase {
     }
     XCTAssertEqual(playlists.map(\.name), ["Long drives"])
   }
-
-  /// A code is read aloud and typed on another device, so case, spaces, and the dash must not
-  /// matter, and it is shown in two halves.
-  func testACodeIsTypedLooselyAndShownInHalves() {
-    for typed in ["ABCD-EFGH", "abcd efgh", " abcdEFGH\n", "ab cd-ef gh", "abcd–efgh"] {
-      XCTAssertEqual(SignInCode.normalized(typed), "ABCDEFGH", typed)
-    }
-    XCTAssertEqual(
-      SignInCode(code: "ABCDEFGH", expiresAt: "2026-10-10T10:00:00.000Z").formatted, "ABCD-EFGH")
-  }
 }
 
 /// A store that refuses every write, like a device whose keychain will not take the token.

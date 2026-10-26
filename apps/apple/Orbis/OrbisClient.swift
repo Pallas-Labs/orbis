@@ -214,19 +214,16 @@ struct Listen: Decodable, Equatable, Sendable {
 struct SignInCode: Decodable, Equatable, Sendable {
   let code: String
   let expiresAt: String
+}
 
-  static let length = 8
+extension CodeFormat {
+  /// The service's alphabet for codes a person types: no 0/O or 1/I/L look-alikes.
+  private static let typable = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
-  /// `ABCDEFGH` as `ABCD-EFGH`, which is easier to read aloud and type.
-  var formatted: String {
-    code.count == Self.length ? "\(code.prefix(4))-\(code.suffix(4))" : code
-  }
-
-  /// What a person typed, as the service compares it: `abcd efgh` and `ABCD-EFGH` are the
-  /// same code.
-  static func normalized(_ typed: String) -> String {
-    typed.uppercased().filter { $0.isASCII && ($0.isLetter || $0.isNumber) }
-  }
+  /// A Sign-in Code: two groups of four.
+  static let signInCode = CodeFormat(alphabet: typable, groups: [4, 4])
+  /// A Group Passcode: three groups of four.
+  static let groupPasscode = CodeFormat(alphabet: typable, groups: [4, 4, 4])
 }
 
 /// One of the Person's own keys, as Settings lists it.

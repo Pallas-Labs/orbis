@@ -1,7 +1,9 @@
+import { GROUP_PASSCODE } from "@orbis/contracts";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { ShownCode } from "@/components/code-field";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Problem } from "@/components/problem";
 import { RouteProblem } from "@/components/route-problem";
@@ -32,6 +34,7 @@ import { lastUsedText } from "@/lib/dates";
 import { formField } from "@/lib/form";
 import type { IssuedSignInCode } from "@/lib/sign-in";
 import { useApiCall } from "@/lib/use-api-call";
+import { useCopy } from "@/lib/use-copy";
 import type { Session } from "@/routes/_app";
 
 const Section = ({
@@ -56,19 +59,6 @@ const Section = ({
   </Card>
 );
 
-const useCopy = (text: string) => {
-  const [copy, setCopy] = useState<"idle" | "copied" | "failed">("idle");
-  const copyText = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopy("copied");
-    } catch {
-      setCopy("failed");
-    }
-  };
-  return { copy, copyText };
-};
-
 const OpenPasscode = ({
   busy,
   change,
@@ -81,25 +71,17 @@ const OpenPasscode = ({
   readonly session: Session;
 }) => {
   const router = useRouter();
-  const { copy, copyText } = useCopy(passcode);
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2">
-        <code
-          aria-label="Group Passcode"
-          className="bg-muted rounded-lg px-2 py-1 font-mono text-lg tracking-widest select-all"
-        >
-          {passcode}
-        </code>
-        <Button onClick={copyText} size="sm">
-          {copy === "copied" ? "Copied" : "Copy passcode"}
-        </Button>
+      <div className="bg-muted rounded-2xl p-4">
+        <ShownCode
+          code={passcode}
+          copyLabel="Copy passcode"
+          format={GROUP_PASSCODE}
+          key={passcode}
+          label="Group Passcode"
+        />
       </div>
-      {copy === "failed" ? (
-        <p className="text-destructive text-sm">
-          Could not copy the passcode. Select and copy it instead.
-        </p>
-      ) : null}
       <div className="flex flex-wrap gap-2">
         <ConfirmDialog
           action="New passcode"
