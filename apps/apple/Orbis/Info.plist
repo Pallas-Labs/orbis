@@ -45,8 +45,10 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<!--
-	The lane opens an Approval link as orbis://pair#<code>, because a simulator cannot verify the
-	orbis.p11a.xyz domain (ADR 0022). An array, so it lives here.
+	The orbis scheme carries two links. The lane opens an Approval link as orbis://pair#<code>,
+	because a simulator cannot verify the orbis.p11a.xyz domain (ADR 0022). The shared page's
+	Open in Orbis button links to orbis://s/<set id>, because Safari opens a universal link to the
+	page's own domain in the page rather than in the app (ADR 0023). An array, so it lives here.
 	-->
 	<key>CFBundleURLTypes</key>
 	<array>

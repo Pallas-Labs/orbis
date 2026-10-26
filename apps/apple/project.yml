@@ -54,7 +54,8 @@ targets:
       # every generate, and a file with none was written back empty, which cut the share
       # extension off from the key.
       properties:
-        # A TV's QR code links to orbis.p11a.xyz/pair, which opens the app (ADR 0022).
+        # A TV's QR code links to orbis.p11a.xyz/pair (ADR 0022) and an Orbis Link to
+        # orbis.p11a.xyz/s/<id> (ADR 0023); both open the app. The Mac and Apple TV files carry it too.
         com.apple.developer.associated-domains:
           - applinks:orbis.p11a.xyz
         com.apple.developer.carplay-audio: true
