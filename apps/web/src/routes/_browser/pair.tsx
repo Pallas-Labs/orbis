@@ -1,4 +1,9 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  Link,
+  createFileRoute,
+  getRouteApi,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
@@ -137,8 +142,10 @@ const Approve = ({
   const approve = async () => {
     setBusy(true);
     setProblem(null);
-    const result = await approveSignInRequest(credentials, request.code);
-    setBusy(false);
+    const result = await approveSignInRequest(
+      credentials,
+      request.code
+    ).finally(() => setBusy(false));
     if (result.ok) {
       onDone({ kind: "approved", request: result.value });
       return;
@@ -177,7 +184,9 @@ const Approve = ({
 };
 
 const Pair = ({ loaded }: { readonly loaded: Pairing }) => {
-  const [pairing, setPairing] = useState(loaded);
+  // The page starts at the loader's answer; approving moves it on from there.
+  const [next, setPairing] = useState<Pairing | null>(null);
+  const pairing = next ?? loaded;
   switch (pairing.kind) {
     case "asking": {
       return <Approve onDone={setPairing} pairing={pairing} />;
@@ -230,10 +239,11 @@ const Pair = ({ loaded }: { readonly loaded: Pairing }) => {
   }
 };
 
-export const Route = createFileRoute("/pair")({
-  // The route hands its own loader data down, which keeps the data's type exact.
-  component: () => <Pair loaded={Route.useLoaderData()} />,
+const pairRoute = getRouteApi("/_browser/pair");
+
+const PairPage = () => <Pair loaded={pairRoute.useLoaderData()} />;
+
+export const Route = createFileRoute("/_browser/pair")({
+  component: PairPage,
   loader: ({ context }) => loadPairing(context.apiUrl),
-  // The key and the code live only in the browser.
-  ssr: false,
 });
