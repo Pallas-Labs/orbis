@@ -1,0 +1,17 @@
+{
+  "steps" : [
+    {
+      "code" : "Code 396 255",
+      "name" : "the link opens the sheet with the platform, the age, and the code"
+    },
+    {
+      "name" : "Sign In as the Person approves, and the TV's wait gets a key for that Person"
+    },
+    {
+      "name" : "Settings lists the TV first under Add a Device, above This Device"
+    },
+    {
+      "name" : "a Sign Out swipe revokes the TV's key"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "steps" : [
+    {
+      "name" : "Cancel closes the sheet and the request still waits"
+    },
+    {
+      "message" : "This code has expired. Check the TV for a new one.",
+      "name" : "an unknown code says it has expired"
+    }
+  ]
+}

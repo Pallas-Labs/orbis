@@ -1,0 +1,10 @@
+{
+  "steps" : [
+    {
+      "name" : "a signed-out phone keeps the code and asks to sign in"
+    },
+    {
+      "name" : "after sign-in the sheet shows, and approving gives the TV its key"
+    }
+  ]
+}
