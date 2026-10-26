@@ -6,6 +6,7 @@ import path from "node:path";
 import type { AudioOptions } from "./audio.js";
 import { createTestApp as createApp, storedKey } from "./test-app.js";
 import { request } from "./test-http.js";
+import { setIn } from "./test-library.js";
 
 const youTubeUrl = "https://www.youtube.com/watch?v=aqzKEbpKQAA";
 const haveFfmpeg =
@@ -93,8 +94,7 @@ const seedSet = async (
     url: "/sets",
   });
   expect(saved.statusCode).toBe(201);
-  // SAFETY: the save route returns the stored set including its id.
-  return saved.json().id as string;
+  return setIn(saved).id;
 };
 
 const rawRequest = (
@@ -470,8 +470,7 @@ test("a restart re-queues a download stuck mid-flight", async () => {
   await boot.dispose();
   const { Database } = await import("bun:sqlite");
   const database = new Database(databasePath);
-  // SAFETY: the save route returns the stored set including its id.
-  const savedId = saved.json().id as string;
+  const savedId = setIn(saved).id;
   database
     .query("UPDATE sets SET download_state = 'downloading' WHERE id = ?")
     .run(savedId);
@@ -606,8 +605,7 @@ test("only the Person who asked for a Download, or the Host, can cancel it", asy
   try {
     const saved = await as("ann-key", "POST", "/sets");
     expect(saved.statusCode).toBe(201);
-    // SAFETY: the save route returns the stored set including its id.
-    const id = saved.json().id as string;
+    const { id } = setIn(saved);
     const bobSaved = await as("bob-key", "POST", "/sets");
     expect(bobSaved.statusCode).toBe(201);
     const asked = await as("ann-key", "POST", `/sets/${id}/audio/download`);
