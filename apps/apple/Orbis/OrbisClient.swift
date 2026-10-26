@@ -125,6 +125,13 @@ extension OrbisFailure {
 enum OrbisService {
   static let address = URL(string: "https://orbis.p11a.xyz/api")!
 
+  /// The link a TV's QR code carries for its Approval Code (ADR 0022). It opens Orbis on an
+  /// iPhone, or the web where Orbis is not installed. The code rides in the fragment, which a
+  /// browser never sends to a server.
+  static func pairLink(code: String) -> URL {
+    URL(string: "https://orbis.p11a.xyz/pair#\(code)")!
+  }
+
   /// The address this launch talks to. A Debug journey points it at the lane's service with
   /// `-orbisServiceAddress <address>`, and a Debug Mac build at the service its development
   /// token belongs to; every other build uses the built-in one.
@@ -231,6 +238,31 @@ struct SignInCode: Decodable, Equatable, Sendable {
 
 private struct SignedIn: Decodable {
   let key: String
+}
+
+/// An Approval Request this device started (ADR 0022): the 6-digit code it shows, and the secret
+/// only this device holds, which collects the key once a signed-in Person approves.
+struct StartedApprovalRequest: Decodable, Sendable {
+  let code: String
+  let secret: String
+}
+
+/// How a wait on an Approval Request ended.
+enum ApprovalAnswer: Equatable, Sendable {
+  /// No one approved it while the wait was open. Wait again.
+  case pending
+  /// A Person approved it. The key is this device's, and comes once.
+  case approved(key: String, username: String)
+  /// The request expired, or its key was already collected. Start a new one.
+  case expired
+}
+
+private struct ApprovalWait: Decodable {
+  struct Person: Decodable { let username: String }
+
+  let status: String
+  let key: String?
+  let person: Person?
 }
 
 private struct GroupPasscode: Decodable {
@@ -419,6 +451,36 @@ struct OrbisClient: Sendable {
     let body = try Self.encoder.encode(["code": code, "label": label])
     let response = try await send(path: "sign-in/code", method: "POST", body: body)
     return try Self.decode(SignedIn.self, from: response).key
+  }
+
+  /// Starts an Approval Request for this signed-out device. Needs no key.
+  func startApprovalRequest(label: String, platform: String) async throws -> StartedApprovalRequest {
+    let body = try Self.encoder.encode(["label": label, "platform": platform])
+    let response = try await send(path: "sign-in/requests", method: "POST", body: body)
+    return try Self.decode(StartedApprovalRequest.self, from: response)
+  }
+
+  /// Waits for a Person to approve the request `secret` started. The service holds the call open
+  /// for up to 25 seconds and answers at once on approval, so the request may run longer than
+  /// any other.
+  func waitForApproval(secret: String) async throws -> ApprovalAnswer {
+    let body = try Self.encoder.encode(["secret": secret])
+    let response: Data
+    do {
+      response = try await send(path: "sign-in/requests/wait", method: "POST", body: body, timeout: 40)
+    } catch OrbisError.server(status: 404, _) {
+      return .expired
+    }
+    let answer = try Self.decode(ApprovalWait.self, from: response)
+    switch answer.status {
+    case "pending":
+      return .pending
+    case "approved":
+      guard let key = answer.key, let person = answer.person else { throw OrbisError.malformed }
+      return .approved(key: key, username: person.username)
+    default:
+      throw OrbisError.malformed
+    }
   }
 
   /// A code another device types to sign in as this Person.
@@ -699,7 +761,9 @@ struct OrbisClient: Sendable {
     "\(method) \(url.host() ?? "") \(url.path())"
   }
 
-  private func send(path: String, method: String, body: Data?) async throws -> Data {
+  private func send(
+    path: String, method: String, body: Data?, timeout: TimeInterval = 15
+  ) async throws -> Data {
     // Resolving against the address would drop its last path segment, so an address such as
     // the Funnel address with `/api` would lose `/api`. Join the strings instead.
     let root = address.absoluteString
@@ -713,7 +777,7 @@ struct OrbisClient: Sendable {
       request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
     request.setValue("application/json", forHTTPHeaderField: "Accept")
-    request.timeoutInterval = 15
+    request.timeoutInterval = timeout
     if let body {
       request.httpBody = body
       request.setValue("application/json", forHTTPHeaderField: "Content-Type")

@@ -43,7 +43,7 @@
           .accessibilityIdentifier("settings-sign-out-confirm")
         Button("Cancel", role: .cancel) {}
       } message: {
-        Text("To sign in again, you need a Sign-in Code from another device or from your Host.")
+        Text("To sign in again, approve the code this TV shows from Orbis on your iPhone.")
       }
       .task(id: model.client?.token) { await settings.load() }
       .accessibilityElement(children: .contain)

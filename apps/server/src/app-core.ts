@@ -431,6 +431,8 @@ export const createPortableApp = (options: {
   signInCodeNow?: () => number;
   /** How long a wait on an Approval Request stays open; 25 seconds by default. */
   approvalWaitMs?: number;
+  /** How long an Approval Request lives; 2 minutes by default. A lane shortens it to show a new code. */
+  approvalLifetimeMs?: number | undefined;
   /** Follows short links such as `on.soundcloud.com`. Tests pass a stub to stay offline. */
   shortLinkFetch?: (url: string, signal: AbortSignal) => Promise<Response>;
   titleReviser?: Layer.Layer<TitleReviser>;
@@ -444,7 +446,10 @@ export const createPortableApp = (options: {
     options.playbackDiagnostics
   );
   const signInCodeNow = options.signInCodeNow ?? Date.now;
-  const approvals = makeApprovalRequests(signInCodeNow);
+  const approvals = makeApprovalRequests(
+    signInCodeNow,
+    options.approvalLifetimeMs
+  );
   const approvalWaitMs = options.approvalWaitMs ?? 25_000;
   const { database } = options;
   const libraryOptions = {
