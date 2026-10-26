@@ -1,0 +1,20 @@
+{
+  "firstCode" : "840732",
+  "label" : "Orbis on PAL-1012 TV rework",
+  "scannedLink" : "https:\/\/orbis.p11a.xyz\/pair#840732",
+  "screenTexts" : [
+    "Sign in to Orbis",
+    "or",
+    "In Orbis on your phone,\ntap Settings › Add a Device",
+    "Scan with your iPhone",
+    "8",
+    "4",
+    "0",
+    "7",
+    "3",
+    "2"
+  ],
+  "secondCode" : "935297",
+  "secondsToHome" : 2.4228420257568359,
+  "welcome" : "Signed in as host"
+}
