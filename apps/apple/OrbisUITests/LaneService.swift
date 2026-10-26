@@ -299,7 +299,7 @@ struct LaneService {
     try status("GET", "me", nil)
   }
 
-  struct ApprovalRequest: Decodable {
+  struct StartedApprovalRequest: Decodable {
     let code: String
     let secret: String
   }
@@ -310,7 +310,7 @@ struct LaneService {
   }
 
   /// Starts an Approval Request the way a signed-out TV does, with no key (ADR 0022).
-  func startApprovalRequest(label: String) throws -> ApprovalRequest {
+  func startApprovalRequest(label: String) throws -> StartedApprovalRequest {
     try send("POST", "sign-in/requests", ["label": label, "platform": "tvOS"], signed: false)
   }
 
