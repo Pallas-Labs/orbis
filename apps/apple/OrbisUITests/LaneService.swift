@@ -326,7 +326,8 @@ struct LaneService {
   }
 
   private func status(_ method: String, _ path: String, _ body: [String: Any]?) throws -> Int {
-    var request = URLRequest(url: URL(string: "\(address)/\(path)")!)
+    guard let endpoint = URL(string: "\(address)/\(path)") else { throw URLError(.badURL) }
+    var request = URLRequest(url: endpoint)
     request.httpMethod = method
     request.setValue("Bearer \(token)", forHTTPHeaderField: "authorization")
     if let body {
@@ -347,7 +348,8 @@ struct LaneService {
     _ method: String, _ path: String, _ body: [String: Any]?, signed: Bool = true,
     timeout: TimeInterval = 20
   ) throws -> Response {
-    var request = URLRequest(url: URL(string: "\(address)/\(path)")!)
+    guard let endpoint = URL(string: "\(address)/\(path)") else { throw URLError(.badURL) }
+    var request = URLRequest(url: endpoint)
     request.httpMethod = method
     request.timeoutInterval = timeout
     if signed {

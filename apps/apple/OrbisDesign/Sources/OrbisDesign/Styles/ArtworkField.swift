@@ -75,9 +75,10 @@ nonisolated extension ArtworkField {
     var bytes = [UInt8](repeating: 0, count: width * height * 4)
     let drawn = bytes.withUnsafeMutableBytes { buffer -> Bool in
       guard
+        let space = CGColorSpace(name: CGColorSpace.sRGB),
         let context = CGContext(
           data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
-          bytesPerRow: width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+          bytesPerRow: width * 4, space: space,
           bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
       else { return false }
       context.interpolationQuality = .medium

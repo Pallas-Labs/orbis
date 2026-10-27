@@ -82,10 +82,11 @@ import Testing
     var bytes = [UInt8]()
     for _ in 0..<(width * height) { bytes += [red, green, blue, 255] }
     guard
+      let space = CGColorSpace(name: CGColorSpace.sRGB),
       let provider = CGDataProvider(data: Data(bytes) as CFData),
       let image = CGImage(
         width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32,
-        bytesPerRow: width * 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+        bytesPerRow: width * 4, space: space,
         bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
         provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)
     else { return nil }

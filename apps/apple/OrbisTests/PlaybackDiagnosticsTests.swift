@@ -60,7 +60,8 @@ final class PlaybackDiagnosticsTests: XCTestCase {
     let player = AudioPlayer(session: .init(start: { false }, end: {}))
     defer { player.stop() }
     player.play(
-      set: set, baseURL: URL(string: privateAddress)!, token: privateToken, autoplay: false)
+      set: set, baseURL: try XCTUnwrap(URL(string: privateAddress)), token: privateToken,
+      autoplay: false)
     player.recordError(error)
     let report = player.playbackReport()
     for privateValue in [privateTitle, privateToken, privateAddress, localized] {

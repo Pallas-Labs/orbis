@@ -55,7 +55,7 @@ class PlaylistJourney: XCTestCase {
 
   func youtubeURL() -> String {
     let letters = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-    return "https://www.youtube.com/watch?v=" + String((0..<11).map { _ in letters.randomElement()! })
+    return "https://www.youtube.com/watch?v=" + String((0..<11).map { _ in letters.randomElement() ?? "a" })
   }
 
   /// Waits until the service stores the expected order, and returns what it last read.

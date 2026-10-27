@@ -25,9 +25,9 @@ final class AudioDownloadTests: XCTestCase {
     "{\"sets\":[\(setJSON(id: "1", state: state))]}"
   }
 
-  private func client() -> OrbisClient {
+  private func client() throws -> OrbisClient {
     OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!,
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
       token: "token",
       session: StubProtocol.session(responder: { request in
         switch (request.httpMethod, request.url?.path()) {
@@ -55,7 +55,7 @@ final class AudioDownloadTests: XCTestCase {
 
   func testDownloadUpdatesLibraryState() async throws {
     let model = AppModel(
-      client: client(), settings: MemoryClientSettings()
+      client: try client(), settings: MemoryClientSettings()
     )
     model.library = .loaded([
       try JSONDecoder().decode(
@@ -70,7 +70,7 @@ final class AudioDownloadTests: XCTestCase {
 
   func testFailedDownloadSurfacesPageFailure() async throws {
     let failing = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!,
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
       token: "token",
       session: StubProtocol.session(status: 500, body: "{}")
     )
@@ -91,7 +91,7 @@ final class AudioDownloadTests: XCTestCase {
       _ responder: @Sendable @escaping (URLRequest) -> (Int, String)
     ) throws -> AppModel {
       let client = OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session(responder: responder)
       )
@@ -144,7 +144,7 @@ final class AudioDownloadTests: XCTestCase {
     XCTAssertEqual(fields?["Authorization"], "Bearer secret-token")
   }
 
-  func testPlayerBuildsFileURLFromSetID() {
+  func testPlayerBuildsFileURLFromSetID() throws {
     // The player once loaded the service root, which answers 404, instead of the
     // Set's file: this pins the exact URL play() hands the asset, with and
     // without a trailing slash on the service address.
@@ -152,7 +152,7 @@ final class AudioDownloadTests: XCTestCase {
       "https://vanta.example.ts.net:8444", "https://vanta.example.ts.net:8444/",
     ] {
       XCTAssertEqual(
-        AudioPlayer.fileURL(setID: "1", baseURL: URL(string: base)!).absoluteString,
+        AudioPlayer.fileURL(setID: "1", baseURL: try XCTUnwrap(URL(string: base))).absoluteString,
         "https://vanta.example.ts.net:8444/sets/1/audio"
       )
     }
@@ -218,7 +218,7 @@ final class AudioDownloadTests: XCTestCase {
   func testADownloadThatFinishesElsewhereStillLandsInTheLibrary() async throws {
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session(responder: { request in
           switch (request.httpMethod, request.url?.path()) {

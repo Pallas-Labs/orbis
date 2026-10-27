@@ -260,7 +260,7 @@ final class PlaybackReliabilityTests: XCTestCase {
     let activations = ActivationLog()
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "http://10.255.255.1:9")!, token: "token",
+        address: try XCTUnwrap(URL(string: "http://10.255.255.1:9")), token: "token",
         session: StubProtocol.session(
           responder: { request in
             requests.record(request)
@@ -274,7 +274,8 @@ final class PlaybackReliabilityTests: XCTestCase {
           holding: { $0.url?.path() == "/queue/active" ? 0.5 : 0 }
         )), settings: MemoryClientSettings())
     defer { model.signOut() }
-    model.audioPlayer.play(set: set, baseURL: URL(string: "http://10.255.255.1:9")!, token: "token")
+    model.audioPlayer.play(
+      set: set, baseURL: try XCTUnwrap(URL(string: "http://10.255.255.1:9")), token: "token")
     model.audioPlayer.pause()
     let older = Task { await model.playSet("b") }
     try await waitUntil("The older play request must be in flight") {
@@ -303,7 +304,7 @@ final class PlaybackReliabilityTests: XCTestCase {
     let log = QueueTests.RequestLog()
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "http://10.255.255.1:9")!, token: "token",
+        address: try XCTUnwrap(URL(string: "http://10.255.255.1:9")), token: "token",
         session: StubProtocol.session(
           responder: { request in
             log.record(request)

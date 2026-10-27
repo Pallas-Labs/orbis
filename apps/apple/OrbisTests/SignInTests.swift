@@ -91,10 +91,10 @@ final class SignInTests: XCTestCase {
 
   /// A sidebar that could not be read must keep its reason and offer retry, because an empty
   /// section reads as "no playlists".
-  func testPlaylistsThatFailToLoadSaySoInsteadOfReadingAsEmpty() async {
+  func testPlaylistsThatFailToLoadSaySoInsteadOfReadingAsEmpty() async throws {
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session { _ in (500, #"{"message":"The library is busy."}"#) }
       ), settings: MemoryClientSettings())
