@@ -19,7 +19,7 @@ final class ApprovalUITests: XCTestCase {
       app.tabBars.buttons["Home"].waitForExistence(timeout: 60),
       "the app must open signed in\n\(app.debugDescription)")
 
-    app.open(Self.link(request.code))
+    app.open(try Self.link(request.code))
 
     let title = app.staticTexts["approval-title"]
     XCTAssertTrue(title.waitForExistence(timeout: 30), "the link must open the sheet\n\(app.debugDescription)")
@@ -93,7 +93,7 @@ final class ApprovalUITests: XCTestCase {
       app.tabBars.buttons["Home"].waitForExistence(timeout: 60),
       "the app must open signed in\n\(app.debugDescription)")
 
-    app.open(Self.link(request.code))
+    app.open(try Self.link(request.code))
     let cancel = app.buttons["approval-cancel"]
     XCTAssertTrue(cancel.waitForExistence(timeout: 30), "the link must open the sheet\n\(app.debugDescription)")
     cancel.tap()
@@ -103,7 +103,7 @@ final class ApprovalUITests: XCTestCase {
     step("Cancel closes the sheet and the request still waits")
 
     let unknown = request.code == "000000" ? "000001" : "000000"
-    app.open(Self.link(unknown))
+    app.open(try Self.link(unknown))
     let expired = app.staticTexts["approval-expired"]
     XCTAssertTrue(expired.waitForExistence(timeout: 30), "an unknown code must say so\n\(app.debugDescription)")
     XCTAssertEqual(expired.label, "This code has expired. Check the TV for a new one.")
@@ -123,7 +123,7 @@ final class ApprovalUITests: XCTestCase {
     let haveCode = app.buttons["signin-have-code"]
     XCTAssertTrue(haveCode.waitForExistence(timeout: 30), "the app must open signed out")
 
-    app.open(Self.link(request.code))
+    app.open(try Self.link(request.code))
     XCTAssertTrue(
       app.staticTexts["signin-approval-notice"].waitForExistence(timeout: 15),
       "a signed-out phone asks to sign in first\n\(app.debugDescription)")
@@ -163,8 +163,8 @@ final class ApprovalUITests: XCTestCase {
 
   // MARK: - Helpers
 
-  private static func link(_ code: String) -> URL {
-    URL(string: "orbis://pair#\(code)")!
+  private static func link(_ code: String) throws -> URL {
+    try XCTUnwrap(URL(string: "orbis://pair#\(code)"))
   }
 
   private func openSettings(_ app: XCUIApplication) {

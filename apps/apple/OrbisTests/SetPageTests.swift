@@ -40,12 +40,12 @@ final class SetPageTests: XCTestCase {
     status: Int = 200,
     body: String = OrbisClientTests.savedSet(title: "Night session", tags: []),
     failure: URLError? = nil
-  ) -> AppModel {
+  ) throws -> AppModel {
     let session =
       failure.map { StubProtocol.session(failure: $0) }
       ?? StubProtocol.session(status: status, body: body)
     let client = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!,
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
       token: "token",
       session: session
     )
@@ -54,8 +54,8 @@ final class SetPageTests: XCTestCase {
     return model
   }
 
-  func testEachTabKeepsItsOwnOpenSet() {
-    let model = model(sets: [set(), set(id: "2", title: "Other")])
+  func testEachTabKeepsItsOwnOpenSet() throws {
+    let model = try model(sets: [set(), set(id: "2", title: "Other")])
     model.destination = .home
     model.openSet("1")
 
@@ -69,8 +69,8 @@ final class SetPageTests: XCTestCase {
     XCTAssertEqual(model.openedSetId, "2")
   }
 
-  func testRemovingASetClosesItInEveryTab() async {
-    let model = model(sets: [set(), set(id: "2", title: "Other")])
+  func testRemovingASetClosesItInEveryTab() async throws {
+    let model = try model(sets: [set(), set(id: "2", title: "Other")])
     model.destination = .home
     model.openSet("1")
     model.destination = .search
@@ -85,8 +85,8 @@ final class SetPageTests: XCTestCase {
 
   /// The Set stays on screen with the reason beside it, so the removal can be tried again
   /// rather than leaving a person wondering whether it worked.
-  func testARefusedRemovalKeepsTheSetAndSaysWhy() async {
-    let model = model(
+  func testARefusedRemovalKeepsTheSetAndSaysWhy() async throws {
+    let model = try model(
       sets: [set()], status: 500, body: #"{"message":"The library is busy."}"#)
 
     await model.remove("1")
@@ -101,14 +101,14 @@ final class SetPageTests: XCTestCase {
     )
   }
 
-  func testAnEmptyTitleIsNeverSent() async {
-    let model = model(sets: [set()])
+  func testAnEmptyTitleIsNeverSent() async throws {
+    let model = try model(sets: [set()])
     await model.rename("1", to: "   ")
     XCTAssertNil(StubProtocol.lastRequest)
   }
 
-  func testReplacingTagsSendsTheWholeList() async {
-    let model = model(sets: [set(tags: ["techno"])])
+  func testReplacingTagsSendsTheWholeList() async throws {
+    let model = try model(sets: [set(tags: ["techno"])])
 
     await model.replaceTags("1", with: ["techno", "live"])
 
@@ -119,8 +119,8 @@ final class SetPageTests: XCTestCase {
 
   /// Orbis holds a Set in one Playlist, so choosing another states the whole membership and
   /// leaves the Playlist it came from.
-  func testMovingASetStatesTheWholeMembership() async {
-    let model = model(sets: [set(playlists: ["old"])])
+  func testMovingASetStatesTheWholeMembership() async throws {
+    let model = try model(sets: [set(playlists: ["old"])])
 
     await model.move("1", to: "new")
 
@@ -130,8 +130,8 @@ final class SetPageTests: XCTestCase {
     XCTAssertEqual((sent as? [String: Any])?["playlistIds"] as? [String], ["new"])
   }
 
-  func testTakingASetOutOfEveryPlaylistSendsNothing() async {
-    let model = model(sets: [set(playlists: ["old"])])
+  func testTakingASetOutOfEveryPlaylistSendsNothing() async throws {
+    let model = try model(sets: [set(playlists: ["old"])])
 
     await model.move("1", to: nil)
 
@@ -141,8 +141,8 @@ final class SetPageTests: XCTestCase {
 
   /// While the Library is showing one playlist, a Set that moves out of it must leave the
   /// list; keeping the row would say the move did nothing.
-  func testMovingASetOutOfThePlaylistBeingViewedTakesItsRowWithIt() async {
-    let model = model(
+  func testMovingASetOutOfThePlaylistBeingViewedTakesItsRowWithIt() async throws {
+    let model = try model(
       sets: [set(id: "1", playlists: ["viewed"]), set(id: "2", title: "Stays", playlists: ["viewed"])]
     )
     model.selectedPlaylistId = "viewed"
@@ -156,10 +156,10 @@ final class SetPageTests: XCTestCase {
   }
 
   /// A change that does not touch membership keeps the row where it was.
-  func testRenamingASetInThePlaylistBeingViewedKeepsItsRow() async {
+  func testRenamingASetInThePlaylistBeingViewedKeepsItsRow() async throws {
     let body = OrbisClientTests.savedSet(title: "Renamed", tags: []).replacingOccurrences(
       of: "\"playlistIds\":[]", with: "\"playlistIds\":[\"viewed\"]")
-    let model = model(sets: [set(id: "1", playlists: ["viewed"])], body: body)
+    let model = try model(sets: [set(id: "1", playlists: ["viewed"])], body: body)
     model.selectedPlaylistId = "viewed"
 
     await model.rename("1", to: "Renamed")
@@ -176,9 +176,9 @@ final class SetPageTests: XCTestCase {
 
   private func tracklistModel(
     responder: @Sendable @escaping (URLRequest) -> (Int, String)
-  ) -> AppModel {
+  ) throws -> AppModel {
     let client = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!,
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
       token: "token",
       session: StubProtocol.session(responder: responder)
     )
@@ -187,8 +187,8 @@ final class SetPageTests: XCTestCase {
 
   /// The service keeps a Set's Cues through a failed refresh, so the page must too: the seek
   /// rows stay usable and the page does not say "Tracklist unavailable".
-  func testARefreshThatCannotReachTheServiceKeepsTheCues() async {
-    let model = tracklistModel { request in
+  func testARefreshThatCannotReachTheServiceKeepsTheCues() async throws {
+    let model = try tracklistModel { request in
       request.httpMethod == "POST"
         ? (500, #"{"message":"The library is busy."}"#)
         : (200, #"{"state":"ready","cues":\#(Self.cues)}"#)
@@ -203,8 +203,8 @@ final class SetPageTests: XCTestCase {
 
   /// A refresh leaves the Tracklist pending with its Cues while Versos works. A failed poll
   /// in that state must not drop them.
-  func testAFailedPollDuringARefreshKeepsTheCues() async {
-    let model = tracklistModel { request in
+  func testAFailedPollDuringARefreshKeepsTheCues() async throws {
+    let model = try tracklistModel { request in
       request.httpMethod == "POST"
         ? (200, #"{"state":"pending","cues":\#(Self.cues)}"#)
         : (500, #"{"message":"The library is busy."}"#)
@@ -217,8 +217,8 @@ final class SetPageTests: XCTestCase {
   }
 
   /// With no Cues to keep, a failed refresh still says the Tracklist is unavailable.
-  func testAFailedRefreshWithNoCuesShowsTheFailure() async {
-    let model = tracklistModel { _ in (500, #"{"message":"The library is busy."}"#) }
+  func testAFailedRefreshWithNoCuesShowsTheFailure() async throws {
+    let model = try tracklistModel { _ in (500, #"{"message":"The library is busy."}"#) }
 
     await model.retryTracklist("1")
 

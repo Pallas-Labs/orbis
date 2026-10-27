@@ -53,8 +53,8 @@ import Testing
   /// picture inside a 16:9 window and black bars above and below it. The box has to keep its own
   /// 16:9 shape and crop them away, or every Set a provider sends that way is drawn 4:3, taller
   /// than the rows beside it, with the bars on show.
-  @Test func `artwork crops the bars off a letterboxed thumbnail`() {
-    let row = letterboxed(.row)
+  @Test func `artwork crops the bars off a letterboxed thumbnail`() throws {
+    let row = try letterboxed(.row)
     let box = measured(row, width: 88, textSize: .large)
     #expect(
       abs(box.width / box.height - 16.0 / 9.0) < 0.01,
@@ -67,7 +67,7 @@ import Testing
     #expect(!isBlack(top), "the top bar is still on show: \(top)")
     #expect(!isBlack(bottom), "the bottom bar is still on show: \(bottom)")
 
-    let header = measured(letterboxed(.header), width: 390, textSize: .large)
+    let header = measured(try letterboxed(.header), width: 390, textSize: .large)
     #expect(
       abs(header.width / header.height - 16.0 / 9.0) < 0.01,
       "the header artwork took the thumbnail's shape: \(header)")
@@ -189,9 +189,10 @@ import Testing
   }
 
   /// The real artwork box around the image a provider sends for a widescreen video at `high`.
-  private func letterboxed(_ size: Artwork.Size) -> some View {
-    Artwork.box(size: size) {
-      Image(decorative: letterboxedThumbnail, scale: 1)
+  private func letterboxed(_ size: Artwork.Size) throws -> some View {
+    let thumbnail = try letterboxedThumbnail
+    return Artwork.box(size: size) {
+      Image(decorative: thumbnail, scale: 1)
         .resizable()
         .aspectRatio(contentMode: .fill)
     }
@@ -199,21 +200,24 @@ import Testing
 
   /// A 16:9 picture inside a 4:3 canvas, with the black bars YouTube adds to fill it.
   private var letterboxedThumbnail: CGImage {
-    let width = 480
-    let height = 360
-    let bar = 45
-    let context = CGContext(
-      data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
-      space: CGColorSpaceCreateDeviceRGB(),
-      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-    let black = CGColor(colorSpace: CGColorSpaceCreateDeviceRGB(), components: [0, 0, 0, 1])!
-    let picture = CGColor(
-      colorSpace: CGColorSpaceCreateDeviceRGB(), components: [0.6, 0.5, 0.85, 1])!
-    context.setFillColor(black)
-    context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-    context.setFillColor(picture)
-    context.fill(CGRect(x: 0, y: bar, width: width, height: height - bar * 2))
-    return context.makeImage()!
+    get throws {
+      let width = 480
+      let height = 360
+      let bar = 45
+      let space = CGColorSpaceCreateDeviceRGB()
+      let context = try #require(
+        CGContext(
+          data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+          space: space,
+          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+      let black = try #require(CGColor(colorSpace: space, components: [0, 0, 0, 1]))
+      let picture = try #require(CGColor(colorSpace: space, components: [0.6, 0.5, 0.85, 1]))
+      context.setFillColor(black)
+      context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+      context.setFillColor(picture)
+      context.fill(CGRect(x: 0, y: bar, width: width, height: height - bar * 2))
+      return try #require(context.makeImage())
+    }
   }
 
   /// The size a view takes when it is offered `width` and as much height as it needs.

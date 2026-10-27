@@ -125,16 +125,16 @@ final class AppleMusicPlaybackTests: XCTestCase {
   // MARK: - AudioPlayer with an engine that owns Now Playing
 
   /// Failure 6.
-  func testOrbisLeavesNowPlayingAndTheRemoteCommandsToMusicKit() async {
+  func testOrbisLeavesNowPlayingAndTheRemoteCommandsToMusicKit() async throws {
     let player = makePlayer()
-    player.play(set: set(id: "yt", source: .youtube), baseURL: address, token: "t", autoplay: false)
+    player.play(set: set(id: "yt", source: .youtube), baseURL: try address, token: "t", autoplay: false)
     XCTAssertTrue(player.answersRemoteCommands)
 
-    player.play(set: set(id: "am", source: .appleMusic), baseURL: address, token: "t")
+    player.play(set: set(id: "am", source: .appleMusic), baseURL: try address, token: "t")
     XCTAssertFalse(player.answersRemoteCommands)
     let theirs: [String: Any] = [MPMediaItemPropertyTitle: "Song from MusicKit"]
     MPNowPlayingInfoCenter.default().nowPlayingInfo = theirs
-    let engine = engines.last!
+    let engine = try XCTUnwrap(engines.last)
     engine.ready(duration: 699.875)
     await settle()
     engine.time = 250
@@ -146,15 +146,15 @@ final class AppleMusicPlaybackTests: XCTestCase {
       "Song from MusicKit")
 
     // Back to a Set with Retained Audio, Orbis answers the commands again.
-    player.play(set: set(id: "yt", source: .youtube), baseURL: address, token: "t", autoplay: false)
+    player.play(set: set(id: "yt", source: .youtube), baseURL: try address, token: "t", autoplay: false)
     XCTAssertTrue(player.answersRemoteCommands)
     player.stop()
   }
 
-  func testTheClockAndTheLengthAreInMixTime() async {
+  func testTheClockAndTheLengthAreInMixTime() async throws {
     let player = makePlayer()
-    player.play(set: set(id: "am", source: .appleMusic), baseURL: address, token: "t")
-    let engine = engines.last!
+    player.play(set: set(id: "am", source: .appleMusic), baseURL: try address, token: "t")
+    let engine = try XCTUnwrap(engines.last)
     engine.ready(duration: 699.875)
     await settle()
     XCTAssertEqual(player.duration, 699.875)
@@ -166,10 +166,10 @@ final class AppleMusicPlaybackTests: XCTestCase {
   }
 
   /// Failure 7.
-  func testAPauseFromTheLockScreenReadsAsPaused() async {
+  func testAPauseFromTheLockScreenReadsAsPaused() async throws {
     let player = makePlayer()
-    player.play(set: set(id: "am", source: .appleMusic), baseURL: address, token: "t")
-    let engine = engines.last!
+    player.play(set: set(id: "am", source: .appleMusic), baseURL: try address, token: "t")
+    let engine = try XCTUnwrap(engines.last)
     engine.ready(duration: 699.875)
     await settle()
     engine.playing = true
@@ -186,29 +186,29 @@ final class AppleMusicPlaybackTests: XCTestCase {
 
   /// Failure 8: the Listening Queue moves from an Apple Music Set to one with Retained Audio and
   /// back, each on its own engine.
-  func testTheEndOfAnAppleMusicSetFinishesItAndTheNextSetGetsItsOwnEngine() async {
+  func testTheEndOfAnAppleMusicSetFinishesItAndTheNextSetGetsItsOwnEngine() async throws {
     let player = makePlayer()
     var finished: [String] = []
     player.onFinished = { finished.append($0) }
-    player.play(set: set(id: "am", source: .appleMusic), baseURL: address, token: "t")
-    let first = engines.last!
+    player.play(set: set(id: "am", source: .appleMusic), baseURL: try address, token: "t")
+    let first = try XCTUnwrap(engines.last)
     first.ready(duration: 699.875)
     await settle()
     first.time = 699.875
     first.send(.ended)
     XCTAssertEqual(finished, ["am"])
 
-    player.play(set: set(id: "yt", source: .youtube), baseURL: address, token: "t")
+    player.play(set: set(id: "yt", source: .youtube), baseURL: try address, token: "t")
     XCTAssertEqual(engines.last?.source, .youtube)
     XCTAssertTrue(first.invalidated)
-    let second = engines.last!
+    let second = try XCTUnwrap(engines.last)
     second.ready(duration: 60)
     await settle()
     second.time = 60
     second.send(.ended)
     XCTAssertEqual(finished, ["am", "yt"])
 
-    player.play(set: set(id: "am2", source: .appleMusic), baseURL: address, token: "t")
+    player.play(set: set(id: "am2", source: .appleMusic), baseURL: try address, token: "t")
     XCTAssertEqual(engines.last?.source, .appleMusic)
     XCTAssertFalse(player.answersRemoteCommands)
     player.stop()
@@ -216,7 +216,10 @@ final class AppleMusicPlaybackTests: XCTestCase {
 
   // MARK: - Helpers
 
-  private let address = URL(string: "http://10.255.255.1:9")!
+  /// An address in a block no host answers, so the item waits and never sounds.
+  private var address: URL {
+    get throws { try XCTUnwrap(URL(string: "http://10.255.255.1:9")) }
+  }
   private var engines: [FakeEngine] = []
 
   private func makePlayer() -> AudioPlayer {

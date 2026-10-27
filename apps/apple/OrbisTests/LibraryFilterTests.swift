@@ -59,13 +59,13 @@ final class LibraryFilterTests: XCTestCase {
     XCTAssertEqual(all.count, 3)
   }
 
-  func testAnIdMatchesACreatorWhoseNameChanged() {
+  func testAnIdMatchesACreatorWhoseNameChanged() throws {
     let model = library([
       set(id: "1", creator: "Old Name", creatorId: "UC1"),
       set(id: "2", creator: "New Name", creatorId: "UC1"),
       set(id: "3", creator: "New Name", creatorId: "UC2"),
     ])
-    model.showCreator(of: model.savedSet("1")!)
+    model.showCreator(of: try XCTUnwrap(model.savedSet("1")))
     guard case .loaded(let visible) = model.visibleSets else {
       return XCTFail("expected a loaded list")
     }

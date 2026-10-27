@@ -53,7 +53,7 @@ final class SupersessionTests: XCTestCase {
     let newBody = libraryBody(title: "New playlist")
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session(
           responder: { request in
@@ -89,10 +89,10 @@ final class SupersessionTests: XCTestCase {
 
   /// The heading must name the query the results answer. Typing a second query without
   /// submitting cannot relabel the results still on screen.
-  func testTheSearchHeadingKeepsTheQueryTheResultsAnswer() async {
+  func testTheSearchHeadingKeepsTheQueryTheResultsAnswer() async throws {
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session(status: 200, body: libraryBody(title: "Night session"))
       ), settings: MemoryClientSettings())
@@ -109,11 +109,11 @@ final class SupersessionTests: XCTestCase {
 
   /// Signing out ends every request the service could still answer, and leaves
   /// nothing selected that belonged to it.
-  func testSigningOutResetsEverythingThatBelongedToTheService() async {
+  func testSigningOutResetsEverythingThatBelongedToTheService() async throws {
     let filed = set(id: "1", title: "Night session")
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session(status: 200, body: libraryBody(title: "Night session"))
       ), settings: MemoryClientSettings())
@@ -150,7 +150,7 @@ final class SupersessionTests: XCTestCase {
     let setsBody = libraryBody(title: "Night session")
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session { request in
           guard request.url?.path() == "/playlists" else { return (200, setsBody) }
@@ -174,13 +174,13 @@ final class SupersessionTests: XCTestCase {
   /// A download that lands while the Library is being read must still show. The read in flight
   /// was made before the service accepted the download, so the Library is read again rather than
   /// the answer being dropped because there was no loaded list to swap into.
-  func testADownloadThatLandsWhileTheLibraryIsLoadingIsNotDropped() async {
+  func testADownloadThatLandsWhileTheLibraryIsLoadingIsNotDropped() async throws {
     let downloading = OrbisClientTests.savedSet(
       title: "Night session", tags: [], downloadState: "downloading")
     let library = "{\"sets\":[\(downloading)]}"
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session { request in
           request.httpMethod == "POST" ? (200, downloading) : (200, library)

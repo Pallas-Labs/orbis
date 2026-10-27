@@ -54,9 +54,9 @@ final class QueueTests: XCTestCase {
   private func model(
     log: RequestLog? = nil,
     responder: @Sendable @escaping (URLRequest) -> (Int, String)
-  ) -> AppModel {
+  ) throws -> AppModel {
     let client = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!,
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
       token: "token",
       session: StubProtocol.session(responder: { request in
         log?.record(request)
@@ -71,8 +71,8 @@ final class QueueTests: XCTestCase {
     return loaded
   }
 
-  func testPlayingASetMakesItTheActiveEntry() async {
-    let model = model { request in
+  func testPlayingASetMakesItTheActiveEntry() async throws {
+    let model = try model { request in
       switch (request.httpMethod, request.url?.path()) {
       case ("PUT", "/queue/active"):
         return (200, Self.queueBody(active: "a", entries: [Self.set(id: "a")]))
@@ -90,8 +90,8 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(queue(model)?.entries.map(\.id), ["a"])
   }
 
-  func testPlayNextIsSentAsAnInsertAfterTheActiveSet() async {
-    let model = model { request in
+  func testPlayNextIsSentAsAnInsertAfterTheActiveSet() async throws {
+    let model = try model { request in
       if request.url?.path() == "/queue/entries" {
         return (
           201,
@@ -110,8 +110,8 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(model.queueNotice, "Plays next")
   }
 
-  func testAddToQueueIsSentAsAnAppend() async {
-    let model = model { request in
+  func testAddToQueueIsSentAsAnAppend() async throws {
+    let model = try model { request in
       if request.url?.path() == "/queue/entries" {
         return (
           201,
@@ -128,8 +128,8 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(model.queueNotice, "Added to the queue")
   }
 
-  func testPlayingAPlaylistReplacesTheQueue() async {
-    let model = model { request in
+  func testPlayingAPlaylistReplacesTheQueue() async throws {
+    let model = try model { request in
       if request.url?.path() == "/queue/playlist" {
         return (
           200,
@@ -147,8 +147,8 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(queue(model)?.entries.map(\.id), ["a", "b"])
   }
 
-  func testAPlaylistWithNothingPlayableStopsPlayback() async {
-    let model = model { request in
+  func testAPlaylistWithNothingPlayableStopsPlayback() async throws {
+    let model = try model { request in
       if request.url?.path() == "/queue/playlist" {
         return (200, Self.queueBody(active: nil, entries: []))
       }
@@ -161,8 +161,8 @@ final class QueueTests: XCTestCase {
     XCTAssertNil(model.audioPlayer.currentSetId)
   }
 
-  func testARefusedQueueActionSaysWhatTheServiceSaid() async {
-    let model = model { _ in
+  func testARefusedQueueActionSaysWhatTheServiceSaid() async throws {
+    let model = try model { _ in
       (400, #"{"message":"Only sets with audio can be added to the queue."}"#)
     }
 
@@ -173,9 +173,9 @@ final class QueueTests: XCTestCase {
       true)
   }
 
-  func testFinishingASetStartsTheNextEntry() async {
+  func testFinishingASetStartsTheNextEntry() async throws {
     let log = RequestLog()
-    let model = model(log: log) { request in
+    let model = try model(log: log) { request in
       switch (request.httpMethod, request.url?.path()) {
       case ("POST", "/queue/completion"):
         return (200, Self.queueBody(active: "b", entries: [Self.set(id: "b")]))
@@ -193,8 +193,8 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(queue(model)?.activeSetId, "b")
   }
 
-  func testAnEmptyQueueAfterAFinishLeavesNothingPlaying() async {
-    let model = model { request in
+  func testAnEmptyQueueAfterAFinishLeavesNothingPlaying() async throws {
+    let model = try model { request in
       if request.url?.path() == "/queue/completion" {
         return (200, Self.queueBody(active: nil, entries: []))
       }
@@ -210,9 +210,9 @@ final class QueueTests: XCTestCase {
     XCTAssertNil(model.audioPlayer.currentSetId)
   }
 
-  func testTheQueueIsReadAgainWhenASetIsRemoved() async {
+  func testTheQueueIsReadAgainWhenASetIsRemoved() async throws {
     let log = RequestLog()
-    let model = model(log: log) { request in
+    let model = try model(log: log) { request in
       switch (request.httpMethod, request.url?.path()) {
       case ("DELETE", "/sets/a"):
         return (200, Self.set(id: "a"))
@@ -229,8 +229,8 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(queue(model)?.entries.map(\.id), ["b"])
   }
 
-  func testSigningOutClearsTheQueue() async {
-    let model = model { _ in (200, Self.queueBody(active: "a", entries: [Self.set(id: "a")])) }
+  func testSigningOutClearsTheQueue() async throws {
+    let model = try model { _ in (200, Self.queueBody(active: "a", entries: [Self.set(id: "a")])) }
     await model.loadQueue()
     XCTAssertEqual(queue(model)?.activeSetId, "a")
 

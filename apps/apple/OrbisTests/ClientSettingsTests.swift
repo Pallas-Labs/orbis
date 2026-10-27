@@ -122,9 +122,9 @@ final class ClientSettingsTests: XCTestCase {
   }
 
   /// A client needs a key, and talks to the address it was given.
-  func testConfiguredClientNeedsAToken() {
+  func testConfiguredClientNeedsAToken() throws {
     let settings = MemoryClientSettings()
-    let address = URL(string: "https://vanta.example.ts.net/api")!
+    let address = try XCTUnwrap(URL(string: "https://vanta.example.ts.net/api"))
     XCTAssertNil(settings.configuredClient(address: address), "an empty store is signed out")
 
     XCTAssertTrue(settings.store(deviceToken: ""))

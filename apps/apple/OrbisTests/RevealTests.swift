@@ -78,14 +78,14 @@ final class RevealTests: XCTestCase {
   /// While the Library is showing one playlist, filing keeps that list truthful: a Set the
   /// playlist holds joins the top, and one it does not hold stays out instead of inventing
   /// a row the playlist does not have.
-  func testFilingIntoThePlaylistBeingViewedKeepsTheListTruthful() async {
+  func testFilingIntoThePlaylistBeingViewedKeepsTheListTruthful() async throws {
     let saveBody = OrbisClientTests.savedSet(title: "Fresh paste", tags: [])
     let belonging = saveBody.replacingOccurrences(
       of: "\"playlistIds\":[]", with: "\"playlistIds\":[\"viewed\"]")
     for (body, expected) in [(belonging, ["Fresh paste", "First"]), (saveBody, ["First"])] {
       let model = AppModel(
         client: OrbisClient(
-          address: URL(string: "https://vanta.example.ts.net")!,
+          address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
           token: "token",
           session: StubProtocol.session { request in
             request.url?.path() == "/sets" && request.httpMethod == "POST"
@@ -122,8 +122,8 @@ final class RevealTests: XCTestCase {
     tags: [String],
     body: String,
     hold: TimeInterval = 0.3
-  ) -> AppModel {
-    retryModel(
+  ) throws -> AppModel {
+    try retryModel(
       set: set, title: title, tags: tags,
       responder: { _ in (200, body) }, holding: { _ in hold })
   }
@@ -136,10 +136,10 @@ final class RevealTests: XCTestCase {
     tags: [String],
     responder: @escaping @Sendable (URLRequest) -> (Int, String),
     holding: @escaping @Sendable (URLRequest) -> TimeInterval = { _ in 0.3 }
-  ) -> AppModel {
+  ) throws -> AppModel {
     let model = AppModel(
       client: OrbisClient(
-        address: URL(string: "https://vanta.example.ts.net")!,
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
         token: "token",
         session: StubProtocol.session(responder: responder, holding: holding)
       ), settings: MemoryClientSettings())
@@ -189,8 +189,8 @@ final class RevealTests: XCTestCase {
     return started
   }
 
-  func testTitleAndTagsEditedDuringARetryBothSurviveIt() async {
-    let model = retryModel(
+  func testTitleAndTagsEditedDuringARetryBothSurviveIt() async throws {
+    let model = try retryModel(
       set: set(metadataState: "failed"), title: "Night session", tags: [],
       body: OrbisClientTests.savedSet(title: "Server name", tags: []))
 
@@ -207,9 +207,9 @@ final class RevealTests: XCTestCase {
 
   /// An empty field still means "use the name that came back", and the saved Set the Library
   /// holds takes that same name.
-  func testAnUntouchedTitleAdoptsTheNameTheRetryBrought() async {
+  func testAnUntouchedTitleAdoptsTheNameTheRetryBrought() async throws {
     let open = set(title: "YouTube video", metadataState: "failed")
-    let model = retryModel(
+    let model = try retryModel(
       set: open, title: "", tags: [],
       body: OrbisClientTests.savedSet(title: "Server name", tags: []))
     model.library = .loaded([open])
@@ -227,9 +227,9 @@ final class RevealTests: XCTestCase {
 
   /// A title the person typed before the retry belongs to them, so a name that arrives later
   /// only refreshes what the Set is, not what the field says.
-  func testATitleTypedBeforeTheRetryStaysThePersons() async {
+  func testATitleTypedBeforeTheRetryStaysThePersons() async throws {
     let open = set(title: "YouTube video", metadataState: "failed")
-    let model = retryModel(
+    let model = try retryModel(
       set: open, title: "My own name", tags: [],
       body: OrbisClientTests.savedSet(title: "Server name", tags: []))
     model.library = .loaded([open])
@@ -243,8 +243,8 @@ final class RevealTests: XCTestCase {
     XCTAssertEqual(model.savedSet("1")?.title, "Server name")
   }
 
-  func testADismissedRevealStaysDismissedWhenTheRetryLands() async {
-    let model = retryModel(
+  func testADismissedRevealStaysDismissedWhenTheRetryLands() async throws {
+    let model = try retryModel(
       set: set(metadataState: "failed"), title: "", tags: [],
       body: OrbisClientTests.savedSet(title: "Server name", tags: []))
 
@@ -256,10 +256,10 @@ final class RevealTests: XCTestCase {
     XCTAssertFalse(model.isSavingReveal)
   }
 
-  func testARetryCannotOverwriteADifferentSetOpenedMeanwhile() async {
+  func testARetryCannotOverwriteADifferentSetOpenedMeanwhile() async throws {
     let other = set(id: "2", title: "Other set", tags: ["morning"])
     let open = set(title: "YouTube video", metadataState: "failed")
-    let model = retryModel(
+    let model = try retryModel(
       set: open, title: "", tags: [],
       body: OrbisClientTests.savedSet(title: "Server name", tags: []))
     model.library = .loaded([open, other])
@@ -280,9 +280,9 @@ final class RevealTests: XCTestCase {
 
   /// A second press while the first is out would stack two answers over one draft, so it sends
   /// nothing at all.
-  func testASecondRetryWhileOneIsOutSendsNothing() async {
+  func testASecondRetryWhileOneIsOutSendsNothing() async throws {
     let requests = RequestCounter()
-    let model = retryModel(
+    let model = try retryModel(
       set: set(metadataState: "failed"), title: "", tags: [],
       responder: { _ in
         requests.record()
@@ -303,12 +303,12 @@ final class RevealTests: XCTestCase {
   /// A provider that still cannot name the Set answers with an HTTP 200 and a `failed` state,
   /// which runs the merge: the draft survives, the saved baseline still takes the placeholder,
   /// and the busy state clears.
-  func testAProviderFailureStillKeepsTheDraftAndRefreshesTheSavedSet() async {
+  func testAProviderFailureStillKeepsTheDraftAndRefreshesTheSavedSet() async throws {
     let placeholder =
       OrbisClientTests.savedSet(title: "YouTube video", tags: [])
       .replacingOccurrences(of: "\"metadataState\":\"enriched\"", with: "\"metadataState\":\"failed\"")
     let open = set(title: "YouTube video", metadataState: "failed")
-    let model = retryModel(set: open, title: "My own name", tags: [], body: placeholder)
+    let model = try retryModel(set: open, title: "My own name", tags: [], body: placeholder)
     model.library = .loaded([open])
 
     let started = await startRetryAndEdit(model) { $0.reveal?.title = "Renamed while waiting" }
@@ -324,9 +324,9 @@ final class RevealTests: XCTestCase {
 
   /// A refusal takes the native catch path: the draft is untouched, the saved baseline stays
   /// where it was, and the screen says what went wrong.
-  func testARefusedRetryKeepsTheDraftAndTheSavedSetItStartedWith() async {
+  func testARefusedRetryKeepsTheDraftAndTheSavedSetItStartedWith() async throws {
     let open = set(title: "YouTube video", metadataState: "failed")
-    let model = retryModel(
+    let model = try retryModel(
       set: open, title: "My own name", tags: ["techno"],
       responder: { _ in (500, #"{"message":"Broken."}"#) })
     model.library = .loaded([open])
