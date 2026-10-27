@@ -1,0 +1,3 @@
+[install]
+# Seconds, not "3d": Bun 1.4.0 rejects a duration string and fails every install.
+minimumReleaseAge = 259200

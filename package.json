@@ -29,7 +29,7 @@
     "garden": "scripts/garden sense"
   },
   "devDependencies": {
-    "@effect/tsgo": "0.41.0",
+    "@effect/tsgo": "0.56.1",
     "@oxlint/plugins": "^1.63.0",
     "@types/node": "^24.0.0",
     "ajv": "^8.20.0",
@@ -39,9 +39,9 @@
     "oxlint": "^1.81.0",
     "playwright": "^1.55.0",
     "turbo": "^2.5.0",
-    "typescript": "7.0.2",
+    "typescript": "7.1.0-beta",
     "ultracite": "7.11.0",
     "vitest": "^5.0.0"
   },
-  "packageManager": "bun@1.4.1"
+  "packageManager": "bun@1.4.4"
 }

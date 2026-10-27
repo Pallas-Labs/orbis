@@ -60,7 +60,7 @@ iPhone, iPad, and Mac builds go to the Group through TestFlight. There is no pub
 
 ## Run it
 
-You need Bun 1.4.1 and Node.js 24. The native app also needs Xcode 26.
+You need Bun 1.4.4 and Node.js 24. The native app also needs Xcode 26.
 
 ```sh
 bun install

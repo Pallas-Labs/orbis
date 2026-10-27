@@ -101,12 +101,11 @@ test("records why a route died, without its credentials or stack", async () => {
       "GET",
       "/boom",
       Effect.gen(function* boom() {
-        yield* Effect.die(
+        return yield* Effect.die(
           new TypeError(
             "Invalid URL: https://node.example/sets/a/audio?grant=1.host.abc token=tok-123 Bearer bearer-456"
           )
         );
-        return HttpServerResponse.jsonUnsafe({ ok: true });
       })
     )
   );
