@@ -56,11 +56,27 @@ Authorization headers, cookies, request bodies, source links, stream grants, and
 
 ## Checks
 
-Run `bun run check` locally or in CI for cached lint, formatting, TypeScript, tests, and Effect diagnostics. Turbo runs independent tasks in parallel, bounded by the available CPU count, and builds shared contracts before consumers. `bun run check:force` bypasses task-cache reads. `bun run fix` applies Ultracite fixes; it is never cached.
+Run `bun run check` for cached lint, formatting, TypeScript, tests, and Effect diagnostics. Turbo runs independent tasks in parallel, bounded by the available CPU count, and builds shared contracts before consumers. `bun run check:force` bypasses task-cache reads. `bun run fix` applies Ultracite fixes; it is never cached.
 
-GitHub Actions cancels superseded runs and runs React Doctor alongside the quality job. Bun downloads and Turbo results use separate caches; each workflow run saves a new Turbo snapshot. Cache restores stay within the same OS and CPU architecture. No remote-cache account is required. Typechecks use separate incremental files so they do not race with builds.
+Typechecks use separate incremental files so they do not race with builds.
 
-The quality workflow also runs the Swift style check and `swift test` for `OrbisDesign` on a macOS runner, so the Swift package is verified even when no Mac is present.
+### Local CI
+
+Orbis runs no GitHub Actions. The `Code quality` and `Release` workflows stay in `.github/workflows` but are disabled. CI is one local command on a clean checkout of the commit to check:
+
+```sh
+bun run ci                  # Linux checks here, macOS checks on cortex over ssh
+bun run ci --mac-host mac   # macOS checks on another ssh host
+bun run ci --no-status      # run the checks, post no status
+```
+
+[`scripts/local-ci.mjs`](../scripts/local-ci.mjs) runs what the `Code quality` workflow ran:
+
+- `bun install --frozen-lockfile`, Playwright's Chromium, and `bun run check`. The HTTP download tests need `ffprobe` on `PATH`.
+- React Doctor on `apps/web`, failing on an error that the commit adds against `origin/main` (`--base` changes the ref).
+- At the same time, `bun run native:format` and `swift test` for `OrbisDesign` on a Mac. From Linux, it copies `apps/apple` at `HEAD` to `~/.cache/orbis-local-ci/<sha>` on the host and removes it afterward. On a Mac with no `--mac-host`, it uses the checkout itself.
+
+When every step passes, it posts the commit status `local-ci` = `success` on `HEAD`, so push the commit first. A green `local-ci` status is the "checks green" signal for review and merge. A failed run posts nothing.
 
 Lint also runs seven rules from the t3code oxlint plugin, vendored in [`lint-plugins/t3code`](../lint-plugins/t3code) and scoped in [`oxlint.config.ts`](../oxlint.config.ts). A suppression comment needs a reason, a test registers cases with `test.each`, and a test sets no per-test timeout (the server test script sets one ceiling).
 
@@ -131,7 +147,7 @@ A lane starts a temporary Orbis service with its own database and trust store, p
 
 The `Orbis` scheme is iOS and macOS; the `OrbisTV` scheme builds the same app for tvOS with `OrbisTests` and the `OrbisTVUITests` journey, which drives the TV with the Siri Remote. The TV's screens live under `apps/apple/Orbis/TV`, and the phone and Mac screens the TV replaces are listed in `project.yml` under `EXCLUDED_SOURCE_FILE_NAMES[sdk=appletv*]`. A `--tvos` lane seeds silent audio and terminates the app when it ends, so a playback check never sounds in the room; playback is proven by the screen's own state. Its service gives an Approval Request 12 seconds instead of 2 minutes (`ORBIS_FIXTURE_APPROVAL_LIFETIME_MS`), so `TVSignInJourney` sees the signed-out TV replace an expired code, and approves the new one through the lane service.
 
-Full and unit lanes run `bun run native:format` first. Journeys-only and `--only` runs leave that check to unit lanes and CI. The style command checks Swift sources with the Xcode toolchain's swift-format against `apps/apple/.swift-format`. swift-format ships with Xcode, so the native style gate needs no install. The check writes nothing; to fix drift, run `xcrun swift-format format --in-place` on the changed files.
+Full and unit lanes run `bun run native:format` first. Journeys-only and `--only` runs leave that check to unit lanes and `bun run ci`. The style command checks Swift sources with the Xcode toolchain's swift-format against `apps/apple/.swift-format`. swift-format ships with Xcode, so the native style gate needs no install. The check writes nothing; to fix drift, run `xcrun swift-format format --in-place` on the changed files.
 
 Playback reliability checks use real AVPlayer instances, a real HTTP service, and a generated ten-minute Ogg file. They require ffmpeg. Repeat `--only` to select several suites in one run:
 
@@ -198,7 +214,7 @@ The runner prints its screenshot directory, defaulting to `orbis-lane-shots` in 
 
 A release is a version tag with generated notes. It has no binaries: signing, notarization, and installers are not set up.
 
-1. Merge the changes to `main` and wait for CI to pass.
+1. Merge the changes to `main` with a green `local-ci` status.
 2. Tag the commit and push the tag. Use `vMAJOR.MINOR.PATCH`; a suffix such as `-rc.1` marks a pre-release.
 
 ```sh
@@ -207,4 +223,10 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The `Release` workflow refuses a tag that is not on `main`, then creates the GitHub Release with notes built from the merged pull requests. Delete a wrong tag with `git push origin :refs/tags/<tag>` and `gh release delete <tag>`.
+The `Release` workflow is disabled, so create the GitHub Release yourself. Check that the tag is on `main`, then build the notes from the merged pull requests:
+
+```sh
+git merge-base --is-ancestor v0.1.0 origin/main && gh release create v0.1.0 --verify-tag --generate-notes --title v0.1.0
+```
+
+Add `--prerelease` for a tag with a suffix. Delete a wrong tag with `git push origin :refs/tags/<tag>` and `gh release delete <tag>`.
