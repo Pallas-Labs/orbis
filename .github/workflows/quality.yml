@@ -14,7 +14,7 @@ concurrency:
 jobs:
   static-analysis:
     name: Oxlint, Oxfmt, Ultracite, and tsgo
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","linux"]') }}
     timeout-minutes: 15
     permissions:
       contents: read
@@ -35,6 +35,7 @@ jobs:
           bun-version: 1.4.1
 
       - name: Restore Bun downloads
+        if: ${{ runner.environment == 'github-hosted' }}
         id: bun-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -45,6 +46,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-bun-1.4.1-
 
       - name: Restore Turborepo outputs
+        if: ${{ runner.environment == 'github-hosted' }}
         id: turbo-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -57,13 +59,18 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Install audio probe for HTTP download tests
+        if: ${{ runner.environment == 'github-hosted' }}
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
 
+      - name: Check audio probe on a self-hosted runner
+        if: ${{ runner.environment != 'github-hosted' }}
+        run: command -v ffprobe
+
       - name: Install browser for web journey
-        run: bunx playwright install --with-deps chromium
+        run: bunx playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
 
       - name: Save Bun downloads
-        if: steps.bun-cache.outputs.cache-hit != 'true'
+        if: ${{ runner.environment == 'github-hosted' && steps.bun-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.bun/install/cache
@@ -75,7 +82,7 @@ jobs:
           TURBO_TELEMETRY_DISABLED: 1
 
       - name: Save successful Turbo task results
-        if: ${{ !cancelled() }}
+        if: ${{ runner.environment == 'github-hosted' && !cancelled() }}
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .turbo
@@ -83,7 +90,7 @@ jobs:
 
   swift-design:
     name: OrbisDesign on macOS
-    runs-on: macos-26
+    runs-on: ${{ fromJSON(vars.APPLE_RUNS_ON || '["self-hosted","macOS"]') }}
     timeout-minutes: 15
     permissions:
       contents: read
@@ -94,6 +101,7 @@ jobs:
           persist-credentials: false
 
       - name: Restore SwiftPM build
+        if: ${{ runner.environment == 'github-hosted' }}
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: apps/apple/OrbisDesign/.build
@@ -112,7 +120,7 @@ jobs:
 
   react-doctor:
     name: React Doctor
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNS_ON || '["self-hosted","linux"]') }}
     timeout-minutes: 15
     permissions:
       contents: read
