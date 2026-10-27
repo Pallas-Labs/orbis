@@ -17,7 +17,11 @@ import { once } from "node:events";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-const root = path.resolve(import.meta.dirname, "..");
+// The checkout to check is the one this runs in, so a branch without this script can be checked
+// with `node <path to>/local-ci.mjs`.
+const root = spawnSync("git", ["rev-parse", "--show-toplevel"], {
+  encoding: "utf-8",
+}).stdout.trim();
 const argument = (name, fallback) => {
   const index = process.argv.indexOf(`--${name}`);
   return index === -1 ? fallback : process.argv[index + 1];
