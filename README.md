@@ -4,10 +4,6 @@
 
 <h1 align="center">Orbis</h1>
 
-<p align="center">
-  <a href="https://github.com/ParthMmm/orbis/actions/workflows/quality.yml"><img src="https://github.com/ParthMmm/orbis/actions/workflows/quality.yml/badge.svg" alt="Code quality"></a>
-</p>
-
 A private library for long music: DJ sets and mixes from YouTube and SoundCloud. Paste a link, file it with a title and tags, download the audio to a server you own, and play it from a native iPhone, iPad, or Mac app.
 
 <p align="center">
