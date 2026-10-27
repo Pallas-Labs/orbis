@@ -249,5 +249,8 @@ test("node reconnects when the Group stops answering heartbeats", async () => {
   );
   expect(
     named("node-link-reconnecting").find((event) => event.level === "error")
-  ).toMatchObject({ attempt: 5, connectFailed: "1006 Failed to connect" });
+  ).toMatchObject({
+    attempt: 5,
+    connectFailed: expect.stringMatching(/^1006\b/u),
+  });
 });

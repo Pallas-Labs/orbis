@@ -18,6 +18,12 @@
     "noUnusedLocals": true,
     "noImplicitOverride": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "ignoreEffectWarningsInTscExitCode": true
+      }
+    ]
   }
 }

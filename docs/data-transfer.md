@@ -1,6 +1,6 @@
 # Transfer and restore Group data
 
-Run these commands from the repository root with Bun 1.4.1. The SQL format includes every application table, trust key digest, row order, SQLite sequence, and Drizzle migration record. The manifest comment and SQL must agree. Table checksums cover the ordered columns and typed rows with SHA-256.
+Run these commands from the repository root with Bun 1.4.4. The SQL format includes every application table, trust key digest, row order, SQLite sequence, and Drizzle migration record. The manifest comment and SQL must agree. Table checksums cover the ordered columns and typed rows with SHA-256.
 
 ## Historical cutover import
 
