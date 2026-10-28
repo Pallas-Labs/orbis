@@ -149,15 +149,18 @@ interface AlarmPort {
 const harness = (databasePath: string, transcript: Transcript) => {
   const transitions: PresenceTransition[] = [];
   const alarm: AlarmPort = { calls: [], failNextSet: false };
+  // Presence reads this clock, and it moves only when a test advances it, so host load
+  // cannot carry a renewal past its lease.
+  const clock = { now: Date.parse("2026-04-02T00:00:00.000Z") };
   const journal = Layer.succeed(PresenceJournal, {
     record: (_tx, transition) =>
       Effect.sync(() => {
         transitions.push(transition);
-        transcript.push({ at: Date.now(), transition });
+        transcript.push({ at: clock.now, transition });
       }),
   });
   const start = async () => {
-    let wake: ReturnType<typeof setTimeout> | undefined;
+    let wakeAt: number | null = null;
     const app = createApp({
       databasePath,
       logging: { silent: true },
@@ -165,7 +168,7 @@ const harness = (databasePath: string, transcript: Transcript) => {
         alarm: {
           cancel: () => {
             alarm.calls.push({ at: null });
-            clearTimeout(wake);
+            wakeAt = null;
           },
           set: (at) => {
             alarm.calls.push({ at });
@@ -173,17 +176,12 @@ const harness = (databasePath: string, transcript: Transcript) => {
               alarm.failNextSet = false;
               throw new Error("alarm storage unavailable");
             }
-            clearTimeout(wake);
-            wake = setTimeout(
-              async () => {
-                await app.expirePresence();
-              },
-              Math.max(at - Date.now(), 0)
-            );
+            wakeAt = at;
           },
         },
         journal,
         leaseMs: LEASE_MS,
+        now: () => clock.now,
         resultRetentionMs: RETENTION_MS,
       },
       presenceWindowMs: LEGACY_WINDOW_MS,
@@ -194,8 +192,15 @@ const harness = (databasePath: string, transcript: Transcript) => {
       token: "seeded-test-fixture",
     });
     const stop = async () => {
-      clearTimeout(wake);
+      wakeAt = null;
       await listeners.stop();
+    };
+    const advance = async (ms: number) => {
+      clock.now += ms;
+      if (wakeAt !== null && wakeAt <= clock.now) {
+        wakeAt = null;
+        await app.expirePresence();
+      }
     };
     const call = async (
       key: Key | "admin",
@@ -220,7 +225,7 @@ const harness = (databasePath: string, transcript: Transcript) => {
       const response = await fetch(new URL(route, listeners.url), init);
       const body: unknown = await response.json();
       transcript.push({
-        at: Date.now(),
+        at: clock.now,
         body,
         key,
         method,
@@ -239,9 +244,24 @@ const harness = (databasePath: string, transcript: Transcript) => {
       const response = await act(key, action);
       return response.status;
     };
+    const expectStatus = (
+      action: PresenceAction,
+      response: { body: unknown; status: number },
+      status: number
+    ) => {
+      if (response.status !== status) {
+        const body =
+          response.status === 409
+            ? decodeConflict(response.body)
+            : response.body;
+        throw new Error(
+          `${action.kind} ${action.actionId} at ${clock.now}: expected HTTP ${status}, received ${response.status} ${JSON.stringify(body)}`
+        );
+      }
+    };
     const accepted = async (key: Key, action: PresenceAction) => {
       const response = await act(key, action);
-      expect(response.status).toBe(200);
+      expectStatus(action, response, 200);
       return decodeResult(response.body);
     };
     const refused = async (
@@ -250,7 +270,7 @@ const harness = (databasePath: string, transcript: Transcript) => {
       reason: (typeof PresenceConflictSchema.Type)["reason"]
     ) => {
       const response = await act(key, action);
-      expect(response.status).toBe(409);
+      expectStatus(action, response, 409);
       expect(decodeConflict(response.body).reason).toBe(reason);
     };
     const watch = async (key: Key, viewer: string) => {
@@ -283,7 +303,7 @@ const harness = (databasePath: string, transcript: Transcript) => {
         );
         if (event.kind === "presence") {
           transcript.push({
-            at: Date.now(),
+            at: clock.now,
             event: event.presence.map((entry) => ({
               personId: entry.personId,
               setId: entry.set.id,
@@ -342,6 +362,7 @@ const harness = (databasePath: string, transcript: Transcript) => {
       accepted,
       act,
       actStatus,
+      advance,
       call,
       callStatus,
       listeners,
@@ -350,7 +371,7 @@ const harness = (databasePath: string, transcript: Transcript) => {
       watch,
     };
   };
-  return { alarm, start, transitions };
+  return { alarm, clock, start, transitions };
 };
 
 const listening = (personId: string, setId: string) => (entries: Entries) =>
@@ -380,7 +401,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
   const root = await mkdtemp(path.join(tmpdir(), "orbis-presence-actions-"));
   const transcript: Transcript = [];
   const databasePath = await seed(root);
-  const { start, transitions } = harness(databasePath, transcript);
+  const { clock, start, transitions } = harness(databasePath, transcript);
   let server = await start();
   const opened: { close: () => Promise<void> }[] = [];
   try {
@@ -422,8 +443,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
       throw new Error("expected a playing session");
     }
     const firstDeadline = Date.parse(first.session.leaseExpiresAt);
-    expect(firstDeadline - Date.now()).toBeGreaterThan(LEASE_MS / 2);
-    expect(firstDeadline - Date.now()).toBeLessThanOrEqual(LEASE_MS);
+    expect(firstDeadline - clock.now).toBe(LEASE_MS);
     await viewer.presence(listening("a", "s1"));
     expect(transitions.at(-1)).toMatchObject({
       cause: "play",
@@ -435,7 +455,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
     let actionNumber = 1;
     let lastDeadline = firstDeadline;
     const transitionsBeforeRenewals = transitions.length;
-    while (Date.now() < firstDeadline + LEASE_MS / 2) {
+    while (clock.now < firstDeadline + LEASE_MS / 2) {
       actionNumber += 1;
       const renewed = await server.accepted("a-phone", {
         actionId: `r${actionNumber}`,
@@ -451,7 +471,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
         lastDeadline
       );
       lastDeadline = Date.parse(renewed.session.leaseExpiresAt);
-      await Bun.sleep(LEASE_MS / 4);
+      await server.advance(LEASE_MS / 4);
     }
     expect(transitions).toHaveLength(transitionsBeforeRenewals);
 
@@ -500,7 +520,8 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
       visibleSetAfter: "s1",
       visibleSetBefore: null,
     });
-    await viewer.presence(absent("a"), LEGACY_WINDOW_MS + 6000);
+    await server.advance(LEGACY_WINDOW_MS);
+    await viewer.presence(absent("a"));
     expect(transitions.at(-1)).toMatchObject({
       cause: "legacy-expiry",
       visibleSetAfter: null,
@@ -651,7 +672,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
       outcome: "duplicate",
     });
 
-    await Bun.sleep(RETENTION_MS + 200);
+    await server.advance(RETENTION_MS + 200);
     await server.refused("a-laptop", replay, "stale");
     const renewAfterPrune = await server.accepted("a-laptop", {
       actionId: "l7",
@@ -701,7 +722,6 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
       listenCount: 1,
     });
 
-    const ownReportAt = Date.now();
     expect(
       await server.callStatus("a-legacy", "/sets/s1/position", "PUT", {
         seconds: 11,
@@ -722,10 +742,8 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
       ownerGeneration: optedIn.session.ownerGeneration,
       sessionId: "legacy-s1",
     });
-    const beforeOwnReportLapses =
-      ownReportAt + LEGACY_WINDOW_MS - 300 - Date.now();
-    expect(beforeOwnReportLapses).toBeGreaterThan(0);
-    await viewer.presence(absent("a"), beforeOwnReportLapses);
+    // The clock has not moved, so only the pause can clear the own report.
+    await viewer.presence(absent("a"));
   } finally {
     await Promise.all(opened.map((open) => open.close().catch(() => null)));
     await server.stop();
@@ -738,7 +756,10 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
   const root = await mkdtemp(path.join(tmpdir(), "orbis-presence-queue-"));
   const transcript: Transcript = [];
   const databasePath = await seed(root);
-  const { alarm, start, transitions } = harness(databasePath, transcript);
+  const { alarm, clock, start, transitions } = harness(
+    databasePath,
+    transcript
+  );
   const server = await start();
   const opened: { close: () => Promise<void> }[] = [];
   try {
@@ -764,7 +785,6 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
     }
     const ownerDeadline = Date.parse(owner.session.leaseExpiresAt);
     expect(alarm.calls).toEqual([{ at: ownerDeadline }]);
-    const retryReportAt = Date.now();
     expect(
       await server.callStatus("a-legacy", "/sets/s3/position", "PUT", {
         seconds: 3,
@@ -814,9 +834,7 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
     );
     await viewer.presence(absent("a"));
 
-    await Bun.sleep(
-      Math.max(retryReportAt + LEGACY_WINDOW_MS + 100 - Date.now(), 0)
-    );
+    await server.advance(LEGACY_WINDOW_MS + 100);
     const second = await server.accepted("a-phone", {
       actionId: "q5",
       actionNumber: 1,
@@ -870,9 +888,11 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
     });
     await viewer.presence(listening("a", "s1"));
 
-    const expiredAt = Date.now();
-    await viewer.presence(absent("a"), LEASE_MS + 6000);
-    expect(Date.now() - expiredAt).toBeGreaterThanOrEqual(LEASE_MS - 100);
+    const transitionsBeforeExpiry = transitions.length;
+    await server.advance(LEASE_MS - 1);
+    expect(transitions).toHaveLength(transitionsBeforeExpiry);
+    await server.advance(1);
+    await viewer.presence(absent("a"));
     expect(transitions.at(-1)).toMatchObject({
       cause: "expiry",
       personId: "a",
@@ -925,13 +945,12 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
       ghost.run(
         `INSERT INTO presence_sessions (key_id, session_id, person_id, set_id, state, owner_generation, action_number, lease_expires_at, updated_at)
          VALUES ('ghost-key', 'ghost', 'a', 's1', 'playing', 99, 1, ?, 0)`,
-        [Date.now() + 60_000]
+        [clock.now + 60_000]
       );
     } finally {
       ghost.close();
     }
     await viewer.presence(listening("a", "s1"));
-    const sweepReportAt = Date.now();
     expect(
       await server.callStatus("a-legacy", "/sets/s3/position", "PUT", {
         seconds: 4,
@@ -958,9 +977,7 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
     } finally {
       sqlite.close();
     }
-    await Bun.sleep(
-      Math.max(sweepReportAt + LEGACY_WINDOW_MS + 100 - Date.now(), 0)
-    );
+    await server.advance(LEGACY_WINDOW_MS + 100);
     expect(
       await server.callStatus("b-phone", "/queue/active", "PUT", {
         setId: "s1",

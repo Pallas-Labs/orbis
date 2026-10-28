@@ -79,6 +79,8 @@ export interface PresenceCaller {
 
 export interface PresenceOptions {
   readonly leaseMs?: number;
+  /** Reads the time for leases, retained results, and legacy reports. Defaults to `Date.now`. */
+  readonly now?: () => number;
   readonly resultRetentionMs?: number;
   readonly legacyReportWindowMs?: number;
   /** Wakes `expire` at the deadline. Bun defaults to a scoped timer. */
@@ -383,6 +385,7 @@ export class Presence extends Context.Service<
         const journal = yield* PresenceJournal;
         const scope = yield* Scope.Scope;
         const leaseMs = options.leaseMs ?? LEASE_MS;
+        const clock = options.now ?? Date.now;
         const retentionMs = options.resultRetentionMs ?? RESULT_RETENTION_MS;
         const legacyWindowMs = options.legacyReportWindowMs ?? LEGACY_WINDOW_MS;
 
@@ -530,7 +533,7 @@ export class Presence extends Context.Service<
             return;
           }
           timer = yield* Effect.sleep(
-            Duration.millis(Math.max(at - Date.now(), 0))
+            Duration.millis(Math.max(at - clock(), 0))
           ).pipe(
             Effect.andThen(
               Effect.sync(() => {
@@ -641,7 +644,7 @@ export class Presence extends Context.Service<
             executeKeepingConflict(
               db.transaction((tx) =>
                 Effect.gen(function* applyAction() {
-                  const now = Date.now();
+                  const now = clock();
                   const input = retryKey(action);
                   const [saved] = yield* tx
                     .select({
@@ -750,7 +753,7 @@ export class Presence extends Context.Service<
             execute(
               db.transaction((tx) =>
                 Effect.gen(function* recordLegacyReportRow() {
-                  const now = Date.now();
+                  const now = clock();
                   const [optedIn] = yield* tx
                     .select({ keyId: presenceKeys.keyId })
                     .from(presenceKeys)
@@ -799,7 +802,7 @@ export class Presence extends Context.Service<
           (tx: DatabaseClient, personId: string, activeSetId: string | null) =>
             execute(
               Effect.gen(function* supersedeOtherSets() {
-                const now = Date.now();
+                const now = clock();
                 const before = yield* visible(tx, personId);
                 yield* tx
                   .update(presenceSessions)
@@ -938,7 +941,7 @@ export class Presence extends Context.Service<
             ).pipe(Effect.andThen(afterCommit()))
           );
 
-        wake = Effect.suspend(() => expire(Date.now())).pipe(
+        wake = Effect.suspend(() => expire(clock())).pipe(
           Effect.catchTag("LibraryError", (failure) =>
             Effect.logWarning("presence expiry failed").pipe(
               Effect.annotateLogs({ cause: failure.message }),

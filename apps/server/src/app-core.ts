@@ -460,6 +460,7 @@ export const createPortableApp = (options: {
     Layer.provide(database)
   );
   const queueSignalsLayer = QueueSignals.layer;
+  const presenceNow = options.presence?.now ?? Date.now;
   const presenceLayer = Presence.layer({
     ...options.presence,
     legacyReportWindowMs: options.presenceWindowMs ?? PRESENCE_WINDOW_MS,
@@ -1687,7 +1688,7 @@ export const createPortableApp = (options: {
         viewerId: string
       ) {
         const { people } = readTrustRegistry(trustPath).store;
-        const now = Date.now();
+        const now = presenceNow();
         const found = [];
         for (const person of people) {
           let target;
@@ -2536,7 +2537,7 @@ export const createPortableApp = (options: {
     expirePresence: async (): Promise<void> => {
       await initialize();
       if (presenceService) {
-        await Effect.runPromise(presenceService.expire(Date.now()));
+        await Effect.runPromise(presenceService.expire(presenceNow()));
       }
     },
     resumeImports: async (): Promise<void> => {
