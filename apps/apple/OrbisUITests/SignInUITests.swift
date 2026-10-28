@@ -14,9 +14,10 @@ final class SignInUITests: XCTestCase {
 
   // MARK: - Journeys
 
-  /// A fresh install joins with a Join Link pasted into the passcode slots, keeps its key across a
-  /// relaunch, shows and copies a Sign-in Code for another device, has no Host sections, signs
-  /// out, and signs back in by pasting the code it copied.
+  /// A fresh install is refused a wrong passcode in one line, joins with a Join Link from the
+  /// Paste button, keeps its key across a relaunch, shows and copies a Sign-in Code for another
+  /// device, has no Host sections, signs out, and signs back in by pasting the code it copied
+  /// into the field with the edit menu.
   func testANewPersonJoinsWithThePasscodeAndAddsADevice() throws {
     let host = try LaneService()
     let username = "journey-\(Self.suffix())"
@@ -37,29 +38,66 @@ final class SignInUITests: XCTestCase {
     new.tap()
     let usernameField = app.textFields["signin-username"]
     XCTAssertTrue(usernameField.waitForExistence(timeout: 10))
+    XCTAssertTrue(
+      app.buttons["signin-passcode-paste"].waitForExistence(timeout: 10),
+      "the passcode has a Paste button\n\(app.debugDescription)")
+    capture("02-join-form")
     usernameField.tap()
     usernameField.typeText(username)
     let passcodeField = app.textFields["signin-passcode"]
     passcodeField.tap()
     type("not-the-passcode", into: passcodeField)
     XCTAssertEqual(
-      passcodeField.value as? String, "NTTHEPASSCDE",
-      "dashes and look-alikes drop out, and the twelve that remain fill the slots")
+      code(in: passcodeField), "NTTHEPASSCDE",
+      "dashes and look-alikes drop out, and the twelve that remain fill the code")
 
     let error = app.staticTexts["signin-error"]
     XCTAssertTrue(
       error.waitForExistence(timeout: 30),
-      "a full wrong passcode is sent as the last slot fills, and refused\n\(app.debugDescription)")
+      "a full wrong passcode is sent as the last position fills, and refused\n\(app.debugDescription)")
+    XCTAssertTrue(
+      error.label.hasPrefix("Wrong passcode."), "one line says what to do: \(error.label)")
     XCTAssertFalse(
-      error.label.hasPrefix("The service"), "the service's own sentence is shown: \(error.label)")
-    XCTAssertTrue(app.buttons["copy-failure"].exists, "a failure offers its details to copy")
-    capture("02-wrong-passcode")
-    step("a wrong passcode shows the service's sentence", ["message": error.label])
+      app.buttons["copy-failure"].exists, "a refused passcode is the Person's to fix, not a report")
+    capture("03-wrong-passcode")
+    step("a wrong passcode is refused in one line under it", ["message": error.label])
 
-    // A Join Link pasted into the passcode keeps only the passcode, and the full slots join.
+    // The refused passcode is held as if selected, so a keystroke starts it again.
+    passcodeField.typeText("k")
+    XCTAssertTrue(
+      waitUntil(timeout: 5) { self.code(in: passcodeField) == "K" },
+      "a keystroke replaces the refused passcode: \(code(in: passcodeField))")
+    XCTAssertFalse(error.exists, "and clears the line")
+    step("a keystroke replaces the refused passcode and clears its line")
+
+    // The Paste button takes a Join Link and keeps only the passcode. The username is empty,
+    // so the full passcode sends the Person there rather than joining.
     let joinLink = "https://orbis.p11a.xyz/join#\(passcode.lowercased())"
-    replaceText(in: passcodeField, with: "", app: app)
-    paste(joinLink, into: passcodeField, app: app)
+    replaceText(in: usernameField, with: "", app: app)
+    tapPaste("signin-passcode-paste", pasting: joinLink, in: app)
+    XCTAssertTrue(
+      waitUntil(timeout: 5) { self.code(in: passcodeField) == passcode },
+      "the pasted Join Link fills the passcode: \(code(in: passcodeField))")
+    let spoken = [passcode.prefix(4), passcode.dropFirst(4).prefix(4), passcode.suffix(4)]
+      .joined(separator: " ")
+    XCTAssertEqual(
+      passcodeField.value as? String, spoken, "VoiceOver reads the passcode in its three groups")
+    XCTAssertTrue(
+      waitUntil(timeout: 5) { usernameField.value(forKey: "hasKeyboardFocus") as? Bool == true },
+      "a full passcode with no username moves focus to the username\n\(app.debugDescription)")
+    let join = app.buttons["signin-join"]
+    XCTAssertFalse(join.isEnabled, "Join waits for the username")
+    capture("04-join-link-pasted")
+    step("the Paste button fills the passcode from a Join Link and moves to the username")
+
+    // The system shows a "pasted from" banner after a paste, which can take keystrokes typed at
+    // once, so the journey taps the field it already holds focus in.
+    usernameField.tap()
+    usernameField.typeText(username)
+    XCTAssertTrue(
+      waitUntil(timeout: 5) { join.isEnabled },
+      "a username enables Join: \(String(describing: usernameField.value))\n\(app.debugDescription)")
+    join.tap()
     XCTAssertTrue(
       app.tabBars.buttons["Library"].waitForExistence(timeout: 30),
       "joining must land in the library\n\(app.debugDescription)")
@@ -68,12 +106,12 @@ final class SignInUITests: XCTestCase {
     XCTAssertTrue(
       app.descendants(matching: .any)["home-empty"].waitForExistence(timeout: 15),
       "a new Person's Home must say the collection is empty\n\(app.debugDescription)")
-    capture("03-joined")
+    capture("05-joined")
     XCTAssertTrue(
       try host.people().contains { $0.username == username },
       "the Host's People must list the new Person")
     step(
-      "a pasted Join Link fills the passcode, creates the Person, and signs in",
+      "Join creates the Person and signs in",
       ["username": username, "pasted": joinLink])
 
     app.terminate()
@@ -103,7 +141,7 @@ final class SignInUITests: XCTestCase {
     XCTAssertTrue(copy.exists, "the code can be copied\n\(app.debugDescription)")
     copy.tap()
     XCTAssertTrue(waitUntil(timeout: 5) { copy.label == "Copied" }, "copying says so: \(copy.label)")
-    capture("04-settings-sign-in-code")
+    capture("06-settings-sign-in-code")
     let shownCode = code.label
     app.navigationBars["Add a Device"].buttons.element(boundBy: 0).tap()
     assertNoHostSections(app)
@@ -118,7 +156,7 @@ final class SignInUITests: XCTestCase {
     XCTAssertTrue(
       app.buttons["signin-new"].waitForExistence(timeout: 15),
       "signing out returns to the first screen\n\(app.debugDescription)")
-    capture("05-signed-out-again")
+    capture("07-signed-out-again")
     step("signing out forgets the key")
 
     app.terminate()
@@ -131,43 +169,49 @@ final class SignInUITests: XCTestCase {
     XCTAssertTrue(
       app.tabBars.buttons["Library"].waitForExistence(timeout: 30),
       "the code Settings copied pastes into the slots and signs in\n\(app.debugDescription)")
-    capture("06-copied-code-signed-in")
+    capture("08-copied-code-signed-in")
     step("the copied Sign-in Code pastes into the slots and signs the device back in")
     app.terminate()
     record("join")
   }
 
-  /// A fresh install signs in with a code another device showed, lowercase with its dash: pasted
-  /// as it arrives in a message, and typed by hand, where a dash, a space, and the look-alikes
-  /// change nothing. Each is sent as the last slot fills.
+  /// A fresh install signs in with a code another device showed, lowercase with its dash: from
+  /// the Paste button as it arrives in a message, with no second tap, and typed by hand, where a
+  /// dash, a space, and the look-alikes change nothing. Each is sent as the last position fills.
   func testACodeFromAnotherDeviceSignsIn() throws {
     let friend = try LaneService.settingsPerson()
     let devicesBefore = Set(try friend.devices().map(\.id))
     var app = launchOrbis(address: friend.address)
 
     let field = openCodeForm(app)
-    paste("zzzz-zzzz", into: field, app: app)
-    XCTAssertEqual(
-      field.value as? String, "ZZZZZZZZ", "a pasted dashed code fills the slots in capitals")
+    XCTAssertTrue(
+      app.buttons["signin-code-paste"].waitForExistence(timeout: 10),
+      "the code has a Paste button\n\(app.debugDescription)")
+    capture("01-code-form")
+    tapPaste("signin-code-paste", pasting: "zzzz-zzzz", in: app)
+    XCTAssertTrue(
+      waitUntil(timeout: 5) { self.code(in: field) == "ZZZZZZZZ" },
+      "a pasted dashed code fills the field in capitals: \(code(in: field))")
     let error = app.staticTexts["signin-error"]
     XCTAssertTrue(
       error.waitForExistence(timeout: 30),
-      "an unknown code is sent as the last slot fills, and refused\n\(app.debugDescription)")
-    XCTAssertTrue(app.buttons["copy-failure"].exists)
-    capture("01-unknown-code-pasted")
-    step(
-      "a pasted unknown code fills the slots and shows the service's sentence",
-      ["message": error.label])
+      "an unknown code is sent as the paste fills it, and refused\n\(app.debugDescription)")
+    XCTAssertTrue(
+      error.label.hasPrefix("That code didn't work."), "one line says what to do: \(error.label)")
+    XCTAssertFalse(
+      app.buttons["copy-failure"].exists, "a refused code is the Person's to fix, not a report")
+    capture("02-unknown-code-pasted")
+    step("a pasted unknown code is refused in one line under it", ["message": error.label])
 
     let first = try friend.signInCode()
     let dashed = "\(first.prefix(4))-\(first.suffix(4))".lowercased()
-    paste(dashed, into: field, app: app)
+    tapPaste("signin-code-paste", pasting: dashed, in: app)
     XCTAssertTrue(
       app.tabBars.buttons["Library"].waitForExistence(timeout: 30),
       "a code pasted over the refused one replaces it and signs in\n\(app.debugDescription)")
-    capture("02-signed-in-pasted")
+    capture("03-signed-in-pasted")
     step(
-      "a lowercase code with its dash, pasted over the full slots, replaces them and signs in",
+      "a lowercase code with its dash, from the Paste button over the refused one, signs in",
       ["pasted": dashed])
 
     // Settings live in memory, so a relaunch starts signed out.
@@ -178,19 +222,19 @@ final class SignInUITests: XCTestCase {
     let typed = "\(second.prefix(4))-\(second.suffix(4))".lowercased()
     type("- O0I1Lol", into: typedField)
     XCTAssertEqual(
-      typedField.value as? String ?? "", "", "a dash, a space, O, 0, I, 1, and L change nothing")
-    capture("03-look-alikes-change-nothing")
+      code(in: typedField), "", "a dash, a space, O, 0, I, 1, and L change nothing")
+    capture("04-look-alikes-change-nothing")
     step("a dash, a space, and look-alikes change nothing", ["typed": "- O0I1Lol"])
     type(typed.dropLast(), into: typedField)
     XCTAssertEqual(
-      typedField.value as? String, String(second.prefix(7)),
-      "typed characters fill the slots in capitals, and the dash adds nothing")
-    capture("04-typed-code")
+      code(in: typedField), String(second.prefix(7)),
+      "typed characters fill the code in capitals, and the dash adds nothing")
+    capture("05-typed-code")
     typedField.typeText(String(typed.suffix(1)))
     XCTAssertTrue(
       app.tabBars.buttons["Library"].waitForExistence(timeout: 30),
       "a typed code must sign in as the last slot fills\n\(app.debugDescription)")
-    capture("05-signed-in-typed")
+    capture("06-signed-in-typed")
     step("a code typed in lowercase with its dash signs in", ["typed": typed])
 
     var added: [LaneService.Device] = []
@@ -205,6 +249,43 @@ final class SignInUITests: XCTestCase {
     }
     app.terminate()
     record("redeem")
+  }
+
+  /// At the largest text size short of the accessibility sizes, the Group Passcode and the
+  /// Sign-in Code each fit the screen's width on one line, in their groups.
+  func testCodesFitAtTheLargestTextSize() throws {
+    let host = try LaneService()
+    let passcode = try host.newPasscode()
+    let app = launchOrbis(
+      address: host.address,
+      arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXXXL"])
+    let window = app.windows.firstMatch
+
+    let new = app.buttons["signin-new"]
+    XCTAssertTrue(new.waitForExistence(timeout: 30))
+    new.tap()
+    let passcodeField = app.textFields["signin-passcode"]
+    XCTAssertTrue(passcodeField.waitForExistence(timeout: 10))
+    tapPaste("signin-passcode-paste", pasting: passcode, in: app)
+    XCTAssertTrue(waitUntil(timeout: 5) { self.code(in: passcodeField) == passcode })
+    assertFits(passcodeField, in: window)
+    capture("01-passcode-xxxl")
+    step(
+      "the pasted passcode fits at xxxLarge",
+      ["field": "\(passcodeField.frame)", "window": "\(window.frame)"])
+
+    // Settings live in memory, so a relaunch starts on the first screen, at the same size.
+    app.terminate()
+    app.launch()
+    let codeField = openCodeForm(app)
+    type("abcdefg", into: codeField)
+    assertFits(codeField, in: window)
+    capture("02-code-xxxl")
+    step(
+      "the Sign-in Code fits at xxxLarge",
+      ["field": "\(codeField.frame)", "window": "\(window.frame)"])
+    app.terminate()
+    record("xxxl")
   }
 
   func testAnUnreachableServiceNamesTheRecoveryAction() throws {
@@ -379,6 +460,28 @@ final class SignInUITests: XCTestCase {
     XCTAssertTrue(field.waitForExistence(timeout: 10), "\(app.debugDescription)")
     field.tap()
     return field
+  }
+
+  /// What a code field holds, without the spaces VoiceOver reads between its groups.
+  private func code(in field: XCUIElement) -> String {
+    (field.value as? String ?? "").replacingOccurrences(of: " ", with: "")
+  }
+
+  private func assertFits(_ field: XCUIElement, in window: XCUIElement) {
+    XCTAssertGreaterThanOrEqual(field.frame.minX, window.frame.minX, "the code starts on screen")
+    XCTAssertLessThanOrEqual(field.frame.maxX, window.frame.maxX, "the code ends on screen")
+  }
+
+  /// Taps a form's Paste button with `text` on the pasteboard, as a person pastes a code from
+  /// Messages. The system button reads the pasteboard without asking.
+  private func tapPaste(_ identifier: String, pasting text: String, in app: XCUIApplication) {
+    UIPasteboard.general.string = text
+    let button = app.buttons[identifier]
+    XCTAssertTrue(
+      button.waitForExistence(timeout: 10), "the form offers Paste\n\(app.debugDescription)")
+    XCTAssertTrue(
+      waitUntil(timeout: 5) { button.isEnabled }, "Paste is enabled while the pasteboard holds text")
+    button.tap()
   }
 
   /// Types one character at a time and lets the field settle after each, as a person types. A

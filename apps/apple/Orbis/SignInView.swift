@@ -140,8 +140,10 @@ struct JoinForm: View {
     case passcode
   }
 
+  private var isPasscodeFull: Bool { passcode.count == CodeFormat.groupPasscode.length }
+
   private var canJoin: Bool {
-    !username.isEmpty && passcode.count == CodeFormat.groupPasscode.length && !model.isSigningIn
+    !username.isEmpty && isPasscodeFull && !model.isSigningIn
   }
 
   var body: some View {
@@ -152,8 +154,14 @@ struct JoinForm: View {
             .plainEntry()
             .textContentType(.username)
             .focused($focus, equals: .username)
-            .submitLabel(.next)
-            .onSubmit { focus = .passcode }
+            .submitLabel(isPasscodeFull ? .join : .next)
+            .onSubmit {
+              if isPasscodeFull {
+                join()
+              } else {
+                focus = .passcode
+              }
+            }
             .multilineTextAlignment(.trailing)
             .accessibilityIdentifier("signin-username")
         }
@@ -163,18 +171,32 @@ struct JoinForm: View {
         // Sign-in Code, rather than hidden like a password.
         CodeField(
           "Group Passcode", code: $passcode, format: .groupPasscode, focus: $focus,
-          equals: .passcode, submit: join
+          equals: .passcode, isRefused: model.isCodeRefused, submit: passcodeFilled
         )
         .accessibilityIdentifier("signin-passcode")
         .codeRow()
+        RefusedCodeLine(message: model.refusedCode)
+        CodePasteButton(code: $passcode, format: .groupPasscode, identifier: "signin-passcode-paste")
       }
       SignInFailureSection(failure: model.signInFailure)
     }
-    .signInForm(title: "Join Your Group", model: model, focus: $focus, first: .username)
+    .signInForm(
+      title: "Join Your Group", model: model, focus: $focus, first: .username, code: .passcode
+    )
     .safeAreaInset(edge: .bottom) {
       SignInSubmit(
         title: "Join", isWorking: model.isSigningIn, isEnabled: canJoin,
         identifier: "signin-join", action: join)
+    }
+  }
+
+  /// A full passcode, typed or pasted, joins at once when the username is there, and otherwise
+  /// sends the Person to the username.
+  private func passcodeFilled() {
+    if username.isEmpty {
+      focus = .username
+    } else {
+      join()
     }
   }
 
@@ -198,14 +220,16 @@ struct CodeForm: View {
       Section("Sign-in Code") {
         CodeField(
           "Sign-in Code", code: $code, format: .signInCode, focus: $focus, equals: true,
-          submit: redeem
+          isRefused: model.isCodeRefused, submit: redeem
         )
         .accessibilityIdentifier("signin-code")
         .codeRow()
+        RefusedCodeLine(message: model.refusedCode)
+        CodePasteButton(code: $code, format: .signInCode, identifier: "signin-code-paste")
       }
       SignInFailureSection(failure: model.signInFailure)
     }
-    .signInForm(title: "Sign In", model: model, focus: $focus, first: true)
+    .signInForm(title: "Sign In", model: model, focus: $focus, first: true, code: true)
     .safeAreaInset(edge: .bottom) {
       SignInSubmit(
         title: "Sign In", isWorking: model.isSigningIn, isEnabled: canRedeem,
@@ -216,6 +240,56 @@ struct CodeForm: View {
   private func redeem() {
     guard canRedeem else { return }
     Task { await model.signIn(.code(code)) }
+  }
+}
+
+extension AppModel {
+  /// Whether the code on screen is the one the service refused. Any change to the code clears
+  /// it.
+  fileprivate var isCodeRefused: Binding<Bool> {
+    Binding(
+      get: { self.refusedCode != nil },
+      set: { if !$0 { self.refusedCode = nil } })
+  }
+}
+
+/// The system Paste button under a code. It reads the clipboard without the paste alert, because
+/// the Person tapped it, and the code arrives through the format, so a Join Link, a dash, or a
+/// space reads as the code. People get codes as text, so this is the usual way in.
+private struct CodePasteButton: View {
+  @Binding var code: String
+  let format: CodeFormat
+  let identifier: String
+
+  var body: some View {
+    #if !os(tvOS)
+      PasteButton(payloadType: String.self) { pasted in
+        guard let text = pasted.first else { return }
+        code = format.code(from: text)
+      }
+      .labelStyle(.titleAndIcon)
+      .buttonBorderShape(.capsule)
+      .tint(Color.orbis.tint)
+      .accessibilityIdentifier(identifier)
+      .codeRow()
+    #endif
+  }
+}
+
+/// A refused code's one line, directly under it: what went wrong and what to do. A refused code
+/// is the Person's to fix, so it gets no card and no details to copy.
+private struct RefusedCodeLine: View {
+  let message: String?
+
+  var body: some View {
+    if let message {
+      Text(message)
+        .font(.orbis.detail)
+        .foregroundStyle(OrbisColor.destructive)
+        .multilineTextAlignment(.center)
+        .accessibilityIdentifier("signin-error")
+        .codeRow()
+    }
   }
 }
 
@@ -294,15 +368,20 @@ extension View {
       #endif
   }
 
-  /// A code field's row: the slots centred on the page, without a row's card behind them.
+  /// A row of a code's section: centred on the page, without a row's card or separator.
   fileprivate func codeRow() -> some View {
     self
       .frame(maxWidth: .infinity)
       .listRowBackground(Color.clear)
+      #if os(iOS)
+        .listRowSeparator(.hidden)
+      #endif
   }
 
+  /// A sign-in form: `first` takes focus as it opens, and the `code` field takes it back when
+  /// the service refuses the code, so the next keystroke replaces it.
   fileprivate func signInForm<Field: Hashable>(
-    title: String, model: AppModel, focus: FocusState<Field?>.Binding, first: Field
+    title: String, model: AppModel, focus: FocusState<Field?>.Binding, first: Field, code: Field
   ) -> some View {
     self
       .formStyle(.grouped)
@@ -314,10 +393,14 @@ extension View {
       .navigationTitle(title)
       .onAppear {
         model.signInFailure = nil
+        model.refusedCode = nil
         focus.wrappedValue = first
       }
       .onChange(of: model.signInFailure) { _, failure in
         if failure != nil { focus.wrappedValue = nil }
+      }
+      .onChange(of: model.refusedCode) { _, refused in
+        if refused != nil { focus.wrappedValue = code }
       }
   }
 }
