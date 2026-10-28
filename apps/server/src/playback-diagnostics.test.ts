@@ -341,6 +341,19 @@ test("strict nested privacy schema rejects unknown fields and inconsistent seque
       { ...base, schemaVersion: 2 },
       { ...base, runId: "private-device-name" },
       { ...base, afterSequence: first.sequence },
+      { ...base, lost: [{ afterSequence: 3, throughSequence: 3 }] },
+      {
+        ...base,
+        lost: [{ afterSequence: 0, private: "x", throughSequence: 1 }],
+      },
+      {
+        ...base,
+        lost: Array.from({ length: 33 }, (_, index) => ({
+          afterSequence: index,
+          throughSequence: index + 1,
+        })),
+      },
+      { ...base, entries: [], throughSequence: base.afterSequence },
       { ...base, throughSequence: first.sequence - 1 },
       { ...base, entries: [first, first] },
       {
@@ -435,7 +448,89 @@ test.each([
   }
 );
 
-test("partial receipt and sequence holes produce bounded searchable records without retry", async () => {
+test("playback.loss is written only for the ranges the client declares, with their exact bounds", async () => {
+  const s = setup();
+  try {
+    const [first] = fixture.entries;
+    if (!first) {
+      throw new Error("fixture is empty");
+    }
+    const send = async (body: object) => {
+      const response = await s.send(JSON.stringify({ ...batch(), ...body }));
+      expect(response.status).toBe(200);
+      return response.json();
+    };
+    // A batch that follows an unacknowledged one: sequences 1 to 7 are behind it, but the
+    // client declared none of them lost, so they may already be stored.
+    expect(
+      await send({
+        afterSequence: 0,
+        entries: [{ ...first, sequence: 8 }],
+        throughSequence: 8,
+      })
+    ).toEqual({ accepted: 1, rejected: 0 });
+    expect(
+      await send({
+        afterSequence: 19,
+        entries: [{ ...first, sequence: 20 }],
+        lost: [
+          { afterSequence: 8, throughSequence: 12 },
+          { afterSequence: 14, throughSequence: 19 },
+        ],
+        throughSequence: 20,
+      })
+    ).toEqual({ accepted: 3, rejected: 0 });
+    // A declaration with no entries, as after a refused batch with nothing newer to send.
+    expect(
+      await send({
+        afterSequence: 25,
+        entries: [],
+        lost: [{ afterSequence: 20, throughSequence: 25 }],
+        throughSequence: 25,
+      })
+    ).toEqual({ accepted: 1, rejected: 0 });
+    const losses = s.requests.map(({ body }) => {
+      if (!isOtlpBody(body)) {
+        throw new Error("the relay did not post an OTLP body");
+      }
+      return recordsOf(body)
+        .filter(
+          (record) => record["event.name"]?.stringValue === "playback.loss"
+        )
+        .map((record) => ({
+          after: record["playback.after_sequence"],
+          count: record["playback.lost_count"],
+          through: record["playback.through_sequence"],
+        }));
+    });
+    expect(losses).toEqual([
+      [],
+      [
+        {
+          after: { intValue: "8" },
+          count: { intValue: "4" },
+          through: { intValue: "12" },
+        },
+        {
+          after: { intValue: "14" },
+          count: { intValue: "5" },
+          through: { intValue: "19" },
+        },
+      ],
+      [
+        {
+          after: { intValue: "20" },
+          count: { intValue: "5" },
+          through: { intValue: "25" },
+        },
+      ],
+    ]);
+  } finally {
+    await s.close();
+  }
+});
+
+test("partial receipt produces bounded searchable records without retry", async () => {
   const s = setup(() =>
     Response.json({
       partialSuccess: { errorMessage: "private", rejectedLogRecords: "1" },
@@ -449,8 +544,9 @@ test("partial receipt and sequence holes produce bounded searchable records with
     const response = await s.send(
       JSON.stringify({
         ...batch(),
-        afterSequence: 0,
-        entries: [{ ...first, sequence: 2 }],
+        afterSequence: 4,
+        entries: [{ ...first, sequence: 5 }],
+        lost: [{ afterSequence: 0, throughSequence: 4 }],
         throughSequence: 5,
       })
     );

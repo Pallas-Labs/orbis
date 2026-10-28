@@ -246,6 +246,28 @@ export const PlaybackDiagnosticsBatch = Schema.Struct({
   })
 );
 export type PlaybackDiagnosticsPayload = typeof PlaybackDiagnosticsBatch.Type;
+
+/** A sequence range `(afterSequence, throughSequence]` that a run will never deliver. */
+export interface PlaybackLoss {
+  readonly afterSequence: number;
+  readonly throughSequence: number;
+}
+
+/**
+ * The ranges a batch reports as lost, which the relay writes as `playback.loss`. Anything
+ * between `afterSequence` and `throughSequence` that the batch does not carry counts.
+ */
+export const playbackLosses = (
+  batch: PlaybackDiagnosticsPayload
+): readonly PlaybackLoss[] =>
+  batch.throughSequence - batch.afterSequence > batch.entries.length
+    ? [
+        {
+          afterSequence: batch.afterSequence,
+          throughSequence: batch.throughSequence,
+        },
+      ]
+    : [];
 export const PlaybackDiagnosticsReceipt = Schema.Struct({
   accepted: Sequence,
   rejected: Sequence,

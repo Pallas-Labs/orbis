@@ -64,9 +64,20 @@ final class StreamingPlaybackTests: XCTestCase {
     return state
   }
 
+  /// Records one timeline sample, and checks that the playback report's `bufferRanges` copy
+  /// AVPlayer's `loadedTimeRanges` at that moment: for Ogg Opus these ranges are whatever
+  /// AVPlayer reports, often zero-length, and the report must not reshape them.
   private func sample(_ player: AudioPlayer, phase: String) {
     let engine = player.player
     let raw = engine?.currentTime().seconds ?? .nan
+    let loaded = (engine?.currentItem?.loadedTimeRanges ?? []).prefix(8).map(\.timeRangeValue)
+      .filter { $0.start.seconds.isFinite && $0.duration.seconds.isFinite }
+    let current = try? decodedReport(player).current
+    let reported: [[Double?]]? = current?.bufferRanges.map { [$0.start.value, $0.duration.value] }
+    let expected: [[Double?]] = loaded.map { [$0.start.seconds, $0.duration.seconds] }
+    XCTAssertEqual(
+      reported, expected,
+      "The report's buffer ranges must equal AVPlayer's loaded time ranges (\(phase))")
     samples.append([
       "phase": phase,
       "uptimeSeconds": ProcessInfo.processInfo.systemUptime,
@@ -82,6 +93,8 @@ final class StreamingPlaybackTests: XCTestCase {
       "loadedRanges": engine?.currentItem?.loadedTimeRanges.map {
         ["start": $0.timeRangeValue.start.seconds, "duration": $0.timeRangeValue.duration.seconds]
       } ?? [],
+      "reportBufferRanges": reported?.map { $0.map { $0 ?? -1 } } ?? [],
+      "bytesTransferred": current?.access?.bytesTransferred ?? -1,
     ])
   }
 
