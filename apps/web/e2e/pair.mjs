@@ -196,6 +196,47 @@ try {
       code: kitchen.code,
     });
 
+    // The first lookup never reaches the server; the page must keep the code
+    // in memory, since the fragment is already gone.
+    const hallway = await startRequest("Orbis on Hallway");
+    const findRoute = "**/me/sign-in-requests/find";
+    let finds = 0;
+    await page.route(findRoute, (route) => {
+      if (route.request().method() !== "POST") {
+        return route.continue();
+      }
+      finds += 1;
+      return finds === 1 ? route.abort("failed") : route.continue();
+    });
+    await openLink(page, hallway.code);
+    const failedAlert = await textOf(page.getByRole("alert"));
+    assert.match(failedAlert, /^Orbis could not be reached\./u);
+    assert.equal(page.url(), `${webUrl}/pair`);
+    await page.screenshot({ path: path.join(artifacts, "pair-failed.png") });
+    await page.getByRole("button", { name: "Try again" }).click();
+    await page.getByRole("heading", { name: "Sign in Apple TV?" }).waitFor();
+    assert.equal(page.url(), `${webUrl}/pair`);
+    assert.equal(finds, 2);
+    await page.getByText("Orbis on Hallway").waitFor();
+    await page.getByRole("button", { name: "Sign In as host" }).click();
+    await page
+      .getByRole("heading", { name: "Apple TV is signed in." })
+      .waitFor();
+    const retried = await post("/sign-in/requests/wait", {
+      secret: hallway.secret,
+    });
+    assert.equal(retried.status, 200);
+    assert.equal(retried.body.status, "approved");
+    assert.ok(retried.body.key);
+    await page.unroute(findRoute);
+    step("a failed lookup keeps the code, and Try again reaches approval", {
+      alert: failedAlert,
+      code: hallway.code,
+      finds,
+      url: page.url(),
+      wait: retried.body.status,
+    });
+
     let unknown = kitchen.code;
     while (unknown === kitchen.code) {
       unknown = String(randomInt(1_000_000)).padStart(6, "0");
