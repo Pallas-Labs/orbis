@@ -10,7 +10,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test && node --test scripts/smoke-cobalt.test.mjs scripts/design-tokens.test.mjs scripts/garden-launcher.test.mjs",
+    "test": "turbo run test && node --test scripts/smoke-cobalt.test.mjs scripts/design-tokens.test.mjs scripts/garden-launcher.test.mjs scripts/local-ci.test.mjs",
     "smoke:cobalt": "node scripts/smoke-cobalt.mjs",
     "test:cobalt": "node --test scripts/smoke-cobalt.test.mjs",
     "prepare": "effect-tsgo patch --typescript --no-oxlint --skip-missing",
