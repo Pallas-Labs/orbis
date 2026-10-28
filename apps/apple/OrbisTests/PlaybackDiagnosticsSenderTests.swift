@@ -113,45 +113,31 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
     XCTAssertEqual(Set(state.delivered.map(\.sequence)), Set((0..<tail).map { $0 + 1 }))
   }
 
-  func testSlicesAccountForInternalAndTrailingEvictedSamples() {
-    let ring = PlaybackDiagnostics(maxEntries: 3)
-    let snapshot = PlaybackDiagnostics.Snapshot()
-    ring.record(.command(.init(kind: .play, origin: .app)), snapshot: snapshot)
-    ring.record(.sample, snapshot: snapshot)
-    ring.record(.stalled, snapshot: snapshot)
-    ring.record(.command(.init(kind: .pause, origin: .app)), snapshot: snapshot)
-    ring.record(.sample, snapshot: snapshot)
-    let first = ring.slice(after: 0, limit: 2)
-    XCTAssertEqual(first.entries.map(\.sequence), [1, 3])
-    XCTAssertEqual(first.throughSequence, 3)
-    let last = ring.slice(after: first.throughSequence, limit: 32)
-    XCTAssertEqual(last.entries.map(\.sequence), [4])
-    XCTAssertEqual(last.throughSequence, 5)
-    XCTAssertTrue(ring.slice(after: 5, limit: 32).entries.isEmpty)
-  }
-
   func testEncoderHalvingPreservesTheUnsentSuffixAndMillisecondDates() async throws {
     let ring = PlaybackDiagnostics()
+    let delivery = ring.startDelivery()
     var snapshot = PlaybackDiagnostics.Snapshot()
     snapshot.bufferRanges = (0..<8).map { .init(start: .init(Double($0)), duration: .init(120)) }
     for _ in 0..<70 {
       ring.record(.sample, snapshot: snapshot, wallTime: Date(timeIntervalSince1970: 1_792_300_000.123))
     }
-    let slice = ring.slice(after: 0, limit: 32)
-    XCTAssertEqual(slice.entries.count, 32)
+    let pending = try XCTUnwrap(ring.pending(for: delivery, limit: 32))
+    XCTAssertEqual(pending.entries.count, 32)
     let encoder = PlaybackDiagnosticsEncoder()
     let encoded = try await encoder.encode(
-      slice: slice, runID: UUID(), metadata: .current, afterSequence: 0, maxBytes: 4_096)
+      pending: pending, runID: UUID(), metadata: .current, maxBytes: 4_096)
     XCTAssertLessThanOrEqual(encoded.body.count, 4_096)
     let decoder = JSONDecoder()
     decoder.dateDecodingStrategy = .millisecondsSince1970
     let upload = try decoder.decode(PlaybackDiagnosticsUpload.self, from: encoded.body)
     XCTAssertLessThan(upload.entries.count, 32)
     XCTAssertEqual(upload.throughSequence, upload.entries.last?.sequence)
-    let next = ring.slice(after: upload.throughSequence, limit: 32)
-    XCTAssertEqual(next.entries.first?.sequence, upload.throughSequence + 1)
+    XCTAssertEqual(encoded.lastEntry, upload.throughSequence)
+    ring.settle(delivery, through: encoded.lastEntry, lostCount: encoded.lostCount, as: .delivered)
+    let next = ring.pending(for: delivery, limit: 32)
+    XCTAssertEqual(next?.entries.first?.sequence, upload.throughSequence + 1)
     XCTAssertEqual(upload.entries.first?.wallTime.timeIntervalSince1970 ?? 0, 1_792_300_000.123, accuracy: 0.0001)
-    let full = try await encoder.encode(slice: slice, runID: UUID(), metadata: .current, afterSequence: 0)
+    let full = try await encoder.encode(pending: pending, runID: UUID(), metadata: .current)
     XCTAssertLessThanOrEqual(full.body.count, 65_536)
     let attachment = XCTAttachment(data: full.body, uniformTypeIdentifier: "public.json")
     attachment.name = "playback-upload.json"
@@ -162,10 +148,11 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
   func testRealHTTPUploadHasNumericReceiptAndRetainsActualPayload() async throws {
     let client = try await configure()
     let ring = PlaybackDiagnostics()
+    let delivery = ring.startDelivery()
     ring.record(.command(.init(kind: .seek, origin: .systemRemote, target: .init(8.5))), snapshot: .init())
     ring.record(.stalled, snapshot: .init())
     let encoded = try await PlaybackDiagnosticsEncoder().encode(
-      slice: ring.slice(after: 0, limit: 32), runID: UUID(), metadata: .current, afterSequence: 0)
+      pending: try XCTUnwrap(ring.pending(for: delivery, limit: 32)), runID: UUID(), metadata: .current)
     let receipt = try await client.uploadPlaybackDiagnostics(encoded.body)
     XCTAssertEqual(receipt.status, 200)
     let captured = try await state()
@@ -275,8 +262,7 @@ final class PlaybackDiagnosticsSenderTests: XCTestCase {
   }
 
   func testUnsentHistoryBeyondItsBoundIsDeclaredLostExactly() async throws {
-    // The documented bound on unsent history ("Playback reports" in docs/development.md).
-    let bound = 1_024
+    let bound = PlaybackDiagnostics.unsentEntryLimit
     let client = try await configure(held: true, times: 1)
     let player = AudioPlayer(session: .init(start: { false }, end: {}))
     let sender = PlaybackDiagnosticsSender(player: player, client: client, pollInterval: .milliseconds(50))

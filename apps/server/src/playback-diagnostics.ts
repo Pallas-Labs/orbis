@@ -243,13 +243,13 @@ const logsFor = (batch: PlaybackDiagnosticsPayload, environment: string) => {
         ...shared,
         text("event.name", "playback.loss"),
         integer(
-          "playback.unacknowledged_count",
-          loss.throughSequence - loss.afterSequence - batch.entries.length
+          "playback.lost_count",
+          loss.throughSequence - loss.afterSequence
         ),
         integer("playback.after_sequence", loss.afterSequence),
         integer("playback.through_sequence", loss.throughSequence),
       ],
-      body: { stringValue: "Unacknowledged playback history" },
+      body: { stringValue: "Playback history the app could not deliver" },
       severityNumber: 13,
       severityText: "WARN",
       timeUnixNano: nanoTime(batch.entries.at(-1)?.wallTime ?? Date.now()),

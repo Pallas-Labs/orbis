@@ -7,17 +7,22 @@ struct PlaybackDiagnosticsUpload: Codable, Sendable {
   let afterSequence: Int
   let throughSequence: Int
   let entries: [PlaybackDiagnostics.Entry]
+  /// Ranges this run will never send. Absent when there are none, so a Group that predates the
+  /// field still accepts the batch.
+  let lost: [PlaybackDiagnostics.LostRange]?
 }
 
 actor PlaybackDiagnosticsEncoder {
   struct Batch: Sendable {
     let body: Data
-    let throughSequence: Int
+    /// The last entry the body carries, or 0 when it carries only loss ranges.
+    let lastEntry: Int
+    let lostCount: Int
   }
 
   func encode(
-    slice: PlaybackDiagnostics.Slice, runID: UUID, metadata: PlaybackDiagnostics.Metadata,
-    afterSequence: Int, maxBytes: Int = 64 * 1_024
+    pending: PlaybackDiagnostics.Pending, runID: UUID, metadata: PlaybackDiagnostics.Metadata,
+    maxBytes: Int = 64 * 1_024
   ) throws -> Batch {
     let metadata = PlaybackDiagnostics.Metadata(
       appVersion: String(decoding: metadata.appVersion.utf16.prefix(64), as: UTF16.self),
@@ -26,17 +31,18 @@ actor PlaybackDiagnosticsEncoder {
       osVersion: String(decoding: metadata.osVersion.utf16.prefix(64), as: UTF16.self))
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .millisecondsSince1970
-    var count = slice.entries.count
+    var count = pending.entries.count
     while true {
       try Task.checkCancellation()
-      let entries = Array(slice.entries.prefix(count))
-      let through = count == slice.entries.count ? slice.throughSequence : entries.last?.sequence ?? afterSequence
+      let entries = Array(pending.entries.prefix(count))
+      let through = entries.last?.sequence ?? pending.lost.last?.throughSequence ?? 0
       let upload = PlaybackDiagnosticsUpload(
-        schemaVersion: 1, runId: runID, metadata: metadata, afterSequence: afterSequence,
-        throughSequence: through, entries: entries)
+        schemaVersion: 1, runId: runID, metadata: metadata,
+        afterSequence: entries.first.map { $0.sequence - 1 } ?? through,
+        throughSequence: through, entries: entries, lost: pending.lost.isEmpty ? nil : pending.lost)
       let data = try encoder.encode(upload)
       if data.count <= min(maxBytes, 64 * 1_024) {
-        return Batch(body: data, throughSequence: through)
+        return Batch(body: data, lastEntry: entries.last?.sequence ?? 0, lostCount: pending.lost.count)
       }
       guard count > 1 else { throw DiagnosticsUploadFailure.invalidResponse }
       count /= 2
@@ -49,12 +55,14 @@ final class PlaybackDiagnosticsSender {
   private let task: Task<Void, Never>
 
   init(player: AudioPlayer, client: OrbisClient, pollInterval: Duration = .seconds(5)) {
-    let tail = player.diagnosticsTail()
+    let delivery = player.startDiagnosticsDelivery()
     task = Task { [weak player] in
       await Self.run(
-        client: client, tail: tail, pollInterval: pollInterval,
-        capture: { [weak player] sequence in
-          player?.diagnostics(after: sequence, limit: 32)
+        client: client, pollInterval: pollInterval,
+        pending: { [weak player] in player?.pendingDiagnostics(for: delivery, limit: 32) },
+        settle: { [weak player] batch, settlement in
+          player?.settleDiagnostics(
+            delivery, through: batch.lastEntry, lostCount: batch.lostCount, as: settlement)
         })
     }
   }
@@ -65,40 +73,46 @@ final class PlaybackDiagnosticsSender {
 
   private enum Outcome {
     case acknowledged
-    case dropped
-    case cooldown(TimeInterval)
+    case refused
+    case unsent(retryAfter: TimeInterval?)
     case stopped
   }
 
+  /// Sends unsent history oldest first until the Group acknowledges it, so a batch can arrive
+  /// twice but never silently goes missing. A refused batch, and history evicted beyond
+  /// `PlaybackDiagnostics.unsentEntryLimit`, is declared lost in a later batch instead.
   private static func run(
-    client: OrbisClient, tail: Int, pollInterval: Duration,
-    capture: @MainActor (Int) -> PlaybackDiagnostics.Slice?
+    client: OrbisClient, pollInterval: Duration,
+    pending: @MainActor () -> PlaybackDiagnostics.Pending?,
+    settle: @MainActor (PlaybackDiagnosticsEncoder.Batch, PlaybackDiagnostics.Settlement) -> Void
   ) async {
     let encoder = PlaybackDiagnosticsEncoder()
     let runID = UUID()
     let metadata = PlaybackDiagnostics.Metadata.current
-    var readSequence = tail
-    var acknowledgedSequence = tail
     var delay = pollInterval
+    var failures = 0
     do {
       while !Task.isCancelled {
         try await Task.sleep(for: delay)
         delay = pollInterval
-        guard let slice = capture(readSequence), slice.throughSequence >= readSequence else { return }
-        guard slice.throughSequence > readSequence else { continue }
-        let batch = try await encoder.encode(
-          slice: slice, runID: runID, metadata: metadata, afterSequence: acknowledgedSequence)
+        guard let next = pending() else { return }
+        guard !next.entries.isEmpty || !next.lost.isEmpty else { continue }
+        let batch = try await encoder.encode(pending: next, runID: runID, metadata: metadata)
         try Task.checkCancellation()
         let outcome = await deliver(batch.body, client: client)
         try Task.checkCancellation()
-        readSequence = batch.throughSequence
         switch outcome {
         case .acknowledged:
-          acknowledgedSequence = batch.throughSequence
-        case .dropped:
-          break
-        case .cooldown(let seconds):
-          delay = .seconds(seconds)
+          failures = 0
+          settle(batch, .delivered)
+        case .refused:
+          failures += 1
+          settle(batch, .refused)
+          delay = backoff(pollInterval, failures: failures)
+        case .unsent(let retryAfter):
+          failures += 1
+          settle(batch, .unsent)
+          delay = max(backoff(pollInterval, failures: failures), .seconds(retryAfter ?? 0))
         case .stopped:
           return
         }
@@ -106,42 +120,32 @@ final class PlaybackDiagnosticsSender {
     } catch {}
   }
 
+  /// Doubles the poll interval for each failure in a row, up to a minute.
+  private static func backoff(_ pollInterval: Duration, failures: Int) -> Duration {
+    min(pollInterval * (1 << min(failures, 6)), max(pollInterval, .seconds(60)))
+  }
+
   private static func deliver(_ body: Data, client: OrbisClient) async -> Outcome {
-    let clock = ContinuousClock()
-    let deadline = clock.now.advanced(by: .seconds(60))
-    for attempt in 0..<3 {
-      guard !Task.isCancelled, clock.now < deadline else { return .dropped }
-      var retryAfter: TimeInterval?
-      do {
-        let result = try await client.uploadPlaybackDiagnostics(body)
-        guard !Task.isCancelled else { return .stopped }
-        switch result.status {
-        case 200:
-          return .acknowledged
-        case 401, 403, 404:
-          return .stopped
-        case 429, 503:
-          retryAfter = result.retryAfter
-        default:
-          return .dropped
-        }
-      } catch is CancellationError {
+    do {
+      let result = try await client.uploadPlaybackDiagnostics(body)
+      guard !Task.isCancelled else { return .stopped }
+      switch result.status {
+      case 200:
+        return .acknowledged
+      case 401, 403, 404:
         return .stopped
-      } catch let error as URLError {
-        if error.code == .cancelled { return .stopped }
-      } catch {
-        return .dropped
+      case 408, 429, 502, 503, 504:
+        if let retryAfter = result.retryAfter, retryAfter > 300 { return .stopped }
+        return .unsent(retryAfter: result.retryAfter)
+      default:
+        return .refused
       }
-      if let retryAfter, retryAfter > 300 { return .stopped }
-      if let retryAfter, retryAfter > 30 { return .cooldown(retryAfter) }
-      guard attempt < 2 else {
-        return retryAfter.map { .cooldown($0) } ?? .dropped
-      }
-      let backoff = Double(1 << attempt) * Double.random(in: 0.8...1.2)
-      let delay = max(backoff, retryAfter ?? 0)
-      guard clock.now.advanced(by: .seconds(delay + 10)) <= deadline else { return .cooldown(delay) }
-      do { try await Task.sleep(for: .seconds(delay)) } catch { return .stopped }
+    } catch is CancellationError {
+      return .stopped
+    } catch let error as URLError where error.code == .cancelled {
+      return .stopped
+    } catch {
+      return Task.isCancelled ? .stopped : .unsent(retryAfter: nil)
     }
-    return .dropped
   }
 }
