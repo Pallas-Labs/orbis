@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdir, writeFile, readdir } from "node:fs/promises";
+import net from "node:net";
 import path from "node:path";
 
 import type { SaveSetInput } from "@orbis/contracts";
@@ -103,7 +104,9 @@ const audioEvents = (lines: readonly string[]) =>
     .filter((line) => line.includes('"audio":'))
     .map((line) => decodeAudioEvent(JSON.parse(line)));
 const GroupEvent = Schema.Struct({
+  ageMs: Schema.optional(Schema.Number),
   code: Schema.optional(Schema.Number),
+  current: Schema.optional(Schema.Boolean),
   event: Schema.String,
   level: Schema.String,
   node: Schema.optional(Schema.String),
@@ -165,6 +168,51 @@ const connect = async (
   send({ files, kind: "inventory" });
   return { commands, pongs: () => pongs, send, socket };
 };
+/**
+ * A node link over raw TCP that never answers the Group's close frame, like a
+ * socket whose network path died. Only `end` ends it, and the Group then sees 1006.
+ */
+const connectSilent = async () => {
+  const url = await runtime.ready;
+  const tcp = net.connect(Number(url.port), url.hostname);
+  await once(tcp, "connect");
+  let received = "";
+  // The Group may reset the connection it is closing; only `end` decides when it ends.
+  tcp.on("error", () => tcp.destroy());
+  tcp.on("data", (chunk: Buffer) => {
+    received += chunk.toString("latin1");
+  });
+  tcp.write(
+    [
+      "GET /api/node HTTP/1.1",
+      `Host: ${url.host}`,
+      "Upgrade: websocket",
+      "Connection: Upgrade",
+      `Sec-WebSocket-Key: ${Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64")}`,
+      "Sec-WebSocket-Version: 13",
+      "Authorization: Bearer node-token",
+      "",
+      "",
+    ].join("\r\n")
+  );
+  await until(
+    () => received,
+    (text) => text.includes("\r\n\r\n")
+  );
+  assert.match(received, /^HTTP\/1\.1 101 /u);
+  const inventory = Buffer.from(
+    JSON.stringify({ files: [], kind: "inventory" })
+  );
+  assert.ok(inventory.length < 126, "a one-byte frame length");
+  // One masked text frame; an all-zero mask leaves the payload as it is.
+  tcp.write(
+    Buffer.concat([
+      Buffer.from([0x81, 0x80 + inventory.length, 0, 0, 0, 0]),
+      inventory,
+    ])
+  );
+  return { end: () => tcp.destroy(), received: () => received };
+};
 const save = async (suffix: string, token = "client-token") => {
   const response = await request(
     "/sets",
@@ -179,6 +227,22 @@ const save = async (suffix: string, token = "client-token") => {
   assert.equal(response.status, 201, await response.clone().text());
   return decodeSavedSet(await response.json());
 };
+const readDetailsFor = (commands: NodeCommand[], setId: string) =>
+  until(
+    () =>
+      commands.find(
+        (command) => command.kind === "read-details" && command.setId === setId
+      ),
+    (value) => value !== undefined
+  );
+const detailsFilled = (setId: string) =>
+  until(
+    async () =>
+      decodeDetailsState(
+        await (await request(`/__node-set?id=${setId}`)).json()
+      ),
+    (value) => value.details_state === "filled"
+  );
 const state = async (id: string) =>
   decodeAudioState(await (await request(`/sets/${id}/audio/state`)).json());
 try {
@@ -234,13 +298,7 @@ try {
   } as const;
   node.send(finished);
   node.send(finished);
-  const read = await until(
-    () =>
-      node.commands.find(
-        (command) => command.kind === "read-details" && command.setId === set.id
-      ),
-    (value) => value !== undefined
-  );
+  const read = await readDetailsFor(node.commands, set.id);
   assert.ok(read);
   const details = {
     chapters: [],
@@ -267,13 +325,7 @@ try {
     requestId: read.requestId,
     setId: set.id,
   });
-  await until(
-    async () =>
-      decodeDetailsState(
-        await (await request(`/__node-set?id=${set.id}`)).json()
-      ),
-    (value) => value.details_state === "filled"
-  );
+  await detailsFilled(set.id);
   await until(
     () => state(set.id),
     (value) => value.state === "ready"
@@ -343,8 +395,9 @@ try {
     groupEvents("group-node-disconnected").map((event) => [
       event.level,
       event.code,
+      event.current,
     ]),
-    [["warn", 4001]]
+    [["warn", 4001, true]]
   );
   const reconnected = await connect([
     { bytes: 25, durationSeconds: 1, format: "mp3", setId: "orphan" },
@@ -448,6 +501,97 @@ try {
     nextPerson: following.setId,
     queuedLimit: 20,
     roundRobinFirst: first.setId,
+  });
+  // The link lost above, `reconnected`, and `fair` each closed once.
+  const closesBefore = (
+    await until(
+      () => groupEvents("group-node-disconnected"),
+      (events) => events.length === 3
+    )
+  ).length;
+  const closesSince = () =>
+    groupEvents("group-node-disconnected").slice(closesBefore);
+  const silent = await connectSilent();
+  const replacedSet = await save("replaced-link");
+  await until(silent.received, (text) =>
+    text.includes(`"kind":"read-details"`)
+  );
+  const replacement = await connect();
+  const moved = await readDetailsFor(replacement.commands, replacedSet.id);
+  assert.ok(moved);
+  assert.ok(
+    silent.received().includes(moved.requestId),
+    "the replacement carries the details read first sent on the replaced link"
+  );
+  silent.end();
+  const lateClose = await until(closesSince, (events) => events.length === 1);
+  assert.deepEqual(
+    lateClose.map((event) => [event.code, event.current]),
+    [[1006, false]],
+    "a replaced link's late close is not the current link's"
+  );
+  replacement.send({
+    details,
+    kind: "details",
+    requestId: moved.requestId,
+    setId: replacedSet.id,
+  });
+  await detailsFilled(replacedSet.id);
+  const lostSet = await save("lost-link");
+  const lostRead = await readDetailsFor(replacement.commands, lostSet.id);
+  assert.ok(lostRead);
+  replacement.socket.close(4001, "fixture link lost");
+  const currentClose = await until(
+    closesSince,
+    (events) => events.length === 2
+  );
+  assert.deepEqual(
+    currentClose.map((event) => [event.code, event.current]),
+    [
+      [1006, false],
+      [4001, true],
+    ]
+  );
+  const restored = await connect();
+  const resent = await readDetailsFor(restored.commands, lostSet.id);
+  assert.equal(
+    resent?.requestId,
+    lostRead.requestId,
+    "the reconnected node gets the details read sent before the link loss"
+  );
+  restored.send({
+    details,
+    kind: "details",
+    requestId: lostRead.requestId,
+    setId: lostSet.id,
+  });
+  await detailsFilled(lostSet.id);
+  const resumed = await until(
+    () =>
+      restored.commands.find(
+        (command) =>
+          command.kind === "start" && command.setId === replacedSet.id
+      ),
+    (value) => value !== undefined
+  );
+  assert.ok(resumed);
+  restored.send({
+    ...finished,
+    requestId: resumed.requestId,
+    setId: replacedSet.id,
+  });
+  await until(
+    () => state(replacedSet.id),
+    (value) => value.state === "ready"
+  );
+  for (const id of [replacedSet.id, lostSet.id]) {
+    await request(`/sets/${id}`, "DELETE");
+  }
+  restored.socket.close();
+  transcript.push({
+    linkCloses: closesSince(),
+    lostLinkDetailsResolvedAfterReconnect: lostRead.requestId,
+    replacedLinkDetailsResolvedOnReplacement: moved.requestId,
   });
   await Bun.sleep(30);
   const fixture = path.join(artifact, "fixture.mp3");

@@ -44,6 +44,8 @@ export const nodeKeyId = (
 };
 
 const AttachmentSchema = Schema.Struct({
+  /** Unique per accept; the newest socket's value is the stored one. */
+  acceptedAt: Schema.Number,
   active: Schema.NullOr(
     Schema.Struct({ requestId: Schema.String, setId: Schema.String })
   ),
@@ -63,6 +65,8 @@ const decodeAttachment = Schema.decodeUnknownSync(AttachmentSchema);
 
 type Attachment = typeof AttachmentSchema.Type;
 type Details = typeof SourceDetails.Type;
+
+const ACCEPTED_AT_KEY = "orbis:node-accepted-at";
 
 export class GroupAudioNode {
   private tail = Promise.resolve();
@@ -153,10 +157,16 @@ export class GroupAudioNode {
     for (const replaced of previous) {
       replaced.close(1000, "Node replaced");
     }
+    const acceptedAt = Math.max(
+      Date.now(),
+      (this.ctx.storage.kv.get<number>(ACCEPTED_AT_KEY) ?? 0) + 1
+    );
+    this.ctx.storage.kv.put(ACCEPTED_AT_KEY, acceptedAt);
     const pair = new WebSocketPair();
     const { 0: client, 1: server } = pair;
     this.ctx.acceptWebSocket(server, ["node"]);
     server.serializeAttachment({
+      acceptedAt,
       active: null,
       detailRequests: [],
       keyId,
@@ -340,14 +350,24 @@ export class GroupAudioNode {
             clearTimeout(timer);
             timer = undefined;
             this.details.delete(requestId);
-            if (socket.readyState === WebSocket.OPEN) {
-              const current = GroupAudioNode.attachment(socket);
-              socket.serializeAttachment({
-                ...current,
-                detailRequests: current.detailRequests.filter(
-                  (request) => request.requestId !== requestId
-                ),
-              } satisfies Attachment);
+            // A reconnect moves the request to the newer socket.
+            for (const carrier of this.ctx.getWebSockets("node")) {
+              const current =
+                carrier.readyState === WebSocket.OPEN
+                  ? GroupAudioNode.attachment(carrier)
+                  : undefined;
+              if (
+                current?.detailRequests.some(
+                  (request) => request.requestId === requestId
+                )
+              ) {
+                carrier.serializeAttachment({
+                  ...current,
+                  detailRequests: current.detailRequests.filter(
+                    (request) => request.requestId !== requestId
+                  ),
+                } satisfies Attachment);
+              }
             }
           };
           timer = setTimeout(() => {
@@ -425,19 +445,27 @@ export class GroupAudioNode {
     return false;
   }
 
+  /**
+   * Pending details reads stay pending: the next socket's inventory re-sends
+   * them, and their own timeout ends them when no node returns.
+   */
   disconnected(socket: WebSocket, code: number, reason = "") {
-    logEvent(
-      code === 1000 ? "info" : "warn",
-      { code, event: "group-node-disconnected", reason },
-      this.logging
-    );
     // 1005, 1006 and 1015 describe a close and cannot be sent, so close() throws on them.
     socket.close([1005, 1006, 1015].includes(code) ? 1011 : code);
-    for (const request of GroupAudioNode.attachment(socket).detailRequests) {
-      this.details
-        .get(request.requestId)
-        ?.reject(new Error("Audio node disconnected."));
-    }
+    const { acceptedAt } = GroupAudioNode.attachment(socket);
+    logEvent(
+      code === 1000 ? "info" : "warn",
+      {
+        ageMs: Date.now() - acceptedAt,
+        code,
+        // A replaced socket's close can arrive many minutes after its replacement.
+        current:
+          acceptedAt === this.ctx.storage.kv.get<number>(ACCEPTED_AT_KEY),
+        event: "group-node-disconnected",
+        reason,
+      },
+      this.logging
+    );
   }
 
   message(socket: WebSocket, data: string | ArrayBuffer) {
@@ -462,14 +490,21 @@ export class GroupAudioNode {
           return;
         }
         await this.reconcile(socket, message.files);
+        const resent = [...this.details.values()].map(
+          (pending) => pending.command
+        );
         socket.serializeAttachment({
           ...GroupAudioNode.attachment(socket),
           active: null,
+          detailRequests: resent.map(({ requestId, setId }) => ({
+            requestId,
+            setId,
+          })),
           progress: null,
           ready: true,
         } satisfies Attachment);
-        for (const pending of this.details.values()) {
-          GroupAudioNode.send(socket, pending.command);
+        for (const command of resent) {
+          GroupAudioNode.send(socket, command);
         }
         await this.schedule();
         return;

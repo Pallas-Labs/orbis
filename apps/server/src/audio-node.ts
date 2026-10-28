@@ -292,9 +292,14 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
     let awaitingPong = false;
     let heartbeatTimedOut = false;
     let opened = false;
+    let openedAt = 0;
+    // A long silence before a close points at an idle timeout; a short one, at a drop mid-traffic.
+    let lastMessageAt = 0;
     let heartbeat: ReturnType<typeof setInterval> | undefined;
     current.addEventListener("open", async () => {
       opened = true;
+      openedAt = Date.now();
+      lastMessageAt = openedAt;
       heartbeat = setInterval(() => {
         if (awaitingPong) {
           heartbeatTimedOut = true;
@@ -326,6 +331,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       }
     });
     current.addEventListener("message", (event) => {
+      lastMessageAt = Date.now();
       if (event.data === "pong") {
         awaitingPong = false;
         return;
@@ -362,13 +368,16 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       clearInterval(heartbeat);
       // A connect that never opened is reported by the reconnect that follows it.
       if (opened) {
+        const now = Date.now();
         logEvent(
           closed ? "info" : "warn",
           {
+            ageMs: now - openedAt,
             code: event.code,
             event: "node-link-closed",
             heartbeatTimedOut,
             reason: event.reason,
+            sinceMessageMs: now - lastMessageAt,
           },
           options.logging
         );
