@@ -260,6 +260,12 @@ final class AppModel {
   /// to 30 seconds, so a service that is down is asked eight times over about two minutes.
   private static let downloadWatchFailureLimit = 8
 
+  /// How the model waits between two reads of a download or a Tracklist. A test runs it faster,
+  /// so a ten-minute timeline takes a second.
+  @ObservationIgnored var sleep: @Sendable (Duration) async throws -> Void = {
+    try await Task.sleep(for: $0)
+  }
+
   var destination: Destination = .home
   /// Counts taps on the Search tab while Search is already open. Each one focuses the field, the
   /// way a second tap on Search does in Apple Music.
@@ -962,7 +968,7 @@ final class AppModel {
         }
         guard self.isDownloading(id) else { return }
         do {
-          try await Task.sleep(for: .seconds(min(1 << failures, 30)))
+          try await self.sleep(.seconds(min(1 << failures, 30)))
         } catch {
           // Cancelled: the answer this watch was waiting for is no longer wanted.
           return
@@ -1295,7 +1301,7 @@ final class AppModel {
           if audioPlayer.currentSetId == id { audioPlayer.setCues(tracklist.cues) }
         }
         guard tracklist.state == .pending else { return }
-        try await Task.sleep(for: .seconds(1))
+        try await sleep(.seconds(1))
       }
     } catch is CancellationError {
       return
