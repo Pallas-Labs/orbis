@@ -52,8 +52,17 @@ const Row = Schema.Record(Schema.String, Schema.Unknown);
 const decodeRows = Schema.decodeUnknownSync(Schema.Array(Row));
 
 const rows = (db: SqlDatabase, sql: string) => decodeRows(db.query(sql));
-// oxlint-disable-next-line anti-slop/no-unknown-parameters -- SQLite driver values enter the dump schema here.
-const encodeValue = (value: unknown): typeof Value.Type => {
+
+const DriverValue = Schema.Union([
+  Schema.Null,
+  Schema.String,
+  Schema.Number,
+  Schema.Uint8Array,
+  Schema.instanceOf(ArrayBuffer),
+]);
+const decodeDriverValue = Schema.decodeUnknownSync(DriverValue);
+
+const encodeValue = (value: typeof DriverValue.Type): typeof Value.Type => {
   if (value instanceof Uint8Array || value instanceof ArrayBuffer) {
     const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
     return {
@@ -64,18 +73,21 @@ const encodeValue = (value: unknown): typeof Value.Type => {
   }
   return decodeSqlValue(value);
 };
-// oxlint-disable anti-slop/no-runtime-typeof -- These values already passed the SQL value schema.
+const isNumber = Schema.is(Schema.Number);
+const isString = Schema.is(Schema.String);
+const isBlob = Schema.is(Schema.Struct({ hex: Schema.String }));
+
 const literal = (value: typeof Value.Type): string => {
   if (value === null) {
     return "NULL";
   }
-  if (typeof value === "number") {
+  if (isNumber(value)) {
     if (!Number.isFinite(value)) {
       throw new TypeError("Non-finite SQLite value.");
     }
     return String(value);
   }
-  if (typeof value === "string") {
+  if (isString(value)) {
     return value.includes("\0")
       ? `CAST(X'${[...new TextEncoder().encode(value)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}' AS TEXT)`
       : `'${value.replaceAll("'", "''")}'`;
@@ -86,12 +98,11 @@ const literal = (value: typeof Value.Type): string => {
   return `X'${value.hex}'`;
 };
 const decodeValue = (value: typeof Value.Type) =>
-  typeof value === "object" && value !== null
+  isBlob(value)
     ? Uint8Array.from(value.hex.match(/../gu) ?? [], (byte) =>
         Number.parseInt(byte, 16)
       )
     : value;
-// oxlint-enable anti-slop/no-runtime-typeof
 export const inspectDatabase = (db: SqlDatabase): DatabaseDump => {
   const tables = rows(
     db,
@@ -113,7 +124,9 @@ export const inspectDatabase = (db: SqlDatabase): DatabaseDump => {
       name,
       rows: data.map((row) =>
         fields.map((field) =>
-          encodeValue(row[field === "rowid" ? "__orbis_rowid" : field])
+          encodeValue(
+            decodeDriverValue(row[field === "rowid" ? "__orbis_rowid" : field])
+          )
         )
       ),
       sql: name === "sqlite_sequence" ? null : sql,

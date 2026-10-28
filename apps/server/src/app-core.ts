@@ -250,6 +250,15 @@ const forwardedResponse = (
   return response;
 };
 
+// Stream responses must not be buffered or cached by an intermediary.
+const withStreamHeaders = (response: Response): Response => {
+  if (response.headers.get("content-type")?.startsWith("text/event-stream")) {
+    response.headers.set("cache-control", "no-cache, no-transform");
+    response.headers.set("x-accel-buffering", "no");
+  }
+  return response;
+};
+
 const ownDevices = (personId: string) => (viewerId: string) =>
   Effect.succeed(viewerId === personId);
 
@@ -2550,16 +2559,6 @@ export const createPortableApp = (options: {
       mode: AccessMode,
       clientAddress = "unknown"
     ): Promise<Response> => {
-      // oxlint-disable-next-line unicorn/consistent-function-scoping -- Kept at the boundary that owns stream headers.
-      const withOrigin = (response: Response): Response => {
-        if (
-          response.headers.get("content-type")?.startsWith("text/event-stream")
-        ) {
-          response.headers.set("cache-control", "no-cache, no-transform");
-          response.headers.set("x-accel-buffering", "no");
-        }
-        return response;
-      };
       const host = request.headers.get("host") ?? new URL(request.url).host;
       const authorization = request.headers.get("authorization");
       const open =
@@ -2598,7 +2597,7 @@ export const createPortableApp = (options: {
             set: streamAccess?.set ?? null,
           },
         });
-        return withOrigin(
+        return withStreamHeaders(
           Response.json({ message: "Invalid stream grant." }, { status: 401 })
         );
       }
@@ -2618,7 +2617,7 @@ export const createPortableApp = (options: {
         decision.statusCode === 401 &&
         attempts.badKey(clientAddress)
       ) {
-        return withOrigin(tooManyAttempts());
+        return withStreamHeaders(tooManyAttempts());
       }
       if (decision.kind === "rejected") {
         const refusal = refusalFor(request, decision);
@@ -2628,7 +2627,7 @@ export const createPortableApp = (options: {
           reason: refusal.message,
           trustStore: registry.storeError,
         });
-        return withOrigin(
+        return withStreamHeaders(
           Response.json(
             { message: refusal.message },
             { status: refusal.statusCode }
@@ -2650,7 +2649,7 @@ export const createPortableApp = (options: {
           Context.add(ClientAddress, clientAddress)
         ) as Context.Context<Library | Queue | SetCaller | ClientAddress>
       );
-      return withOrigin(
+      return withStreamHeaders(
         forwardedResponse(request, response, registry.store, decision.keyId)
       );
     },

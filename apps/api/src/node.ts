@@ -1,5 +1,4 @@
 /* oxlint-disable no-await-in-loop -- Reconciliation finishes each database change before dispatching the next command. */
-/* oxlint-disable unicorn/no-array-method-this-argument -- Effect.flatMap accepts an Effect and callback, not an Array thisArg. */
 import { NodeMessageSchema } from "@orbis/contracts/node";
 import type {
   NodeCommand,
@@ -406,15 +405,19 @@ export class GroupAudioNode {
         const pending = this.details.get(message.requestId);
         if (message.kind === "details") {
           await this.runtime.runPromise(
-            Effect.flatMap(Library, (library) =>
-              library.recordDetails(message.setId, message.details)
+            Library.pipe(
+              Effect.flatMap((library) =>
+                library.recordDetails(message.setId, message.details)
+              )
             )
           );
           pending?.resolve(message.details);
         } else {
           await this.runtime.runPromise(
-            Effect.flatMap(Library, (library) =>
-              library.recordDetailsFailure(message.setId)
+            Library.pipe(
+              Effect.flatMap((library) =>
+                library.recordDetailsFailure(message.setId)
+              )
             )
           );
           pending?.reject(new Error(message.reason));
@@ -542,7 +545,9 @@ export class GroupAudioNode {
         progress: null,
       } satisfies Attachment);
       await this.runtime.runPromise(
-        Effect.flatMap(Library, (library) => library.release(message.setId))
+        Library.pipe(
+          Effect.flatMap((library) => library.release(message.setId))
+        )
       );
       await this.schedule();
     });
@@ -586,8 +591,10 @@ export class GroupAudioNode {
         });
       } else if (state.state !== "ready") {
         await this.runtime.runPromise(
-          Effect.flatMap(Library, (library) =>
-            library.finishDownload(file.setId, file)
+          Library.pipe(
+            Effect.flatMap((library) =>
+              library.finishDownload(file.setId, file)
+            )
           )
         );
       }

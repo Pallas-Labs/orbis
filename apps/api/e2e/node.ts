@@ -7,7 +7,6 @@ import path from "node:path";
 import type { SaveSetInput } from "@orbis/contracts";
 import { AudioStateSchema, SavedSetSchema } from "@orbis/contracts/http-api";
 /* oxlint-disable no-await-in-loop -- Ordered HTTP requests define queue fairness and capacity; polling waits for observed state. */
-/* oxlint-disable unicorn/no-await-expression-member -- HTTP assertions read each completed response in place. */
 import type { NodeCommand, NodeMessage } from "@orbis/contracts/node";
 import { NodeCommandSchema } from "@orbis/contracts/node";
 import { Schema } from "effect";
@@ -179,15 +178,22 @@ const save = async (suffix: string, token = "client-token") => {
   assert.equal(response.status, 201, await response.clone().text());
   return decodeSavedSet(await response.json());
 };
-const state = async (id: string) =>
-  decodeAudioState(await (await request(`/sets/${id}/audio/state`)).json());
+const state = async (id: string) => {
+  const response = await request(`/sets/${id}/audio/state`);
+  return decodeAudioState(await response.json());
+};
 try {
-  assert.equal((await request("/__seed-node")).status, 200);
-  assert.equal(
-    (await request("/sets", "GET", undefined, "node-token")).status,
-    403
+  const seeded = await request("/__seed-node");
+  assert.equal(seeded.status, 200);
+  const refusedNodeToken = await request(
+    "/sets",
+    "GET",
+    undefined,
+    "node-token"
   );
-  assert.equal((await request("/node")).status, 403);
+  assert.equal(refusedNodeToken.status, 403);
+  const anonymousNode = await request("/node");
+  assert.equal(anonymousNode.status, 403);
   const node = await connect();
   node.socket.send("ping");
   await until(node.pongs, (count) => count === 1);
@@ -268,10 +274,10 @@ try {
     setId: set.id,
   });
   await until(
-    async () =>
-      decodeDetailsState(
-        await (await request(`/__node-set?id=${set.id}`)).json()
-      ),
+    async () => {
+      const response = await request(`/__node-set?id=${set.id}`);
+      return decodeDetailsState(await response.json());
+    },
     (value) => value.details_state === "filled"
   );
   await until(
@@ -320,10 +326,11 @@ try {
     (value) => value !== undefined
   );
   assert.ok(retry);
-  assert.equal(
-    (await request(`/sets/${second.id}/audio/download`, "DELETE")).status,
-    200
+  const cancelled = await request(
+    `/sets/${second.id}/audio/download`,
+    "DELETE"
   );
+  assert.equal(cancelled.status, 200);
   await until(
     () =>
       node.commands.some(
@@ -333,7 +340,8 @@ try {
   );
   node.send({ ...finished, requestId: retry.requestId, setId: second.id });
   await Bun.sleep(50);
-  assert.equal((await state(second.id)).state, "none");
+  const afterCancel = await state(second.id);
+  assert.equal(afterCancel.state, "none");
   node.socket.close(4001, "fixture link lost");
   await until(
     () => groupEvents("group-node-disconnected"),
@@ -401,10 +409,11 @@ try {
   }
   const overflow = queued.at(20);
   assert.ok(overflow);
-  assert.equal(
-    (await request(`/sets/${overflow.id}/audio/download`, "POST")).status,
-    429
+  const overflowed = await request(
+    `/sets/${overflow.id}/audio/download`,
+    "POST"
   );
+  assert.equal(overflowed.status, 429);
   const peerSet = await save("peer-job", "peer-token");
   const fair = await connect();
   const first = await until(
@@ -518,11 +527,13 @@ try {
       () => state(realSet.id),
       (value) => value.state === "downloading" && value.bytesReceived > 0
     );
-    const beforeJobs = Schema.decodeUnknownSync(
+    const decodeJobs = Schema.decodeUnknownSync(
       Schema.Array(
         Schema.Struct({ sequence: Schema.Number, set_id: Schema.String })
       )
-    )(await (await request("/__node-jobs")).json());
+    );
+    const firstJobsResponse = await request("/__node-jobs");
+    const beforeJobs = decodeJobs(await firstJobsResponse.json());
     const beforeJob = beforeJobs.find((job) => job.set_id === realSet.id);
     assert.ok(beforeJob);
     await stop();
@@ -531,16 +542,14 @@ try {
       () => state(realSet.id),
       (value) => value.state === "ready"
     );
-    const afterJobs = Schema.decodeUnknownSync(
-      Schema.Array(
-        Schema.Struct({ sequence: Schema.Number, set_id: Schema.String })
-      )
-    )(await (await request("/__node-jobs")).json());
+    const secondJobsResponse = await request("/__node-jobs");
+    const afterJobs = decodeJobs(await secondJobsResponse.json());
     assert.deepEqual(
       afterJobs.filter((job) => job.set_id === realSet.id),
       [beforeJob]
     );
-    assert.ok((await readdir(audioDir)).includes(`${realSet.id}.mp3`));
+    const downloaded = await readdir(audioDir);
+    assert.ok(downloaded.includes(`${realSet.id}.mp3`));
     const play = (setId: string) =>
       runtime.dispatchFetch(`http://orbis/api/sets/${setId}/audio`, {
         headers: { authorization: "Bearer client-token" },
@@ -553,7 +562,8 @@ try {
     assert.equal(location.origin, `http://127.0.0.1:${nodePort}`);
     const ranged = await fetch(location, { headers: { range: "bytes=0-99" } });
     assert.equal(ranged.status, 206);
-    assert.equal((await ranged.arrayBuffer()).byteLength, 100);
+    const rangedBody = await ranged.arrayBuffer();
+    assert.equal(rangedBody.byteLength, 100);
     const forged = new URL(location);
     forged.searchParams.set("grant", "forged");
     const refusedGrant = await fetch(forged);
@@ -572,8 +582,9 @@ try {
       () => readdir(audioDir),
       (files) => !files.includes(`${realSet.id}.mp3`)
     );
+    const leftovers = await readdir(audioDir);
     assert.equal(
-      (await readdir(audioDir)).some((file) => /sqlite|devices/u.test(file)),
+      leftovers.some((file) => /sqlite|devices/u.test(file)),
       false
     );
     const groupRestartSet = await save("group-restart");
@@ -581,17 +592,16 @@ try {
       () => state(groupRestartSet.id),
       (value) => value.state === "downloading" && value.bytesReceived > 0
     );
-    const jobsBeforeRestart = await (await request("/__node-jobs")).json();
+    const jobsBeforeRestartResponse = await request("/__node-jobs");
+    const jobsBeforeRestart = await jobsBeforeRestartResponse.json();
     await runtime.dispose();
     runtime = new Miniflare({ ...runtimeOptions, port: Number(api.port) });
     await until(
       () => state(groupRestartSet.id),
       (value) => value.state === "ready"
     );
-    assert.deepEqual(
-      await (await request("/__node-jobs")).json(),
-      jobsBeforeRestart
-    );
+    const jobsAfterRestartResponse = await request("/__node-jobs");
+    assert.deepEqual(await jobsAfterRestartResponse.json(), jobsBeforeRestart);
     await request(`/sets/${groupRestartSet.id}`, "DELETE");
     await until(
       () => readdir(audioDir),
