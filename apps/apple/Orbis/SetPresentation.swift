@@ -89,9 +89,7 @@ enum SetPresentation {
     case "downloading":
       guard let live, let total = live.bytesTotal, total > 0 else { return .downloading(nil) }
       return .downloading(Double(live.bytesReceived) / Double(total))
-    // A watch that gave up offers the retry: asking again is safe while the service still runs
-    // the download, and it starts a new watch.
-    case "failed", "canceled", AudioState.unwatched.state:
+    case "failed", "canceled":
       return .failed
     case "ready":
       return live == nil ? .available : .downloading(1)
