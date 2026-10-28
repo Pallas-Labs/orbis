@@ -5,7 +5,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type { SavedSet } from "@orbis/contracts";
-import { SavedSetSchema } from "@orbis/contracts/http-api";
+import {
+  ListeningQueueSchema,
+  SavedSetSchema,
+} from "@orbis/contracts/http-api";
 import { Schema } from "effect";
 
 import { createTestApp as createApp } from "./test-app.js";
@@ -23,14 +26,15 @@ const decodeLibraryResponse = Schema.decodeUnknownSync(
 );
 const Refusal = Schema.Struct({ message: Schema.String });
 const decodeRefusal = Schema.decodeUnknownSync(Refusal);
+const decodeQueueResponse = Schema.decodeUnknownSync(
+  Schema.Struct({ queue: ListeningQueueSchema })
+);
+const decodeSavedSet = Schema.decodeUnknownSync(SavedSetSchema);
 
 export type App = ReturnType<typeof createApp>;
 export type Response = Awaited<ReturnType<typeof request>>;
 
-export interface Queue {
-  activeSetId: string | null;
-  entries: SavedSet[];
-}
+export type Queue = typeof ListeningQueueSchema.Type;
 
 export interface SetSeed {
   readonly downloadState?: string;
@@ -106,19 +110,15 @@ export const withSeededApp = async (
 
 /** The queue a response carried. Every queue route answers with the whole queue. */
 export const queueIn = (response: Response): Queue =>
-  // SAFETY: every queue route answers with the whole queue, which the tests then
-  // assert field by field; a refusal body passes through unread.
-  response.json().queue as Queue;
+  decodeQueueResponse(response.json()).queue;
 
 /** The sentence a refused request carried. */
 export const messageIn = (response: Response): string =>
   decodeRefusal(response.json()).message;
 
-/** The Set a response carried. */
+/** The Set a response carried. Only a route that answers with the Set reaches here. */
 export const setIn = (response: Response): SavedSet =>
-  // SAFETY: the Set routes answer with the SavedSet contract, which the tests read
-  // by field; a refusal body passes through unread.
-  response.json() as SavedSet;
+  decodeSavedSet(response.json());
 
 export const queueOf = async (app: App): Promise<Queue> => {
   const response = await request(app, { method: "GET", url: "/queue" });
