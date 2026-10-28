@@ -38,6 +38,11 @@ struct SettingsScreen: View {
         return approval.origin == .typed
       #endif
     }
+    // The sheet closed after an approval, typed or linked: the new device leads the list.
+    .onChange(of: model.approval) { old, new in
+      guard new == nil, case .approved = old?.step else { return }
+      Task { await settings.loadDevices() }
+    }
   }
 }
 
@@ -326,8 +331,8 @@ private struct AddDeviceView: View {
       }
       if digits.count == 6 { Task { await model.findApproval(typed: digits) } }
     }
-    // The sheet closed. After an approval the new device leads the list Settings goes back to;
-    // otherwise the field empties for the next try.
+    // The sheet closed. After an approval Settings shows again with the new device; otherwise
+    // the field empties for the next try.
     .onChange(of: model.approval) { old, new in
       guard new == nil, let old, old.origin == .typed else { return }
       guard case .approved = old.step else {
@@ -335,7 +340,6 @@ private struct AddDeviceView: View {
         return
       }
       dismiss()
-      Task { await settings.loadDevices() }
     }
   }
 }
