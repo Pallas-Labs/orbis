@@ -1,0 +1,14 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for getByRole('button', { name: 'Try again' })
+
+    at /home/parth/.t3/worktrees/orbis/agent-pal-1042/apps/web/e2e/pair.mjs:216:59 {
+  log: [ "  - waiting for getByRole('button', { name: 'Try again' })" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.22.1
