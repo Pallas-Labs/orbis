@@ -25,6 +25,9 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
+    "doctor": {
+      "cache": false
+    },
     "//#lint": {
       "outputs": []
     },
