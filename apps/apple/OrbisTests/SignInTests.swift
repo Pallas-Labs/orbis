@@ -52,17 +52,18 @@ final class SignInTests: XCTestCase {
     XCTAssertFalse(model.isConfigured)
   }
 
-  /// A wrong passcode, a taken username, and an expired code are the service's to explain, and
-  /// it explains them in a sentence meant for the person.
+  /// A taken username is the service's to explain, and it explains it in a sentence meant for
+  /// the person.
   func testARefusalShowsTheServiceSentenceAndStaysSignedOut() async {
     let settings = MemoryClientSettings()
     let model = signedOutModel(settings: settings) { _ in
-      (403, #"{"message":"That passcode is not right."}"#)
+      (409, #"{"message":"That username is already in use."}"#)
     }
 
-    await model.signIn(.join(username: "ada", passcode: "wrong"))
+    await model.signIn(.join(username: "ada", passcode: "ABCDEFGHJKMN"))
 
-    XCTAssertEqual(model.signInFailure?.message, "That passcode is not right.")
+    XCTAssertEqual(model.signInFailure?.message, "That username is already in use.")
+    XCTAssertNil(model.refusedCode, "a taken username is not the passcode's fault")
     XCTAssertFalse(model.isSigningIn)
     XCTAssertFalse(model.isConfigured)
     XCTAssertNil(settings.deviceToken)

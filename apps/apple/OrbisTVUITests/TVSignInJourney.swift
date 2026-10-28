@@ -175,12 +175,12 @@ final class TVSignInJourney: XCTestCase {
     remote.press(.select)
     type(dashed.dropLast(), into: field)
     XCTAssertTrue(
-      waitUntil { field.value as? String == String(first.prefix(7)) },
+      waitUntil { self.code(in: field) == String(first.prefix(7)) },
       "the dash drops out and capitals fill the slots: \(String(describing: field.value))")
     capture("tv-signin-01-keyboard")
     remote.press(.menu)
     XCTAssertTrue(
-      waitUntil { app.buttons["signin-redeem"].exists && field.value as? String == String(first.prefix(7)) },
+      waitUntil { app.buttons["signin-redeem"].exists && self.code(in: field) == String(first.prefix(7)) },
       "closing the keyboard keeps the code\n\(app.debugDescription)")
     capture("tv-signin-02-slots-filled")
     remote.press(.select)
@@ -202,7 +202,7 @@ final class TVSignInJourney: XCTestCase {
     // characters that follow them filling the first seven slots.
     type("- O0I1L" + typed.dropLast(), into: field)
     XCTAssertTrue(
-      waitUntil { field.value as? String == String(second.prefix(7)) },
+      waitUntil { self.code(in: field) == String(second.prefix(7)) },
       "a dash, a space, and look-alikes change nothing, and typed characters fill the slots in "
         + "capitals: \(String(describing: field.value))")
     capture("tv-signin-04-typed")
@@ -237,6 +237,11 @@ final class TVSignInJourney: XCTestCase {
     XCTAssertTrue(
       pressUntil(.up, limit: 3) { field.hasFocus }, "the code field must take focus\n\(app.debugDescription)")
     return field
+  }
+
+  /// What a code field holds, without the spaces VoiceOver reads between its groups.
+  private func code(in field: XCUIElement) -> String {
+    (field.value as? String ?? "").replacingOccurrences(of: " ", with: "")
   }
 
   /// Types one character at a time and lets the field settle after each, as a person does with

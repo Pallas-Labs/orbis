@@ -33,8 +33,11 @@ final class AppModel {
   let serviceAddress: URL
 
   var isSigningIn = false
-  /// Why the last sign-in failed, said under the button.
+  /// Why the last sign-in failed, when the person cannot fix it by trying another code.
   var signInFailure: OrbisFailure?
+  /// What to do about a code the service refused: a wrong, expired, or used Sign-in Code, or a
+  /// Group Passcode that no longer opens the Group. Said in one line under the code.
+  var refusedCode: String?
   /// The greeting over the library while it loads, after a new Person joins or another device
   /// approves this one. Cleared once the greeting has faded.
   var welcome: String?
@@ -441,6 +444,7 @@ final class AppModel {
   func signIn(_ request: SignIn) async {
     guard !isSigningIn else { return }
     signInFailure = nil
+    refusedCode = nil
     isSigningIn = true
     defer { isSigningIn = false }
     let signedOut = signedOutClient
@@ -462,7 +466,11 @@ final class AppModel {
         greeting = "Signed in as \(username)"
       }
     } catch {
-      signInFailure = OrbisFailure.explaining(error, at: serviceAddress)
+      if let refused = Self.refusal(of: request, error) {
+        refusedCode = refused
+      } else {
+        signInFailure = OrbisFailure.explaining(error, at: serviceAddress)
+      }
       return
     }
     guard settings.store(deviceToken: key) else {
@@ -480,6 +488,18 @@ final class AppModel {
     await loadLibrary()
     await loadPlaylists()
     await loadQueue()
+  }
+
+  /// The line to show when the service refused the code itself: 404 for a Sign-in Code it does
+  /// not hold, 403 for a passcode that is wrong or that a closed Group no longer takes. Anything
+  /// else is not the code's fault.
+  private static func refusal(of request: SignIn, _ error: any Error) -> String? {
+    guard case .server(let status, _) = error as? OrbisError else { return nil }
+    switch (request, status) {
+    case (.code, 404): return "That code didn't work. Get a new one."
+    case (.join, 403): return "Wrong passcode. Ask your Host for a new one."
+    default: return nil
+    }
   }
 
   private func startDiagnosticsSender() {
@@ -531,6 +551,7 @@ final class AppModel {
     settings.store(deviceToken: nil)
     client = nil
     signInFailure = nil
+    refusedCode = nil
     isShowingSettings = false
     approval = nil
     // The next sign-in starts on Home, so the first Set opened lands in the stack on screen.
