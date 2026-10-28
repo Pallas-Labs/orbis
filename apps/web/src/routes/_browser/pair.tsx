@@ -37,10 +37,20 @@ const PLATFORMS: Readonly<
 
 const EXPIRED = "This code has expired. Check the TV for a new one.";
 
+/** What a lookup needs. It lives in memory only, so a retry still has the code. */
+export interface Lookup {
+  readonly code: string;
+  readonly credentials: Credentials;
+}
+
 type Pairing =
   | { readonly kind: "signed-out" }
   | { readonly kind: "expired" }
-  | { readonly kind: "failed"; readonly message: string }
+  | {
+      readonly kind: "failed";
+      readonly lookup: Lookup;
+      readonly message: string;
+    }
   | {
       readonly kind: "asking";
       readonly credentials: Credentials;
@@ -51,7 +61,8 @@ type Pairing =
 
 /** A rejected key signs this browser out; a 404 means no device waits with the code. */
 const refused = (
-  result: Extract<ApiResult<unknown>, { ok: false }>
+  result: Extract<ApiResult<unknown>, { ok: false }>,
+  lookup: Lookup
 ): Pairing => {
   if (result.failure === "rejected") {
     forgetKey();
@@ -59,7 +70,7 @@ const refused = (
   }
   return result.status === 404
     ? { kind: "expired" }
-    : { kind: "failed", message: problemFor(result) };
+    : { kind: "failed", lookup, message: problemFor(result) };
 };
 
 /**
@@ -76,6 +87,26 @@ const takeCode = (): string | null => {
   return /^\d{6}$/u.test(code) ? code : null;
 };
 
+const lookUp = async (lookup: Lookup): Promise<Pairing> => {
+  const { code, credentials } = lookup;
+  const [me, found] = await Promise.all([
+    fetchMe(credentials),
+    findSignInRequest(credentials, code),
+  ]);
+  if (!me.ok) {
+    return refused(me, lookup);
+  }
+  if (!found.ok) {
+    return refused(found, lookup);
+  }
+  return {
+    credentials,
+    kind: "asking",
+    person: me.value,
+    request: found.value,
+  };
+};
+
 const loadPairing = async (apiUrl: string): Promise<Pairing> => {
   const code = takeCode();
   const key = readKey();
@@ -85,23 +116,7 @@ const loadPairing = async (apiUrl: string): Promise<Pairing> => {
   if (code === null) {
     return { kind: "expired" };
   }
-  const credentials = { apiUrl, key };
-  const [me, found] = await Promise.all([
-    fetchMe(credentials),
-    findSignInRequest(credentials, code),
-  ]);
-  if (!me.ok) {
-    return refused(me);
-  }
-  if (!found.ok) {
-    return refused(found);
-  }
-  return {
-    credentials,
-    kind: "asking",
-    person: me.value,
-    request: found.value,
-  };
+  return await lookUp({ code, credentials: { apiUrl, key } });
 };
 
 const PairCard = ({
@@ -150,7 +165,7 @@ const Approve = ({
       onDone({ kind: "approved", request: result.value });
       return;
     }
-    const next = refused(result);
+    const next = refused(result, { code: request.code, credentials });
     if (next.kind === "failed") {
       setProblem(next.message);
     } else {
@@ -183,8 +198,31 @@ const Approve = ({
   );
 };
 
+// Retries with the kept code: the loader would find the fragment already gone.
+const Failed = ({
+  onDone,
+  pairing: { lookup, message },
+}: {
+  readonly onDone: (next: Pairing) => void;
+  readonly pairing: Extract<Pairing, { kind: "failed" }>;
+}) => {
+  const [busy, setBusy] = useState(false);
+  const retry = async () => {
+    setBusy(true);
+    onDone(await lookUp(lookup).finally(() => setBusy(false)));
+  };
+  return (
+    <PairCard title="Sign in a device">
+      <Problem message={message} />
+      <Button disabled={busy} onClick={retry} variant="outline">
+        {busy ? "Trying again…" : "Try again"}
+      </Button>
+    </PairCard>
+  );
+};
+
 const Pair = ({ loaded }: { readonly loaded: Pairing }) => {
-  // The page starts at the loader's answer; approving moves it on from there.
+  // The page starts at the loader's answer; approving or retrying moves it on.
   const [next, setPairing] = useState<Pairing | null>(null);
   const pairing = next ?? loaded;
   switch (pairing.kind) {
@@ -213,11 +251,7 @@ const Pair = ({ loaded }: { readonly loaded: Pairing }) => {
       );
     }
     case "failed": {
-      return (
-        <PairCard title="Sign in a device">
-          <Problem message={pairing.message} />
-        </PairCard>
-      );
+      return <Failed onDone={setPairing} pairing={pairing} />;
     }
     case "signed-out": {
       return (
