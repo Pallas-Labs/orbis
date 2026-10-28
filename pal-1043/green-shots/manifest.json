@@ -1,0 +1,152 @@
+[
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approve-link-over-settings.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approve-link-over-settings_0_37064E14-610A-4409-BB04-56BC8D223EC7.json",
+        "timestamp": 1793176295.908
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-09-settings-after-link.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-09-settings-after-link_0_B47A52C3-A1BF-4845-B772-638288A415E7.png",
+        "timestamp": 1793176294.865
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-10-sheet-over-settings.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-10-sheet-over-settings_0_86F56E6C-A2C6-43C3-8F2A-B13A59FAFD73.png",
+        "timestamp": 1793176289.183
+      }
+    ],
+    "testIdentifier": "ApprovalUITests/testALinkApprovedOverSettingsListsTheNewDevice()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/ApprovalUITests/testALinkApprovedOverSettingsListsTheNewDevice"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approve-link.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approve-link_0_361F8C71-9EE2-4920-9F18-4EB41FAEE82F.json",
+        "timestamp": 1793176324.924
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-05-signed-out.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-05-signed-out_0_335FBF64-1F5F-4F87-BF4F-7EA9962EFFF6.png",
+        "timestamp": 1793176323.918
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-04-swipe-sign-out.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-04-swipe-sign-out_0_EC6776EB-2C5A-4A3D-A209-503A5559304A.png",
+        "timestamp": 1793176322.783
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-03-device-list.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-03-device-list_0_62B69C65-7E0F-47AE-B750-27C5AEA52AE9.png",
+        "timestamp": 1793176319.699
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-02-approved.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-02-approved_0_7DE70D89-F2C7-4C3F-9609-9DDE6E37FDBA.png",
+        "timestamp": 1793176313.384
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-01-sheet.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-01-sheet_0_7EE324CF-48C5-46A5-B941-E679B2FF262E.png",
+        "timestamp": 1793176310.564
+      }
+    ],
+    "testIdentifier": "ApprovalUITests/testALinkApprovesATVAndSettingsSignsItOut()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/ApprovalUITests/testALinkApprovesATVAndSettingsSignsItOut"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approve-after-sign-in.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approve-after-sign-in_0_186DF667-4E6C-4E4C-A73F-221FD487905D.json",
+        "timestamp": 1793176350.483
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-08-after-sign-in.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-08-after-sign-in_0_B0632E87-4F57-4011-841D-4875894DDB57.png",
+        "timestamp": 1793176347.182
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-07-signed-out.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-07-signed-out_0_E6D56E13-8392-4CD6-A004-CAB5009A3AA1.png",
+        "timestamp": 1793176338.019
+      }
+    ],
+    "testIdentifier": "ApprovalUITests/testASignedOutPhoneKeepsTheCodeThroughSignIn()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/ApprovalUITests/testASignedOutPhoneKeepsTheCodeThroughSignIn"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approve-cancel-expired.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approve-cancel-expired_0_F76A8C6D-CCE0-4CD3-B04C-4FE2B1C24D73.json",
+        "timestamp": 1793176372.603
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+        "deviceName": "PAL-1043 Orbis Lanes",
+        "exportedFileName": "approval-06-expired.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "approval-06-expired_0_E71B035A-D2EC-4BA3-AEE0-6B4E23FACA0E.png",
+        "timestamp": 1793176370.681
+      }
+    ],
+    "testIdentifier": "ApprovalUITests/testCancelLeavesTheRequestAndAnUnknownCodeHasExpired()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/ApprovalUITests/testCancelLeavesTheRequestAndAnUnknownCodeHasExpired"
+  }
+]

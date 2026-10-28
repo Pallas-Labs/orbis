@@ -1,0 +1,12 @@
+{
+  "elapsedSeconds": 156.848,
+  "requestedWorkers": 1,
+  "simulator": "Orbis Lanes",
+  "simulatorUdid": "97AE7A57-79FD-4F53-A2D3-44109EF4AD10",
+  "workers": [
+    {
+      "directory": "worker-1",
+      "name": "PAL-1043 Orbis Lanes"
+    }
+  ]
+}

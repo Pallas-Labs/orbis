@@ -1,0 +1,9 @@
+Test Case '-[OrbisUITests.ApprovalUITests testALinkApprovedOverSettingsListsTheNewDevice]' passed (24.638 seconds).
+Test Case '-[OrbisUITests.ApprovalUITests testALinkApprovesATVAndSettingsSignsItOut]' passed (29.314 seconds).
+Test Case '-[OrbisUITests.ApprovalUITests testASignedOutPhoneKeepsTheCodeThroughSignIn]' passed (25.502 seconds).
+Test Case '-[OrbisUITests.ApprovalUITests testCancelLeavesTheRequestAndAnUnknownCodeHasExpired]' passed (22.074 seconds).
+** TEST SUCCEEDED **
+lane completed in 156.848s
+Testing started
+screenshots: /Users/parthmangrola/.cache/agent-scratch/pal-1043/green-shots
+lane completed in 156.848s

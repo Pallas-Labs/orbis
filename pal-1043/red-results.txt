@@ -1,0 +1,6 @@
+/Users/parthmangrola/.cache/agent-scratch/pal-1043/red/apps/apple/OrbisUITests/ApprovalUITests.swift:131: error: -[OrbisUITests.ApprovalUITests testALinkApprovedOverSettingsListsTheNewDevice] : XCTAssertTrue failed - Settings must list the TV without reopening
+/Users/parthmangrola/.cache/agent-scratch/pal-1043/red/apps/apple/OrbisUITests/ApprovalUITests.swift:133: error: -[OrbisUITests.ApprovalUITests testALinkApprovedOverSettingsListsTheNewDevice] : Failed to get matching snapshot: No matches found for Elements matching predicate '"device-aefbe1ba0882" IN identifiers' from input {(
+Test Case '-[OrbisUITests.ApprovalUITests testALinkApprovedOverSettingsListsTheNewDevice]' failed (48.919 seconds).
+Test Case '-[OrbisUITests.ApprovalUITests testALinkApprovesATVAndSettingsSignsItOut]' passed (27.196 seconds).
+Test Case '-[OrbisUITests.ApprovalUITests testASignedOutPhoneKeepsTheCodeThroughSignIn]' passed (24.187 seconds).
+Test Case '-[OrbisUITests.ApprovalUITests testCancelLeavesTheRequestAndAnUnknownCodeHasExpired]' passed (22.023 seconds).

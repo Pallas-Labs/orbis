@@ -1,0 +1,13 @@
+{
+  "steps" : [
+    {
+      "name" : "Settings is open and does not list the TV"
+    },
+    {
+      "name" : "the link opens the sheet over Settings, and Sign In approves the TV"
+    },
+    {
+      "name" : "Settings lists the TV without being opened again"
+    }
+  ]
+}
