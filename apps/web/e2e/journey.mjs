@@ -7,11 +7,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { setTimeout } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
-import { signInWithKey } from "./helpers.mjs";
+import { signInWithKey, waitFor } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-library");
@@ -22,21 +21,6 @@ const webUrl = `http://127.0.0.1:${webPort}`;
 const key = randomBytes(24).toString("base64url");
 const youTubeLink = "https://www.youtube.com/watch?v=abcdefghijk";
 const soundCloudLink = "https://soundcloud.com/artist/track";
-
-const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 150; attempt += 1) {
-    try {
-      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-      await fetch(url);
-      return;
-    } catch {
-      // Not listening yet.
-    }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(100);
-  }
-  throw new Error(`${url} did not start`);
-};
 
 const dataDirectory = await mkdtemp(path.join(tmpdir(), "orbis-library-"));
 await writeFile(

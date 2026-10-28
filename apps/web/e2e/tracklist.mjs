@@ -5,11 +5,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { setTimeout } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
-import { signInWithKey } from "./helpers.mjs";
+import { signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-tracklist");
@@ -21,21 +20,6 @@ const apiUrl = `http://127.0.0.1:${ports.device}`;
 const webUrl = `http://127.0.0.1:${ports.web}`;
 const key = randomBytes(24).toString("base64url");
 const steps = [];
-
-const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 150; attempt += 1) {
-    try {
-      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-      await fetch(url);
-      return;
-    } catch {
-      // The server has not bound its port yet.
-    }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(100);
-  }
-  throw new Error(`${url} did not start`);
-};
 
 const call = async (method, route, payload) => {
   const headers = { authorization: `Bearer ${key}` };
@@ -108,18 +92,10 @@ try {
     url: "https://www.youtube.com/watch?v=abcdefghijk",
   });
   await call("POST", `/sets/${saved.id}/audio/download`);
-  let audioReady = false;
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    const state = await call("GET", `/sets/${saved.id}/audio/state`);
-    if (state.state === "ready") {
-      audioReady = true;
-      break;
-    }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(200);
-  }
-  assert.ok(audioReady, "audio Download did not finish");
+  await waitUntil(async () => {
+    const audio = await call("GET", `/sets/${saved.id}/audio/state`);
+    return audio.state === "ready";
+  }, "audio Download did not finish");
 
   execFileSync("bun", [
     "-e",

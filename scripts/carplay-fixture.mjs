@@ -130,15 +130,17 @@ const artworkServer = Bun.serve({
 });
 
 const api = async (method, route, body) => {
-  const response = await fetch(`${address}/${route}`, {
-    // oxlint-disable-next-line unicorn/no-invalid-fetch-options -- Every caller writes with POST or PUT.
-    body: JSON.stringify(body),
+  const init = {
     headers: {
       authorization: `Bearer ${token}`,
       "content-type": "application/json",
     },
     method,
-  });
+  };
+  if (body !== undefined) {
+    init.body = JSON.stringify(body);
+  }
+  const response = await fetch(`${address}/${route}`, init);
   if (!response.ok) {
     throw new Error(`${method} ${route} answered ${response.status}`);
   }

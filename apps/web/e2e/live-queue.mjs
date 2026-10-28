@@ -7,11 +7,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { setTimeout } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
-import { signInWithKey } from "./helpers.mjs";
+import { signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-player");
@@ -21,21 +20,6 @@ const apiUrl = `http://127.0.0.1:${devicePort}`;
 const webUrl = `http://127.0.0.1:${webPort}`;
 const key = randomBytes(24).toString("base64url");
 const otherKey = randomBytes(24).toString("base64url");
-
-const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 150; attempt += 1) {
-    try {
-      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-      await fetch(url);
-      return;
-    } catch {
-      // Not listening yet.
-    }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(100);
-  }
-  throw new Error(`${url} did not start`);
-};
 
 // The same Person from a second client, as another device would call the API.
 const api = async (method, route, body, token = key) => {
@@ -52,18 +36,6 @@ const api = async (method, route, body, token = key) => {
   const response = await fetch(`${apiUrl}${route}`, init);
   assert.ok(response.ok, `${method} ${route} answered ${response.status}`);
   return response.status === 204 ? null : response.json();
-};
-
-const waitUntil = async (check, message) => {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    if (await check()) {
-      return;
-    }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(200);
-  }
-  throw new Error(message);
 };
 
 const dataDirectory = await mkdtemp(path.join(tmpdir(), "orbis-player-"));

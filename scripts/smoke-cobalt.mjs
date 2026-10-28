@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { once } from "node:events";
 import {
   chmod,
   copyFile,
@@ -130,198 +131,75 @@ function parseSample(value) {
   return { expectedDurationSeconds, source, url };
 }
 
-// The CLI has one branch per supported option.
-// eslint-disable-next-line complexity
-export function parseArgs(argv) {
-  const options = {
-    apiKeyEnv: undefined,
-    apiKeyStdin: false,
-    audioBitrate: undefined,
-    audioFormat: DEFAULT_AUDIO_FORMAT,
-    downloadTimeoutMs: DEFAULT_DOWNLOAD_TIMEOUT_MS,
-    durationToleranceSeconds: DEFAULT_DURATION_TOLERANCE_SECONDS,
-    endpoint: undefined,
-    ffmpegBin: "ffmpeg",
-    ffprobeBin: "ffprobe",
-    interruptAfterBytes: DEFAULT_INTERRUPT_AFTER_BYTES,
-    invalidUrl: undefined,
-    keepOutput: undefined,
-    maxBytes: DEFAULT_MAX_BYTES,
-    operatorHost: hostname(),
-    probeTimeoutMs: DEFAULT_PROBE_TIMEOUT_MS,
-    processingTimeoutMs: DEFAULT_PROCESSING_TIMEOUT_MS,
-    report: undefined,
-    samples: [],
-    tempRoot: undefined,
-  };
+// The flags that take one value, and the option each one fills.
+const TEXT_FLAGS = {
+  "--api-key-env": "apiKeyEnv",
+  "--endpoint": "endpoint",
+  "--ffmpeg-bin": "ffmpegBin",
+  "--ffprobe-bin": "ffprobeBin",
+  "--invalid-url": "invalidUrl",
+  "--keep-output": "keepOutput",
+  "--operator-host": "operatorHost",
+  "--report": "report",
+  "--temp-root": "tempRoot",
+};
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const argument = argv[index];
-    switch (argument) {
-      case "--help":
-      case "-h": {
-        return { help: true };
-      }
-      case "--endpoint": {
-        options.endpoint = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      case "--api-key-env": {
-        options.apiKeyEnv = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      case "--api-key-stdin": {
-        options.apiKeyStdin = true;
-        break;
-      }
-      case "--sample": {
-        options.samples.push(parseSample(requireValue(argv, index, argument)));
-        index += 1;
-        break;
-      }
-      case "--audio-format": {
-        const value = requireValue(argv, index, argument);
-        if (!AUDIO_FORMATS.includes(value)) {
-          throw new SmokeError(
-            `${argument} must be one of: ${AUDIO_FORMATS.join(", ")}`,
-            { status: "usage" }
-          );
-        }
-        options.audioFormat = value;
-        index += 1;
-        break;
-      }
-      case "--audio-bitrate": {
-        const value = requireValue(argv, index, argument);
-        if (!AUDIO_BITRATES.includes(value)) {
-          throw new SmokeError(
-            `${argument} must be one of: ${AUDIO_BITRATES.join(", ")}`,
-            { status: "usage" }
-          );
-        }
-        options.audioBitrate = value;
-        index += 1;
-        break;
-      }
-      case "--keep-output": {
-        options.keepOutput = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      case "--invalid-url": {
-        options.invalidUrl = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      case "--report": {
-        options.report = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      case "--operator-host": {
-        options.operatorHost = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      case "--processing-timeout-ms": {
-        options.processingTimeoutMs = parsePositiveInteger(
-          requireValue(argv, index, argument),
-          argument
-        );
-        index += 1;
-        break;
-      }
-      case "--download-timeout-ms": {
-        options.downloadTimeoutMs = parsePositiveInteger(
-          requireValue(argv, index, argument),
-          argument
-        );
-        index += 1;
-        break;
-      }
-      case "--probe-timeout-ms": {
-        options.probeTimeoutMs = parsePositiveInteger(
-          requireValue(argv, index, argument),
-          argument
-        );
-        index += 1;
-        break;
-      }
-      case "--max-bytes": {
-        options.maxBytes = parsePositiveInteger(
-          requireValue(argv, index, argument),
-          argument
-        );
-        index += 1;
-        break;
-      }
-      case "--duration-tolerance-seconds": {
-        options.durationToleranceSeconds = parsePositiveInteger(
-          requireValue(argv, index, argument),
-          argument
-        );
-        index += 1;
-        break;
-      }
-      case "--interrupt-after-bytes": {
-        options.interruptAfterBytes = parsePositiveInteger(
-          requireValue(argv, index, argument),
-          argument
-        );
-        index += 1;
-        break;
-      }
-      case "--ffprobe-bin": {
-        options.ffprobeBin = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      case "--ffmpeg-bin": {
-        options.ffmpegBin = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      case "--temp-root": {
-        options.tempRoot = requireValue(argv, index, argument);
-        index += 1;
-        break;
-      }
-      default: {
-        throw new SmokeError(`unknown option: ${argument}`);
-      }
+// The flags that take a positive whole number.
+const COUNT_FLAGS = {
+  "--download-timeout-ms": "downloadTimeoutMs",
+  "--duration-tolerance-seconds": "durationToleranceSeconds",
+  "--interrupt-after-bytes": "interruptAfterBytes",
+  "--max-bytes": "maxBytes",
+  "--probe-timeout-ms": "probeTimeoutMs",
+  "--processing-timeout-ms": "processingTimeoutMs",
+};
+
+/**
+ * Applies the flag at `index`, and answers whether it asked for help and how
+ * many arguments past the flag it used.
+ */
+function applyFlag(options, argv, index) {
+  const argument = argv[index];
+  if (argument === "--help" || argument === "-h") {
+    return { consumed: 0, help: true };
+  }
+  if (argument === "--api-key-stdin") {
+    options.apiKeyStdin = true;
+    return { consumed: 0, help: false };
+  }
+  if (argument === "--sample") {
+    options.samples.push(parseSample(requireValue(argv, index, argument)));
+    return { consumed: 1, help: false };
+  }
+  if (Object.hasOwn(TEXT_FLAGS, argument)) {
+    options[TEXT_FLAGS[argument]] = requireValue(argv, index, argument);
+    return { consumed: 1, help: false };
+  }
+  if (Object.hasOwn(COUNT_FLAGS, argument)) {
+    options[COUNT_FLAGS[argument]] = parsePositiveInteger(
+      requireValue(argv, index, argument),
+      argument
+    );
+    return { consumed: 1, help: false };
+  }
+  if (argument === "--audio-format" || argument === "--audio-bitrate") {
+    const allowed =
+      argument === "--audio-format" ? AUDIO_FORMATS : AUDIO_BITRATES;
+    const value = requireValue(argv, index, argument);
+    if (!allowed.includes(value)) {
+      throw new SmokeError(
+        `${argument} must be one of: ${allowed.join(", ")}`,
+        { status: "usage" }
+      );
     }
+    if (argument === "--audio-format") {
+      options.audioFormat = value;
+    } else {
+      options.audioBitrate = value;
+    }
+    return { consumed: 1, help: false };
   }
-
-  if (options.apiKeyEnv && options.apiKeyStdin) {
-    throw new SmokeError("choose --api-key-env or --api-key-stdin, not both");
-  }
-  if (!options.apiKeyEnv && !options.apiKeyStdin) {
-    throw new SmokeError("supply --api-key-env or --api-key-stdin");
-  }
-  if (
-    options.apiKeyEnv &&
-    !/^[A-Za-z_][A-Za-z0-9_]*$/u.test(options.apiKeyEnv)
-  ) {
-    throw new SmokeError("--api-key-env must name an environment variable");
-  }
-  if (!options.endpoint) {
-    throw new SmokeError("--endpoint is required");
-  }
-  if (!options.invalidUrl) {
-    throw new SmokeError("--invalid-url is required");
-  }
-  if (!options.report) {
-    throw new SmokeError("--report is required");
-  }
-  if (options.samples.length === 0) {
-    throw new SmokeError("at least one --sample is required");
-  }
-
-  // Validation is kept below parsing so every option is normalized in one place.
-  // eslint-disable-next-line no-use-before-define
-  return validateOptions(options);
+  throw new SmokeError(`unknown option: ${argument}`);
 }
 
 function isHostForDomain(host, domain) {
@@ -416,6 +294,7 @@ function validateExternalUrl(rawUrl, label) {
   return parsed;
 }
 
+/** Checks every parsed option in one place, and normalizes the paths they name. */
 function validateOptions(options) {
   options.endpoint = validateEndpoint(options.endpoint);
   const invalidUrl = validateExternalUrl(options.invalidUrl, "--invalid-url");
@@ -460,6 +339,65 @@ function validateOptions(options) {
     options.keepOutput = path.resolve(options.keepOutput);
   }
   return options;
+}
+
+export function parseArgs(argv) {
+  const options = {
+    apiKeyEnv: undefined,
+    apiKeyStdin: false,
+    audioBitrate: undefined,
+    audioFormat: DEFAULT_AUDIO_FORMAT,
+    downloadTimeoutMs: DEFAULT_DOWNLOAD_TIMEOUT_MS,
+    durationToleranceSeconds: DEFAULT_DURATION_TOLERANCE_SECONDS,
+    endpoint: undefined,
+    ffmpegBin: "ffmpeg",
+    ffprobeBin: "ffprobe",
+    interruptAfterBytes: DEFAULT_INTERRUPT_AFTER_BYTES,
+    invalidUrl: undefined,
+    keepOutput: undefined,
+    maxBytes: DEFAULT_MAX_BYTES,
+    operatorHost: hostname(),
+    probeTimeoutMs: DEFAULT_PROBE_TIMEOUT_MS,
+    processingTimeoutMs: DEFAULT_PROCESSING_TIMEOUT_MS,
+    report: undefined,
+    samples: [],
+    tempRoot: undefined,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const applied = applyFlag(options, argv, index);
+    if (applied.help) {
+      return { help: true };
+    }
+    index += applied.consumed;
+  }
+
+  if (options.apiKeyEnv && options.apiKeyStdin) {
+    throw new SmokeError("choose --api-key-env or --api-key-stdin, not both");
+  }
+  if (!options.apiKeyEnv && !options.apiKeyStdin) {
+    throw new SmokeError("supply --api-key-env or --api-key-stdin");
+  }
+  if (
+    options.apiKeyEnv &&
+    !/^[A-Za-z_][A-Za-z0-9_]*$/u.test(options.apiKeyEnv)
+  ) {
+    throw new SmokeError("--api-key-env must name an environment variable");
+  }
+  if (!options.endpoint) {
+    throw new SmokeError("--endpoint is required");
+  }
+  if (!options.invalidUrl) {
+    throw new SmokeError("--invalid-url is required");
+  }
+  if (!options.report) {
+    throw new SmokeError("--report is required");
+  }
+  if (options.samples.length === 0) {
+    throw new SmokeError("at least one --sample is required");
+  }
+
+  return validateOptions(options);
 }
 
 export async function readApiKey(options) {
@@ -965,55 +903,41 @@ function downloadTunnel(
   );
 }
 
-function runCommand(command, args, signal, toolName) {
-  // Spawn exposes events rather than a promise-based API.
-  // eslint-disable-next-line promise/avoid-new
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    let stdout = "";
-    let settled = false;
-    let killTimer;
-    const abort = () => {
-      child.kill("SIGTERM");
-      killTimer = setTimeout(() => child.kill("SIGKILL"), CHILD_KILL_GRACE_MS);
-      killTimer.unref?.();
-    };
-    const finish = (callback, value) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      signal.removeEventListener("abort", abort);
-      if (killTimer) {
-        clearTimeout(killTimer);
-      }
-      // The callback is either resolve or reject for the child event.
-      // eslint-disable-next-line promise/prefer-await-to-callbacks
-      callback(value);
-    };
-    if (signal.aborted) {
-      abort();
-    } else {
-      signal.addEventListener("abort", abort, { once: true });
-    }
-    child.stdout.setEncoding("utf-8");
-    child.stdout.on("data", (chunk) => {
-      if (stdout.length < MAX_JSON_BODY_BYTES) {
-        stdout += chunk;
-      }
-    });
-    child.once("error", (error) => {
-      finish(
-        reject,
-        error.code === "ENOENT"
-          ? new SmokeError(`${toolName}_unavailable`, { status: "blocked" })
-          : new SmokeError(`${toolName}_failed`)
-      );
-    });
-    child.once("close", (code) => finish(resolve, { code, stdout }));
+async function runCommand(command, args, signal, toolName) {
+  const child = spawn(command, args, {
+    stdio: ["ignore", "pipe", "ignore"],
   });
+  let stdout = "";
+  let killTimer;
+  const abort = () => {
+    child.kill("SIGTERM");
+    killTimer = setTimeout(() => child.kill("SIGKILL"), CHILD_KILL_GRACE_MS);
+    killTimer.unref?.();
+  };
+  if (signal.aborted) {
+    abort();
+  } else {
+    signal.addEventListener("abort", abort, { once: true });
+  }
+  child.stdout.setEncoding("utf-8");
+  child.stdout.on("data", (chunk) => {
+    if (stdout.length < MAX_JSON_BODY_BYTES) {
+      stdout += chunk;
+    }
+  });
+  try {
+    const [code] = await once(child, "close");
+    return { code, stdout };
+  } catch (error) {
+    throw error.code === "ENOENT"
+      ? new SmokeError(`${toolName}_unavailable`, { status: "blocked" })
+      : new SmokeError(`${toolName}_failed`);
+  } finally {
+    signal.removeEventListener("abort", abort);
+    if (killTimer) {
+      clearTimeout(killTimer);
+    }
+  }
 }
 
 async function probeAudio(filePath, options, parentSignal) {

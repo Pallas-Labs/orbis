@@ -1,20 +1,43 @@
 import { createHash } from "node:crypto";
 import { setTimeout } from "node:timers/promises";
 
-export const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 150; attempt += 1) {
-    try {
-      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-      await fetch(url);
+/**
+ * Asks `attempt` again and again until it answers true, pacing each try after
+ * the last one. A poll has to see the previous answer before it asks again, so
+ * the journeys' one polling loop lives here.
+ */
+const poll = async (attempt, message, attempts, delayMs) => {
+  for (let index = 0; index < attempts; index += 1) {
+    // eslint-disable-next-line no-await-in-loop -- a poll must see the previous answer before the next try
+    if (await attempt()) {
       return;
-    } catch {
-      // Not listening yet.
     }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(100);
+    // eslint-disable-next-line no-await-in-loop -- a poll must see the previous answer before the next try
+    await setTimeout(delayMs);
   }
-  throw new Error(`${url} did not start`);
+  throw new Error(message);
 };
+
+/** Waits until the server at `url` answers it, however it answers. */
+export const waitFor = (url) =>
+  poll(
+    async () => {
+      try {
+        await fetch(url);
+        return true;
+      } catch {
+        // Not listening yet.
+        return false;
+      }
+    },
+    `${url} did not start`,
+    150,
+    100
+  );
+
+/** Polls `check` until it answers true, for an observation under test. */
+export const waitUntil = (check, message, attempts = 100, delayMs = 200) =>
+  poll(check, message, attempts, delayMs);
 
 /** A key as the trust store's `devices.json` seeds it. */
 export const keyRecord = (id, label, personId, token, scope = "daily") => ({
