@@ -38,7 +38,7 @@ const PLATFORMS: Readonly<
 const EXPIRED = "This code has expired. Check the TV for a new one.";
 
 /** What a lookup needs. It lives in memory only, so a retry still has the code. */
-interface Lookup {
+export interface Lookup {
   readonly code: string;
   readonly credentials: Credentials;
 }
