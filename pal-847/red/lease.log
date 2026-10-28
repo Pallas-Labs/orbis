@@ -1,0 +1,37 @@
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex runner has a job; cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 52.94 + 4 > 8; cortex memory 3.04 - 5 < 0 GB; cortex disk 11.4 < 15 GB; mac load 40.56 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 61.11 + 4 > 8; cortex memory 2.88 - 5 < 0 GB; cortex disk 11.41 < 15 GB; mac load 6.67 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex runner has a job; cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 57.11 + 4 > 8; cortex memory 2.8 - 5 < 0 GB; cortex disk 11.38 < 15 GB; mac simulator 1/1 (PAL-847); mac xcode 1/1 (PAL-847); mac load 7.34 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 72.05 + 4 > 8; cortex memory 2.96 - 5 < 0 GB; cortex disk 11.37 < 15 GB; mac simulator 1/1 (PAL-847); mac xcode 1/1 (PAL-847); mac load 123.77 + 4 > 8
+[01:52:14.118] WARN (#3011): cortex probe failed: Operation timed out after '1m 30s'
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex unreachable; mac load 21.68 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 197.03 + 4 > 8; cortex memory 2.96 - 5 < 0 GB; cortex disk 11.34 < 15 GB; mac load 4.44 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 84.97 + 4 > 8; cortex memory 2.88 - 5 < 0 GB; cortex disk 11.34 < 15 GB; mac simulator 1/1 (PAL-1159); mac xcode 1/1 (PAL-1159); mac load 44.14 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 83.46 + 4 > 8; cortex memory 3.12 - 5 < 0 GB; cortex disk 11.33 < 15 GB; mac simulator 1/1 (PAL-1159); mac xcode 1/1 (PAL-1159); mac load 206.16 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 159.48 + 4 > 8; cortex memory 3.12 - 5 < 0 GB; cortex disk 11.33 < 15 GB; mac load 40.65 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 98.09 + 4 > 8; cortex memory 2.96 - 5 < 0 GB; cortex disk 11.32 < 15 GB; mac load 7.89 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 59.97 + 4 > 8; cortex memory 3.12 - 5 < 0 GB; cortex disk 11.27 < 15 GB; mac load 4.49 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 44.16 + 4 > 8; cortex memory 3.12 - 5 < 0 GB; cortex disk 11.24 < 15 GB; mac load 4.69 + 4 > 8
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z granted: mac: headroom 0.08; cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 49.23 + 4 > 8; cortex memory 2.88 - 5 < 0 GB; cortex disk 11.21 < 15 GB
+factory lease: PAL-847:test:4@2026-10-28T08:42:11.486Z runs on mac, simulator 226573E8-6863-43D9-B8AF-3771561E1445
+host=Parths-MacBook-Pro.local out=/Users/parthmangrola/.cache/agent-scratch/pal-847/run-red2 commit=3f438fcd14a5dccdcf6111d3c0cb6baffa82a68a
+@orbis/contracts build: Exited with code 0
+lane-1 (--only OrbisTests/AudioDownloadTests): exit 1
+** TEST FAILED **
+Test Case '-[OrbisTests.AudioDownloadTests testADownloadThatFinishesElsewhereStillLandsInTheLibrary]' passed (0.039 seconds).
+/Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-4-2026-10-28T08-42-11-486Z/apps/apple/OrbisTests/AudioDownloadTests.swift:372: error: -[OrbisTests.AudioDownloadTests testAPendingTracklistIsReadOnlyWhileAScreenWantsIt] : XCTAssertLessThanOrEqual failed: ("60") is greater than ("20") - a pending answer that does not change is read less and less often
+Test Case '-[OrbisTests.AudioDownloadTests testAPendingTracklistIsReadOnlyWhileAScreenWantsIt]' failed (7.273 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testCancelDownloadDecodesSet]' passed (0.002 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testDownloadUpdatesLibraryState]' passed (0.002 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testFailedDownloadSurfacesPageFailure]' passed (0.012 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testLetterboxedThumbnailsAreCroppedToTheirPicture]' passed (0.002 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testNowPlayingInfoHasTitleDurationAndRate]' passed (0.001 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testPlayerAssetCarriesBearerToken]' passed (0.000 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testPlayerBuildsFileURLFromSetID]' passed (0.000 seconds).
+/Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-4-2026-10-28T08-42-11-486Z/apps/apple/OrbisTests/AudioDownloadTests.swift:338: error: -[OrbisTests.AudioDownloadTests testQueuedSetsWithNoPageOpenCostAFewRequestsAMinute] : XCTAssertLessThanOrEqual failed: ("541") is greater than ("6") - after the first minute, at most 6 requests a minute in total; each minute: [482, 541, 414, 351, 318, 289, 256, 247, 233]
+Test Case '-[OrbisTests.AudioDownloadTests testQueuedSetsWithNoPageOpenCostAFewRequestsAMinute]' failed (1.271 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testRefreshStoresProgressAndReloadsOnTerminal]' passed (0.003 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testRemoteCommandsRegisteredAndEnabled]' passed (0.001 seconds).
+	 Executed 12 tests, with 2 failures (0 unexpected) in 8.605 (8.610) seconds
+	 Executed 12 tests, with 2 failures (0 unexpected) in 8.605 (8.610) seconds
+	 Executed 12 tests, with 2 failures (0 unexpected) in 8.605 (8.611) seconds
+exit=1

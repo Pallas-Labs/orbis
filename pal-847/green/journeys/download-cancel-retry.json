@@ -1,0 +1,659 @@
+[
+  {
+    "audio" : {
+      "bytesReceived" : 0,
+      "state" : "none"
+    },
+    "observedAt" : "2026-10-28T08:48:25Z",
+    "phase" : "initial",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 0,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:25Z",
+    "phase" : "first-download",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 4096,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:26Z",
+    "phase" : "first-download",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 0,
+      "state" : "none"
+    },
+    "observedAt" : "2026-10-28T08:48:27Z",
+    "phase" : "canceled",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 0,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:29Z",
+    "phase" : "second-download",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 4096,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:29Z",
+    "phase" : "second-download",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 28672,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:31Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 28672,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:31Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 32768,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:31Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 36864,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:31Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 40960,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:32Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 45056,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:32Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 49152,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:32Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 53248,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:32Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 57344,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:33Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 61440,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:33Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 65536,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:33Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 69632,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:33Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 69632,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:34Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 73728,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:34Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 77824,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:34Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 81920,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:34Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 86016,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:34Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 90112,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:35Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 94208,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:35Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 98304,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:35Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 102400,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:35Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 106496,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:36Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 110592,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:36Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 114688,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:36Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 118784,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:36Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 122880,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:37Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 126976,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:37Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 131072,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:37Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 135168,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:37Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 139264,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:38Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 143360,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:38Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 147456,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:38Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 147456,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:38Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 151552,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:39Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 155648,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:39Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 159744,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:39Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 163840,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:39Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 167936,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:39Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 172032,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:40Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 176128,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:40Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 180224,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:40Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 184320,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:40Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 188416,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:41Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 192512,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:41Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 196608,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:41Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 200704,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:41Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 204800,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:42Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 208896,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:42Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 212992,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:42Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 212992,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:42Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 217088,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:43Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 221184,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:43Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 225280,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:43Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 229376,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:43Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 233472,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:43Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 237568,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:44Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 241664,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:44Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 245760,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:44Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 247269,
+      "bytesTotal" : 247269,
+      "state" : "downloading"
+    },
+    "observedAt" : "2026-10-28T08:48:44Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  },
+  {
+    "audio" : {
+      "bytesReceived" : 247269,
+      "bytesTotal" : 247269,
+      "format" : "m4a",
+      "state" : "ready"
+    },
+    "observedAt" : "2026-10-28T08:48:45Z",
+    "phase" : "ready",
+    "setId" : "17e446a3-dad0-4f07-bc8b-c8b218a6c711"
+  }
+]

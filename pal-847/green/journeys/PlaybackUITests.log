@@ -1,0 +1,325 @@
+lane service: http://127.0.0.1:59871
+2026-10-28 01:48:05.825 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:48:11.594 xcodebuild[26867:24615092] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-28 01:48:11.594 xcodebuild[26867:24615092] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-28 01:48:11.604 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:48:46.981 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:48:46.981 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:48:46.982 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:48:48.058 xcodebuild[26867:24615092] [MT] IDELaunchParametersSnapshot: debugger version lookup failed for path '<nil>': noURL
+2026-10-28 01:48:48.062 xcodebuild[26867:24615092] [MT] IDELaunchParametersSnapshot: no debugger version
+2026-10-28 01:48:48.084 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:49:06.486 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:49:06.486 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:49:06.486 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:49:06.509 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:49:06.509 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:49:06.509 xcodebuild[26867:24615092] [MT] IDESchemeActionSDKRecord: operatingSystemBuild = <DVTBuildVersion 24A94232>, error = invalidDigitCount(94232).
+2026-10-28 01:49:06.791 xcodebuild[26867:24615092] [MT] IDETestOperationsObserverDebug: 61.014 elapsed -- Testing started completed.
+2026-10-28 01:49:06.792 xcodebuild[26867:24615092] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-28 01:49:06.792 xcodebuild[26867:24615092] [MT] IDETestOperationsObserverDebug: 61.014 sec, +61.014 sec -- end
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project Orbis.xcodeproj -scheme Orbis -destination "platform=iOS Simulator,id=E4C0E600-B51D-4C53-8575-C0F9DD3C3925" CODE_SIGN_IDENTITY=- -derivedDataPath /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData -resultBundlePath /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/result.xcresult "-only-testing:OrbisUITests/PlaybackUITests/testCancelsAndRetriesADownload" "-only-testing:OrbisUITests/PlaybackUITests/testRefreshKeepsAReadyTracklist" test
+
+Build settings from command line:
+    CODE_SIGN_IDENTITY = -
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  OrbisDesign: /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/OrbisDesign
+
+Writing result bundle at path:
+	/Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/result.xcresult
+
+note: Using codesigning identity override: -
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (6 targets)
+    Target 'OrbisUITests' in project 'Orbis'
+        ➜ Explicit dependency on target 'Orbis' in project 'Orbis'
+    Target 'OrbisTests' in project 'Orbis'
+        ➜ Explicit dependency on target 'Orbis' in project 'Orbis'
+        ➜ Explicit dependency on target 'OrbisDesign-product' in project 'OrbisDesign'
+    Target 'Orbis' in project 'Orbis'
+        ➜ Explicit dependency on target 'OrbisShare' in project 'Orbis'
+        ➜ Explicit dependency on target 'OrbisDesign-product' in project 'OrbisDesign'
+    Target 'OrbisShare' in project 'Orbis'
+        ➜ Explicit dependency on target 'OrbisDesign-product' in project 'OrbisDesign'
+    Target 'OrbisDesign-product' in project 'OrbisDesign'
+        ➜ Explicit dependency on target 'OrbisDesign' in project 'OrbisDesign'
+    Target 'OrbisDesign' in project 'OrbisDesign' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/Orbis/Assets.xcassets /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/Orbis/orbis.icon
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 9a1c69e932e51210f3670bdec02e9318
+Build description path: /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/XCBuildData/9a1c69e932e51210f3670bdec02e9318.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/SDKStatCaches.noindex/iphonesimulator27.1-24A94232-e829b21a6f8c9b70876ba0858053c04435d3147121984ba087c28d913653d626.sdkstatcache
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/Orbis.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk -o /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/SDKStatCaches.noindex/iphonesimulator27.1-24A94232-e829b21a6f8c9b70876ba0858053c04435d3147121984ba087c28d913653d626.sdkstatcache
+
+ProcessInfoPlistFile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework/Info.plist /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/OrbisDesign.build/Debug-iphonesimulator/OrbisDesign-product-t.build/empty-OrbisDesign_-417F4A7804452F9C_PackageProduct.plist (in target 'OrbisDesigndynamic-product' from project 'OrbisDesign')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/OrbisDesign
+    builtin-infoPlistUtility /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/OrbisDesign.build/Debug-iphonesimulator/OrbisDesign-product-t.build/empty-OrbisDesign_-417F4A7804452F9C_PackageProduct.plist -producttype com.apple.product-type.framework -expandbuildsettings -format binary -platform iphonesimulator -o /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework/Info.plist
+
+ProcessInfoPlistFile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisShare.appex/Info.plist /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/OrbisShare/Info.plist (in target 'OrbisShare' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    builtin-infoPlistUtility /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/OrbisShare/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -o /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisShare.appex/Info.plist
+
+ProcessInfoPlistFile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Info.plist /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/Orbis/Info.plist (in target 'Orbis' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    builtin-infoPlistUtility /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/Orbis/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_generated_info.plist -scanforprivacyfile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Frameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework -scanforprivacyfile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisShare.appex -o /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Info.plist
+
+CopySwiftLibs /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app (in target 'Orbis' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Orbis.debug.dylib --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Frameworks --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/SystemExtensions --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Extensions --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v27.1.266.1.RX4iGI/Metal.xctoolchain --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+
+ProcessInfoPlistFile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/Info.plist /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisTests.build/empty-OrbisTests.plist (in target 'OrbisTests' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    builtin-infoPlistUtility /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisTests.build/empty-OrbisTests.plist -producttype com.apple.product-type.bundle.unit-test -expandbuildsettings -format binary -platform iphonesimulator -o /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/Info.plist
+
+CodeSign /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Orbis.debug.dylib (in target 'Orbis' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Orbis.debug.dylib
+/Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Orbis.debug.dylib: replacing existing signature
+
+CodeSign /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/__preview.dylib (in target 'Orbis' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/__preview.dylib
+/Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/__preview.dylib: replacing existing signature
+
+CodeSign /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app (in target 'Orbis' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/Orbis.app.xcent --timestamp\=none --generate-entitlement-der /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app
+/Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app: replacing existing signature
+
+Validate /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app (in target 'Orbis' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    builtin-validationUtility /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app -shallow-bundle -infoplist-subpath Info.plist
+
+ProcessInfoPlistFile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Info.plist /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisUITests.build/empty-OrbisUITests.plist (in target 'OrbisUITests' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    builtin-infoPlistUtility /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisUITests.build/empty-OrbisUITests.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisUITests.build/ProductTypeInfoPlistAdditions.plist -o /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Info.plist
+
+CopySwiftLibs /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest (in target 'OrbisUITests' from project 'Orbis')
+    cd /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/OrbisUITests --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Frameworks --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/PlugIns --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/SystemExtensions --scan-folder /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Extensions --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v27.1.266.1.RX4iGI/Metal.xctoolchain --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisUITests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+
+PruneExplicitPrecompiledModules /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/SDKExplicitPrecompiledModules
+
+2026-10-28 01:48:07.194827-0700 OrbisUITests-Runner[26897:24615436] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'Selected tests' started at 2026-10-28 01:48:10.845.
+Test Suite 'OrbisUITests.xctest' started at 2026-10-28 01:48:10.846.
+Test Suite 'PlaybackUITests' started at 2026-10-28 01:48:10.846.
+Test Case '-[OrbisUITests.PlaybackUITests testCancelsAndRetriesADownload]' started.
+    t =     0.00s Start Test at 2026-10-28 01:48:10.849
+    t =     0.19s Set Up
+    t =     0.49s Open app.orbis.client
+    t =     0.49s     Launch app.orbis.client
+objc[26897]: Class UIAccessibilityLoaderWebShared is implemented in both /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.dJ1XMl/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x107160398) and /private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.1.434.0.dJ1XMl/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 27.0.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x107320310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =     1.57s         Setting up automation session
+    t =     4.60s         Wait for app.orbis.client to idle
+    t =     6.70s Waiting 8.0s for "Library" Button to exist
+    t =     7.76s     Checking `Expect predicate `existsNoRetry == 1` for object "Library" Button`
+    t =     7.76s         Checking existence of `"Library" Button`
+    t =     7.92s Checking existence of `"Library" NavigationBar`
+    t =     7.96s Find the "Library" Button
+    t =     8.01s Tap Window (First Match)[0.00, 0.00] -> (132.2, 813.0)
+    t =     8.01s     Wait for app.orbis.client to idle
+    t =     8.01s     Find the Window (First Match)
+    t =     8.02s     Check for interrupting elements affecting Window
+    t =     8.07s     Synthesize event
+    t =     8.07s         Find the Window at {{0.0, 0.0}, {402.0, 874.0}}
+    t =     8.08s         Find the Window at {{0.0, 0.0}, {402.0, 874.0}}
+    t =     8.11s         Find the Window at {{0.0, 0.0}, {402.0, 874.0}}
+    t =     8.52s     Wait for app.orbis.client to idle
+    t =    10.46s Waiting 2.0s for "Library" NavigationBar to exist
+    t =    11.52s     Checking `Expect predicate `existsNoRetry == 1` for object "Library" NavigationBar`
+    t =    11.52s         Checking existence of `"Library" NavigationBar`
+    t =    11.59s Waiting 30.0s for "set-row-17e446a3-dad0-4f07-bc8b-c8b218a6c711" Any to exist
+    t =    12.64s     Checking `Expect predicate `existsNoRetry == 1` for object "set-row-17e446a3-dad0-4f07-bc8b-c8b218a6c711" Any`
+    t =    12.64s         Checking existence of `"set-row-17e446a3-dad0-4f07-bc8b-c8b218a6c711" Any`
+    t =    12.69s Find the "set-row-17e446a3-dad0-4f07-bc8b-c8b218a6c711" Any
+    t =    12.73s Tap Target Application 'app.orbis.client'[0.00, 0.00] -> (201.0, 366.8)
+    t =    12.73s     Wait for app.orbis.client to idle
+    t =    12.74s     Find the Target Application 'app.orbis.client'
+    t =    12.77s     Check for interrupting elements affecting "Orbis" Application
+    t =    12.81s     Synthesize event
+    t =    12.81s         Find the Target Application 'app.orbis.client'
+    t =    12.84s         Find the Target Application 'app.orbis.client'
+    t =    12.87s         Find the Target Application 'app.orbis.client'
+    t =    13.18s     Wait for app.orbis.client to idle
+    t =    13.26s Waiting 15.0s for "detail-download" Any to exist
+    t =    14.32s     Checking `Expect predicate `existsNoRetry == 1` for object "detail-download" Any`
+    t =    14.32s         Checking existence of `"detail-download" Any`
+    t =    14.43s Find the "detail-download" Any
+    t =    14.53s Tap Target Application 'app.orbis.client'[0.00, 0.00] -> (201.0, 427.0)
+    t =    14.53s     Wait for app.orbis.client to idle
+    t =    14.53s     Find the Target Application 'app.orbis.client'
+    t =    14.56s     Check for interrupting elements affecting "Orbis" Application
+    t =    14.59s     Synthesize event
+    t =    14.59s         Find the Target Application 'app.orbis.client'
+    t =    14.61s         Find the Target Application 'app.orbis.client'
+    t =    14.64s         Find the Target Application 'app.orbis.client'
+    t =    14.95s     Wait for app.orbis.client to idle
+    t =    15.20s Waiting 15.0s for Any (First Match) to exist
+    t =    16.27s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    16.27s         Checking existence of `Any (First Match)`
+    t =    16.36s Checking existence of `"detail-play-toggle" Button`
+    t =    16.54s Added attachment named 'download-first-progress'
+    t =    16.54s Tap "detail-cancel-download" Button
+    t =    16.54s     Wait for app.orbis.client to idle
+    t =    16.54s     Find the "detail-cancel-download" Button
+    t =    16.58s     Check for interrupting elements affecting "detail-cancel-download" Button
+    t =    16.62s     Synthesize event
+    t =    16.96s     Wait for app.orbis.client to idle
+    t =    16.99s Waiting 15.0s for "Download" Button to exist
+    t =    18.04s     Checking `Expect predicate `existsNoRetry == 1` for object "Download" Button`
+    t =    18.04s         Checking existence of `"Download" Button`
+    t =    18.23s Added attachment named 'download-canceled'
+    t =    18.23s Find the "detail-download" Button
+    t =    18.33s Tap Target Application 'app.orbis.client'[0.00, 0.00] -> (201.0, 427.0)
+    t =    18.33s     Wait for app.orbis.client to idle
+    t =    18.34s     Find the Target Application 'app.orbis.client'
+    t =    18.36s     Check for interrupting elements affecting "Orbis" Application
+    t =    18.39s     Synthesize event
+    t =    18.39s         Find the Target Application 'app.orbis.client'
+    t =    18.42s         Find the Target Application 'app.orbis.client'
+    t =    18.44s         Find the Target Application 'app.orbis.client'
+    t =    18.75s     Wait for app.orbis.client to idle
+    t =    19.00s Waiting 15.0s for Any (First Match) to exist
+    t =    20.06s     Checking `Expect predicate `existsNoRetry == 1` for object Any (First Match)`
+    t =    20.07s         Checking existence of `Any (First Match)`
+    t =    20.18s Checking existence of `"detail-play-toggle" Button`
+    t =    20.36s Added attachment named 'download-retry-progress'
+    t =    34.32s Waiting 30.0s for "detail-play-toggle" Button to exist
+    t =    35.37s     Checking `Expect predicate `existsNoRetry == 1` for object "detail-play-toggle" Button`
+    t =    35.38s         Checking existence of `"detail-play-toggle" Button`
+    t =    35.45s Checking existence of `"detail-cancel-download" Button`
+    t =    35.63s Added attachment named 'download-retry-ready'
+    t =    35.63s Added attachment named 'download-cancel-retry'
+    t =    35.63s Tear Down
+Test Case '-[OrbisUITests.PlaybackUITests testCancelsAndRetriesADownload]' passed (36.054 seconds).
+Test Case '-[OrbisUITests.PlaybackUITests testRefreshKeepsAReadyTracklist]' started.
+    t =     0.00s Start Test at 2026-10-28 01:48:46.906
+    t =     0.03s Set Up
+    t =     0.05s Open app.orbis.client
+    t =     0.05s     Launch app.orbis.client
+    t =     0.05s         Terminate app.orbis.client:27029
+    t =     1.39s         Setting up automation session
+    t =     3.92s         Wait for app.orbis.client to idle
+    t =     5.98s Waiting 8.0s for "Library" Button to exist
+    t =     7.04s     Checking `Expect predicate `existsNoRetry == 1` for object "Library" Button`
+    t =     7.04s         Checking existence of `"Library" Button`
+    t =     7.21s Checking existence of `"Library" NavigationBar`
+    t =     7.25s Find the "Library" Button
+    t =     7.30s Tap Window (First Match)[0.00, 0.00] -> (132.2, 813.0)
+    t =     7.30s     Wait for app.orbis.client to idle
+    t =     7.30s     Find the Window (First Match)
+    t =     7.31s     Check for interrupting elements affecting Window
+    t =     7.35s     Synthesize event
+    t =     7.35s         Find the Window at {{0.0, 0.0}, {402.0, 874.0}}
+    t =     7.36s         Find the Window at {{0.0, 0.0}, {402.0, 874.0}}
+    t =     7.38s         Find the Window at {{0.0, 0.0}, {402.0, 874.0}}
+    t =     7.67s     Wait for app.orbis.client to idle
+    t =     9.57s Waiting 2.0s for "Library" NavigationBar to exist
+    t =    10.62s     Checking `Expect predicate `existsNoRetry == 1` for object "Library" NavigationBar`
+    t =    10.62s         Checking existence of `"Library" NavigationBar`
+    t =    10.71s Waiting 60.0s for "set-row-564c12b2-2af3-4e6e-85f4-421d5b3baae6" Any to exist
+    t =    11.71s     Checking `Expect predicate `existsNoRetry == 1` for object "set-row-564c12b2-2af3-4e6e-85f4-421d5b3baae6" Any`
+    t =    11.71s         Checking existence of `"set-row-564c12b2-2af3-4e6e-85f4-421d5b3baae6" Any`
+    t =    11.78s Find the "set-row-564c12b2-2af3-4e6e-85f4-421d5b3baae6" Any
+    t =    11.84s Tap Target Application 'app.orbis.client'[0.00, 0.00] -> (201.0, 366.8)
+    t =    11.84s     Wait for app.orbis.client to idle
+    t =    11.84s     Find the Target Application 'app.orbis.client'
+    t =    11.88s     Check for interrupting elements affecting "Orbis" Application
+    t =    11.92s     Synthesize event
+    t =    11.92s         Find the Target Application 'app.orbis.client'
+    t =    11.96s         Find the Target Application 'app.orbis.client'
+    t =    11.99s         Find the Target Application 'app.orbis.client'
+    t =    12.31s     Wait for app.orbis.client to idle
+    t =    13.24s Waiting 30.0s for "tracklist" Any to exist
+    t =    14.30s     Checking `Expect predicate `existsNoRetry == 1` for object "tracklist" Any`
+    t =    14.30s         Checking existence of `"tracklist" Any`
+    t =    14.39s Find the "tracklist-refresh" Button
+    t =    14.48s Find the "tracklist-refresh" Button
+    t =    14.67s Added attachment named 'tracklist-refresh'
+    t =    14.67s Tap "tracklist-refresh" Button
+    t =    14.67s     Wait for app.orbis.client to idle
+    t =    14.68s     Find the "tracklist-refresh" Button
+    t =    14.72s     Check for interrupting elements affecting "tracklist-refresh" Button
+    t =    14.75s     Synthesize event
+    t =    15.05s     Wait for app.orbis.client to idle
+    t =    16.11s Checking `Expect predicate `exists == 0` for object "tracklist-pending" Any`
+    t =    16.11s     Checking existence of `"tracklist-pending" Any`
+    t =    16.17s Waiting 10.0s for "tracklist-refresh" Button to exist
+    t =    17.18s     Checking `Expect predicate `existsNoRetry == 1` for object "tracklist-refresh" Button`
+    t =    17.18s         Checking existence of `"tracklist-refresh" Button`
+    t =    17.25s Checking existence of `"cue-1" Button`
+    t =    17.44s Added attachment named 'tracklist-after-refresh'
+    t =    17.44s Tap "tracklist-refresh" Button
+    t =    17.44s     Wait for app.orbis.client to idle
+    t =    17.45s     Find the "tracklist-refresh" Button
+    t =    17.48s     Check for interrupting elements affecting "tracklist-refresh" Button
+    t =    17.52s     Synthesize event
+    t =    17.82s     Wait for app.orbis.client to idle
+    t =    17.82s Waiting 10.0s for "tracklist-pending" Any to exist
+    t =    18.89s     Checking `Expect predicate `existsNoRetry == 1` for object "tracklist-pending" Any`
+    t =    18.89s         Checking existence of `"tracklist-pending" Any`
+    t =    18.96s Checking existence of `"cue-1" Button`
+    t =    19.00s Checking existence of `"tracklist-refresh" Button`
+    t =    19.19s Added attachment named 'tracklist-refreshing'
+    t =    19.19s Tear Down
+Test Case '-[OrbisUITests.PlaybackUITests testRefreshKeepsAReadyTracklist]' passed (19.518 seconds).
+Test Suite 'PlaybackUITests' passed at 2026-10-28 01:49:06.424.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 55.572 (55.578) seconds
+Test Suite 'OrbisUITests.xctest' passed at 2026-10-28 01:49:06.425.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 55.572 (55.579) seconds
+Test Suite 'Selected tests' passed at 2026-10-28 01:49:06.426.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 55.572 (55.580) seconds
+
+Test session results, code coverage, and logs:
+	/Users/parthmangrola/.cache/agent-scratch/lease-PAL-847-test-5-2026-10-28T08-42-11-700Z/apps/apple/DerivedData/result.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started
+screenshots: /Users/parthmangrola/.cache/agent-scratch/pal-847/run-green2/shots-3
+lane completed in 64.732s

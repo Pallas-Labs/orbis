@@ -1,0 +1,61 @@
+factory lease: PAL-847:test:5@2026-10-28T08:42:11.700Z waits: cortex runner has a job; cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 52.94 + 4 > 8; cortex memory 3.04 - 5 < 0 GB; cortex disk 11.4 < 15 GB; mac load 37.39 + 4 > 8
+factory lease: PAL-847:test:5@2026-10-28T08:42:11.700Z waits: cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 61.11 + 4 > 8; cortex memory 2.88 - 5 < 0 GB; cortex disk 11.41 < 15 GB; mac load 6.67 + 4 > 8
+factory lease: PAL-847:test:5@2026-10-28T08:42:11.700Z granted: mac: headroom 0.08; cortex runner has a job; cortex simulator 1/1 (PAL-848 Lanes, no lease); cortex load 57.11 + 4 > 8; cortex memory 2.8 - 5 < 0 GB; cortex disk 11.38 < 15 GB
+factory lease: PAL-847:test:5@2026-10-28T08:42:11.700Z runs on mac, simulator E4C0E600-B51D-4C53-8575-C0F9DD3C3925
+host=Parths-MacBook-Pro.local out=/Users/parthmangrola/.cache/agent-scratch/pal-847/run-green2 commit=37d6026ba8432ba8b372a749ad1ef7bcd5909c5b
+@orbis/contracts build: Exited with code 0
+lane-1 (--only OrbisTests/AudioDownloadTests): exit 0
+Test Case '-[OrbisTests.AudioDownloadTests testADownloadThatFinishesElsewhereStillLandsInTheLibrary]' passed (1.059 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testAnOpenPageFollowsItsDownloadUntilItCloses]' passed (3.443 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testAPendingTracklistIsReadOnlyWhileAScreenWantsIt]' passed (7.100 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testCancelDownloadDecodesSet]' passed (0.001 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testDownloadUpdatesLibraryState]' passed (0.002 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testFailedDownloadSurfacesPageFailure]' passed (0.007 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testLetterboxedThumbnailsAreCroppedToTheirPicture]' passed (0.002 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testNowPlayingInfoHasTitleDurationAndRate]' passed (0.001 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testPlayerAssetCarriesBearerToken]' passed (0.000 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testPlayerBuildsFileURLFromSetID]' passed (0.000 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testQueuedSetsWithNoPageOpenCostAFewRequestsAMinute]' passed (1.276 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testRefreshStoresProgressAndReloadsOnTerminal]' passed (0.005 seconds).
+Test Case '-[OrbisTests.AudioDownloadTests testRemoteCommandsRegisteredAndEnabled]' passed (0.001 seconds).
+	 Executed 13 tests, with 0 failures (0 unexpected) in 12.897 (12.902) seconds
+	 Executed 13 tests, with 0 failures (0 unexpected) in 12.897 (12.902) seconds
+	 Executed 13 tests, with 0 failures (0 unexpected) in 12.897 (12.903) seconds
+** TEST SUCCEEDED **
+lane-2 (--only OrbisTests/SetPageTests --only OrbisTests/SetPresentationTests --only OrbisTests/SupersessionTests): exit 0
+Test Case '-[OrbisTests.SetPageTests testAFailedPollDuringARefreshKeepsTheCues]' passed (0.025 seconds).
+Test Case '-[OrbisTests.SetPageTests testAFailedRefreshWithNoCuesShowsTheFailure]' passed (0.002 seconds).
+Test Case '-[OrbisTests.SetPageTests testAnEmptyTitleIsNeverSent]' passed (0.003 seconds).
+Test Case '-[OrbisTests.SetPageTests testARefreshThatCannotReachTheServiceKeepsTheCues]' passed (0.004 seconds).
+Test Case '-[OrbisTests.SetPageTests testARefusedRemovalKeepsTheSetAndSaysWhy]' passed (0.002 seconds).
+Test Case '-[OrbisTests.SetPageTests testEachTabKeepsItsOwnOpenSet]' passed (0.002 seconds).
+Test Case '-[OrbisTests.SetPageTests testMovingASetOutOfThePlaylistBeingViewedTakesItsRowWithIt]' passed (0.003 seconds).
+Test Case '-[OrbisTests.SetPageTests testMovingASetStatesTheWholeMembership]' passed (0.002 seconds).
+Test Case '-[OrbisTests.SetPageTests testRemovingASetClosesItInEveryTab]' passed (0.007 seconds).
+Test Case '-[OrbisTests.SetPageTests testRenamingASetInThePlaylistBeingViewedKeepsItsRow]' passed (0.003 seconds).
+Test Case '-[OrbisTests.SetPageTests testReplacingTagsSendsTheWholeList]' passed (0.003 seconds).
+Test Case '-[OrbisTests.SetPageTests testTakingASetOutOfEveryPlaylistSendsNothing]' passed (0.002 seconds).
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.057 (0.062) seconds
+Test Case '-[OrbisTests.SetPresentationTests testContinueListeningHoldsStartedSetsMostRecentFirst]' passed (0.001 seconds).
+Test Case '-[OrbisTests.SetPresentationTests testDateParsesWithAndWithoutFractionalSeconds]' passed (0.003 seconds).
+Test Case '-[OrbisTests.SetPresentationTests testRowPlaybackFollowsRetainedAudioAndThePlayer]' passed (0.001 seconds).
+Test Case '-[OrbisTests.SetPresentationTests testTagCountsCountEachSetOncePerTag]' passed (0.001 seconds).
+Test Case '-[OrbisTests.SetPresentationTests testTheDownloadControlFollowsTheLiveState]' passed (0.001 seconds).
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+Test Case '-[OrbisTests.SupersessionTests testADownloadThatLandsWhileTheLibraryIsLoadingIsNotDropped]' passed (0.005 seconds).
+Test Case '-[OrbisTests.SupersessionTests testALibraryResponseThatArrivesAfterANewerOneStartedCannotPublish]' passed (0.307 seconds).
+Test Case '-[OrbisTests.SupersessionTests testAPlaylistsResponseThatArrivesAfterSigningOutCannotPublish]' passed (0.017 seconds).
+Test Case '-[OrbisTests.SupersessionTests testSigningOutResetsEverythingThatBelongedToTheService]' passed (0.002 seconds).
+Test Case '-[OrbisTests.SupersessionTests testTheSearchHeadingKeepsTheQueryTheResultsAnswer]' passed (0.001 seconds).
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.332 (0.334) seconds
+	 Executed 22 tests, with 0 failures (0 unexpected) in 0.395 (0.404) seconds
+	 Executed 22 tests, with 0 failures (0 unexpected) in 0.395 (0.405) seconds
+** TEST SUCCEEDED **
+lane-3 (--only OrbisUITests/PlaybackUITests/testCancelsAndRetriesADownload --only OrbisUITests/PlaybackUITests/testRefreshKeepsAReadyTracklist): exit 0
+Test Case '-[OrbisUITests.PlaybackUITests testCancelsAndRetriesADownload]' passed (36.054 seconds).
+Test Case '-[OrbisUITests.PlaybackUITests testRefreshKeepsAReadyTracklist]' passed (19.518 seconds).
+	 Executed 2 tests, with 0 failures (0 unexpected) in 55.572 (55.578) seconds
+	 Executed 2 tests, with 0 failures (0 unexpected) in 55.572 (55.579) seconds
+	 Executed 2 tests, with 0 failures (0 unexpected) in 55.572 (55.580) seconds
+** TEST SUCCEEDED **
+exit=0

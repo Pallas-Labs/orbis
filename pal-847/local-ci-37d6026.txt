@@ -1,0 +1,33 @@
+$ node scripts/local-ci.mjs
+local-ci: 37d6026ba8432ba8b372a749ad1ef7bcd5909c5b
+[checks] Install dependencies
+[checks] Install dependencies: passed in 1 s
+[checks] Find ffprobe
+[checks] Find ffprobe: passed in 0 s
+[checks] Install browser for web journey
+[checks] Install browser for web journey: passed in 1 s
+[checks] bun run check (oxlint, oxfmt, Ultracite, tsgo, tests, diagnostics)
+@orbis/web:test: [e2e] admin-journey: passed in 14.5 s
+@orbis/web:test: [e2e] shared-audio: passed in 16.7 s
+@orbis/web:test: [e2e] playlists: passed in 20.4 s
+@orbis/web:test: [e2e] live-queue: passed in 8.6 s
+@orbis/web:test: [e2e] journey: passed in 8.9 s
+@orbis/web:test: [e2e] presence: passed in 25.9 s
+@orbis/web:test: [e2e] tracklist: passed in 8.6 s
+@orbis/web:test: [e2e] sign-in: passed in 10.0 s
+@orbis/web:test: [e2e] devices: passed in 9.4 s
+@orbis/web:test: [e2e] apple-music: passed in 9.1 s
+@orbis/web:test: [e2e] pair: passed in 8.3 s
+@orbis/web:test: [e2e] share: passed in 5.4 s
+[checks] bun run check (oxlint, oxfmt, Ultracite, tsgo, tests, diagnostics): passed in 44 s
+[checks] React Doctor (apps/web, changed against origin/main)
+[checks] React Doctor (apps/web, changed against origin/main): passed in 2 s
+[macos on cortex] Copy apps/apple at 37d6026ba8432ba8b372a749ad1ef7bcd5909c5b
+[macos on cortex] Copy apps/apple at 37d6026ba8432ba8b372a749ad1ef7bcd5909c5b: passed in 11 s
+[macos on cortex] Check Swift style
+[macos on cortex] Check Swift style: passed in 144 s
+[macos on cortex] Test the design package
+Another instance of SwiftPM (PID: 12044) is already running using '/Users/parth/.cache/orbis-local-ci/OrbisDesign-build', waiting until that process has finished execution...Building for debugging...
+/Users/parth/.cache/orbis-local-ci/37d6026ba8432ba8b372a749ad1ef7bcd5909c5b/apps/apple/OrbisDesign/Sources/OrbisDesign/Components/SetDetail.swift:237:36: [1;33mwarning: [1;39mmain actor-isolated static property 'content' can not be referenced from a Sendable closure[0;0m
+[macos on cortex] Test the design package: passed in 925 s
+local-ci: passed. Posted local-ci=success on ParthMmm/orbis@37d6026ba8432ba8b372a749ad1ef7bcd5909c5b.
