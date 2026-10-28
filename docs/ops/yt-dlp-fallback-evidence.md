@@ -115,7 +115,10 @@ The stored file is served as it is. No transcode happens at play time.
 
 One narrow source interface, two backends, and a recorded winner.
 
-1. `apps/server/src/audio-source.ts` holds the seam: `fetch(set) -> Stream<Uint8Array, SourceError>` with byte, duration, and timeout bounds. Its failures are typed so the worker can tell "this backend produced no usable output" from "this link is unsupported". Only the first is worth another backend; the second is terminal.
+1. `apps/server/src/download-backends.ts` holds the seam: one `DownloadBackends` service that names the backends to try for a source, in order, and fetches a Source Link into a partial file, with byte, duration, and timeout bounds. Its failures are typed as `LibraryError`, so a backend that produced no usable output is a logged, retryable outcome and a cancelled download is terminal.
+
+   Update, October 2026: the seam landed as `DownloadBackends`, not as the planned `audio-source.ts`. Its fetch takes the backend, the Source Link, the destination, a progress callback, and the abort signal, and a backend failure falls through to the next configured backend; only a cancel is terminal.
+
 2. `apps/server/src/cobalt.ts` remains the Cobalt client, unchanged in shape.
 3. `apps/server/src/ytdlp.ts` becomes the second backend. It spawns the pinned binary with a fixed argument list, never through a shell, writes to a temporary path inside the managed media directory, streams to disk, and deletes partial output on every failure path.
 4. The worker tries the preferred backend first and the other on a retryable failure, then records which backend produced the file on the download row. Preference follows the evidence: YouTube first to yt-dlp, SoundCloud first to Cobalt. Each is proven on its source and the other is the safety net.

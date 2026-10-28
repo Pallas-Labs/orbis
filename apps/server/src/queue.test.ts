@@ -130,13 +130,21 @@ test("playing a Playlist replaces the queue in Playlist order, with its playable
 
 test("a Set without Retained Audio cannot enter the queue", async () => {
   await withSeededApp([{ downloadState: "none", id: "d" }], async (app) => {
-    const activated = await play(app, "d");
-    expect(activated.response.statusCode).toBe(400);
-    expect(messageIn(activated.response)).toBe(
+    const activated = await request(app, {
+      method: "PUT",
+      payload: { setId: "d" },
+      url: "/queue/active",
+    });
+    expect(activated.statusCode).toBe(400);
+    expect(messageIn(activated)).toBe(
       "Only sets with audio can be added to the queue."
     );
-    const queued = await addToQueue(app, "d");
-    expect(queued.response.statusCode).toBe(400);
+    const queued = await request(app, {
+      method: "POST",
+      payload: { placement: "end", setId: "d" },
+      url: "/queue/entries",
+    });
+    expect(queued.statusCode).toBe(400);
     expect(await queueOf(app)).toEqual({ activeSetId: null, entries: [] });
   });
 });
@@ -150,11 +158,17 @@ test("a Download state other than ready cannot enter the queue", async () => {
     ],
     async (app) => {
       const attempts = await Promise.all(
-        ["a", "b", "c"].map((id) => play(app, id))
+        ["a", "b", "c"].map((id) =>
+          request(app, {
+            method: "PUT",
+            payload: { setId: id },
+            url: "/queue/active",
+          })
+        )
       );
 
       for (const attempt of attempts) {
-        expect(attempt.response.statusCode).toBe(400);
+        expect(attempt.statusCode).toBe(400);
       }
     }
   );
@@ -234,9 +248,13 @@ test("a Playback Position past the end of the Set is stored as the end", async (
 
 test("a negative Playback Position is refused", async () => {
   await withSeededApp(ready(["a"]), async (app) => {
-    const reported = await putPosition(app, "a", -1);
+    const reported = await request(app, {
+      method: "PUT",
+      payload: { seconds: -1 },
+      url: "/sets/a/position",
+    });
 
-    expect(reported.response.statusCode).toBe(400);
+    expect(reported.statusCode).toBe(400);
   });
 });
 
