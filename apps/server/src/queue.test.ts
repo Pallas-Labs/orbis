@@ -1,10 +1,28 @@
+// The Listening Queue through `createApp` over HTTP with a real database.
+//
+// Ways it could fail:
+// - Playing a Set drops the queue behind it, or moves a Set that is already
+//   queued.
+// - Play Next puts the Set at the end, or before the active Set, instead of
+//   directly after the active Set.
+// - Add to Queue puts the Set anywhere but the end, or a queued action starts
+//   playback.
+// - A Set without Retained Audio enters the queue, or its refusal changes the
+//   queue.
+// - Completion leaves the finished Set in the queue, keeps its Playback
+//   Position, or does not start the next Set.
+// - The queue loses its order or its active Set across a restart.
+//
+// The transcript test prints the queue after each step as one line, with the
+// active Set in brackets, so a change to these rules shows in its snapshot
+// diff.
 import { expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { createTestApp as createApp } from "./test-app.js";
-import { request } from "./test-http.js";
+import { request, statusLine, transcript } from "./test-http.js";
 import {
   addToQueue,
   complete,
@@ -16,10 +34,91 @@ import {
   queueIn,
   queueOf,
   ready,
+  savedSet,
   seedSets,
   SET_SECONDS,
   withSeededApp,
 } from "./test-library.js";
+import type { Queue, Response } from "./test-library.js";
+
+/** The queue as one line: `[a*] b c`, the active Set starred in brackets. */
+const queueLine = (queue: Queue) =>
+  queue.entries.length === 0
+    ? "(empty)"
+    : queue.entries
+        .map((entry) =>
+          entry.id === queue.activeSetId ? `[${entry.id}*]` : entry.id
+        )
+        .join(" ");
+
+test("transcript: play, Play Next, Add to Queue, a refusal, and completion", async () => {
+  await withSeededApp(
+    [...ready(["a", "b", "c"]), { downloadState: "none", id: "d" }],
+    async (app) => {
+      const t = transcript();
+      const queued = async (
+        step: string,
+        settled: Promise<{ queue: Queue; response: Response }>
+      ) => {
+        const { queue, response } = await settled;
+        t.step(step, `${response.statusCode} ${queueLine(queue)}`);
+      };
+      const refused = async (step: string, response: Promise<Response>) => {
+        const settled = await response;
+        t.step(step, `${statusLine(settled)} ${queueLine(await queueOf(app))}`);
+      };
+
+      await queued("play a", play(app, "a"));
+      await queued("add c to the queue", addToQueue(app, "c"));
+      await queued("play next b", playNext(app, "b"));
+      await queued("play next c", playNext(app, "c"));
+      await refused(
+        "play d, which has no Retained Audio",
+        request(app, {
+          method: "PUT",
+          payload: { setId: "d" },
+          url: "/queue/active",
+        })
+      );
+      await refused(
+        "add d to the queue",
+        request(app, {
+          method: "POST",
+          payload: { placement: "end", setId: "d" },
+          url: "/queue/entries",
+        })
+      );
+      const position = await putPosition(app, "a", 120);
+      t.step(
+        "a reaches 120s",
+        `${position.response.statusCode}, a at ${position.set.playbackPositionSeconds}s`
+      );
+      await queued("complete a", complete(app, "a"));
+      const finished = await savedSet(app, "a");
+      t.step("read a", `a at ${finished.playbackPositionSeconds}s`);
+      await queued("complete b, which is not active", complete(app, "b"));
+      await queued("complete c", complete(app, "c"));
+      await queued("complete b", complete(app, "b"));
+
+      expect(t.text()).toMatchInlineSnapshot(`
+        "
+        play a  -> 200 [a*]
+        add c to the queue  -> 201 [a*] c
+        play next b  -> 201 [a*] b c
+        play next c  -> 201 [a*] c b
+        play d, which has no Retained Audio  -> 400 "Only sets with audio can be added to the queue." [a*] c b
+        add d to the queue  -> 400 "Only sets with audio can be added to the queue." [a*] c b
+        a reaches 120s  -> 200, a at 120s
+        complete a  -> 200 [c*] b
+        read a  -> a at 0s
+        complete b, which is not active  -> 200 [c*] b
+        complete c  -> 200 [b*]
+        complete b  -> 200 (empty)
+        "
+      `);
+    }
+  );
+});
 
 test("tapping a playable Set makes it active and keeps the queue behind it", async () => {
   await withSeededApp(ready(["a", "b", "c"]), async (app) => {

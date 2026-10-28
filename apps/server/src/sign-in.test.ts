@@ -23,6 +23,13 @@
 //   or a fresh IPv6 address for each guess skips the limit.
 // - Guesses spread over many addresses meet no limit at all.
 // - The Host can still choose the passcode.
+//
+// The transcript test beside the Sign-in Code tests prints one code's life as
+// text, so a change to these rules shows in its snapshot diff:
+// - The code is not 10 minutes long, or a code typed in lowercase with a dash
+//   is refused.
+// - The new key signs in as the wrong Person or without the device's name.
+// - A second redeem of the same code mints another key.
 import { expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -38,7 +45,7 @@ import { Schema } from "effect";
 import { createApp } from "./app.js";
 import { hashToken, readTrustStrict } from "./identity.js";
 import { storedKey } from "./test-app.js";
-import { request } from "./test-http.js";
+import { relativeTime, request, statusLine, transcript } from "./test-http.js";
 
 const HOST_DAILY = "sign-in-host-daily";
 const HOST_LAPTOP = "sign-in-host-laptop";
@@ -108,6 +115,11 @@ const bodyOf = (response: ReturnType<typeof call>) =>
 const decodeCode = Schema.decodeUnknownSync(SignInCodeSchema);
 const decodeSignedIn = Schema.decodeUnknownSync(SignedInSchema);
 const decodePasscode = Schema.decodeUnknownSync(GroupPasscodeSchema);
+const decodeDevices = Schema.decodeUnknownSync(
+  Schema.Struct({
+    devices: Schema.Array(Schema.Struct({ label: Schema.String })),
+  })
+);
 
 const PASSCODE_FORM = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{12}$/u;
 const newPasscode = (app: App, key = HOST_DAILY) =>
@@ -310,6 +322,54 @@ test("a Sign-in Code adds a device for its Person, once", async () => {
       message: "That code is not valid. Get a new one.",
     });
     expect(store().keys).toHaveLength(5);
+  } finally {
+    await app.dispose();
+    await cleanup();
+  }
+});
+
+test("transcript: a Sign-in Code typed in lowercase redeems once", async () => {
+  const { cleanup, clock, open } = await setup();
+  const app = open();
+  const origin = clock.now;
+  const t = transcript();
+  try {
+    const issued = await issueOwn(app, FRIEND_DAILY);
+    const code = t.name("code", issued.code);
+    t.step(
+      "Friend issues a Sign-in Code",
+      `201, code ${code}, expires ${relativeTime(Date.parse(issued.expiresAt), origin)}`
+    );
+
+    const typed =
+      `${issued.code.slice(0, 4)}-${issued.code.slice(4)}`.toLowerCase();
+    const redeemed = await redeem(app, typed, { label: " Friend's iPad " });
+    const result = decodeSignedIn(redeemed.json());
+    const key = t.name("key", result.key);
+    t.step(
+      `redeem ${code} typed as "abcd-efgh" for " Friend's iPad "`,
+      `${redeemed.statusCode}, key ${key} for ${result.person.username}`
+    );
+    const devices = await call(app, "GET", "/me/devices", { key: result.key });
+    const labels = decodeDevices(devices.json()).devices.map(
+      (device) => device.label
+    );
+    t.step(
+      `GET /me/devices with ${key}`,
+      `${devices.statusCode} ${labels.join(", ")}`
+    );
+
+    const again = await redeem(app, issued.code);
+    t.step(`redeem ${code} again`, statusLine(again));
+
+    expect(t.text()).toMatchInlineSnapshot(`
+      "
+      Friend issues a Sign-in Code  -> 201, code <code 1>, expires +10m
+      redeem <code 1> typed as "abcd-efgh" for " Friend's iPad "  -> 200, key <key 1> for Friend
+      GET /me/devices with <key 1>  -> 200 friend-daily, Friend's iPad
+      redeem <code 1> again  -> 404 "That code is not valid. Get a new one."
+      "
+    `);
   } finally {
     await app.dispose();
     await cleanup();

@@ -22,6 +22,8 @@ Never guess at Effect patterns - check the guide first.
 
 The E2E suites are the UI journeys in `apps/apple/OrbisUITests` (`node scripts/native-lanes.mjs --journeys`, which exports screenshots) and the server tests that drive `createApp` over HTTP with a real database.
 
+The server's expect tests print a flow as text, one `request  -> answer` line per step, into a `toMatchInlineSnapshot()` beside the steps; `transcript` in `apps/server/src/test-http.ts` renders the lines. When a behavior change is intended, accept the new text with `bun run --filter @orbis/server test:update`, then read the snapshot diff before you commit it. `CI=true bun run --filter @orbis/server test` fails on any snapshot that is not committed.
+
 ## Local Effect Source
 
 The Effect source repository is available at `~/.local/share/effect-solutions/effect` for reference. Use it to explore APIs, find usage examples, and understand implementation details when the documentation is not enough.
