@@ -21,6 +21,13 @@
 // - One client, one /64, or the whole Group can hold any number of live
 //   requests.
 // - A log event carries the code, the secret, or the key.
+//
+// The transcript test below prints the whole flow as text, so a change to any
+// of these rules shows in its snapshot diff:
+// - The code typed with a space is not found, the approver is not the Person
+//   the key belongs to, or the key does not sign in on GET /me.
+// - A wrong code is found, or a used request hands out a second key.
+// - The 2-minute expiry is off by one in either direction.
 import { expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -37,7 +44,7 @@ import type { WideEvent } from "evlog";
 import { createApp } from "./app.js";
 import { hashToken, readTrustStrict } from "./identity.js";
 import { storedKey } from "./test-app.js";
-import { request } from "./test-http.js";
+import { relativeTime, request, statusLine, transcript } from "./test-http.js";
 
 const FRIEND_DAILY = "approval-friend-daily";
 const NODE = "approval-node";
@@ -49,6 +56,9 @@ const WAIT_MS = 1000;
 const decodeStarted = Schema.decodeUnknownSync(StartedApprovalRequestSchema);
 const decodeWait = Schema.decodeUnknownSync(ApprovalWaitSchema);
 const decodeRequest = Schema.decodeUnknownSync(ApprovalRequestSchema);
+const decodeMe = Schema.decodeUnknownSync(
+  Schema.Struct({ username: Schema.String })
+);
 
 const setup = async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-approval-"));
@@ -137,6 +147,8 @@ const approve = (app: App, code: string, client = PHONE, key = FRIEND_DAILY) =>
     key,
     payload: { code },
   });
+const said = (answer: Answer) =>
+  statusLine({ json: () => answer.body, statusCode: answer.status });
 const approvedKey = (answer: Answer) => {
   expect(answer.status).toBe(200);
   expect(answer.cacheControl).toBe("no-store");
@@ -182,6 +194,102 @@ test.each(["", "   ", "x".repeat(101)])(
     }
   }
 );
+
+test("transcript: a TV is approved, signs in once, and its request expires after 2 minutes", async () => {
+  const { app, cleanup, clock } = await setup();
+  const origin = clock.now;
+  const t = transcript();
+  try {
+    const startAnswer = await start(app);
+    const pairing = decodeStarted(startAnswer.body);
+    const code = t.name("code", pairing.code);
+    const secret = t.name("secret", pairing.secret);
+    t.step(
+      'start "Living room TV" on tvOS',
+      `${said(startAnswer)}, code ${code}, secret ${secret}, expires ${relativeTime(Date.parse(pairing.expiresAt), origin)}`
+    );
+
+    const typed = `${pairing.code.slice(0, 3)} ${pairing.code.slice(3)}`;
+    const found = await find(app, typed);
+    const shown = decodeRequest(found.body);
+    t.step(
+      `find ${code} typed as "ddd ddd"`,
+      `${said(found)}, "${shown.label}" on ${shown.platform}, requested ${relativeTime(Date.parse(shown.requestedAt), origin)}`
+    );
+    t.step(`approve ${code} as Friend`, said(await approve(app, pairing.code)));
+
+    const collected = await wait(app, pairing.secret);
+    const result = decodeWait(collected.body);
+    t.step(
+      `wait ${secret}`,
+      result.status === "approved"
+        ? `${said(collected)}, approved as ${result.person.username}, key ${t.name("key", result.key)}`
+        : `${said(collected)}, ${result.status}`
+    );
+    if (result.status === "approved") {
+      const me = await app.handler(
+        new Request("http://vanta.example.ts.net/me", {
+          headers: { authorization: `Bearer ${result.key}` },
+        }),
+        "device",
+        TV
+      );
+      const person = decodeMe(await me.json());
+      t.step(
+        `GET /me with ${t.name("key", result.key)}`,
+        `${me.status} ${person.username}`
+      );
+    }
+
+    const wrong = String((Number(pairing.code) + 1) % 1_000_000).padStart(
+      6,
+      "0"
+    );
+    t.step(`find ${t.name("wrong code", wrong)}`, said(await find(app, wrong)));
+    t.step(`wait ${secret} again`, said(await wait(app, pairing.secret)));
+    t.step(`find ${code} again`, said(await find(app, pairing.code)));
+
+    const later = await started(app);
+    const laterCode = t.name("code", later.code);
+    t.step(
+      'start "Living room TV" on tvOS',
+      `201, code ${laterCode}, expires ${relativeTime(Date.parse(later.expiresAt), origin)}`
+    );
+    clock.now += TWO_MINUTES - 1;
+    t.step(
+      `at ${relativeTime(clock.now, origin)} find ${laterCode}`,
+      said(await find(app, later.code))
+    );
+    clock.now += 1;
+    t.step(
+      `at ${relativeTime(clock.now, origin)} find ${laterCode}`,
+      said(await find(app, later.code))
+    );
+    t.step(
+      `at ${relativeTime(clock.now, origin)} approve ${laterCode}`,
+      said(await approve(app, later.code))
+    );
+
+    expect(t.text()).toMatchInlineSnapshot(`
+      "
+      start "Living room TV" on tvOS  -> 201, code <code 1>, secret <secret 1>, expires +2m
+      find <code 1> typed as "ddd ddd"  -> 200, "Living room TV" on tvOS, requested +0s
+      approve <code 1> as Friend  -> 200
+      wait <secret 1>  -> 200, approved as Friend, key <key 1>
+      GET /me with <key 1>  -> 200 Friend
+      find <wrong code 1>  -> 404 "No device is waiting with that code."
+      wait <secret 1> again  -> 404 "That sign-in request expired. Start again."
+      find <code 1> again  -> 404 "No device is waiting with that code."
+      start "Living room TV" on tvOS  -> 201, code <code 2>, expires +2m
+      at +1m59.999s find <code 2>  -> 200
+      at +2m find <code 2>  -> 404 "No device is waiting with that code."
+      at +2m approve <code 2>  -> 404 "No device is waiting with that code."
+      "
+    `);
+  } finally {
+    await cleanup();
+  }
+});
 
 test("a wait holds until its wait time and answers pending, and an open wait answers approved at once with a key for the approver", async () => {
   const { app, cleanup, clock, store } = await setup();

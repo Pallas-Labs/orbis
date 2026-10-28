@@ -1,9 +1,20 @@
+// The library's Sets and Playlists through `createApp` over HTTP with a real
+// database.
+//
+// Ways a Set could fail, which the transcript test prints as text:
+// - Saving keeps a tracking parameter or a short link instead of the canonical
+//   URL, or names the wrong source.
+// - Tags keep their case, spaces, or duplicates.
+// - A second save of the same video overwrites the first or adds a second Set.
+// - A title or tag update is lost, changes the other field, or does not show
+//   in the library as read back.
 import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import type { SavedSet } from "@orbis/contracts";
 import { SavedSetSchema } from "@orbis/contracts/http-api";
 import { Schema } from "effect";
 
@@ -12,9 +23,12 @@ import {
   MAX_SETS_PER_PLAYLIST,
 } from "./library-limits.js";
 import { createTestApp as createApp } from "./test-app.js";
-import { request } from "./test-http.js";
+import { request, statusLine, transcript } from "./test-http.js";
 
 const savedSet = Schema.decodeUnknownSync(SavedSetSchema);
+const decodeLibrary = Schema.decodeUnknownSync(
+  Schema.Struct({ sets: Schema.Array(SavedSetSchema) })
+);
 
 const SEEDED_CREATED_AT = "2026-04-01T00:00:00.000Z";
 
@@ -422,6 +436,86 @@ test("keeps an oversized Set membership readable and lets it shrink", async () =
     }
   } finally {
     await rm(directory, { force: true, recursive: true });
+  }
+});
+
+test("transcript: save a Set, refuse a duplicate, and update its title and tags", async () => {
+  const app = createApp();
+  const t = transcript();
+  const described = (set: SavedSet) =>
+    `${t.name("set", set.id)} ${set.source} ${set.url} "${set.title}" [${set.tags.join(", ")}]`;
+  const answer = (response: Awaited<ReturnType<typeof request>>) =>
+    response.statusCode < 300
+      ? `${response.statusCode} ${described(savedSet(response.json()))}`
+      : statusLine(response);
+  try {
+    const saved = await request(app, {
+      method: "POST",
+      payload: {
+        tags: [" Techno ", "techno", "LIVE"],
+        title: "Night session",
+        url: "https://youtu.be/abcdefghijk?si=tracking&t=30",
+      },
+      url: "/sets",
+    });
+    t.step(
+      'save "Night session" [" Techno ", "techno", "LIVE"] from https://youtu.be/abcdefghijk?si=tracking&t=30',
+      answer(saved)
+    );
+    const { id } = savedSet(saved.json());
+    t.step(
+      'save "Replacement" from https://www.youtube.com/watch?v=abcdefghijk&t=90',
+      answer(
+        await request(app, {
+          method: "POST",
+          payload: {
+            tags: [],
+            title: "Replacement",
+            url: "https://www.youtube.com/watch?v=abcdefghijk&t=90",
+          },
+          url: "/sets",
+        })
+      )
+    );
+    t.step(
+      `retitle ${t.name("set", id)} to " Late session "`,
+      answer(
+        await request(app, {
+          method: "PATCH",
+          payload: { title: " Late session " },
+          url: `/sets/${id}/title`,
+        })
+      )
+    );
+    t.step(
+      `retag ${t.name("set", id)} with [" Ambient ", "ambient", "live"]`,
+      answer(
+        await request(app, {
+          method: "PATCH",
+          payload: { tags: [" Ambient ", "ambient", "live"] },
+          url: `/sets/${id}/tags`,
+        })
+      )
+    );
+    const library = await request(app, { method: "GET", url: "/sets" });
+    const { sets } = decodeLibrary(library.json());
+    t.step("GET /sets", `${library.statusCode}, ${sets.length} Set`);
+    for (const set of sets) {
+      t.step("  in the library", described(set));
+    }
+
+    expect(t.text()).toMatchInlineSnapshot(`
+      "
+      save "Night session" [" Techno ", "techno", "LIVE"] from https://youtu.be/abcdefghijk?si=tracking&t=30  -> 201 <set 1> youtube https://www.youtube.com/watch?v=abcdefghijk "Night session" [techno, live]
+      save "Replacement" from https://www.youtube.com/watch?v=abcdefghijk&t=90  -> 409 "This set is already in your library."
+      retitle <set 1> to " Late session "  -> 200 <set 1> youtube https://www.youtube.com/watch?v=abcdefghijk "Late session" [techno, live]
+      retag <set 1> with [" Ambient ", "ambient", "live"]  -> 200 <set 1> youtube https://www.youtube.com/watch?v=abcdefghijk "Late session" [ambient, live]
+      GET /sets  -> 200, 1 Set
+        in the library  -> <set 1> youtube https://www.youtube.com/watch?v=abcdefghijk "Late session" [ambient, live]
+      "
+    `);
+  } finally {
+    await app.dispose();
   }
 });
 
