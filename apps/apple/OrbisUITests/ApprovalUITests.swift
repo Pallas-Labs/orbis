@@ -84,6 +84,61 @@ final class ApprovalUITests: XCTestCase {
     record("approve-link")
   }
 
+  /// A link that arrives while Settings is open approves over Settings, and Settings lists the TV
+  /// without being opened again.
+  func testALinkApprovedOverSettingsListsTheNewDevice() throws {
+    let lane = try LaneService()
+    let label = "Orbis on Settings TV \(Self.suffix())"
+    let request = try lane.startApprovalRequest(label: label)
+    let app = launchOrbis(address: lane.address, token: lane.token)
+    XCTAssertTrue(
+      app.tabBars.buttons["Home"].waitForExistence(timeout: 60),
+      "the app must open signed in\n\(app.debugDescription)")
+
+    openSettings(app)
+    let thisDevice = app.descendants(matching: .any)
+      .matching(NSPredicate(format: "identifier BEGINSWITH 'device-' AND label CONTAINS %@", "This Device"))
+      .firstMatch
+    XCTAssertTrue(thisDevice.waitForExistence(timeout: 30), "Settings must list This Device\n\(app.debugDescription)")
+    let tvRows = app.descendants(matching: .any)
+      .matching(NSPredicate(format: "identifier BEGINSWITH 'device-' AND label CONTAINS %@", label))
+    XCTAssertEqual(tvRows.count, 0, "Settings does not list the TV before the approval")
+    step("Settings is open and does not list the TV")
+
+    // `app.open` relaunches the app, which would close Settings. The system opens the link in the
+    // running app, as a scanned QR code does, and may first ask to open it in Orbis.
+    XCUIDevice.shared.system.open(try Self.link(request.code))
+    let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+    let openInOrbis = springboard.buttons["Open"]
+    if openInOrbis.waitForExistence(timeout: 5) { openInOrbis.tap() }
+    let approve = app.buttons["approval-approve"]
+    XCTAssertTrue(approve.waitForExistence(timeout: 30), "the link must open the sheet\n\(app.debugDescription)")
+    capture("approval-10-sheet-over-settings")
+    approve.tap()
+    XCTAssertTrue(
+      app.staticTexts["approval-approved"].waitForExistence(timeout: 15),
+      "approving must say the TV is signed in\n\(app.debugDescription)")
+    XCTAssertEqual(try lane.waitForApproval(request.secret).status, "approved", "the TV's wait must get a key")
+    let device = try XCTUnwrap(
+      try lane.devices().first { $0.label == label }, "the service lists the TV under its label")
+    app.buttons["approval-done"].tap()
+    step("the link opens the sheet over Settings, and Sign In approves the TV")
+
+    XCTAssertTrue(
+      app.buttons["settings-done"].waitForExistence(timeout: 10),
+      "Settings stays open after the sheet closes\n\(app.debugDescription)")
+    let row = app.descendants(matching: .any)["device-\(device.id)"]
+    XCTAssertTrue(
+      row.waitForExistence(timeout: 15), "Settings must list the TV without reopening\n\(app.debugDescription)")
+    XCTAssertTrue(row.label.contains(label), row.label)
+    capture("approval-09-settings-after-link")
+    step("Settings lists the TV without being opened again")
+
+    app.terminate()
+    XCTAssertEqual(try lane.revokeDevice(device.id), 200)
+    record("approve-link-over-settings")
+  }
+
   /// Cancel closes the sheet and leaves the TV's request waiting; an unknown code says it expired.
   func testCancelLeavesTheRequestAndAnUnknownCodeHasExpired() throws {
     let lane = try LaneService()
