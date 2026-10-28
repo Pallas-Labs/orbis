@@ -1,0 +1,12 @@
+{
+  "elapsedSeconds": 200.253,
+  "requestedWorkers": 1,
+  "simulator": "Orbis Lanes",
+  "simulatorUdid": "01120C2B-546B-43E9-B76D-91A2D9288769",
+  "workers": [
+    {
+      "directory": "worker-1",
+      "name": "iPhone 17 Pro"
+    }
+  ]
+}

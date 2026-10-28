@@ -1,0 +1,12 @@
+{
+  "elapsedSeconds": 192.805,
+  "requestedWorkers": 1,
+  "simulator": "Apple TV",
+  "simulatorUdid": "CFDB9A87-9AD4-4BF6-A2EB-EC78A543F560",
+  "workers": [
+    {
+      "directory": "worker-1",
+      "name": "Apple TV 4K (3rd generation)"
+    }
+  ]
+}

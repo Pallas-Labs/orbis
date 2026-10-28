@@ -1,0 +1,10 @@
+local-ci-3.log:@orbis/web:test: [e2e] failed: playlists
+local-ci-3.log:Failed:    @orbis/web#test
+local-ci-2.log:@orbis/web:test: [e2e] failed: playlists
+local-ci-2.log:Failed:    @orbis/web#test
+local-ci-4.log:@orbis/web:test: [e2e] failed: live-queue
+local-ci-4.log:Failed:    @orbis/web#test
+local-ci-5.log:@orbis/web:test: [e2e] failed: playlists, live-queue, journey
+local-ci-5.log:Failed:    @orbis/web#test
+local-ci.log:@orbis/web:test: [e2e] failed: playlists, live-queue, pair, share
+local-ci.log:Failed:    @orbis/web#test
