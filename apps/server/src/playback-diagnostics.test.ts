@@ -455,7 +455,7 @@ test("playback.loss is written only for the ranges the client declares, with the
     if (!first) {
       throw new Error("fixture is empty");
     }
-    const send = async (body: object) => {
+    const send = async (body: Partial<typeof fixture>) => {
       const response = await s.send(JSON.stringify({ ...batch(), ...body }));
       expect(response.status).toBe(200);
       return response.json();

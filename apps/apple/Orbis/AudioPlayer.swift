@@ -189,8 +189,16 @@ final class AudioPlayer {
 
   func diagnosticsTail() -> Int { diagnostics.tail }
 
-  func diagnostics(after sequence: Int, limit: Int) -> PlaybackDiagnostics.Slice {
-    diagnostics.slice(after: sequence, limit: limit)
+  func startDiagnosticsDelivery() -> Int { diagnostics.startDelivery() }
+
+  func pendingDiagnostics(for delivery: Int, limit: Int) -> PlaybackDiagnostics.Pending? {
+    diagnostics.pending(for: delivery, limit: limit)
+  }
+
+  func settleDiagnostics(
+    _ delivery: Int, through: Int, lostCount: Int, as settlement: PlaybackDiagnostics.Settlement
+  ) {
+    diagnostics.settle(delivery, through: through, lostCount: lostCount, as: settlement)
   }
 
   func resetDiagnostics() {

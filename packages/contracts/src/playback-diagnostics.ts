@@ -201,6 +201,13 @@ const Event = Schema.Union([
   Schema.Struct({ error: Schema.Struct({ _0: ErrorValue }) }),
 ]);
 const MetadataString = Schema.String.check(Schema.isMaxLength(64));
+/** A sequence range `(afterSequence, throughSequence]` that a run will never deliver. */
+const LostRange = Schema.Struct({
+  afterSequence: Sequence,
+  throughSequence: Sequence,
+}).check(
+  Schema.makeFilter((range) => range.throughSequence > range.afterSequence)
+);
 export const PlaybackDiagnosticsBatch = Schema.Struct({
   afterSequence: Sequence,
   entries: Schema.Array(
@@ -214,6 +221,9 @@ export const PlaybackDiagnosticsBatch = Schema.Struct({
       ),
     })
   ).check(Schema.isMaxLength(32)),
+  lost: Schema.optionalKey(
+    Schema.Array(LostRange).check(Schema.isMaxLength(32))
+  ),
   metadata: Schema.Struct({
     appBuild: MetadataString,
     appVersion: MetadataString,
@@ -229,7 +239,10 @@ export const PlaybackDiagnosticsBatch = Schema.Struct({
   throughSequence: Sequence,
 }).check(
   Schema.makeFilter((batch) => {
-    if (batch.throughSequence <= batch.afterSequence) {
+    if (
+      batch.throughSequence < batch.afterSequence ||
+      (batch.entries.length === 0 && !batch.lost?.length)
+    ) {
       return false;
     }
     let previous = batch.afterSequence;
@@ -247,27 +260,16 @@ export const PlaybackDiagnosticsBatch = Schema.Struct({
 );
 export type PlaybackDiagnosticsPayload = typeof PlaybackDiagnosticsBatch.Type;
 
-/** A sequence range `(afterSequence, throughSequence]` that a run will never deliver. */
-export interface PlaybackLoss {
-  readonly afterSequence: number;
-  readonly throughSequence: number;
-}
+export type PlaybackLoss = typeof LostRange.Type;
 
 /**
- * The ranges a batch reports as lost, which the relay writes as `playback.loss`. Anything
- * between `afterSequence` and `throughSequence` that the batch does not carry counts.
+ * The ranges the relay writes as `playback.loss`: only those the client declares, because only
+ * the client knows what it evicted or what the Group refused. A gap between batches is not a
+ * loss, since a batch the collector stored can still lack its acknowledgement.
  */
 export const playbackLosses = (
   batch: PlaybackDiagnosticsPayload
-): readonly PlaybackLoss[] =>
-  batch.throughSequence - batch.afterSequence > batch.entries.length
-    ? [
-        {
-          afterSequence: batch.afterSequence,
-          throughSequence: batch.throughSequence,
-        },
-      ]
-    : [];
+): readonly PlaybackLoss[] => batch.lost ?? [];
 export const PlaybackDiagnosticsReceipt = Schema.Struct({
   accepted: Sequence,
   rejected: Sequence,

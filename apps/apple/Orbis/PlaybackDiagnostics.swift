@@ -3,6 +3,9 @@ import Foundation
 final class PlaybackDiagnostics {
   static let retainedEntryLimit = 256
   static let reportByteLimit = 256 * 1_024
+  /// The most entries kept for delivery before the oldest unsent one is evicted and declared
+  /// lost. Separate from the report's ring, which may evict a sample the moment it arrives.
+  static let unsentEntryLimit = 1_024
 
   struct Finite: Codable, Equatable, Sendable {
     let value: Double?
@@ -270,12 +273,40 @@ final class PlaybackDiagnostics {
     let entries: [Entry]
   }
 
+  /// The sequences `(afterSequence, throughSequence]`, which delivery will never send.
+  struct LostRange: Codable, Equatable, Sendable {
+    let afterSequence: Int
+    let throughSequence: Int
+  }
+
+  /// The oldest history that delivery has yet to send, in sequence order.
+  struct Pending: Sendable {
+    let entries: [Entry]
+    let lost: [LostRange]
+  }
+
+  enum Settlement {
+    /// The Group acknowledged the batch.
+    case delivered
+    /// The Group refused the batch for good, so its entries are lost.
+    case refused
+    /// The batch may not have arrived, so it is sent again.
+    case unsent
+  }
+
   private let maxEntries: Int
   private let maxReportBytes: Int
   private let metadata: Metadata
   private var entries: [Entry] = []
   private var nextSequence = 1
   private var evictedCount = 0
+  private var delivery: Int?
+  private var deliveries = 0
+  private var unsent: [Entry] = []
+  private var lost: [LostRange] = []
+  /// The last entry and the number of loss ranges that `pending` handed out and that are not
+  /// yet settled. Eviction and merging leave them alone.
+  private var inFlight: (through: Int, lost: Int)?
 
   init(
     maxEntries: Int = retainedEntryLimit,
@@ -291,31 +322,83 @@ final class PlaybackDiagnostics {
     _ event: Event, snapshot: Snapshot, wallTime: Date = Date(),
     uptime: Double = ProcessInfo.processInfo.systemUptime
   ) {
-    entries.append(
-      Entry(
-        sequence: nextSequence, wallTime: wallTime, uptime: Finite(uptime), event: event,
-        snapshot: snapshot))
+    let entry = Entry(
+      sequence: nextSequence, wallTime: wallTime, uptime: Finite(uptime), event: event,
+      snapshot: snapshot)
+    entries.append(entry)
     nextSequence += 1
     if entries.count > maxEntries {
       let index = entries.firstIndex { $0.event == .sample } ?? entries.startIndex
       entries.remove(at: index)
       evictedCount += 1
     }
-  }
-
-  struct Slice: Sendable {
-    let entries: [Entry]
-    let throughSequence: Int
+    guard delivery != nil else { return }
+    unsent.append(entry)
+    if unsent.count > Self.unsentEntryLimit {
+      let index = unsent.firstIndex { $0.sequence > inFlight?.through ?? 0 } ?? unsent.startIndex
+      declareLost(unsent.remove(at: index).sequence)
+    }
   }
 
   var tail: Int { nextSequence - 1 }
 
-  func slice(after sequence: Int, limit: Int) -> Slice {
-    let selected = Array(entries.lazy.filter { $0.sequence > sequence }.prefix(max(1, min(limit, 32))))
-    let through =
-      selected.last?.sequence == entries.last?.sequence || selected.isEmpty
-      ? tail : selected.last?.sequence ?? sequence
-    return Slice(entries: selected, throughSequence: through)
+  /// Starts delivering what is recorded from now on, and forgets what an earlier delivery left
+  /// unsent. Returns the delivery's generation, which `pending` and `settle` check.
+  func startDelivery() -> Int {
+    deliveries += 1
+    delivery = deliveries
+    unsent.removeAll()
+    lost.removeAll()
+    inFlight = nil
+    return deliveries
+  }
+
+  /// The oldest unsent entries and loss ranges, at most `limit` of each. They stay unsent, and
+  /// are not evicted, until `settle`. Nil once `generation` is no longer delivering.
+  func pending(for generation: Int, limit: Int) -> Pending? {
+    guard generation == delivery else { return nil }
+    let pending = Pending(entries: Array(unsent.prefix(limit)), lost: Array(lost.prefix(limit)))
+    if !pending.entries.isEmpty || !pending.lost.isEmpty {
+      inFlight = (pending.entries.last?.sequence ?? 0, pending.lost.count)
+    }
+    return pending
+  }
+
+  /// Settles the batch that sent the unsent entries through `through` and the first `lostCount`
+  /// loss ranges.
+  func settle(_ generation: Int, through: Int, lostCount: Int, as settlement: Settlement) {
+    guard generation == delivery else { return }
+    inFlight = nil
+    switch settlement {
+    case .delivered:
+      unsent.removeAll { $0.sequence <= through }
+      lost.removeFirst(min(lostCount, lost.count))
+    case .refused:
+      let refused = unsent.prefix { $0.sequence <= through }.map(\.sequence)
+      unsent.removeFirst(refused.count)
+      for sequence in refused { declareLost(sequence) }
+    case .unsent:
+      break
+    }
+    lost.sort { $0.afterSequence < $1.afterSequence }
+    lost = lost.reduce(into: []) { merged, range in
+      if let last = merged.last, last.throughSequence >= range.afterSequence {
+        merged[merged.count - 1] = LostRange(
+          afterSequence: last.afterSequence,
+          throughSequence: max(last.throughSequence, range.throughSequence))
+      } else {
+        merged.append(range)
+      }
+    }
+  }
+
+  /// Adds `sequence` to the loss ranges, extending the last range unless it is in flight.
+  private func declareLost(_ sequence: Int) {
+    if lost.count > inFlight?.lost ?? 0, let last = lost.last, last.throughSequence == sequence - 1 {
+      lost[lost.count - 1] = LostRange(afterSequence: last.afterSequence, throughSequence: sequence)
+    } else {
+      lost.append(LostRange(afterSequence: sequence - 1, throughSequence: sequence))
+    }
   }
 
   func report(current: Snapshot) -> String {
@@ -350,6 +433,10 @@ final class PlaybackDiagnostics {
     entries.removeAll(keepingCapacity: true)
     nextSequence = 1
     evictedCount = 0
+    delivery = nil
+    unsent.removeAll()
+    lost.removeAll()
+    inFlight = nil
   }
 
   private static func encode(_ report: Report) -> Data? {
