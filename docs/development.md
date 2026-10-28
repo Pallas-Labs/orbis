@@ -56,7 +56,9 @@ Authorization headers, cookies, request bodies, source links, stream grants, and
 
 ## Checks
 
-Run `bun run check` for cached lint, formatting, TypeScript, tests, and Effect diagnostics. Turbo runs independent tasks in parallel, bounded by the available CPU count, and builds shared contracts before consumers. `bun run check:force` bypasses task-cache reads. `bun run fix` applies Ultracite fixes; it is never cached.
+Run `bun run check` for cached lint, formatting, TypeScript, tests, Effect diagnostics, and React Doctor. Turbo runs independent tasks in parallel, bounded by the available CPU count, and builds shared contracts before consumers. `bun run check:force` bypasses task-cache reads. `bun run fix` applies Ultracite fixes; it is never cached.
+
+React Doctor is the `doctor` task of `apps/web`: `bunx react-doctor@0.9.18 . --scope changed --base origin/main --blocking error`, the command, version and blocking level the `Code quality` workflow's React Doctor action ran for `apps/web`. It reports only the errors the checkout adds against `origin/main`, so `origin/main` must be fetched. The task is never cached, because its result depends on that ref.
 
 Typechecks use separate incremental files so they do not race with builds.
 

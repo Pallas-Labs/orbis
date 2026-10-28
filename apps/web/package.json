@@ -6,6 +6,7 @@
     "dev": "vite dev --host 127.0.0.1 --port 3000",
     "build": "vite build",
     "typecheck": "tsc --noEmit --tsBuildInfoFile .cache/typecheck.tsbuildinfo",
+    "doctor": "bunx react-doctor@0.9.18 . --scope changed --base origin/main --blocking error --no-telemetry --yes",
     "deploy": "bun ../api/scripts/migrations.ts --check && alchemy deploy --stage prod",
     "destroy": "alchemy destroy --stage prod",
     "test": "vite build && node e2e/run.mjs"
