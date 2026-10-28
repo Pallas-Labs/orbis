@@ -9,8 +9,10 @@
 //   bun run ci --no-status        # run the checks, post no status
 //
 // On macOS, the macOS checks run in this checkout unless --mac-host is given. Elsewhere,
-// apps/apple at HEAD is copied to ~/.cache/orbis-local-ci/<sha> on the host, checked there
-// and removed. React Doctor reports only issues that HEAD adds against --base (origin/main).
+// apps/apple at the starting commit is copied to ~/.cache/orbis-local-ci/<sha> on the host,
+// checked there and removed. React Doctor reports only issues that HEAD adds against --base
+// (origin/main). Just before posting, it checks the checkout still is the starting commit and
+// still clean; otherwise it posts nothing (PAL-1138).
 
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
@@ -83,17 +85,20 @@ const exec = async (command, { input, log, env } = {}) => {
 };
 
 /// Runs steps in order and stops at the first failure. Returns the failed step's name.
-/// Recursive rather than a loop, so each step is a separate await.
+/// Recursive rather than a loop, so each step is a separate await. A step's options may carry
+/// `run` instead of a command, for work that spans more than one process.
 const lane = async (name, [first, ...rest], log) => {
   if (!first) {
     return;
   }
-  const [step, command, options] = first;
+  const [step, command, options = {}] = first;
   const say = (line) =>
     log ? log.push(Buffer.from(`${line}\n`)) : console.log(line);
   const started = performance.now();
   say(`\n[${name}] ${step}`);
-  const code = await exec(command, { ...options, log });
+  const code = options.run
+    ? await options.run({ log })
+    : await exec(command, { ...options, log });
   const seconds = ((performance.now() - started) / 1000).toFixed(0);
   say(
     `[${name}] ${step}: ${code === 0 ? "passed" : `exited ${code}`} in ${seconds} s`
@@ -156,19 +161,33 @@ const mac = async () => {
     // through `bash -c` in single quotes, and bash expands $HOME there.
     const dir = `$HOME/.cache/orbis-local-ci/${sha}`;
     const remote = (script) => ["ssh", macHost, "bash", "-c", `'${script}'`];
-    const archive = spawn(
-      "git",
-      ["archive", "--format=tar", "HEAD", "apps/apple", "package.json"],
-      { cwd: root, stdio: ["ignore", "pipe", "inherit"] }
-    );
+    // The archive comes from the starting commit, not HEAD, so a commit during the run
+    // cannot change what the Mac checks. A failed archive fails the lane.
+    const copy = async ({ log: laneLog }) => {
+      const archive = spawn(
+        "git",
+        ["archive", "--format=tar", sha, "apps/apple", "package.json"],
+        { cwd: root, stdio: ["ignore", "pipe", "inherit"] }
+      );
+      const closed = once(archive, "close");
+      const code = await exec(
+        remote(`rm -rf ${dir} && mkdir -p ${dir} && tar -x -C ${dir}`),
+        { input: archive.stdout, log: laneLog }
+      );
+      const [archiveCode] = await closed;
+      if (archiveCode !== 0) {
+        laneLog?.push(
+          Buffer.from(`git archive at ${sha} exited ${archiveCode ?? 1}\n`)
+        );
+        return archiveCode ?? 1;
+      }
+      return code;
+    };
     failed = await lane(
       `macos on ${macHost}`,
       [
-        [
-          "Copy apps/apple at HEAD",
-          remote(`rm -rf ${dir} && mkdir -p ${dir} && tar -x -C ${dir}`),
-          { input: archive.stdout },
-        ],
+        // No command: the copy pipes git archive into ssh itself.
+        [`Copy apps/apple at ${sha}`, [], { run: copy }],
         [
           "Check Swift style",
           remote(`cd ${dir} && ${scripts["native:format"]}`),
@@ -203,6 +222,19 @@ if (failures.length > 0) {
 if (!postStatus) {
   console.log("\nlocal-ci: passed. --no-status: no status posted.");
   process.exit(0);
+}
+
+// The status names the commit the checks started on, so that commit must still be HEAD and
+// the tree still clean. Another process may edit or commit in this worktree during the run.
+const head = git("rev-parse", "HEAD");
+const changes = git("status", "--porcelain");
+if (head !== sha || changes !== "") {
+  const moved = head === sha ? "" : `, now ${head}`;
+  const dirty = changes === "" ? "" : `, with changes:\n${changes}`;
+  console.error(
+    `\nlocal-ci: the checkout changed during the run. Started at ${sha}${moved}${dirty}. No status posted.`
+  );
+  process.exit(1);
 }
 
 const repo = spawnSync(
