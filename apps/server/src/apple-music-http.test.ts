@@ -496,13 +496,17 @@ test("an Apple Music album link saves once, read from the US catalog with the Ho
     expect(refusedLinks.some((url) => url.includes("/artist/"))).toBe(true);
     expect(refusedLinks.some((url) => url.includes("/station/"))).toBe(true);
     expect(refusedLinks.some((url) => url.includes("/song/"))).toBe(true);
-    for (const url of refusedLinks) {
-      // oxlint-disable-next-line no-await-in-loop -- Each refusal is one save, in order.
-      const refused = await request(server.app, {
-        method: "POST",
-        payload: { url },
-        url: "/sets",
-      });
+    // A refused link never reaches Apple and never saves, so the refusals are independent.
+    const refusals = await Promise.all(
+      refusedLinks.map((url) =>
+        request(server.app, {
+          method: "POST",
+          payload: { url },
+          url: "/sets",
+        })
+      )
+    );
+    for (const refused of refusals) {
       expect(refused.statusCode).toBe(400);
       expect(messageIn(refused)).toBe(SOURCE_URL_MESSAGE);
     }
@@ -840,6 +844,7 @@ const named = (album: FoundAlbum) => `${album.title} / ${album.creator}`;
 test("each recorded search shows Apple's labelled DJ mixes first, in Apple's order, from two US searches and one album read", async () => {
   const server = await start();
   try {
+    const evidenceWrites: Promise<void>[] = [];
     for (const [words, mixes] of EXPECTED_DJ_MIXES) {
       const before = server.reads.length;
       // oxlint-disable-next-line no-await-in-loop -- Each search is checked against its own reads.
@@ -878,21 +883,25 @@ test("each recorded search shows Apple's labelled DJ mixes first, in Apple's ord
           album.djMix || typed.has(album.url.split("/").at(-1) ?? "")
         ).toBe(true);
       }
-      // oxlint-disable-next-line no-await-in-loop -- One evidence file per search.
-      await record(`search-${words.toLowerCase().replaceAll(/\W+/gu, "-")}`, {
-        albums: albums.map((album) => ({
-          djMix: album.djMix,
-          name: named(album),
-          url: album.url,
-        })),
-        reads: reads.map(String),
-      });
+      evidenceWrites.push(
+        record(`search-${words.toLowerCase().replaceAll(/\W+/gu, "-")}`, {
+          albums: albums.map((album) => ({
+            djMix: album.djMix,
+            name: named(album),
+            url: album.url,
+          })),
+          reads: reads.map(String),
+        })
+      );
     }
-    for (const [words, mix] of UNLABELLED_MIXES) {
-      // oxlint-disable-next-line no-await-in-loop -- Each known miss is read from its search.
-      const albums = await search(server, words);
-      expect(albums.find((album) => named(album) === mix)?.djMix).toBe(false);
-    }
+    // Each search writes its own evidence file, so the writes need no order.
+    await Promise.all(evidenceWrites);
+    await Promise.all(
+      UNLABELLED_MIXES.map(async ([words, mix]) => {
+        const albums = await search(server, words);
+        expect(albums.find((album) => named(album) === mix)?.djMix).toBe(false);
+      })
+    );
   } finally {
     await server.dispose();
   }

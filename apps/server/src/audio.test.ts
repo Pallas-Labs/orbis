@@ -510,11 +510,20 @@ test("device ingress without a token is rejected on every audio route", async ()
       ["GET", `/sets/${id}/audio`],
       ["DELETE", `/sets/${id}/audio/download`],
     ] as const;
-    for (const [method, url] of routes) {
-      // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
-      const response = await rawRequest(app, method, url, {}, "device", false);
-      expect(response.status).toBe(403);
-    }
+    // Every route rejects the device before any work, so the four probes are independent.
+    await Promise.all(
+      routes.map(async ([method, url]) => {
+        const response = await rawRequest(
+          app,
+          method,
+          url,
+          {},
+          "device",
+          false
+        );
+        expect(response.status, `${method} ${url}`).toBe(403);
+      })
+    );
   } finally {
     await cleanup();
   }
