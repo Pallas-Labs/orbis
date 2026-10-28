@@ -1,12 +1,19 @@
+import { ExportIcon } from "@phosphor-icons/react";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { setDetails } from "@/components/library/set-row";
+import { SOURCE_LABELS, setDetails } from "@/components/library/set-row";
 import { Tracklist } from "@/components/library/tracklist";
 import { useDownloadProgress } from "@/components/library/use-download-progress";
 import { usePlayer } from "@/components/player/player";
 import { RouteProblem } from "@/components/route-problem";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { listSets, requestDownload } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
@@ -58,6 +65,36 @@ const AudioAction = ({
   );
 };
 
+const ShareMenu = ({
+  onCopy,
+  set,
+}: {
+  readonly onCopy: (link: string, url: string) => Promise<void>;
+  readonly set: SavedSet;
+}) => {
+  const sourceLink = `${SOURCE_LABELS[set.source]} link`;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="outline" />}>
+        <ExportIcon data-icon="inline-start" />
+        Share
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem
+          onClick={() =>
+            onCopy("Orbis link", `${window.location.origin}/s/${set.id}`)
+          }
+        >
+          Copy Orbis link
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onCopy(sourceLink, set.url)}>
+          Copy {sourceLink}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const SetPage = ({
   session,
   set,
@@ -71,6 +108,7 @@ const SetPage = ({
   const player = usePlayer();
   const [problem, setProblem] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const downloadProgress = useDownloadProgress(
     session,
     set === null ? [] : [set]
@@ -111,6 +149,16 @@ const SetPage = ({
     setProblem(result.ok ? null : FAILURE_MESSAGES[result.failure]);
     if (result.ok) {
       await router.invalidate();
+    }
+  };
+  const copy = async (link: string, url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(link);
+      setProblem(null);
+    } catch {
+      setCopied(null);
+      setProblem(`Could not copy the ${link}.`);
     }
   };
   const refresh = async () => {
@@ -179,12 +227,20 @@ const SetPage = ({
             <h1 className="text-2xl font-medium text-pretty">{set.title}</h1>
             <p className="text-muted-foreground">{setDetails(set)}</p>
           </div>
-          <AudioAction
-            download={download}
-            play={play}
-            progress={downloadProgress.get(set.id)}
-            set={set}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <AudioAction
+              download={download}
+              play={play}
+              progress={downloadProgress.get(set.id)}
+              set={set}
+            />
+            <ShareMenu onCopy={copy} set={set} />
+            {copied === null ? null : (
+              <p className="text-muted-foreground text-sm" role="status">
+                Copied the {copied}
+              </p>
+            )}
+          </div>
         </div>
       </header>
       {problem === null ? null : <p role="alert">{problem}</p>}

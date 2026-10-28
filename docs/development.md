@@ -121,6 +121,7 @@ Build shared contracts before running a focused lane from the repository root:
 | Change | Command from repo root | Evidence and prerequisites |
 | --- | --- | --- |
 | Bun HTTP handlers | `bun run --filter @orbis/server test` | Real database HTTP tests in `apps/server/src`; retain command output for failures |
+| Orbis Link page and preview image | `bun scripts/share-preview.ts --out <directory>` | Writes the PNG, page HTML, and render times for a fixture Set; add `--serve` to keep it answering for curl |
 | Cloudflare Group and audio node | `bun run --filter @orbis/api test` | Workerd journeys write `.cache/api-group`, `.cache/audio-node`, `.cache/api-grants`, and `.cache/api-recovery`; requires ffmpeg and ffprobe |
 | Group data transfer | `bun run --filter @orbis/api test:transfer` | See [data transfer](data-transfer.md) for restore and comparison artifacts |
 | Web client | `bun run --filter @orbis/web test` | Production browser journeys and artifacts listed in [web verification](../apps/web/README.md#verify-the-migration); install Chromium with `bun x playwright install chromium` |

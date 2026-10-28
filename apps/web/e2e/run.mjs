@@ -1,5 +1,5 @@
 // Runs the browser journeys side by side against the built client. Each journey has its own ports,
-// data directory, and artifacts directory, so none waits for another. All eleven at once overload
+// data directory, and artifacts directory, so none waits for another. All twelve at once overload
 // the host and time out, so at most four run together, longest first. Each one's output
 // prints when it ends, so the logs never interleave.
 import { spawn } from "node:child_process";
@@ -18,6 +18,7 @@ const journeys = [
   "devices",
   "apple-music",
   "pair",
+  "share",
 ];
 const concurrency = 4;
 

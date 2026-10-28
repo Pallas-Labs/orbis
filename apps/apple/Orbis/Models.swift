@@ -177,6 +177,18 @@ struct LibraryResponse: Decodable {
   let sets: [SavedSet]
 }
 
+/// What anyone with a Set's Orbis Link may read about it (ADR 0023): the provider's facts, never
+/// a Library's.
+struct SharedSet: Decodable, Equatable, Identifiable {
+  let id: String
+  /// The Source Link, which saving the Set sends.
+  let url: String
+  let title: String
+  let source: SetSource
+  let creator: String?
+  let artworkUrl: String?
+}
+
 /// An album an Apple Music search found. Saving its link makes it a Set (ADR 0021).
 struct AppleMusicAlbum: Decodable, Equatable, Identifiable, Sendable {
   let url: String

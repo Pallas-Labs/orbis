@@ -28,6 +28,10 @@ _Avoid_: Thumbnail, cover, image
 The original YouTube, SoundCloud, or Apple Music album address associated with a Set.
 _Avoid_: Media URL, download URL
 
+**Orbis Link**:
+A Set's public address, `https://orbis.p11a.xyz/s/<set id>`. It opens the Set in Orbis and previews only the Set's shared facts.
+_Avoid_: Share link, deep link
+
 **Retained Audio**:
 An audio copy of a Set stored on Vanta for playback. One per Set, streamable by anyone who can see the Set.
 _Avoid_: Download, media file

@@ -229,6 +229,16 @@ const sampleFor = (operationId: string) => {
       requestedAt: "2026-09-29T00:00:00.000Z",
     };
   }
+  if (operationId === "share.set") {
+    return {
+      artworkUrl: null,
+      creator: "Boiler Room",
+      id: "a1b2c3d4e5f6",
+      source: "youtube",
+      title: "Peggy Gou | Boiler Room Seoul",
+      url: "https://www.youtube.com/watch?v=abcdefghijk",
+    };
+  }
   if (operationId === "presence.act") {
     return {
       outcome: "accepted",
@@ -244,6 +254,13 @@ const sampleFor = (operationId: string) => {
   }
   return samples[sampleKeyFor(operationId)];
 };
+
+/** Operations whose success body is not JSON, by the content type they declare. */
+const STREAMED_CONTENT = new Map([
+  ["events.subscribe", "text/event-stream"],
+  ["share.image", "image/png"],
+  ["share.page", "text/html; charset=utf-8"],
+]);
 
 test("the served OpenAPI document accepts the Swift response samples", async () => {
   const app = createApp();
@@ -277,10 +294,9 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
           checked += 1;
           continue;
         }
-        if (operation.operationId === "events.subscribe") {
-          expect(
-            operation.responses["200"]?.content?.["text/event-stream"]
-          ).toBeDefined();
+        const streamed = STREAMED_CONTENT.get(operation.operationId);
+        if (streamed) {
+          expect(operation.responses["200"]?.content?.[streamed]).toBeDefined();
           checked += 1;
           continue;
         }
@@ -302,7 +318,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(52);
+    expect(checked).toBe(55);
   } finally {
     await app.dispose();
   }

@@ -61,9 +61,8 @@ struct Approval: Equatable {
 }
 
 extension AppModel {
-  /// Opens a link the system handed the app. Only an Approval link does anything yet.
-  func open(_ url: URL) async {
-    guard let code = ApprovalLink.code(in: url) else { return }
+  /// Opens the approve sheet for the code an Approval link carries.
+  func openApproval(_ code: String) async {
     approval = Approval(code: code, origin: .link, step: isConfigured ? .finding : .awaitingSignIn)
     await findApproval()
   }

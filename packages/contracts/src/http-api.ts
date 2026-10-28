@@ -95,6 +95,18 @@ export const AppleMusicAlbumSchema = Schema.Struct({
 export const AppleMusicSearchSchema = Schema.Struct({
   albums: Schema.Array(AppleMusicAlbumSchema),
 });
+/**
+ * What anyone holding an Orbis Link sees: the Set's shared facts only (ADR 0023).
+ * `title` is the provider title, `artworkUrl` the largest Artwork, `url` the Source Link.
+ */
+export const SharedSetSchema = Schema.Struct({
+  artworkUrl: Schema.NullOr(Schema.String),
+  creator: Schema.NullOr(Schema.String),
+  id: Schema.String,
+  source: SavedSetSchema.fields.source,
+  title: Schema.String,
+  url: Schema.String,
+});
 export const LibraryResponseSchema = Schema.Struct({
   sets: Schema.Array(SavedSetSchema).pipe(Schema.mutable),
 });
@@ -905,6 +917,29 @@ export const OrbisApi = PlaylistApi.add(
         })
       )
       .middleware(SetAccess)
+  )
+  .add(
+    HttpApiGroup.make("share").add(
+      HttpApiEndpoint.get("set", "/share/sets/:id", {
+        error: [NotFound, InternalError],
+        params: SetId,
+        success: SharedSetSchema,
+      }),
+      HttpApiEndpoint.get("page", "/share/sets/:id/page", {
+        error: [NotFound, InternalError],
+        params: SetId,
+        success: Schema.String.pipe(
+          HttpApiSchema.asText({ contentType: "text/html; charset=utf-8" })
+        ),
+      }),
+      HttpApiEndpoint.get("image", "/share/sets/:id/image.png", {
+        error: [NotFound, InternalError],
+        params: SetId,
+        success: Schema.Uint8Array.pipe(
+          HttpApiSchema.asUint8Array({ contentType: "image/png" })
+        ),
+      })
+    )
   )
   .add(
     HttpApiGroup.make("diagnostics")
