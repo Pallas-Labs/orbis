@@ -23,6 +23,6 @@ Rejected alternatives:
 - **Open sign-up.** The API is public whatever TestFlight does. Strangers could spend Vanta's disk, bandwidth, and provider quotas on Downloads.
 - **A hashed passcode.** The Host could not read the current passcode back to tell a friend. The passcode protects only the right to join.
 - **A permanent per-Person code.** It would act as a second key that never expires.
-- **A passcode the Host chooses.** This was the first design, with a minimum of eight characters. A typed passcode is a word a person can remember, so it is weak, and the API is public. Since 2026-10-15 the API makes the passcode. A passcode a Host typed before then still works until the Host makes a new one.
+- **A passcode the Host chooses.** This was the first design, with a minimum of eight characters. A typed passcode is a word a person can remember, so it is weak, and the API is public. Since 2026-10-15 the API makes the passcode. Clients accept only a generated passcode: since PAL-1013, every client takes the passcode in 12 slots that allow only the Sign-in Code alphabet, so no one can enter a passcode a Host typed before then. A Host with such a passcode presses New passcode in Admin.
 
 Anyone who learns the passcode can join until the Host makes a new one. A Host who loses every device and Vanta access cannot recover without redeploying. The Host can remove a Person who should not have joined.
