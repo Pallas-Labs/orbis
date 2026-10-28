@@ -108,7 +108,7 @@ try {
   assert.deepEqual(detail.appIDs, ["JR398S689Z.app.orbis.client"]);
   assert.deepEqual(
     detail.components.map((component) => component["/"]),
-    ["/pair", "/join"]
+    ["/pair", "/join", "/s/*"]
   );
   step("apple-app-site-association names the app, /pair, and /join", {
     body: associationBody,
