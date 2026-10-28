@@ -12,13 +12,19 @@ For Cloudflare deployment, use the [API deploy README](../../apps/api/README.md)
 | `~/Developer/orbis-service-data` | Retained Audio, stream secret, and canary records. The pre-cutover SQLite database and trust files are rollback records, not live Group data. |
 | `~/.config/systemd/user/orbis-server.service` | Installed service and its drop-ins. The production entrypoint is `src/node.ts`. |
 
-Keep the installed service, provider settings, backup and canary timers, and private environment files. Caddy reserves Tailscale port `443`. Keep the Jellyfin Funnel on `8443`.
+Keep the installed service, its drop-ins, and the backup and canary timers. Caddy reserves Tailscale port `443`. Keep the Jellyfin Funnel on `8443`.
+
+## Secrets
+
+`apps/server/.env.schema` names every provider setting and key. The keys live in the 1Password vault `Vanta Services` (`orbis-youtube`, `orbis-cobalt`, `orbis-openrouter`, `orbis-node`, field `credential`), read by the Vanta read-only service account. `orbis-server`, `orbis-canary`, and `orbis-backup` start through `~/.local/share/mise/shims/varlock run`, which resolves the schema, caches values for an hour, and refuses to start when a value is missing. Every value is required, so each `varlock run` in `apps/server` needs `ORBIS_NODE_KEY` too. After a key changes in 1Password, restart the unit once with `varlock run --clear-cache`, or wait out the cache. No file on Vanta holds these values.
+
+The Cloudflare deploy reads the same keys: run `~/vanta-stack/deploy/orbis-deploy.ts` under `varlock run --path <checkout>/apps/server/`, as its header shows.
 
 ## Run the audio node
 
 For a standalone audio-node process, run `bun run node` from `apps/server`. Build its entrypoint with `bun run build` and start the result with `bun dist/node.js`.
 
-Set `ORBIS_GROUP_URL` to the API base URL, such as `https://orbis.p11a.xyz/api`, and retain the imported node key in `ORBIS_NODE_KEY`. [Transfer and restore Group data](../../docs/data-transfer.md#import-into-an-empty-group) covers node-key creation for migration. The Group accepts that key on `/api/node`. It does not grant client API access.
+Set `ORBIS_GROUP_URL` to the API base URL, such as `https://orbis.p11a.xyz/api`, and keep the imported node key in 1Password, where the schema loads it as `ORBIS_NODE_KEY`. [Transfer and restore Group data](../../docs/data-transfer.md#import-into-an-empty-group) covers node-key creation for migration. The Group accepts that key on `/api/node`. It does not grant client API access.
 
 Set `ORBIS_AUDIO_DIR` to the existing audio directory and `ORBIS_STREAM_SECRET_FILE` to the existing 32-byte `stream-grant.key` file. The node refuses to start if that secret is missing or has the wrong size. `ORBIS_NODE_HOST` and `ORBIS_NODE_PORT` default to `127.0.0.1` and `4311`.
 
@@ -35,7 +41,7 @@ Run `bun run --cwd apps/api test:node` to exercise the local Group with a fake n
 Use the approved Vanta update window. Preserve the installed unit and drop-ins.
 
 1. Check the installed unit's `WorkingDirectory` and `ExecStart` with `systemctl --user cat orbis-server`. Confirm the production checkout and audio-node entrypoint without printing private environment files.
-2. Update that checkout to the approved revision. Use the unit's exact Bun executable for the frozen install and shared-contract build. Complete both before restarting.
+2. Update that checkout to the approved revision. Use the unit's exact Bun executable for the frozen install and shared-contract build, and match that path to `packageManager` in `package.json`. The frozen install also installs the 1Password plugin that the schema needs. Complete both before restarting.
 3. Record `systemctl --user show orbis-server -p InvocationID --value`, restart the existing service, and confirm its new invocation and active status.
 4. Check [API forwarding](#check-the-api-and-forwarding), authenticated audio playback, and the [download canary](#check-downloads-every-night). Record the deployed commit and results. If rollout was not performed, state that on the issue or PR.
 
@@ -63,7 +69,7 @@ Expect `200` for both health requests and for `/api/sets` with a valid daily key
 
 `apps/server/src/canary.ts` downloads a short and a long Set per source through each configured backend, using the worker's own code, and checks that each stored file has the expected duration. It catches a backend that stops working before a user's download does: on 2026-09-29, Cobalt returned empty YouTube streams for long videos while short ones still worked.
 
-Keep the existing canary service and timer. Do not recopy the repository templates over them. For a first install, adapt `orbis-canary.service` before installing it and its timer. Set `WorkingDirectory=%h/Developer/orbis-service/apps/server` and `ORBIS_DATA_DIR=%h/Developer/orbis-service-data`. Keep `ExecStart` on the Bun `1.4.1` binary with `src/canary.ts`, and preserve the provider environment file and yt-dlp settings.
+Keep the existing canary service and timer. Do not recopy the repository templates over them. For a first install, adapt `orbis-canary.service` before installing it and its timer. Set `WorkingDirectory=%h/Developer/orbis-service/apps/server` and `ORBIS_DATA_DIR=%h/Developer/orbis-service-data`. Start `src/canary.ts` with the Bun binary that matches `packageManager`, through `varlock run` (see [Secrets](#secrets)), and preserve the yt-dlp settings.
 
 For installed units, check and run the timer:
 
@@ -81,7 +87,7 @@ It downloads about 400 MB a night and keeps none of it.
 
 SigNoz runs on Vanta and accepts OTLP/HTTP logs at `127.0.0.1:4318`. Every event has `service.name=orbis` and an `orbis.component` resource attribute: `node`, `canary`, or `group`.
 
-Add this line to the environment of both `orbis-server` and `orbis-canary`, for example in `~/.config/orbis-node.env` or a drop-in, then restart each in the update window:
+Add this line to the environment of both `orbis-server` and `orbis-canary`, for example in a drop-in, then restart each in the update window:
 
 ```sh
 ORBIS_OTLP_LOGS_URL=http://127.0.0.1:4318/v1/logs
@@ -153,11 +159,10 @@ Preserve the installed provider drop-ins, `ORBIS_YTDLP_BIN`, PATH, and cookies. 
 
 After cutover, the nightly timer calls `scripts/data-transfer.ts backup`, which fetches the Group's SQL export with the node key and retains the newest 14 SQL files. The existing script then rsyncs the staging directory to `ORBIS_BACKUP_DEST`. SQL includes library and trust tables, so new backups do not need `devices.json`.
 
-Keep the installed service, timer, destination, and environment file. Do not recopy the repository templates over them. The existing private environment file needs these values alongside its destination:
+Keep the installed service, timer, destination, and environment file. Do not recopy the repository templates over them. The existing private environment file needs this value alongside its destination; the node key comes from 1Password through `varlock run --path <checkout>/apps/server/` (see [Secrets](#secrets)):
 
 ```sh
 ORBIS_GROUP_API_URL=https://orbis.p11a.xyz/api
-ORBIS_NODE_KEY=<the imported node key>
 ```
 
 Keep `~/.config/orbis-backup.env` at mode `0600`. Keep the current `ORBIS_BACKUP_STAGING` if one exists. A remote destination requires key-based SSH for the service user. The script does not change the installed units or network configuration.

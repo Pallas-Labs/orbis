@@ -3,6 +3,7 @@ Description=Orbis nightly database backup
 
 [Service]
 Type=oneshot
-# Holds ORBIS_BACKUP_DEST. Create it once; see the README.
+# Holds ORBIS_BACKUP_DEST, ORBIS_DATA_DIR, and ORBIS_GROUP_API_URL. Create it once; see the README.
 EnvironmentFile=%h/.config/orbis-backup.env
-ExecStart=%h/orbis-service/deploy/orbis-server/orbis-backup.sh
+# ORBIS_NODE_KEY comes from 1Password through apps/server/.env.schema.
+ExecStart=%h/.local/share/mise/shims/varlock run --path %h/orbis-service/apps/server/ -- %h/orbis-service/deploy/orbis-server/orbis-backup.sh
