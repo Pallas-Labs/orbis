@@ -1,6 +1,6 @@
 import Foundation
 
-/// A Set's public address, `https://orbis.p11a.xyz/s/<set id>` (ADR 0022), and the
+/// A Set's public address, `https://orbis.p11a.xyz/s/<set id>` (ADR 0023), and the
 /// `orbis://s/<set id>` form the shared page's Open in Orbis button uses.
 nonisolated enum OrbisLink {
   static let host = "orbis.p11a.xyz"

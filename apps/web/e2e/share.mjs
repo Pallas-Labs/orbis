@@ -1,4 +1,4 @@
-// A real browser, API, and web server verify Orbis Links (ADR 0022): the
+// A real browser, API, and web server verify Orbis Links (ADR 0023): the
 // apple-app-site-association file, the /s/:id redirect to the Group's page, and
 // the Set page's Share menu copying the Orbis Link and the Source Link.
 import assert from "node:assert/strict";

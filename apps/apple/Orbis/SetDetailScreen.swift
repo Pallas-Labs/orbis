@@ -249,7 +249,7 @@ struct SetDetailScreen: View {
   }
 }
 
-/// The page an Orbis Link opens on a Set outside this Library (ADR 0022): the Set's shared facts
+/// The page an Orbis Link opens on a Set outside this Library (ADR 0023): the Set's shared facts
 /// on the Set page's own header, with Save in place of Play.
 private struct LinkedSetPage: View {
   let model: AppModel

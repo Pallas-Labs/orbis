@@ -8,7 +8,7 @@ import { asLibraryError, LibraryError } from "./errors.js";
 
 /**
  * Reads the shared `sets` row only, never a Library Entry, so no Person's title override,
- * Tags, Playlists, or Listens can reach an Orbis Link (ADR 0022).
+ * Tags, Playlists, or Listens can reach an Orbis Link (ADR 0023).
  */
 export const sharedSet = Effect.fn("Share.sharedSet")(function* readSharedSet(
   id: string

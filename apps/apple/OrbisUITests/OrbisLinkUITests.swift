@@ -1,6 +1,6 @@
 import XCTest
 
-/// Sharing a Set as an Orbis Link, and opening one (ADR 0022). The lane cannot verify the
+/// Sharing a Set as an Orbis Link, and opening one (ADR 0023). The lane cannot verify the
 /// universal link's domain, so the journeys open the `orbis://` form, which the app routes the same
 /// way.
 final class OrbisLinkUITests: LibraryJourney {

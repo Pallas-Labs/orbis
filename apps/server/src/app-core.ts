@@ -322,7 +322,7 @@ const refusalFor = (
 const EXPIRED_APPROVAL = "That sign-in request expired. Start again.";
 const expiredApproval = () =>
   new LibraryError({ message: EXPIRED_APPROVAL, statusCode: 404 });
-/** An Orbis Link's routes, which anyone may read without a key (ADR 0022). */
+/** An Orbis Link's routes, which anyone may read without a key (ADR 0023). */
 const SHARE_ROUTE = /^\/share\/sets\/[^/]+(?:\/page|\/image\.png)?$/u;
 const isShareRoute = (request: Request): boolean =>
   (request.method === "GET" || request.method === "HEAD") &&

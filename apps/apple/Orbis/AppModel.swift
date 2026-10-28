@@ -1696,7 +1696,7 @@ final class AppModel {
 
   // MARK: - An Orbis Link
 
-  /// An Orbis Link the app was asked to open (ADR 0022), and what is known of the Set it names.
+  /// An Orbis Link the app was asked to open (ADR 0023), and what is known of the Set it names.
   struct OpenedLink: Equatable {
     let setId: String
     var state: State

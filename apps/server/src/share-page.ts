@@ -59,7 +59,7 @@ export const sharePagePolicy = async (): Promise<string> => {
 
 /**
  * The small page an Orbis Link opens outside the app. Its Open Graph tags give iMessage and
- * other previews the title, the creator, and the 1200x630 image (ADR 0022).
+ * other previews the title, the creator, and the 1200x630 image (ADR 0023).
  */
 export const renderSharePage = (
   set: SharedSet,

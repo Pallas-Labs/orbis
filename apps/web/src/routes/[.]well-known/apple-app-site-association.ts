@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// The system reads this file to open these links in the app (ADR 0022).
+// The system reads this file to open these links in the app (ADR 0022, ADR 0023).
 export const Route = createFileRoute("/.well-known/apple-app-site-association")(
   {
     server: {

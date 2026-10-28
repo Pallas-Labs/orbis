@@ -96,7 +96,7 @@ export const AppleMusicSearchSchema = Schema.Struct({
   albums: Schema.Array(AppleMusicAlbumSchema),
 });
 /**
- * What anyone holding an Orbis Link sees: the Set's shared facts only (ADR 0022).
+ * What anyone holding an Orbis Link sees: the Set's shared facts only (ADR 0023).
  * `title` is the provider title, `artworkUrl` the largest Artwork, `url` the Source Link.
  */
 export const SharedSetSchema = Schema.Struct({

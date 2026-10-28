@@ -104,7 +104,7 @@
       .defaultFocus($focus, isDownloading(set) ? .cancel : .play)
     }
 
-    /// The page an Orbis Link opens on a Set outside this Library (ADR 0022): its shared facts,
+    /// The page an Orbis Link opens on a Set outside this Library (ADR 0023): its shared facts,
     /// with Save.
     @ViewBuilder private func linked(_ state: AppModel.OpenedLink.State) -> some View {
       switch state {

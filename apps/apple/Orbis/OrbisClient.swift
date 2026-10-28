@@ -602,7 +602,7 @@ struct OrbisClient: Sendable {
     return try Self.decode(AppleMusicSearchResponse.self, from: response).albums
   }
 
-  /// A Set's shared facts, which the service answers for any Set, saved here or not (ADR 0022).
+  /// A Set's shared facts, which the service answers for any Set, saved here or not (ADR 0023).
   func sharedSet(_ id: String) async throws -> SharedSet {
     let response = try await send(path: "share/sets/\(id)", method: "GET", body: nil)
     return try Self.decode(SharedSet.self, from: response)

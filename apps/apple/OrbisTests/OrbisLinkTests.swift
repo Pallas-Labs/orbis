@@ -3,7 +3,7 @@ import XCTest
 
 @testable import Orbis
 
-/// An Orbis Link opens the Set it names (ADR 0022): its own page when the Library holds it, its
+/// An Orbis Link opens the Set it names (ADR 0023): its own page when the Library holds it, its
 /// shared facts with Save when it does not, and the same once sign-in completes when the device
 /// is signed out.
 @MainActor

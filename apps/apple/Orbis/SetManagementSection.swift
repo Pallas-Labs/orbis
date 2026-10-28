@@ -81,7 +81,7 @@ struct SetManagementSection: View {
       }
       .accessibilityIdentifier("detail-open")
       Menu {
-        // The Orbis Link first: it opens the Set in Orbis for a friend who has it (ADR 0022).
+        // The Orbis Link first: it opens the Set in Orbis for a friend who has it (ADR 0023).
         ShareLink(item: OrbisLink.url(forSet: set.id), subject: Text(set.title)) {
           Label("Orbis Link", systemImage: "link")
         }

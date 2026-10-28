@@ -177,7 +177,7 @@ struct LibraryResponse: Decodable {
   let sets: [SavedSet]
 }
 
-/// What anyone with a Set's Orbis Link may read about it (ADR 0022): the provider's facts, never
+/// What anyone with a Set's Orbis Link may read about it (ADR 0023): the provider's facts, never
 /// a Library's.
 struct SharedSet: Decodable, Equatable, Identifiable {
   let id: String
