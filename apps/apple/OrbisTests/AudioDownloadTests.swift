@@ -301,10 +301,8 @@ final class AudioDownloadTests: XCTestCase {
     let clock = FastClock(scale: 600)
     let log = TimedRequestLog(clock: clock)
     let ids = (1...15).map(String.init)
-    let library =
-      "{\"sets\":["
-      + ids.map { Self.setJSON(id: $0, state: "queued", tracklist: "pending") }
-        .joined(separator: ",") + "]}"
+    let sets = ids.map { Self.setJSON(id: $0, state: "queued", tracklist: "pending") }
+    let library = "{\"sets\":[" + sets.joined(separator: ",") + "]}"
     let model = AppModel(
       client: OrbisClient(
         address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
