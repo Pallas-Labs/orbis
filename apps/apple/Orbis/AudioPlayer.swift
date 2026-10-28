@@ -487,6 +487,10 @@ final class AudioPlayer {
   /// Only the latest start acts. One queued behind it answers for the newer press, so an earlier
   /// start that fails cannot mark the Set failed under it, and one that succeeds does not play
   /// ahead of it.
+  ///
+  /// The system's music player brings up its own session, and its start interrupts an active one
+  /// of Orbis's, which would pause it again at once. So for that engine the start waits only for
+  /// the session work before it, which lets a previous Set's session go first.
   private func startPlayback() {
     sessionReady = false
     timelineSample = nil
@@ -495,12 +499,13 @@ final class AudioPlayer {
     let start = latestStart
     let previous = sessionWork
     let startSession = session.start
+    let needsSession = engine?.isSystemMusicPlayer != true
     record(
       .session(
         .init(phase: .startRequested, requestID: start, playbackGeneration: generation)))
     sessionWork = Task { [weak self] in
       await previous?.value
-      let started = await startSession()
+      let started = needsSession ? await startSession() : true
       guard let self, self.playbackGeneration == generation, self.latestStart == start,
         self.wantsSound
       else { return }
@@ -1113,7 +1118,7 @@ final class AudioPlayer {
   }
 
   private func publishNowPlaying(isPlaying: Bool) {
-    guard !currentTitle.isEmpty, engine?.ownsNowPlaying != true else { return }
+    guard !currentTitle.isEmpty, engine?.isSystemMusicPlayer != true else { return }
     MPNowPlayingInfoCenter.default().nowPlayingInfo = Self.nowPlayingInfo(
       title: currentTitle,
       artist: currentArtist,
@@ -1141,7 +1146,7 @@ final class AudioPlayer {
   /// The handlers are taken away rather than the commands disabled: MusicKit may answer through
   /// the same shared command center, and a disabled command would grey out its buttons too.
   private func takeSystemControls(from engine: any PlaybackEngine) {
-    if engine.ownsNowPlaying {
+    if engine.isSystemMusicPlayer {
       leaveRemoteCommands()
     } else {
       answerRemoteCommands()

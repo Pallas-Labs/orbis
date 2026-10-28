@@ -8,9 +8,10 @@ import Foundation
 /// a media reset, so an engine never carries a Set's state into the next.
 @MainActor
 protocol PlaybackEngine: AnyObject {
-  /// Whether the engine draws Now Playing and answers the remote commands itself. When false,
-  /// `AudioPlayer` does both.
-  var ownsNowPlaying: Bool { get }
+  /// Whether the engine is the system's music player, which plays out of this process. It brings
+  /// up its own audio session, draws Now Playing, and answers the remote commands, so `AudioPlayer`
+  /// does none of the three. When false, `AudioPlayer` does all three.
+  var isSystemMusicPlayer: Bool { get }
 
   /// Starts loading the Set's audio. `onEvent` hears what happens next, on the main actor, until
   /// `invalidate()`.
@@ -58,7 +59,7 @@ enum PlaybackEngineEvent {
   case ended
   /// Playback broke after it started.
   case failed(PlaybackDiagnostics.NormalizedError?)
-  /// The system's controls paused an engine that answers them itself (`ownsNowPlaying`), so
+  /// The system's controls paused an engine that answers them itself (`isSystemMusicPlayer`), so
   /// `AudioPlayer` heard nothing of the press.
   case pausedBySystem
   case stalled

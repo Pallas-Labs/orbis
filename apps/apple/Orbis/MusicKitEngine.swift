@@ -47,9 +47,10 @@ struct MixTimeline: Equatable {
 /// the Music app's alone. The album's songs are queued in order, and the engine turns MusicKit's
 /// song and offset into one clock for the whole mix.
 ///
-/// MusicKit publishes Now Playing and answers the lock screen itself, so `ownsNowPlaying` is true
-/// and `AudioPlayer` stays out of both. A pause from the lock screen reaches MusicKit, not
-/// `AudioPlayer`, so the engine reports one it did not ask for as `.pausedBySystem`.
+/// MusicKit plays in the system's music service, with its own audio session, and publishes Now
+/// Playing and answers the lock screen itself, so `isSystemMusicPlayer` is true and `AudioPlayer`
+/// stays out of all three. A pause from the lock screen reaches MusicKit, not `AudioPlayer`, so
+/// the engine reports one it did not ask for as `.pausedBySystem`.
 ///
 /// MusicKit does not play in the simulator: this engine is checked on a device.
 @MainActor
@@ -77,7 +78,7 @@ final class MusicKitEngine: PlaybackEngine {
 
   private var player: ApplicationMusicPlayer { .shared }
 
-  var ownsNowPlaying: Bool { true }
+  var isSystemMusicPlayer: Bool { true }
 
   func load(
     _ set: SavedSet, baseURL: URL, token: String,

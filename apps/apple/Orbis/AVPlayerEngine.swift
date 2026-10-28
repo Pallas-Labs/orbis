@@ -22,7 +22,7 @@ final class AVPlayerEngine: PlaybackEngine {
   /// reference is left, so it has the array to itself.
   nonisolated(unsafe) private var observers: [NSObjectProtocol] = []
 
-  var ownsNowPlaying: Bool { false }
+  var isSystemMusicPlayer: Bool { false }
 
   deinit {
     for observer in observers {

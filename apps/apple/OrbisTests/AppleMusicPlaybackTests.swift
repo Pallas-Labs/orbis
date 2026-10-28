@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import MediaPlayer
 import XCTest
@@ -27,6 +28,9 @@ import XCTest
 /// 8. The end of an Apple Music Set does not finish its Listen, so the Listening Queue never moves
 ///    on to a Set with Retained Audio, or the next Set is handed to the wrong engine.
 /// 9. A Set from a service that names `apple-music` decodes as an unknown source and offers no Play.
+/// 10. Orbis brings up its own audio session for an Apple Music Set. MusicKit plays out of process,
+///     so its start interrupts that session, and Orbis pauses MusicKit for the interruption: Play
+///     and Resume do nothing (PAL-1160).
 @MainActor
 final class AppleMusicPlaybackTests: XCTestCase {
   // MARK: - Mix time
@@ -184,6 +188,41 @@ final class AppleMusicPlaybackTests: XCTestCase {
     player.stop()
   }
 
+  #if !os(macOS)
+    /// Failure 10, as Parth's iPhone logged it: every Play was followed within 30 ms by an
+    /// interruption of Orbis's own audio session, and the Set never left Loading.
+    func testPlayPauseAndPlayAgainSoundWithoutAnInterruption() async throws {
+      let session = OwnSession()
+      let player = makePlayer(session: session)
+      player.play(set: set(id: "am", source: .appleMusic), baseURL: try address, token: "t")
+      let engine = try XCTUnwrap(engines.last)
+      engine.interrupts = session
+      engine.ready(duration: 699.875)
+      await settle()
+      XCTAssertEqual(player.state, .playing, "Play must start an Apple Music Set")
+      XCTAssertTrue(engine.playing)
+
+      engine.time = 250
+      engine.send(.tick)
+      player.togglePlayPause()
+      XCTAssertEqual(player.state, .paused)
+      XCTAssertFalse(engine.playing)
+
+      player.togglePlayPause()
+      await settle()
+      XCTAssertEqual(player.state, .playing, "Play after Pause must sound again")
+      XCTAssertTrue(engine.playing)
+      XCTAssertEqual(player.elapsed, 250, "Play after Pause resumes where it paused")
+
+      player.seek(to: 510.75)
+      await settle()
+      XCTAssertEqual(engine.time, 510.75)
+      XCTAssertEqual(player.elapsed, 510.75)
+      XCTAssertEqual(player.state, .playing, "a seek to a Cue keeps playing")
+      player.stop()
+    }
+  #endif
+
   /// Failure 8: the Listening Queue moves from an Apple Music Set to one with Retained Audio and
   /// back, each on its own engine.
   func testTheEndOfAnAppleMusicSetFinishesItAndTheNextSetGetsItsOwnEngine() async throws {
@@ -222,9 +261,9 @@ final class AppleMusicPlaybackTests: XCTestCase {
   }
   private var engines: [FakeEngine] = []
 
-  private func makePlayer() -> AudioPlayer {
+  private func makePlayer(session: OwnSession = OwnSession()) -> AudioPlayer {
     AudioPlayer(
-      session: AudioPlayer.Session(start: { true }, end: {}),
+      session: session.session,
       engines: { [unowned self] set in
         let engine = FakeEngine(source: set.source)
         self.engines.append(engine)
@@ -265,6 +304,23 @@ final class AppleMusicPlaybackTests: XCTestCase {
   }
 }
 
+/// Orbis's own audio session, which is active from a start until the next end.
+@MainActor
+private final class OwnSession {
+  private(set) var isActive = false
+
+  nonisolated var session: AudioPlayer.Session {
+    AudioPlayer.Session(
+      start: {
+        await self.setActive(true)
+        return true
+      },
+      end: { await self.setActive(false) })
+  }
+
+  private func setActive(_ active: Bool) { isActive = active }
+}
+
 /// An engine that plays nothing and reports what the test tells it to. It owns Now Playing for an
 /// Apple Music Set, as the MusicKit engine does.
 @MainActor
@@ -276,10 +332,13 @@ private final class FakeEngine: PlaybackEngine {
   var playing = false
   var invalidated = false
   var status = PlaybackEngineStatus.unknown
+  /// Orbis's session, when this engine starts out of process as MusicKit does: a start while that
+  /// session is active interrupts it, as the system did on Parth's iPhone.
+  var interrupts: OwnSession?
 
   init(source: SetSource) { self.source = source }
 
-  var ownsNowPlaying: Bool { source == .appleMusic }
+  var isSystemMusicPlayer: Bool { source == .appleMusic }
 
   func load(
     _ set: SavedSet, baseURL: URL, token: String,
@@ -296,7 +355,18 @@ private final class FakeEngine: PlaybackEngine {
 
   func send(_ event: PlaybackEngineEvent) { onEvent?(event) }
 
-  func play() { playing = true }
+  func play() {
+    playing = true
+    #if !os(macOS)
+      if interrupts?.isActive == true {
+        NotificationCenter.default.post(
+          name: AVAudioSession.interruptionNotification, object: nil,
+          userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue])
+      }
+    #endif
+    send(.rateChanged)
+    send(.timeControlChanged)
+  }
   func pause() { playing = false }
   func seek(to seconds: TimeInterval, completion: @escaping @MainActor (Bool) -> Void) {
     time = seconds
