@@ -173,6 +173,11 @@ test("real node reconnects and handles duplicate download, details and release c
       reason: "fixture closed",
     },
   ]);
+  const [dropped] = named("node-link-closed");
+  // The Group closed the link right after the details reply, well into the link's life.
+  expect(dropped?.ageMs).toBeGreaterThan(0);
+  expect(dropped?.sinceMessageMs).toBeGreaterThanOrEqual(0);
+  expect(Number(dropped?.sinceMessageMs)).toBeLessThan(Number(dropped?.ageMs));
   expect(named("node-link-reconnecting")).toMatchObject([
     { attempt: 1, delayMs: 10, level: "info" },
   ]);
@@ -243,6 +248,11 @@ test("node reconnects when the Group stops answering heartbeats", async () => {
   expect(named("node-link-closed")).toMatchObject([
     { heartbeatTimedOut: true, level: "warn" },
   ]);
+  const [silent] = named("node-link-closed");
+  // Open for the 300 ms of answered pings; silent for at least one unanswered beat.
+  expect(silent?.ageMs).toBeGreaterThanOrEqual(300);
+  expect(silent?.sinceMessageMs).toBeGreaterThanOrEqual(50);
+  expect(Number(silent?.sinceMessageMs)).toBeLessThan(Number(silent?.ageMs));
   await server.stop(true);
   await until(() =>
     named("node-link-reconnecting").some((event) => event.level === "error")
