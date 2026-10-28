@@ -51,6 +51,9 @@ final class AppModel {
       refreshDerivedState()
       refreshPlaylistArtwork()
       refreshCueMatches()
+      // Whatever brought a running download into the list, a read, a download asked for here, or
+      // an import, the Library watch follows it from here.
+      watchDownloads()
     }
   }
   var playlists: Loadable<[Playlist]> = .idle
@@ -240,25 +243,21 @@ final class AppModel {
   var isSavingReveal = false
   var revealFailure: OrbisFailure?
 
-  /// The latest download progress the service reported, by Set. Terminal states reload
-  /// the library instead, so this only holds a download that is still running, or
-  /// `AudioState.unwatched` for one whose watch gave up.
+  /// The latest download progress the service reported, by Set, for the Set pages that follow
+  /// it. Terminal states reload the library instead, so this only holds a download that is still
+  /// running.
   var audioStates: [String: AudioState] = [:]
 
-  /// The watches on downloads that are still running, by Set. Held by the model rather than by
-  /// the page that asked for the download, because a person who starts one and leaves still needs
-  /// its result in the Library. Each watch has its own id, so a stopped watch that ends late
-  /// cannot remove the newer watch on the same Set.
-  private var downloadWatchers: [String: (watch: UUID, task: Task<Void, Never>)] = [:]
+  /// The one watch on the downloads that are still running, which reads the library rather than
+  /// each Set. Held by the model rather than by a page, because a person who starts a download and
+  /// leaves still needs its result in the Library. Each watch has its own id, so a stopped watch
+  /// that ends late cannot remove a newer one.
+  @ObservationIgnored private var downloadsWatch: (watch: UUID, task: Task<Void, Never>)?
 
-  /// How many answers one download is polled for before a watch gives up: ten minutes at one
-  /// second a poll. Bounded, so a service that never reaches a terminal state cannot leave a task
-  /// running for the life of the app.
-  private static let downloadWatchLimit = 600
-
-  /// How many polls in a row may fail before a watch gives up. Each failure doubles the wait, up
-  /// to 30 seconds, so a service that is down is asked eight times over about two minutes.
-  private static let downloadWatchFailureLimit = 8
+  /// The longest wait, in seconds, between two reads of an answer that does not change. A read
+  /// that changes the answer brings the wait back to one second, and each one that does not
+  /// doubles it up to this.
+  private static let longestWait = 30
 
   /// How the model waits between two reads of a download or a Tracklist. A test runs it faster,
   /// so a ten-minute timeline takes a second.
@@ -523,6 +522,11 @@ final class AppModel {
     stopReportingPosition()
     audioStates.removeAll()
     tracklistGeneration += 1
+    for load in tracklistLoads.values {
+      load.task.cancel()
+    }
+    tracklistLoads.removeAll()
+    tracklistReaders.removeAll()
     tracklists.removeAll()
     settings.store(deviceToken: nil)
     client = nil
@@ -573,11 +577,6 @@ final class AppModel {
       library = .loaded(sets)
       reloadsAfterCancellation = 0
       if openedLink?.state == .opening { await readOpenedLink() }
-      // A download the service is still running is watched from here, which is what resumes a
-      // watch after a relaunch and catches one another device started.
-      for set in sets where isDownloading(set.id) {
-        watchDownload(set.id)
-      }
     } catch OrbisError.cancelled {
       guard generation == libraryGeneration, !Task.isCancelled else { return }
       // The screen that asked for this went away, which is not a failure. The retry runs
@@ -900,7 +899,6 @@ final class AppModel {
     guard let client else { return }
     do {
       await publish(try await client.requestAudioDownload(id))
-      watchDownload(id)
     } catch OrbisError.cancelled {
       return
     } catch let error as OrbisError {
@@ -941,53 +939,76 @@ final class AppModel {
     return true
   }
 
-  /// True while the service is still working on this Set's audio.
   private func isDownloading(_ id: String) -> Bool {
-    ["queued", "downloading"].contains(savedSet(id)?.downloadState ?? "none")
+    savedSet(id)?.isDownloading ?? false
   }
 
-  /// Watches a Set's download until the service reports a state that is no longer running. One
-  /// watch per Set, ended by the terminal state, by cancellation, or at one of the limits.
-  private func watchDownload(_ id: String) {
-    guard downloadWatchers[id] == nil, isDownloading(id) else { return }
+  /// The wait before the next read: one second after an answer that changed, and double the last
+  /// wait, up to `longestWait`, after one that did not.
+  private static func nextWait(after wait: Int, changed: Bool) -> Int {
+    changed ? 1 : min(wait * 2, longestWait)
+  }
+
+  /// Follows one Set's download for its open page, until the service says it ended or the page
+  /// closes. Reads the progress again a second later while it moves, and less often while it does
+  /// not, so a Set queued with no node is asked about twice a minute.
+  func followDownload(_ id: String) async {
+    // Only an open page reads the progress, so a page that closes leaves none behind to show
+    // when the Set opens again after its download ended elsewhere.
+    defer { audioStates[id] = nil }
+    var wait = 1
+    var last: AudioState?
+    while isDownloading(id), !Task.isCancelled {
+      let answered = await refreshAudioState(id)
+      wait = Self.nextWait(after: wait, changed: answered && audioStates[id] != last)
+      last = audioStates[id]
+      do {
+        try await sleep(.seconds(wait))
+      } catch {
+        // Cancelled: the page closed.
+        return
+      }
+    }
+  }
+
+  /// Reads the library while any Set in it is downloading, so a download that ends with no page
+  /// open still lands in the Library, and one another device started shows too. One read for
+  /// every Set, and the wait doubles while the library does not change, so fifteen Sets queued
+  /// with no node cost two reads a minute.
+  private func watchDownloads() {
+    guard downloadsWatch == nil, hasDownloadInFlight else { return }
     let watch = UUID()
     let task = Task { [weak self] in
       defer {
-        if self?.downloadWatchers[id]?.watch == watch { self?.downloadWatchers[id] = nil }
+        if self?.downloadsWatch?.watch == watch { self?.downloadsWatch = nil }
       }
-      var answers = 0
-      var failures = 0
-      while answers < Self.downloadWatchLimit {
-        guard !Task.isCancelled, let self else { return }
-        if await self.refreshAudioState(id) {
-          answers += 1
-          failures = 0
-        } else {
-          failures += 1
-          if failures == Self.downloadWatchFailureLimit { break }
-        }
-        guard self.isDownloading(id) else { return }
+      var wait = 1
+      while let sleep = self?.sleep {
         do {
-          try await self.sleep(.seconds(min(1 << failures, 30)))
+          try await sleep(.seconds(wait))
         } catch {
-          // Cancelled: the answer this watch was waiting for is no longer wanted.
+          // Cancelled: this device signed out.
           return
         }
+        guard let self, !Task.isCancelled, self.hasDownloadInFlight else { return }
+        let before = self.library
+        await self.refreshLibraryQuietly()
+        wait = Self.nextWait(after: wait, changed: self.library != before)
       }
-      // The watch stopped before the service said the download ended, so the progress on screen
-      // no longer moves. The Set says so and offers the retry, which watches again.
-      guard !Task.isCancelled, let self else { return }
-      self.audioStates[id] = .unwatched
     }
-    downloadWatchers[id] = (watch, task)
+    downloadsWatch = (watch, task)
   }
 
-  /// Ends every watch, so nothing keeps asking a service this device has left.
+  private var hasDownloadInFlight: Bool {
+    guard case .loaded(let sets) = library else { return false }
+    return sets.contains(where: \.isDownloading)
+  }
+
+  /// Ends the Library's watch, so nothing keeps asking a service this device has left. A page's
+  /// own watch ends when its Set is no longer in the library.
   private func stopDownloadWatches() {
-    for watcher in downloadWatchers.values {
-      watcher.task.cancel()
-    }
-    downloadWatchers.removeAll()
+    downloadsWatch?.task.cancel()
+    downloadsWatch = nil
   }
 
   /// The player this screen drives. One player for the model, because only one Set
@@ -1268,40 +1289,86 @@ final class AppModel {
     if set.tracklistState != .none,
       tracklists[set.id] == nil || tracklists[set.id]?.state == .pending
     {
-      Task { await loadTracklist(set.id) }
+      startTracklistLoad(set.id)
     }
   }
 
   /// The one read running for each Set's Tracklist. The Set page, Now Playing, and the player
-  /// each ask for the same Tracklist, and a pending one is polled every second, so a second
-  /// caller waits on the first rather than polling beside it.
-  @ObservationIgnored private var tracklistLoads: [String: Task<Void, Never>] = [:]
+  /// each ask for the same Tracklist, so a second caller joins the first rather than polling
+  /// beside it. Each load has its own id, so one that ends late cannot remove a newer one.
+  @ObservationIgnored private var tracklistLoads: [String: (load: UUID, task: Task<Void, Never>)] = [:]
 
+  /// The screens waiting in `loadTracklist`, by Set. A pending Tracklist is read again only while
+  /// one of them is still open, or while its Set is in the player, which shows the Cues.
+  @ObservationIgnored private var tracklistReaders: [String: Set<UUID>] = [:]
+
+  /// Reads a Set's Tracklist, and keeps reading a pending one while the caller waits. A screen
+  /// calls this from its `.task`, so closing the screen ends its part in the poll. A closed
+  /// screen's task still waits for the poll to end, but it no longer keeps the poll going.
   func loadTracklist(_ id: String) async {
     // A ready Tracklist does not change, and the page asks again each time it appears.
     guard client != nil, tracklists[id]?.state != .ready else { return }
-    if let running = tracklistLoads[id] { return await running.value }
-    let load = Task { await pollTracklist(id) }
-    tracklistLoads[id] = load
-    await load.value
-    tracklistLoads[id] = nil
+    let reader = UUID()
+    tracklistReaders[id, default: []].insert(reader)
+    let load = startTracklistLoad(id)
+    await withTaskCancellationHandler {
+      await load.value
+    } onCancel: {
+      Task { @MainActor [weak self] in self?.releaseTracklist(id, reader: reader) }
+    }
+    releaseTracklist(id, reader: reader)
+  }
+
+  private func releaseTracklist(_ id: String, reader: UUID) {
+    tracklistReaders[id]?.remove(reader)
+    if tracklistReaders[id]?.isEmpty == true { tracklistReaders[id] = nil }
+  }
+
+  /// Starts the read of a Set's Tracklist unless one is running, so a Tracklist asked for at a tap
+  /// or by the player is usually in before a screen shows it. A pending answer is read again only
+  /// for a screen waiting in `loadTracklist`, or for the Set in the player.
+  @discardableResult
+  private func startTracklistLoad(_ id: String) -> Task<Void, Never> {
+    if let running = tracklistLoads[id] { return running.task }
+    let load = UUID()
+    let task = Task { [weak self] in
+      await self?.pollTracklist(id)
+      if self?.tracklistLoads[id]?.load == load { self?.tracklistLoads[id] = nil }
+    }
+    tracklistLoads[id] = (load, task)
+    return task
+  }
+
+  /// What a screen keys its Tracklist read on. A retry makes a failed Tracklist pending again, and
+  /// the new key starts the screen's read over, so the screen follows it until it is ready.
+  struct TracklistRead: Equatable {
+    let setId: String
+    let pending: Bool
+  }
+
+  func tracklistRead(_ id: String) -> TracklistRead {
+    TracklistRead(setId: id, pending: tracklists[id]?.state == .pending)
   }
 
   private func pollTracklist(_ id: String) async {
     guard let client else { return }
     let generation = tracklistGeneration
+    var wait = 1
     do {
-      for _ in 0..<60 {
+      while true {
         guard generation == tracklistGeneration, !Task.isCancelled else { return }
         let tracklist = try await client.tracklist(id)
         guard generation == tracklistGeneration, !Task.isCancelled else { return }
-        // Written only when it changed: a pending poll answers the same thing most seconds.
-        if tracklists[id] != tracklist {
+        // Written only when it changed: a pending poll answers the same thing most times.
+        let changed = tracklists[id] != tracklist
+        if changed {
           tracklists[id] = tracklist
           if audioPlayer.currentSetId == id { audioPlayer.setCues(tracklist.cues) }
         }
         guard tracklist.state == .pending else { return }
-        try await sleep(.seconds(1))
+        wait = Self.nextWait(after: wait, changed: changed)
+        try await sleep(.seconds(wait))
+        guard tracklistReaders[id] != nil || audioPlayer.currentSetId == id else { return }
       }
     } catch is CancellationError {
       return
@@ -1322,7 +1389,7 @@ final class AppModel {
       guard generation == tracklistGeneration, !Task.isCancelled else { return }
       tracklists[id] = tracklist
       if audioPlayer.currentSetId == id { audioPlayer.setCues(tracklist.cues) }
-      if tracklist.state == .pending { await loadTracklist(id) }
+      if tracklist.state == .pending { await startTracklistLoad(id).value }
     } catch OrbisError.cancelled {
       return
     } catch {
@@ -1696,7 +1763,7 @@ final class AppModel {
     // Asked for at the tap rather than when the page appears, so the Tracklist is usually in
     // before the page finishes zooming open, instead of pushing the page down once it lands.
     if let set = savedSet(id), set.tracklistState != .none {
-      Task { [weak self] in await self?.loadTracklist(id) }
+      startTracklistLoad(id)
     }
   }
 

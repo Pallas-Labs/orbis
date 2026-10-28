@@ -39,6 +39,9 @@ extension SavedSet {
   /// plays through MusicKit (ADR 0021). The service's `isPlayableSet` holds the same rule.
   var isPlayable: Bool { downloadState == "ready" || source == .appleMusic }
 
+  /// True while the service is still working on this Set's audio.
+  var isDownloading: Bool { downloadState == "queued" || downloadState == "downloading" }
+
   /// The catalog id of an Apple Music Set's album, the last part of its Source Link
   /// (`https://music.apple.com/album/<id>`).
   var appleMusicAlbumID: String? {
@@ -225,10 +228,6 @@ struct AudioState: Decodable, Equatable {
   let bytesReceived: Int
   let bytesTotal: Int?
   let format: String?
-
-  /// A download the app stopped watching before the service said it ended. The service never
-  /// sends this state.
-  static let unwatched = AudioState(state: "unwatched", bytesReceived: 0, bytesTotal: nil, format: nil)
 }
 
 /// Mirrors the server contract. The count comes from the server so a sidebar does not ask once

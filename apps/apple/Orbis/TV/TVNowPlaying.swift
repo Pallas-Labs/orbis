@@ -71,7 +71,7 @@
         }
       }
       .padding(.top, 24)
-      .task(id: set.id) {
+      .task(id: model.tracklistRead(set.id)) {
         if set.tracklistState != .none { await model.loadTracklist(set.id) }
       }
     }

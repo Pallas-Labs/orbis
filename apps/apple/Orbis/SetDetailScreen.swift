@@ -50,8 +50,14 @@ struct SetDetailScreen: View {
         .accessibilityIdentifier("set-detail")
         .task(id: setId) {
           if set.source == .appleMusic { await model.checkAppleMusicAccess() }
+        }
+        .task(id: model.tracklistRead(setId)) {
           if set.tracklistState != .none { await model.loadTracklist(setId) }
         }
+        // Keyed on whether the Set is downloading, so a download asked for on this page is followed
+        // from the moment the service accepts it, and moving from queued to downloading does not
+        // start the watch over.
+        .task(id: set.isDownloading ? setId : nil) { await model.followDownload(setId) }
       } else {
         // Only a library that has arrived without the Set can say it is gone.
         switch model.library {

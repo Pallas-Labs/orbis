@@ -53,7 +53,7 @@ final class AudioDownloadTests: XCTestCase {
       let at = clock.elapsed
       return lock.withLock {
         defer { entries.append((entry, at)) }
-        return entries.count { $0.request == entry }
+        return entries.count(where: { $0.request == entry })
       }
     }
 
@@ -346,6 +346,63 @@ final class AudioDownloadTests: XCTestCase {
       .flatMap { log.times(endingWith: $0) }
       .filter { $0 > atSignOut + .seconds(30) }
     XCTAssertEqual(late, [], "sign-out ends every watch")
+  }
+
+  /// An open Set page shows its download moving: while the bytes grow, each answer lands within
+  /// two seconds of the last. Once the page closes, nothing asks about that Set again.
+  func testAnOpenPageFollowsItsDownloadUntilItCloses() async throws {
+    let clock = FastClock(scale: 5)
+    let log = TimedRequestLog(clock: clock)
+    let model = AppModel(
+      client: OrbisClient(
+        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        token: "token",
+        session: StubProtocol.session(responder: { request in
+          switch (request.httpMethod, request.url?.path()) {
+          case ("GET", "/sets/1/audio/state"):
+            let received = 10 * (log.record(request) + 1)
+            return (
+              200,
+              "{\"state\":\"downloading\",\"bytesReceived\":\(received),\"bytesTotal\":1000,\"format\":null}"
+            )
+          case ("GET", "/sets"):
+            return (200, Self.libraryJSON(state: "downloading"))
+          default:
+            return (404, "{\"message\":\"Set not found.\"}")
+          }
+        })
+      ), settings: MemoryClientSettings())
+    model.sleep = { try await clock.sleep($0) }
+    model.library = .loaded([
+      try JSONDecoder().decode(
+        SavedSet.self, from: Data(Self.setJSON(id: "1", state: "downloading").utf8))
+    ])
+
+    let page = Task { await model.followDownload("1") }
+    var changes: [Duration] = []
+    var shown: AudioState?
+    let deadline = ContinuousClock.now + .seconds(10)
+    while changes.count < 8, ContinuousClock.now < deadline {
+      if let live = model.audioStates["1"], live != shown {
+        shown = live
+        changes.append(clock.elapsed)
+      }
+      try await Task.sleep(for: .milliseconds(5))
+    }
+    XCTAssertEqual(changes.count, 8, "the open page sees the bytes grow")
+    let gaps = zip(changes, changes.dropFirst()).map { $1 - $0 }
+    XCTAssertLessThanOrEqual(
+      gaps.max() ?? .zero, .seconds(2), "the progress moves at least every 2 s: \(gaps)")
+
+    page.cancel()
+    await page.value
+    XCTAssertNil(model.audioStates["1"], "a closed page leaves no progress behind")
+    let atClose = log.times(endingWith: "/sets/1/audio/state").count
+    // Ten more seconds on the model's clock, ten times the wait between two reads that move.
+    try await Task.sleep(for: .seconds(2))
+    XCTAssertEqual(
+      log.times(endingWith: "/sets/1/audio/state").count, atClose,
+      "a closed page asks nothing more about its Set")
   }
 
   /// A pending Tracklist is read while a screen shows it, less often while the answer stays the
