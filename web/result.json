@@ -1,0 +1,29 @@
+{
+  "apiUrl": "http://127.0.0.1:4571",
+  "steps": [
+    {
+      "name": "the server's /join HTML has the preview tags and no passcode",
+      "image": "https://orbis.p11a.xyz/join-preview.png",
+      "imageWidth": 1200,
+      "title": "Join the Orbis Group"
+    },
+    {
+      "name": "the link fills the passcode and leaves no # in the address",
+      "url": "http://127.0.0.1:3471/join"
+    },
+    {
+      "name": "joining on the web reaches the signed-in app as friend"
+    },
+    {
+      "name": "no request URL carries the passcode; only the join's body does",
+      "requests": 43
+    },
+    {
+      "name": "after a new passcode, the old link says it no longer works"
+    },
+    {
+      "name": "no Content Security Policy violations"
+    }
+  ],
+  "webUrl": "http://127.0.0.1:3471"
+}
