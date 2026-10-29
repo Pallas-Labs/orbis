@@ -6,6 +6,7 @@ import path from "node:path";
 import { inflateSync } from "node:zlib";
 
 import { Effect } from "effect";
+import type { WideEvent } from "evlog";
 
 import { createApp } from "./app.js";
 import { hashToken } from "./identity.js";
@@ -60,6 +61,11 @@ const startArtworkHost = () =>
     port: 0,
   });
 
+const metaContent = (page: string, key: string) =>
+  new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)">`, "u").exec(
+    page
+  )?.[1];
+
 const startApp = async (artworkHost: string) => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-share-"));
   const devicesPath = path.join(directory, "devices.json");
@@ -86,10 +92,11 @@ const startApp = async (artworkHost: string) => {
       version: 2,
     })
   );
+  const events: WideEvent[] = [];
   const app = createApp({
     databasePath,
     devicesPath,
-    logging: { silent: true },
+    logging: { onEvent: (event) => events.push(event), silent: true },
     metadata: Metadata.layerOf({
       enrich: ({ url }) => {
         const video = new URL(url).searchParams.get("v");
@@ -128,12 +135,34 @@ const startApp = async (artworkHost: string) => {
     expect(response.status).toBeLessThan(300);
     return response.json();
   };
-  const open = (url: string, headers: Record<string, string> = {}) =>
+  const open = (
+    url: string,
+    headers: Record<string, string> = {},
+    method = "GET"
+  ) =>
     app.handler(
-      new Request(`${ORIGIN}${url}`, { headers }),
+      new Request(`${ORIGIN}${url}`, { headers, method }),
       "device",
       "198.51.100.7"
     );
+  /** The Set's current preview image path, as its share page's og:image names it. */
+  const imagePath = async (id: string) => {
+    const response = await open(`/share/sets/${id}/page`);
+    const page = await response.text();
+    const image = metaContent(page, "og:image") ?? "";
+    expect(image).toMatch(
+      new RegExp(
+        `^${ORIGIN}/share/sets/${id}/image\\.png\\?v=[0-9a-f]{16}$`,
+        "u"
+      )
+    );
+    return image.slice(ORIGIN.length);
+  };
+  /** How many image requests drew the image rather than reusing one. */
+  const renders = () =>
+    events.filter((event) =>
+      Bun.deepMatch({ share: { image: "rendered" } }, event)
+    ).length;
   return {
     call,
     databasePath,
@@ -141,7 +170,9 @@ const startApp = async (artworkHost: string) => {
       await app.dispose();
       await rm(directory, { force: true, recursive: true });
     },
+    imagePath,
     open,
+    renders,
   };
 };
 
@@ -189,11 +220,6 @@ const readPng = (png: Uint8Array) => {
   }
   return { height, pixels, width };
 };
-
-const metaContent = (page: string, key: string) =>
-  new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)">`, "u").exec(
-    page
-  )?.[1];
 
 test("an Orbis Link shows the Set's shared facts and nothing from any Library", async () => {
   const artworkHost = startArtworkHost();
@@ -266,12 +292,9 @@ test("an Orbis Link shows the Set's shared facts and nothing from any Library", 
     expect(metaContent(page, "twitter:title")).toBe(escapedTitle);
     expect(metaContent(page, "og:description")).toBe(CREATOR);
     expect(metaContent(page, "og:url")).toBe(`${ORIGIN}/s/${id}`);
-    expect(metaContent(page, "og:image")).toBe(
-      `${ORIGIN}/share/sets/${id}/image.png`
-    );
-    expect(metaContent(page, "twitter:image")).toBe(
-      `${ORIGIN}/share/sets/${id}/image.png`
-    );
+    const image = `${ORIGIN}${await server.imagePath(id)}`;
+    expect(metaContent(page, "og:image")).toBe(image);
+    expect(metaContent(page, "twitter:image")).toBe(image);
     expect(metaContent(page, "og:image:width")).toBe("1200");
     expect(metaContent(page, "og:image:height")).toBe("630");
     expect(metaContent(page, "twitter:card")).toBe("summary_large_image");
@@ -393,12 +416,16 @@ test("the preview image is a 1200x630 PNG that draws the Artwork, and draws with
       ids.push(saved.id);
     }
     const images = await Promise.all(
-      ids.map(async (id) => {
-        const response = await server.open(`/share/sets/${id}/image.png`);
+      ids.map(async (id, index) => {
+        const response = await server.open(await server.imagePath(id));
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("image/png");
+        // A preview drawn without its Artwork may only be a provider's passing failure,
+        // so only the drawn one is kept for good.
         expect(response.headers.get("cache-control")).toBe(
-          "public, max-age=3600"
+          index === 0
+            ? "public, max-age=31536000, immutable"
+            : "public, max-age=3600"
         );
         return readPng(await response.bytes());
       })
@@ -413,6 +440,79 @@ test("the preview image is a 1200x630 PNG that draws the Artwork, and draws with
     // only because the image stops waiting for it.
     expect(new Set(fallbacks).size).toBe(1);
     expect(fallbacks[0]).not.toBe(drawn);
+  } finally {
+    await server.dispose();
+    await artworkHost.stop(true);
+  }
+});
+
+test("the preview image draws once per Set content version, however often and however it is asked for", async () => {
+  const artworkHost = startArtworkHost();
+  const server = await startApp(artworkHost.url.origin);
+  try {
+    const { id } = await server.call(HOST_TOKEN, "POST", "/sets", {
+      url: SOURCE_LINK,
+    });
+    const current = await server.imagePath(id);
+    const unversioned = await server.open(`/share/sets/${id}/image.png`);
+    const guessed = await server.open(
+      `/share/sets/${id}/image.png?v=${crypto.randomUUID().slice(0, 16)}`
+    );
+    for (const stale of [unversioned, guessed]) {
+      expect(stale.status).toBe(302);
+      expect(stale.headers.get("location")).toBe(`${ORIGIN}${current}`);
+      expect(stale.headers.get("cache-control")).toBe("no-store");
+    }
+    expect(server.renders()).toBe(0);
+
+    const cold = await Promise.all(
+      Array.from({ length: 5 }, () => server.open(current))
+    );
+    expect(cold.map((response) => response.status)).toEqual([
+      200, 200, 200, 200, 200,
+    ]);
+    const bodies = await Promise.all(cold.map((response) => response.bytes()));
+    expect(
+      new Set(bodies.map((body) => Buffer.from(body).toString("base64"))).size
+    ).toBe(1);
+    expect(cold[0]?.headers.get("cache-control")).toBe(
+      "public, max-age=31536000, immutable"
+    );
+    expect(server.renders()).toBe(1);
+
+    const head = await server.open(current, {}, "HEAD");
+    expect(head.status).toBe(200);
+    const again = await server.open(`${current}&x=1`);
+    expect(again.status).toBe(200);
+    expect(server.renders()).toBe(1);
+
+    const sqlite = new SqliteDatabase(server.databasePath);
+    sqlite
+      .query("UPDATE sets SET title = ? WHERE id = ?")
+      .run("Peggy Gou | Boiler Room Seoul (Extended)", id);
+    sqlite.close();
+    const retitled = await server.imagePath(id);
+    expect(retitled).not.toBe(current);
+    const old = await server.open(current);
+    expect(old.status).toBe(302);
+    expect(old.headers.get("location")).toBe(`${ORIGIN}${retitled}`);
+    const fresh = await server.open(retitled);
+    expect(fresh.status).toBe(200);
+    expect(Buffer.from(await fresh.bytes()).toString("base64")).not.toBe(
+      Buffer.from(bodies[0] ?? new Uint8Array()).toString("base64")
+    );
+    expect(server.renders()).toBe(2);
+
+    const reart = new SqliteDatabase(server.databasePath);
+    reart
+      .query("UPDATE sets SET artwork_large_url = ? WHERE id = ?")
+      .run(`${artworkHost.url.origin}/brokenImage/maxresdefault.jpg`, id);
+    reart.close();
+    const rearted = await server.imagePath(id);
+    expect(rearted).not.toBe(retitled);
+    const redrawn = await server.open(rearted);
+    expect(redrawn.status).toBe(200);
+    expect(server.renders()).toBe(3);
   } finally {
     await server.dispose();
     await artworkHost.stop(true);

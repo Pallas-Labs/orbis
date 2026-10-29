@@ -3,6 +3,8 @@ import { Group as ProductionGroup } from "../src/group.js";
 
 export { default } from "../src/index.js";
 export class Group extends ProductionGroup {
+  /** Preview image requests that reached the Group, past the Worker's cache. */
+  private shareImageArrivals = 0;
   override async fetch(request: Request): Promise<Response> {
     const ready = await super.fetch(new Request("http://group/health"));
     if (!ready.ok) {
@@ -77,6 +79,12 @@ export class Group extends ProductionGroup {
       return Response.json(
         this.ctx.storage.sql.exec("SELECT value FROM smoke_state").toArray()
       );
+    }
+    if (pathname === "/__share-image-arrivals") {
+      return Response.json(this.shareImageArrivals);
+    }
+    if (pathname.endsWith("/image.png")) {
+      this.shareImageArrivals += 1;
     }
     const response = await super.fetch(request);
     response.headers.set("x-smoke-group", this.ctx.id.toString());
