@@ -6,7 +6,9 @@ import Testing
 /// kept, a look-alike kept, too many characters kept, a pasted link's address read as the code,
 /// a `#` in plain text read as a link, a paste into full slots that keeps the old code, a typed
 /// character into full slots that wipes them, the wrong length or groups, a digit code that opens
-/// the letter keyboard, or letters kept in a digit code.
+/// the letter keyboard, or letters kept in a digit code. A refused code is held as if selected,
+/// so it could also go wrong by keeping the refused characters beside a typed one, by keeping
+/// them after a delete, or by dropping a whole code set over it.
 @Suite struct CodeFieldTests {
   private let signIn = CodeFormat(alphabet: "ABCDEFGHJKMNPQRSTUVWXYZ23456789", groups: [4, 4])
   private let passcode = CodeFormat(alphabet: "ABCDEFGHJKMNPQRSTUVWXYZ23456789", groups: [4, 4, 4])
@@ -63,5 +65,20 @@ import Testing
   @Test func `slots are numbered across the groups`() {
     #expect(passcode.slotGroups == [0..<4, 4..<8, 8..<12])
     #expect(digits.slotGroups == [0..<3, 3..<6])
+  }
+
+  @Test func `a character typed over a refused code replaces it`() {
+    #expect(signIn.code(replacingRefused: "ZZZZZZZZ", in: "ZZZZZZZZa") == "A")
+    #expect(signIn.code(replacingRefused: "ZZZZZZZZ", in: "aZZZZZZZZ") == "A")
+  }
+
+  @Test func `a delete over a refused code clears it`() {
+    #expect(signIn.code(replacingRefused: "ZZZZZZZZ", in: "ZZZZZZZ") == "")
+  }
+
+  @Test func `a code pasted or set over a refused code replaces it`() {
+    #expect(signIn.code(replacingRefused: "ZZZZZZZZ", in: "ZZZZZZZZabcd-efgh") == "ABCDEFGH")
+    #expect(signIn.code(replacingRefused: "ZZZZZZZZ", in: "ABCDEFGH") == "ABCDEFGH")
+    #expect(signIn.code(replacingRefused: "ZZZZZZZZ", in: "abc") == "ABC")
   }
 }
