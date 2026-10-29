@@ -1,0 +1,27 @@
+{
+  "steps" : [
+    {
+      "message" : "That code didn't work. Ask for a new one.",
+      "name" : "a pasted unknown code is refused in one line under it"
+    },
+    {
+      "name" : "a lowercase code with its dash, from the Paste button over the refused one, signs in",
+      "pasted" : "s4mq-36ea"
+    },
+    {
+      "name" : "a dash, a space, and look-alikes change nothing",
+      "typed" : "- O0I1Lol"
+    },
+    {
+      "name" : "a code typed in lowercase with its dash signs in",
+      "typed" : "af72-5v55"
+    },
+    {
+      "labels" : [
+        "Orbis on lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "Orbis on lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z"
+      ],
+      "name" : "the service lists both devices"
+    }
+  ]
+}

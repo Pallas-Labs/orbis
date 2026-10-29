@@ -1,0 +1,326 @@
+[
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "redeem.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "redeem_0_212494F3-9769-4A25-8D77-FFE014A50717.json",
+        "timestamp": 1793267658.988
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "06-signed-in-typed.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "06-signed-in-typed_0_1E268F06-7320-4B14-B416-5DC16453EDAA.png",
+        "timestamp": 1793267657.889
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "05-typed-code.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "05-typed-code_0_B97B1DB3-B3F4-461F-BCC4-CAEE9C8F48E6.png",
+        "timestamp": 1793267656.019
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "04-look-alikes-change-nothing.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "04-look-alikes-change-nothing_0_0F14480D-57C4-44AE-B917-15BA36980364.png",
+        "timestamp": 1793267650.658
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "03-signed-in-pasted.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "03-signed-in-pasted_0_49FDB45A-8C08-4731-8FBC-A0BCB4022333.png",
+        "timestamp": 1793267617.596
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "02-unknown-code-pasted.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "02-unknown-code-pasted_0_96570226-4EDB-407D-AAB1-E7FB385118F7.png",
+        "timestamp": 1793267614.125
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "01-code-form.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "01-code-form_0_FE117990-11B6-496D-9681-C54DEECB42CA.png",
+        "timestamp": 1793267610.89
+      }
+    ],
+    "testIdentifier": "SignInUITests/testACodeFromAnotherDeviceSignsIn()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/SignInUITests/testACodeFromAnotherDeviceSignsIn"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "auto-download-settings.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "auto-download-settings_0_0D235A2A-1411-4DDF-854E-4BED418B4EA1.json",
+        "timestamp": 1793267682.777
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "auto-download-restored.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "auto-download-restored_0_74353929-8DF9-4E6E-B3F6-F5808D9A010D.png",
+        "timestamp": 1793267682.776
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "auto-download-changed-reopened.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "auto-download-changed-reopened_0_81986B3B-BB5C-4049-97C7-40140F404B59.png",
+        "timestamp": 1793267680.701
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "friend-settings-end.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "friend-settings-end_0_3C37B417-860F-4A7D-AB35-ED898C78D937.png",
+        "timestamp": 1793267671.355
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "auto-download-changed.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "auto-download-changed_0_6855DD6A-B202-49CC-8565-6788459CFF70.png",
+        "timestamp": 1793267669.605
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "auto-download-as-stored.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "auto-download-as-stored_0_16013B6B-B295-4372-A0D7-582662E64F00.png",
+        "timestamp": 1793267667.449
+      }
+    ],
+    "testIdentifier": "SignInUITests/testAFriendsSettingsKeepAutoDownloadAndHaveNoHostSections()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/SignInUITests/testAFriendsSettingsKeepAutoDownloadAndHaveNoHostSections"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "join.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "join_0_37292E9D-3286-47F6-9BE4-1A5195A1F264.json",
+        "timestamp": 1793267758.043
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "08-copied-code-signed-in.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "08-copied-code-signed-in_0_8ACEDB8B-FF8D-4613-B25D-64BE0D4F5D64.png",
+        "timestamp": 1793267757.034
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "07-signed-out-again.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "07-signed-out-again_0_7EDB9EA1-4902-4D64-89D6-789F0863949C.png",
+        "timestamp": 1793267741.376
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "06-settings-sign-in-code.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "06-settings-sign-in-code_0_D5F785ED-36E1-4516-955C-37370FBD447E.png",
+        "timestamp": 1793267734.977
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "05-joined.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "05-joined_0_D8D1F8E0-C820-429F-BA97-1DC1A72B83D2.png",
+        "timestamp": 1793267719.944
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "04-join-link-pasted.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "04-join-link-pasted_0_F5A73A84-C677-4226-9DD3-6EEBD47A7C0D.png",
+        "timestamp": 1793267715.373
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "03-wrong-passcode.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "03-wrong-passcode_0_AD045FD1-B8CF-4FF6-A761-8989AFB87F51.png",
+        "timestamp": 1793267711.565
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "02-join-form.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "02-join-form_0_1D0A0670-EDEE-4680-BA24-ED522E85A9B4.png",
+        "timestamp": 1793267694.144
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "01-signed-out.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "01-signed-out_0_3EBC4148-64CB-46A3-92C6-583450BCB151.png",
+        "timestamp": 1793267690.085
+      }
+    ],
+    "testIdentifier": "SignInUITests/testANewPersonJoinsWithThePasscodeAndAddsADevice()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/SignInUITests/testANewPersonJoinsWithThePasscodeAndAddsADevice"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "unreachable-service.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "unreachable-service_0_FB89E883-18F3-4DBB-B59E-0F9F15A9F095.png",
+        "timestamp": 1793267828.335
+      }
+    ],
+    "testIdentifier": "SignInUITests/testAnUnreachableServiceNamesTheRecoveryAction()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/SignInUITests/testAnUnreachableServiceNamesTheRecoveryAction"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "xxxl.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "xxxl_0_722F5A38-CBEB-4F97-9305-8D2C6083CB99.json",
+        "timestamp": 1793267854.869
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "02-code-xxxl.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "02-code-xxxl_0_875156B9-AF06-48B8-BF4B-32BBB6E8D098.png",
+        "timestamp": 1793267853.731
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "01-passcode-xxxl.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "01-passcode-xxxl_0_4A4EFE80-B966-4264-9373-7D1D5BE9BF11.png",
+        "timestamp": 1793267840.127
+      }
+    ],
+    "testIdentifier": "SignInUITests/testCodesFitAtTheLargestTextSize()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/SignInUITests/testCodesFitAtTheLargestTextSize"
+  },
+  {
+    "attachments": [
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "host.json",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "host_0_7C01AB7A-376C-4D72-99EA-72610B340F49.json",
+        "timestamp": 1793267890.611
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "05-joining-reopened.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "05-joining-reopened_0_78A9F185-064E-4F5F-805B-A4F575E80AE6.png",
+        "timestamp": 1793267889.525
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "04-joining-closed.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "04-joining-closed_0_F18F6E50-D161-41E7-ACEE-7A4ADD7B67AA.png",
+        "timestamp": 1793267886.184
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "03-person-sign-in-code.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "03-person-sign-in-code_0_3E7BEAB9-B2DE-48F8-BE6E-9E7178350F3F.png",
+        "timestamp": 1793267874.978
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "02-new-passcode.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "02-new-passcode_0_66714CFC-8A03-48BC-BB76-8C2B4059BBB5.png",
+        "timestamp": 1793267868.004
+      },
+      {
+        "configurationName": "Test Scheme Action",
+        "deviceId": "3356841A-04A7-45EA-9AB7-9F2F17B0CBCA",
+        "deviceName": "lease-PAL-1159-test-15-2026-10-29T09-45-12-513Z",
+        "exportedFileName": "01-host-settings.png",
+        "isAssociatedWithFailure": false,
+        "suggestedHumanReadableName": "01-host-settings_0_A843BAAC-DDD8-4A12-80C3-C24211E5F662.png",
+        "timestamp": 1793267864.526
+      }
+    ],
+    "testIdentifier": "SignInUITests/testTheHostManagesThePasscodeAndPeople()",
+    "testIdentifierURL": "test://com.apple.xcode/Orbis/OrbisUITests/SignInUITests/testTheHostManagesThePasscodeAndPeople"
+  }
+]

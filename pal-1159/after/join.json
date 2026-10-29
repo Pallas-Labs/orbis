@@ -1,0 +1,35 @@
+{
+  "steps" : [
+    {
+      "name" : "a fresh install offers two choices and no fields"
+    },
+    {
+      "message" : "Wrong passcode. Ask your Host for a new one.",
+      "name" : "a wrong passcode is refused in one line under it"
+    },
+    {
+      "name" : "a keystroke replaces the refused passcode and clears its line"
+    },
+    {
+      "name" : "the Paste button fills the passcode from a Join Link and moves to the username"
+    },
+    {
+      "name" : "Join creates the Person and signs in",
+      "pasted" : "https:\/\/orbis.p11a.xyz\/join#pnazhfbmw8ws",
+      "username" : "journey-b80bd9"
+    },
+    {
+      "name" : "a relaunch reads the key back from the keychain"
+    },
+    {
+      "code" : "RQWB 6SKF",
+      "name" : "Settings shows the Person's name and a Sign-in Code in slots, copies it, and shows no Host sections"
+    },
+    {
+      "name" : "signing out forgets the key"
+    },
+    {
+      "name" : "the copied Sign-in Code pastes into the slots and signs the device back in"
+    }
+  ]
+}

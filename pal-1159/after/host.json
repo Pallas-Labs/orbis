@@ -1,0 +1,25 @@
+{
+  "steps" : [
+    {
+      "name" : "the Host's Settings shows the generated passcode and copies it",
+      "passcode" : "MAADTXW7UNSG"
+    },
+    {
+      "after" : "U3ATD3BD3UPB",
+      "name" : "New Passcode asks first, then replaces the passcode"
+    },
+    {
+      "name" : "the Host shows a Sign-in Code for a friend"
+    },
+    {
+      "name" : "the Host removes a Person after confirming"
+    },
+    {
+      "name" : "closing joining clears the passcode"
+    },
+    {
+      "name" : "turning joining on makes a new passcode at once",
+      "passcode" : "M5BH3F8E8MUJ"
+    }
+  ]
+}

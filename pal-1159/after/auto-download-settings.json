@@ -1,0 +1,11 @@
+{
+  "steps" : [
+    {
+      "afterChange" : true,
+      "afterRelaunch" : true,
+      "name" : "auto download",
+      "restored" : false,
+      "stored" : false
+    }
+  ]
+}

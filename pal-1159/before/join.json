@@ -1,0 +1,29 @@
+{
+  "steps" : [
+    {
+      "name" : "a fresh install offers two choices and no fields"
+    },
+    {
+      "message" : "That passcode is not right.",
+      "name" : "a wrong passcode shows the service's sentence"
+    },
+    {
+      "name" : "a pasted Join Link fills the passcode, creates the Person, and signs in",
+      "pasted" : "https:\/\/orbis.p11a.xyz\/join#7mbm6z8q5wnh",
+      "username" : "journey-b18db9"
+    },
+    {
+      "name" : "a relaunch reads the key back from the keychain"
+    },
+    {
+      "code" : "DSD2 2R7P",
+      "name" : "Settings shows the Person's name and a Sign-in Code in slots, copies it, and shows no Host sections"
+    },
+    {
+      "name" : "signing out forgets the key"
+    },
+    {
+      "name" : "the copied Sign-in Code pastes into the slots and signs the device back in"
+    }
+  ]
+}

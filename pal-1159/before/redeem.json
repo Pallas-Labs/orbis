@@ -1,0 +1,27 @@
+{
+  "steps" : [
+    {
+      "message" : "That code is not valid. Get a new one.",
+      "name" : "a pasted unknown code fills the slots and shows the service's sentence"
+    },
+    {
+      "name" : "a lowercase code with its dash, pasted over the full slots, replaces them and signs in",
+      "pasted" : "2wn9-cmgw"
+    },
+    {
+      "name" : "a dash, a space, and look-alikes change nothing",
+      "typed" : "- O0I1Lol"
+    },
+    {
+      "name" : "a code typed in lowercase with its dash signs in",
+      "typed" : "ywf5-625q"
+    },
+    {
+      "labels" : [
+        "Orbis on lease-PAL-1159-test-8-2026-10-29T06-00-15-963Z",
+        "Orbis on lease-PAL-1159-test-8-2026-10-29T06-00-15-963Z"
+      ],
+      "name" : "the service lists both devices"
+    }
+  ]
+}
