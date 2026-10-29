@@ -99,9 +99,13 @@ struct RootView: View {
       await model.loadQueue()
       await model.refreshLibraryQuietly()
     }
-    // A TV's QR code opens `/pair#<code>` here (ADR 0022), and an Orbis Link opens `/s/<id>`
-    // (ADR 0023), each as a universal link or as `orbis://`.
+    // A TV's QR code opens `/pair#<code>` here (ADR 0022), an Orbis Link opens `/s/<id>`
+    // (ADR 0023), and a Join Link opens `/join#<passcode>`, each as a universal link or as
+    // `orbis://`.
     .onOpenURL { url in Task { await model.open(url) } }
+    .alert(model.linkNotice ?? "", isPresented: isShowingLinkNotice) {
+      Button("OK") {}
+    }
     #if !os(tvOS)
       // A window already open takes the link. Otherwise SwiftUI opens a new window for each one.
       .handlesExternalEvents(preferring: ["*"], allowing: ["*"])
@@ -113,6 +117,12 @@ struct RootView: View {
         SettingsScreen(model: model) { model.isShowingSettings = false }
       }
     #endif
+  }
+
+  private var isShowingLinkNotice: Binding<Bool> {
+    Binding(
+      get: { model.linkNotice != nil },
+      set: { if !$0 { model.linkNotice = nil } })
   }
 
   /// Holds the greeting long enough to read, then fades it the way the splash fades.

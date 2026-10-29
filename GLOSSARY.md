@@ -90,6 +90,10 @@ _Avoid_: Admin
 The random code Orbis makes when the Host opens joining, which the Host tells friends so they can join the Group without the Host. Joining is closed while there is none.
 _Avoid_: Invite code, password
 
+**Join Link**:
+The link `https://orbis.p11a.xyz/join#<Group Passcode>` that the Host's "Invite a Friend" shares. It opens Join Your Group with the passcode already in place, so a friend chooses only a username. The passcode rides in the fragment, which no browser sends to a server, and the link stops working when the Host makes a new passcode or closes joining.
+_Avoid_: Invite link, magic link
+
 **Sign-in Code**:
 A short, one-time code that a signed-in device, or the Host, shows so another device can sign in as the same Person.
 _Avoid_: Device Link, pairing code, Invite

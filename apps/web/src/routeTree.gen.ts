@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as BrowserRouteImport } from './routes/_browser'
+import { Route as JoinRouteImport } from './routes/join'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
@@ -31,6 +32,11 @@ const AppRoute = AppRouteImport.update({
 } as any)
 const BrowserRoute = BrowserRouteImport.update({
   id: '/_browser',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -102,6 +108,7 @@ const AppSetsIdRoute = AppSetsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/join': typeof JoinRoute
   '/sign-in': typeof SignInRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/admin': typeof AppAdminRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
+  '/join': typeof JoinRoute
   '/sign-in': typeof SignInRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/admin': typeof AppAdminRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_browser': typeof BrowserRouteWithChildren
+  '/join': typeof JoinRoute
   '/sign-in': typeof SignInRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/_app/admin': typeof AppAdminRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/join'
     | '/sign-in'
     | '/.well-known/apple-app-site-association'
     | '/admin'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/join'
     | '/sign-in'
     | '/.well-known/apple-app-site-association'
     | '/admin'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_browser'
+    | '/join'
     | '/sign-in'
     | '/.well-known/apple-app-site-association'
     | '/_app/admin'
@@ -201,6 +213,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   BrowserRoute: typeof BrowserRouteWithChildren
+  JoinRoute: typeof JoinRoute
   SignInRoute: typeof SignInRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   SIdRoute: typeof SIdRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof BrowserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -356,6 +376,7 @@ const BrowserRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   BrowserRoute: BrowserRouteWithChildren,
+  JoinRoute: JoinRoute,
   SignInRoute: SignInRoute,
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,

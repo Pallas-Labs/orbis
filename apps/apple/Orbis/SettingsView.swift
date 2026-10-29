@@ -417,10 +417,15 @@ private struct HostSections: View {
             title: "Copy Group Passcode", text: passcode, identifier: "settings-passcode-copy")
         }
         .accessibilityElement(children: .contain)
-        ShareLink(item: Self.invitation(passcode)) {
-          Label("Share Passcode", systemImage: "square.and.arrow.up")
+        // The link is the item, so the share sheet builds its card from the /join page's
+        // preview tags, and the text with both steps travels with it.
+        ShareLink(
+          item: JoinLink.url(forPasscode: passcode),
+          message: Text(JoinLink.invitation(passcode: passcode))
+        ) {
+          Label("Invite a Friend", systemImage: "square.and.arrow.up")
         }
-        .accessibilityIdentifier("settings-passcode-share")
+        .accessibilityIdentifier("settings-invite")
         Button("New Passcode") { isConfirmingNewPasscode = true }
           .disabled(settings.isSaving)
           .accessibilityIdentifier("settings-passcode-new")
@@ -476,11 +481,6 @@ private struct HostSections: View {
     Binding(
       get: { settings.isJoiningOpen },
       set: { open in Task { await settings.changeJoining(open: open) } })
-  }
-
-  /// The passcode sits on a line of its own, so a friend can select only it.
-  private static func invitation(_ passcode: String) -> String {
-    "Join my Orbis Group with this passcode:\n\n\(passcode)"
   }
 }
 

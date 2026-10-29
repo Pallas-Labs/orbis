@@ -19,6 +19,7 @@ const journeys = [
   "apple-music",
   "pair",
   "share",
+  "join",
 ];
 const concurrency = 4;
 
