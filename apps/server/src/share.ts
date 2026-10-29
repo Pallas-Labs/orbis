@@ -5,6 +5,8 @@ import { Effect } from "effect";
 import { sets } from "./db/schema.js";
 import { Database } from "./db/service.js";
 import { asLibraryError, LibraryError } from "./errors.js";
+import { hashToken } from "./identity.js";
+import { SHARE_IMAGE_VERSION } from "./share-image/render.js";
 
 /**
  * Reads the shared `sets` row only, never a Library Entry, so no Person's title override,
@@ -44,5 +46,15 @@ export const sharedSet = Effect.fn("Share.sharedSet")(function* readSharedSet(
   };
   /** Where the preview image reads Artwork from, sharpest first. */
   const artwork = [row.artworkLargeUrl, row.artworkUrl];
-  return { artwork, set };
+  /** A short digest of everything the preview image draws, so a new one gets a new address. */
+  const version = hashToken(
+    JSON.stringify([
+      SHARE_IMAGE_VERSION,
+      row.title,
+      row.creator,
+      row.source,
+      ...artwork,
+    ])
+  ).slice(0, 16);
+  return { artwork, set, version };
 });

@@ -1,5 +1,5 @@
 import { normalizeSourceUrl, youTubePlaylistId } from "@orbis/contracts";
-import type { PlaylistImport, SavedSet } from "@orbis/contracts";
+import type { PlaylistImport, SavedSet, SharedSet } from "@orbis/contracts";
 import type {
   ChangeTopic,
   SaveSetResultSchema,
@@ -2424,19 +2424,66 @@ export const createPortableApp = (options: {
       );
       const readShared = (id: string) =>
         sharedSet(id).pipe(Effect.provideService(Database, db));
-      /** The Orbis Link and the absolute image address, as a client outside the Group sees them. */
+      /**
+       * The Orbis Link and the absolute address of the image's current version, as a client
+       * outside the Group sees them.
+       */
       const shareLinks = (
         request: HttpServerRequest.HttpServerRequest,
-        id: string
+        id: string,
+        version: string
       ) => {
         const { origin } = new URL(request.originalUrl);
         const path = encodeURIComponent(id);
         return {
-          image: `${origin}${options.publicApiPath ?? ""}/share/sets/${path}/image.png`,
+          image: `${origin}${options.publicApiPath ?? ""}/share/sets/${path}/image.png?v=${version}`,
           orbisLink: `${origin}/s/${path}`,
         };
       };
       const shareCache = { "cache-control": "public, max-age=3600" };
+      /**
+       * Recent preview images by `id:version`. A request that arrives during or after a draw
+       * gets that draw's bytes, so one version draws once however many requests miss the
+       * Worker's cache at the same time or in other data centers.
+       */
+      const shareImages = new Map<
+        string,
+        Promise<{ readonly artwork: boolean; readonly png: Uint8Array }>
+      >();
+      const drawShareImage = (
+        key: string,
+        artwork: readonly (string | null)[],
+        set: SharedSet
+      ) => {
+        const known = shareImages.get(key);
+        if (known) {
+          return { drawn: known, image: "reused" as const };
+        }
+        const drawn = (async () => {
+          try {
+            const picture = await loadArtwork(artwork);
+            const png = await renderShareImage({
+              artwork: picture,
+              creator: set.creator,
+              source: set.source,
+              title: set.title,
+            });
+            return { artwork: picture !== null, png };
+          } catch (error) {
+            // The first await above puts this after the set below, so a failed draw is retried.
+            shareImages.delete(key);
+            throw error;
+          }
+        })();
+        shareImages.set(key, drawn);
+        for (const oldest of shareImages.keys()) {
+          if (shareImages.size <= 16) {
+            break;
+          }
+          shareImages.delete(oldest);
+        }
+        return { drawn, image: "rendered" as const };
+      };
       const shareGroup = HttpApiBuilder.group(OrbisApi, "share", (handlers) =>
         handlers
           .handleRaw("set", ({ params }) =>
@@ -2449,10 +2496,10 @@ export const createPortableApp = (options: {
           .handleRaw("page", ({ params, request }) =>
             withFailureResponse(
               Effect.gen(function* sharePage() {
-                const { set } = yield* readShared(params.id);
+                const { set, version } = yield* readShared(params.id);
                 const policy = yield* Effect.promise(sharePagePolicy);
                 return HttpServerResponse.text(
-                  renderSharePage(set, shareLinks(request, set.id)),
+                  renderSharePage(set, shareLinks(request, set.id, version)),
                   {
                     contentType: "text/html; charset=utf-8",
                     headers: {
@@ -2464,39 +2511,45 @@ export const createPortableApp = (options: {
               })
             )
           )
-          .handleRaw("image", ({ params }) =>
+          .handleRaw("image", ({ params, request }) =>
             withFailureResponse(
               Effect.gen(function* shareImage() {
-                const { artwork, set } = yield* readShared(params.id);
-                const requested = performance.now();
-                const picture = yield* Effect.promise(() =>
-                  loadArtwork(artwork)
+                const { artwork, set, version } = yield* readShared(params.id);
+                const asked = new URL(request.originalUrl).searchParams.get(
+                  "v"
                 );
-                const started = performance.now();
-                const png = yield* Effect.tryPromise({
+                if (asked !== version) {
+                  yield* annotateWideEvent({ share: { image: "redirected" } });
+                  return HttpServerResponse.redirect(
+                    shareLinks(request, set.id, version).image,
+                    { headers: { "cache-control": "no-store" } }
+                  );
+                }
+                const { drawn, image } = drawShareImage(
+                  `${set.id}:${version}`,
+                  artwork,
+                  set
+                );
+                const preview = yield* Effect.tryPromise({
                   catch: () =>
                     new LibraryError({
                       message: "Could not draw the preview image.",
                       statusCode: 500,
                     }),
-                  try: () =>
-                    renderShareImage({
-                      artwork: picture,
-                      creator: set.creator,
-                      source: set.source,
-                      title: set.title,
-                    }),
+                  try: () => drawn,
                 });
                 yield* annotateWideEvent({
-                  share: {
-                    artwork: picture !== null,
-                    artworkMs: Math.round(started - requested),
-                    renderMs: Math.round(performance.now() - started),
-                  },
+                  share: { artwork: preview.artwork, image },
                 });
-                return HttpServerResponse.uint8Array(png, {
+                // An image drawn without its Artwork may come from a provider's passing
+                // failure, so caches keep it only as long as a share page.
+                const kept =
+                  preview.artwork || artwork.every((url) => url === null)
+                    ? { "cache-control": "public, max-age=31536000, immutable" }
+                    : shareCache;
+                return HttpServerResponse.uint8Array(preview.png, {
                   contentType: "image/png",
-                  headers: shareCache,
+                  headers: kept,
                 });
               })
             )

@@ -50,8 +50,14 @@ const options = {
 /**
  * An Orbis Link's three routes answer without a key under workerd, with absolute `/api`
  * image and `/s/<id>` addresses, and the image is a 1200x630 PNG drawn from local Artwork.
+ * The Worker's cache answers repeat image requests, so each image version reaches the Group
+ * once, and a key-gated route never enters that cache.
  */
-const checkShareRoutes = async (miniflare: Miniflare, id: string) => {
+const checkShareRoutes = async (
+  miniflare: Miniflare,
+  id: string,
+  keyed: (route: string) => Promise<Response>
+) => {
   const artwork = await Bun.file(
     path.join(import.meta.dir, "../../server/src/fixtures/share-artwork.jpg")
   ).bytes();
@@ -90,36 +96,137 @@ const checkShareRoutes = async (miniflare: Miniflare, id: string) => {
     assert.ok(
       page.includes(`<meta property="og:url" content="${origin}/s/${id}">`)
     );
-    assert.ok(
-      page.includes(
-        `<meta property="og:image" content="${origin}/api/share/sets/${id}/image.png">`
-      )
-    );
-    assert.doesNotMatch(page, /Group smoke/u);
-    const timings: number[] = [];
-    let png = new Uint8Array();
-    for (let run = 0; run < 5; run += 1) {
-      const started = performance.now();
-      // oxlint-disable-next-line no-await-in-loop -- Each render is timed alone.
-      const image = await miniflare.dispatchFetch(
-        `http://orbis/api/share/sets/${id}/image.png`
+    const imageOf = (html: string) => {
+      const image =
+        /<meta property="og:image" content="(?<image>[^"]+)">/u.exec(html)
+          ?.groups?.image;
+      assert.ok(image);
+      assert.match(
+        image,
+        new RegExp(
+          `^${origin}/api/share/sets/${id}/image\\.png\\?v=[0-9a-f]{16}$`,
+          "u"
+        )
       );
-      assert.equal(image.status, 200);
+      return image.slice(origin.length);
+    };
+    const imagePath = imageOf(page);
+    assert.doesNotMatch(page, /Group smoke/u);
+    const caches = await miniflare.getCaches();
+    const cache = caches.default;
+    const cacheKey = (route: string) =>
+      `https://${new URL(origin).host}${route}`;
+    const arrivals = async () => {
+      const response = await miniflare.dispatchFetch(
+        "http://orbis/api/__share-image-arrivals"
+      );
+      return Number(await response.text());
+    };
+    /** Waits for the Worker's `waitUntil` to store the image, which ends after the response. */
+    const stored = async (route: string) => {
+      for (let wait = 0; wait < 100; wait += 1) {
+        // oxlint-disable-next-line no-await-in-loop -- Polls one entry until it lands.
+        const hit = await cache.match(cacheKey(route));
+        if (hit) {
+          // oxlint-disable-next-line no-await-in-loop -- Returns right after.
+          await hit.arrayBuffer();
+          return;
+        }
+        // oxlint-disable-next-line no-await-in-loop -- Polls one entry until it lands.
+        await Bun.sleep(50);
+      }
+      assert.fail(`${route} never entered the Worker's cache`);
+    };
+    const fetchImage = async (route: string) => {
+      const image = await miniflare.dispatchFetch(`http://orbis${route}`, {
+        redirect: "manual",
+      });
+      assert.equal(image.status, 200, route);
       assert.equal(image.headers.get("content-type"), "image/png");
-      // oxlint-disable-next-line no-await-in-loop -- Each render is timed alone.
-      png = new Uint8Array(await image.arrayBuffer());
-      timings.push(Math.round(performance.now() - started));
+      assert.equal(
+        image.headers.get("cache-control"),
+        "public, max-age=31536000, immutable"
+      );
+      return Buffer.from(await image.arrayBuffer());
+    };
+
+    const before = await arrivals();
+    const png = await fetchImage(imagePath);
+    await stored(imagePath);
+    const repeats = [
+      imagePath,
+      `${imagePath}&x=1`,
+      imagePath.replace("/share/sets/", "/share//sets/").replace("?", "?x=2&"),
+    ];
+    for (const route of repeats) {
+      // oxlint-disable-next-line no-await-in-loop -- Each repeat follows the first in order.
+      const repeat = await fetchImage(route);
+      assert.ok(repeat.equals(png), route);
     }
-    const header = new DataView(png.buffer);
+    const afterRepeats = await arrivals();
+    const repeatArrivals = afterRepeats - before;
+    assert.equal(repeatArrivals, 1);
+
+    const unversioned = await miniflare.dispatchFetch(
+      `http://orbis/api/share/sets/${id}/image.png`,
+      { redirect: "manual" }
+    );
+    assert.equal(unversioned.status, 302);
+    assert.equal(unversioned.headers.get("location"), `${origin}${imagePath}`);
+    assert.equal(unversioned.headers.get("cache-control"), "no-store");
+    await unversioned.arrayBuffer();
+
+    const retitled = await miniflare.dispatchFetch(
+      `http://orbis/api/__share?${new URLSearchParams({
+        artwork: `${host.url.origin}/maxresdefault.jpg`,
+        creator: "Boiler Room",
+        title: "Peggy Gou | Boiler Room Seoul (Extended)",
+      })}`
+    );
+    assert.equal(retitled.status, 200);
+    const newPageResponse = await miniflare.dispatchFetch(
+      `http://orbis/api/share/sets/${id}/page`
+    );
+    const newPage = await newPageResponse.text();
+    const newImagePath = imageOf(newPage);
+    assert.notEqual(newImagePath, imagePath);
+    const beforeRetitle = await arrivals();
+    const newPng = await fetchImage(newImagePath);
+    assert.ok(!newPng.equals(png));
+    await stored(newImagePath);
+    const newRepeat = await fetchImage(newImagePath);
+    assert.ok(newRepeat.equals(newPng));
+    const afterRetitle = await arrivals();
+    const retitleArrivals = afterRetitle - beforeRetitle;
+    assert.equal(retitleArrivals, 1);
+
+    const me = await keyed("/me?v=1");
+    assert.equal(me.status, 200);
+    await me.arrayBuffer();
+    for (const route of [
+      "/api/me?v=1",
+      `/api/share/sets/${id}/image.png`,
+      `/api/share/sets/${id}/image.png?v=0000000000000000`,
+    ]) {
+      // oxlint-disable-next-line no-await-in-loop -- Each key is checked alone.
+      assert.equal(await cache.match(cacheKey(route)), undefined, route);
+    }
+
+    const header = new DataView(png.buffer, png.byteOffset, png.byteLength);
     assert.equal(new TextDecoder().decode(png.subarray(12, 16)), "IHDR");
     assert.deepEqual([header.getUint32(16), header.getUint32(20)], [1200, 630]);
     await writeFile(path.join(artifact, "share-image.png"), png);
+    await writeFile(path.join(artifact, "share-image-retitled.png"), newPng);
     await writeFile(path.join(artifact, "share-page.html"), page);
     const unknown = await miniflare.dispatchFetch(
       `http://orbis/api/share/sets/${crypto.randomUUID()}/image.png`
     );
     assert.equal(unknown.status, 404);
-    return { imageMilliseconds: timings, page: true, png: png.length };
+    return {
+      imageArrivals: { repeated: repeatArrivals, retitled: retitleArrivals },
+      page: true,
+      png: png.length,
+    };
   } finally {
     await host.stop(true);
   }
@@ -169,7 +276,9 @@ try {
   assert.equal(savedResponse.status, 201, await savedResponse.clone().text());
   const saved = await savedResponse.json();
   assert.ok(saved.id);
-  const share = await checkShareRoutes(runtime, saved.id);
+  const share = await checkShareRoutes(runtime, saved.id, (route) =>
+    call(route)
+  );
   const playlistResponse = await call("/playlists", "POST", {
     name: "Group smoke playlist",
   });
