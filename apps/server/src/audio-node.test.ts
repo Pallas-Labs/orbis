@@ -1,6 +1,6 @@
 /* oxlint-disable no-await-in-loop -- The journey observes ordered WebSocket messages and cleans resources in reverse order. */
 import { afterEach, expect, test } from "bun:test";
-import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -263,4 +263,104 @@ test("node reconnects when the Group stops answering heartbeats", async () => {
     attempt: 5,
     connectFailed: expect.stringMatching(/^1006\b/u),
   });
+});
+
+test("node probes a stored file again only when it changes", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "orbis-node-"));
+  cleanups.push(() => rm(directory, { force: true, recursive: true }));
+  const audioDir = path.join(directory, "audio");
+  await mkdir(audioDir);
+  const sine = async (seconds: number) => {
+    const generated = Bun.spawn([
+      "ffmpeg",
+      "-v",
+      "error",
+      "-y",
+      "-f",
+      "lavfi",
+      "-i",
+      `sine=frequency=440:duration=${seconds}`,
+      path.join(audioDir, "kept.mp3"),
+    ]);
+    expect(await generated.exited).toBe(0);
+  };
+  await sine(1);
+  await writeFile(path.join(audioDir, "broken.mp3"), "not audio");
+  const probes = path.join(directory, "probes.log");
+  const ffprobe = path.join(directory, "ffprobe");
+  await writeFile(
+    ffprobe,
+    `#!/bin/sh\nfor last; do :; done\nbasename "$last" >> ${JSON.stringify(probes)}\nexec ffprobe "$@"\n`,
+    { mode: 0o755 }
+  );
+  const probed = async () => {
+    const lines = await Bun.file(probes).text();
+    const names = lines.trim().split("\n");
+    names.sort();
+    return names;
+  };
+  const inventories: Extract<NodeMessage, { kind: "inventory" }>[] = [];
+  let socket: Bun.ServerWebSocket<undefined> | undefined;
+  const server = Bun.serve({
+    fetch(request, listener) {
+      if (listener.upgrade(request)) {
+        return;
+      }
+      return new Response(null, { status: 400 });
+    },
+    port: 0,
+    websocket: {
+      message(_ws, message) {
+        const decoded = decodeNodeMessage(JSON.parse(String(message)));
+        if (decoded.kind === "inventory") {
+          inventories.push(decoded);
+        }
+      },
+      open(ws) {
+        socket = ws;
+      },
+    },
+  });
+  cleanups.push(async () => {
+    await server.stop(true);
+  });
+  const node = await startAudioNode({
+    audioDir,
+    ffprobePath: ffprobe,
+    groupUrl: `ws://localhost:${server.port}/api/node`,
+    logging: collect().logging,
+    nodeKey: "node-secret",
+    reconnectDelayMs: 10,
+  });
+  cleanups.push(() => node.close());
+  const reconnect = async () => {
+    const count = inventories.length;
+    socket?.close(4000, "fixture closed");
+    await until(() => inventories.length === count + 1);
+    return inventories.at(-1)?.files;
+  };
+  await until(() => inventories.length === 1);
+  expect(inventories[0]?.files).toMatchObject([
+    { format: "mp3", setId: "kept" },
+  ]);
+  expect(await probed()).toEqual(["broken.mp3", "kept.mp3"]);
+  // An unchanged file keeps its result; a file that failed is tried again.
+  expect(await reconnect()).toEqual(inventories[0]?.files);
+  expect(await probed()).toEqual(["broken.mp3", "broken.mp3", "kept.mp3"]);
+  const [first] = inventories[0]?.files ?? [];
+  await sine(2);
+  const [replaced] = (await reconnect()) ?? [];
+  expect(replaced?.bytes).toBeGreaterThan(Number(first?.bytes));
+  expect(replaced?.durationSeconds).toBeGreaterThan(
+    Number(first?.durationSeconds)
+  );
+  expect(await probed()).toEqual([
+    "broken.mp3",
+    "broken.mp3",
+    "broken.mp3",
+    "kept.mp3",
+    "kept.mp3",
+  ]);
+  await rm(path.join(audioDir, "kept.mp3"));
+  expect(await reconnect()).toEqual([]);
 });

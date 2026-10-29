@@ -1,4 +1,4 @@
-import { mkdir, readdir, rename, rm } from "node:fs/promises";
+import { mkdir, readdir, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 
 import { Context, Effect, Layer, Schema } from "effect";
@@ -337,10 +337,29 @@ export class MediaStore extends Context.Service<
         )
       )
     );
+    /**
+     * Each reconnect sends the full inventory before the Group takes work, and
+     * probing every file again took seconds, so a file keeps its result while
+     * its size and modification time are unchanged.
+     */
+    const probed = new Map<
+      string,
+      {
+        readonly bytes: number;
+        readonly durationSeconds: number;
+        readonly modifiedMs: number;
+      }
+    >();
     const inventory = Effect.fn("MediaStore.inventory")(function* inventory(
       onlySetId?: string
     ) {
       const names = yield* Effect.promise(() => readdir(audioDir));
+      const present = new Set(names);
+      for (const name of probed.keys()) {
+        if (!present.has(name)) {
+          probed.delete(name);
+        }
+      }
       const files: (StoredAudio & { readonly setId: string })[] = [];
       for (const name of names) {
         const match = /^(?<id>[a-zA-Z0-9_-]+)\.(?<format>mp3|ogg|m4a)$/u.exec(
@@ -353,16 +372,29 @@ export class MediaStore extends Context.Service<
         if (!setId || !format || (onlySetId && onlySetId !== setId)) {
           continue;
         }
-        const metadata = yield* probe(fileFor(setId, format)).pipe(
+        const filePath = fileFor(setId, format);
+        const stats = yield* Effect.tryPromise(() => stat(filePath)).pipe(
           Effect.option
         );
-        if (metadata._tag === "Some") {
+        if (stats._tag === "None") {
+          continue;
+        }
+        const { mtimeMs: modifiedMs, size: bytes } = stats.value;
+        const known = probed.get(name);
+        if (known?.bytes === bytes && known.modifiedMs === modifiedMs) {
           files.push({
-            bytes: Bun.file(fileFor(setId, format)).size,
-            durationSeconds: metadata.value.durationSeconds,
+            bytes,
+            durationSeconds: known.durationSeconds,
             format,
             setId,
           });
+          continue;
+        }
+        const metadata = yield* probe(filePath).pipe(Effect.option);
+        if (metadata._tag === "Some") {
+          const { durationSeconds } = metadata.value;
+          probed.set(name, { bytes, durationSeconds, modifiedMs });
+          files.push({ bytes, durationSeconds, format, setId });
         }
       }
       return files;

@@ -125,11 +125,14 @@ In SigNoz, filter the logs on `service.name = orbis` and `severity_text = ERROR`
 | `event: node-link-closed` | node | `warn`; `info` at shutdown | `code`, `reason`, `heartbeatTimedOut` |
 | `event: node-link-reconnecting` | node | `info`; `error` from the fifth failed try in a row | `attempt`, `delayMs`, `connectFailed` |
 | `event: group-node-accepted` | group | `info` | `replaced` (earlier sockets closed) |
-| `event: group-node-disconnected` | group | `warn`; `info` for code 1000 | `code`, `reason` |
+| `event: group-node-disconnected` | group | `warn`; `info` for code 1000 | `code`, `reason`, `ageMs`; no `code` when the node reconnected before the close arrived |
+| `event: group-node-replaced-closed` | group | `info` | `code`, `reason`, `ageMs` |
 | `event: group-download-started` | group | `info` | `set`, `source`, `requestId` |
 | `event: group-download-settled` | group | `info`; `warn` when the node reports a failure | `set`, `requestId`, `outcome` |
 | `event: group-downloads-waiting` | group | `warn` | `queued`, `oldestQueuedMs`, `node` (`missing` or `connecting`) |
 | `job: download-canary` | canary | `info`; `warn` when a backend failed; `error` when a source has no working backend | `ok`, `failed`, `sourcesWithoutBackend`, `logs` |
+
+`group-node-disconnected` counts each lost link once. The node often sees a drop and reconnects before the Group hears of it, so the Group logs the loss when it accepts the new link. The old link's own close can arrive minutes later; it is `group-node-replaced-closed` and is not a lost link.
 
 `group-downloads-waiting` is the Group's sign that Downloads are queued and no node can take them. The Group checks each time it schedules work, so the event repeats while new work arrives and the node stays away. `oldestQueuedMs` is null for Downloads queued before 2026-10-20.
 
