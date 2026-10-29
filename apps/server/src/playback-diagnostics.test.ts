@@ -38,6 +38,11 @@ const setup = (
   const requests: { headers: Headers; body: unknown }[] = [];
   const collector = Bun.serve({
     fetch: async (request) => {
+      // The relay only POSTs. On a dev machine, a local tool (T3's port scan) can GET any
+      // new port, and that probe must not count as an export.
+      if (request.method !== "POST") {
+        return new Response(null, { status: 404 });
+      }
       requests.push({ body: await request.json(), headers: request.headers });
       return respond(request);
     },
