@@ -181,6 +181,12 @@ const paintMark = (canvas: Bitmap, bold: Font) => {
 };
 
 /**
+ * Part of every preview image's content version. Raise it whenever the drawing changes, so
+ * caches that keep an image for good ask for the new one.
+ */
+export const SHARE_IMAGE_VERSION = 1;
+
+/**
  * The 1200x630 preview an Orbis Link unfurls into: the Set's Artwork as a card over its own
  * blurred glow, the provider title, the creator, and the Orbis mark.
  */
