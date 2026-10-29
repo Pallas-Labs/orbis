@@ -2,11 +2,11 @@ import type {
   AppleMusicAlbum as AppleMusicSearchResult,
   SetSource,
 } from "@orbis/contracts";
-import { Context, Effect, Layer, Option, Schema } from "effect";
+import { Clock, Context, Effect, Layer, Option, Schema } from "effect";
 
 import type { AppleMusicCredentials } from "./apple-music-token.js";
 import { appleMusicTokens } from "./apple-music-token.js";
-import { isDjMix } from "./apple-music.js";
+import { isDjMix, mixSeries, songStarts } from "./apple-music.js";
 import { MetadataError } from "./metadata-error.js";
 import {
   appleMusicAlbumUrl,
@@ -280,7 +280,9 @@ const YouTubePlaylistResponse = Schema.Struct({
 
 const YouTubePlaylistItemsResponse = Schema.Struct({
   items: Schema.Array(
-    Schema.Struct({ contentDetails: Schema.Struct({ videoId: Schema.String }) })
+    Schema.Struct({
+      contentDetails: Schema.Struct({ videoId: Schema.String }),
+    })
   ),
   nextPageToken: Schema.optionalKey(Schema.String),
 });
@@ -479,6 +481,7 @@ const AppleMusicAlbumResponse = Schema.Struct({
         ),
         isSingle: Schema.optionalKey(Schema.Boolean),
         name: Schema.String,
+        recordLabel: Schema.optionalKey(Schema.String),
         releaseDate: Schema.optionalKey(Schema.String),
       }),
       id: Schema.String,
@@ -584,8 +587,8 @@ export const appleMusicSearchReads = (words: string): string[] =>
 export const appleMusicAlbumsRead = (albumIds: readonly string[]): string =>
   `${APPLE_MUSIC_CATALOG}/albums?${new URLSearchParams({
     "fields[albums]":
-      "artistName,artwork,editorialNotes,isSingle,name,releaseDate",
-    "fields[songs]": "durationInMillis,name",
+      "artistName,artwork,editorialNotes,isSingle,name,recordLabel,releaseDate",
+    "fields[songs]": "artistName,durationInMillis,name",
     ids: albumIds.join(","),
     include: "tracks",
   })}`;
@@ -617,24 +620,35 @@ const appleMusicSearchAlbum = (
   const metadata = appleMusicMetadata(album);
   const songs = metadata.songs ?? [];
   const notes = album.attributes.editorialNotes;
+  const djMix = isDjMix({
+    editorialNotes: [notes?.short, notes?.standard].filter(Boolean).join("\n"),
+    isSingle: album.attributes.isSingle ?? false,
+    songTitles: songs.map((song) => song.title),
+    title: metadata.title,
+  });
+  const starts = songStarts(songs);
   return {
     artworkUrl: metadata.artworkUrl,
     creator: metadata.creator,
-    djMix: isDjMix({
-      editorialNotes: [notes?.short, notes?.standard]
-        .filter(Boolean)
-        .join("\n"),
-      isSingle: album.attributes.isSingle ?? false,
-      songTitles: songs.map((song) => song.title),
-      title: metadata.title,
-    }),
+    djMix,
     durationSeconds: metadata.durationSeconds,
+    id: album.id,
+    recordLabel: album.attributes.recordLabel?.trim() || null,
     releasedAt: metadata.releasedAt,
+    series: djMix ? mixSeries(metadata.title) : null,
     songCount: songs.length,
+    songs: songs.map((song, position) => ({
+      artist: song.artist,
+      startSeconds: starts[position] ?? null,
+      title: song.title,
+    })),
     title: metadata.title,
     url: appleMusicAlbumUrl(album.id),
   };
 };
+
+/** How long a search's answer is kept, so typing the same words again does not spend Apple's quota. */
+const APPLE_MUSIC_SEARCH_KEPT_MS = 10 * 60 * 1000;
 
 const notInUsCatalog = () =>
   new MetadataError({
@@ -657,6 +671,46 @@ const appleMusicProvider = (
       authorization: `Bearer ${developerToken}`,
     }))
   );
+  /** Two US searches and one batched album read: DJ mixes first, then other albums. */
+  const searchApple = Effect.fn("Metadata.searchAppleMusic.apple")(
+    function* askApple(words: string) {
+      const headers = yield* authorization;
+      const options = { headers, label: "Apple Music", request };
+      const searches = yield* Effect.forEach(
+        appleMusicSearchReads(words),
+        (url) => requestJson(url, AppleMusicSearchResponse, options),
+        { concurrency: "unbounded" }
+      );
+      const ids = mergedAlbumIds(searches);
+      if (ids.length === 0) {
+        return [];
+      }
+      const typed = new Set(mergedAlbumIds(searches.slice(0, 1)));
+      const read = yield* requestJson(
+        appleMusicAlbumsRead(ids),
+        AppleMusicAlbumResponse,
+        options
+      );
+      const albums = new Map(read.data.map((album) => [album.id, album]));
+      // The "DJ Mix" search only exists to find mixes; its other albums are strangers' singles.
+      const found = ids.flatMap((id) => {
+        const album = albums.get(id);
+        const result = album ? appleMusicSearchAlbum(album) : null;
+        return result && (typed.has(id) || result.djMix) ? [result] : [];
+      });
+      return [
+        ...found.filter((album) => album.djMix),
+        ...found.filter((album) => !album.djMix),
+      ];
+    }
+  );
+  const answers = new Map<
+    string,
+    {
+      readonly albums: readonly AppleMusicSearchAlbum[];
+      readonly until: number;
+    }
+  >();
   return {
     enrich: Effect.fn("Metadata.enrich")(function* enrichAppleMusic(url) {
       const albumId = appleMusicAlbumId(url);
@@ -690,34 +744,22 @@ const appleMusicProvider = (
     search: Effect.fn("Metadata.searchAppleMusic")(function* searchAppleMusic(
       words: string
     ) {
-      const headers = yield* authorization;
-      const options = { headers, label: "Apple Music", request };
-      const searches = yield* Effect.forEach(
-        appleMusicSearchReads(words),
-        (url) => requestJson(url, AppleMusicSearchResponse, options),
-        { concurrency: "unbounded" }
-      );
-      const ids = mergedAlbumIds(searches);
-      if (ids.length === 0) {
-        return [];
+      // The handler has already collapsed the spaces. Words that differ only in case share an
+      // answer, and Apple is asked with the first.
+      const key = words.toLowerCase();
+      const now = yield* Clock.currentTimeMillis;
+      const kept = answers.get(key);
+      if (kept && kept.until > now) {
+        return kept.albums;
       }
-      const typed = new Set(mergedAlbumIds(searches.slice(0, 1)));
-      const read = yield* requestJson(
-        appleMusicAlbumsRead(ids),
-        AppleMusicAlbumResponse,
-        options
-      );
-      const albums = new Map(read.data.map((album) => [album.id, album]));
-      // The "DJ Mix" search only exists to find mixes; its other albums are strangers' singles.
-      const found = ids.flatMap((id) => {
-        const album = albums.get(id);
-        const result = album ? appleMusicSearchAlbum(album) : null;
-        return result && (typed.has(id) || result.djMix) ? [result] : [];
-      });
-      return [
-        ...found.filter((album) => album.djMix),
-        ...found.filter((album) => !album.djMix),
-      ];
+      const albums = yield* searchApple(words);
+      for (const [keptKey, answer] of answers) {
+        if (answer.until <= now) {
+          answers.delete(keptKey);
+        }
+      }
+      answers.set(key, { albums, until: now + APPLE_MUSIC_SEARCH_KEPT_MS });
+      return albums;
     }),
   };
 };

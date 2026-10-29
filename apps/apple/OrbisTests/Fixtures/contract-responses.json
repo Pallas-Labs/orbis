@@ -6,9 +6,134 @@
         "creator": "Seth Troxler",
         "djMix": true,
         "durationSeconds": 5393,
+        "id": "1814380376",
         "inLibrary": true,
+        "recordLabel": null,
         "releasedAt": "2025-01-11",
+        "series": null,
         "songCount": 24,
+        "songs": [
+          {
+            "artist": "Blakkat & David Morales",
+            "startSeconds": 0,
+            "title": "SECOND CHANCE (David Morales Zone Vocal Remix) [Mixed]"
+          },
+          {
+            "artist": "Joeski",
+            "startSeconds": 246,
+            "title": "Frequencia (feat. UNNA X) [Mixed]"
+          },
+          {
+            "artist": "Grace Bones",
+            "startSeconds": 438,
+            "title": "AfroFuturistic (Mixed)"
+          },
+          {
+            "artist": "ID",
+            "startSeconds": 700,
+            "title": "ID1 (from Seth Troxler at Circoloco Thailand) [Mixed]"
+          },
+          {
+            "artist": "ID",
+            "startSeconds": 885,
+            "title": "ID2 (from Seth Troxler at Circoloco Thailand) [Mixed]"
+          },
+          {
+            "artist": "Ohm Hourani & Ananda Project",
+            "startSeconds": 1173,
+            "title": "Barbara (Villalobos & Javasoul Remix) / Cascades of Colour (feat. Gaëlle) [Manoo’s Tribute Remix] [Mixed]"
+          },
+          {
+            "artist": "David Morales",
+            "startSeconds": 1587,
+            "title": "The Bonester (Mixed)"
+          },
+          {
+            "artist": "Antonio Ocasio",
+            "startSeconds": 1817,
+            "title": "Going to the Mountain (feat. Ed Ramsey) [Mixed]"
+          },
+          {
+            "artist": "ID",
+            "startSeconds": 2110,
+            "title": "ID3 (from Seth Troxler at Circoloco Thailand) [Mixed]"
+          },
+          {
+            "artist": "Lil' Mo' Yin Yang",
+            "startSeconds": 2281,
+            "title": "Reach (Little \"More\" Mix) [Mixed]"
+          },
+          {
+            "artist": "Mikki Affllick",
+            "startSeconds": 2354,
+            "title": "Kuna Dance (Kuna Tribe Mix) [Mixed]"
+          },
+          {
+            "artist": "Alinka",
+            "startSeconds": 2524,
+            "title": "Weather the Storm (Mixed)"
+          },
+          {
+            "artist": "Milion",
+            "startSeconds": 2669,
+            "title": "Space Invaders (Mixed)"
+          },
+          {
+            "artist": "Dexter Troy",
+            "startSeconds": 2786,
+            "title": "Kick It (Mixed)"
+          },
+          {
+            "artist": "Moodena & Charles Levine",
+            "startSeconds": 3053,
+            "title": "Badman (Mixed)"
+          },
+          {
+            "artist": "Lorenz Rhode & Purple Disco Machine",
+            "startSeconds": 3317,
+            "title": "Dirty Pleasures (feat. Jake Shears) [Erol Alkan Rework] [Mixed]"
+          },
+          {
+            "artist": "Pryda & Chuck Roberts",
+            "startSeconds": 3591,
+            "title": "Rakfunk / In The Beginning (There Was Jack) [feat. Monique Bingham] [Mixed]"
+          },
+          {
+            "artist": "Byron Stingily",
+            "startSeconds": 3776,
+            "title": "I Could Be That (Remix) [Mixed]"
+          },
+          {
+            "artist": "Darran Nugent",
+            "startSeconds": 4078,
+            "title": "The Messiah (An Abacus Story) [Mixed]"
+          },
+          {
+            "artist": "Kölsch",
+            "startSeconds": 4243,
+            "title": "Der Alte (Mixed)"
+          },
+          {
+            "artist": "The Streets",
+            "startSeconds": 4454,
+            "title": "Turn the Page (Mixed)"
+          },
+          {
+            "artist": "Dennis Ferrer",
+            "startSeconds": 4572,
+            "title": "The Red Room (Obj Vocal Mix) [Mixed]"
+          },
+          {
+            "artist": "Kristin Velvet",
+            "startSeconds": 4920,
+            "title": "The Same Old Heart (Mixed)"
+          },
+          {
+            "artist": "Pitto",
+            "startSeconds": 5153,
+            "title": "You (Mixed)"
+          }
+        ],
         "title": "Seth Troxler at Circoloco Thailand (DJ Mix)",
         "url": "https://music.apple.com/album/1814380376"
       },
@@ -17,13 +142,38 @@
         "creator": "Seth Troxler",
         "djMix": false,
         "durationSeconds": 509,
+        "id": "1677680660",
         "inLibrary": false,
+        "recordLabel": "CircoLoco Records",
         "releasedAt": "2021-05-24",
+        "series": null,
         "songCount": 1,
+        "songs": [
+          {
+            "artist": "Seth Troxler",
+            "startSeconds": 0,
+            "title": "Lumartes (Extended)"
+          }
+        ],
         "title": "Lumartes (Extended) - Single",
         "url": "https://music.apple.com/album/1677680660"
       }
-    ]
+    ],
+    "groups": {
+      "djs": [
+        {
+          "albumCount": 1,
+          "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/16/8d/b9/168db9f1-c17d-20e3-49b2-5b8a6fd1d1f7/c9005a8d-8beb-4667-9b2b-9485bb32c50b.jpg/300x300bb.jpg",
+          "name": "Seth Troxler"
+        }
+      ],
+      "labels": [],
+      "series": []
+    },
+    "top": {
+      "kind": "dj",
+      "name": "Seth Troxler"
+    }
   },
   "audioGrant": {
     "url": "/sets/e712bcc8-3341-4098-aba4-63154c467c4c/audio?grant=sample"
@@ -73,8 +223,13 @@
     "social": false,
     "username": "host"
   },
-  "people": { "people": [] },
-  "socialFilters": { "appear": true, "see": true },
+  "people": {
+    "people": []
+  },
+  "socialFilters": {
+    "appear": true,
+    "see": true
+  },
   "playlist": {
     "createdAt": "2026-09-29T06:59:45.382Z",
     "id": "b31eb1ab-d124-45bb-858e-8592e9ec15a3",
@@ -100,7 +255,11 @@
         "name": "Contract playlist",
         "setCount": 49
       },
-      "state": { "kind": "running", "processed": 50, "total": 61 }
+      "state": {
+        "kind": "running",
+        "processed": 50,
+        "total": 61
+      }
     },
     {
       "id": "6f1d2c1e-6a51-4d55-9a4e-1f8f4f7d2b10",

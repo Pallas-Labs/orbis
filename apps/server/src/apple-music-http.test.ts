@@ -38,6 +38,14 @@ const failures = [
   "an album in the Person's Library is not marked, or a friend's Set marks it",
   "a Group without the key answers a search with anything but the not-set-up message",
   "Apple refusing a search fails with a 500 instead of asking to try again",
+  "a series search does not name its series as the Top Result, or a near match does",
+  "a group's count differs from the albums the search marks with it, or counts albums that are not DJ mixes",
+  "a narrowed search answers albums outside the group, other albums, or not newest first",
+  "a song's start is not the sum of the lengths before it, or the starts drift from the album's length",
+  "a song after one Apple gives no length for has a start",
+  "Various Artists is offered as a DJ",
+  "the same words, or words that differ only in case or spaces, ask Apple again within 10 minutes",
+  "a refused search is kept, so trying again cannot succeed",
 ];
 
 const record = async <Result>(name: string, result: Result) => {
@@ -51,7 +59,20 @@ const record = async <Result>(name: string, result: Result) => {
 interface Recording {
   readonly body: {
     readonly data?: {
-      readonly relationships: { readonly tracks: { readonly data: unknown[] } };
+      readonly id: string;
+      readonly relationships: {
+        readonly tracks: {
+          readonly data: {
+            readonly attributes?: {
+              readonly artistName?: string;
+              readonly durationInMillis?: number;
+              readonly name?: string;
+            };
+            readonly id?: string;
+            readonly type: string;
+          }[];
+        };
+      };
     }[];
     readonly results?: {
       readonly albums?: { readonly data: { readonly id: string }[] };
@@ -815,23 +836,58 @@ test("a Group without the MusicKit key saves the Set with failed metadata and ne
 interface FoundAlbum {
   readonly creator: string | null;
   readonly djMix: boolean;
+  readonly durationSeconds: number | null;
+  readonly id: string;
   readonly inLibrary: boolean;
+  readonly recordLabel: string | null;
+  readonly releasedAt: string | null;
+  readonly series: string | null;
+  readonly songCount: number;
+  readonly songs: {
+    readonly artist: string;
+    readonly startSeconds: number | null;
+    readonly title: string;
+  }[];
   readonly title: string;
   readonly url: string;
 }
+
+interface FoundGroup {
+  readonly albumCount: number;
+  readonly artworkUrl: string | null;
+  readonly name: string;
+}
+
+interface Answer {
+  readonly albums: FoundAlbum[];
+  readonly groups: {
+    readonly djs: FoundGroup[];
+    readonly labels: FoundGroup[];
+    readonly series: FoundGroup[];
+  };
+  readonly top: { readonly kind: string; readonly name: string } | null;
+}
+
+const answer = async (
+  server: Awaited<ReturnType<typeof start>>,
+  query: Record<string, string>,
+  headers?: Record<string, string>
+): Promise<Answer> => {
+  const url = `/apple-music/search?${new URLSearchParams(query)}`;
+  const response = await request(
+    server.app,
+    headers ? { headers, method: "GET", url } : { method: "GET", url }
+  );
+  expect(response.statusCode).toBe(200);
+  return response.json();
+};
 
 const search = async (
   server: Awaited<ReturnType<typeof start>>,
   words: string,
   headers?: Record<string, string>
 ) => {
-  const url = `/apple-music/search?q=${encodeURIComponent(words)}`;
-  const response = await request(
-    server.app,
-    headers ? { headers, method: "GET", url } : { method: "GET", url }
-  );
-  expect(response.statusCode).toBe(200);
-  const { albums }: { albums: FoundAlbum[] } = response.json();
+  const { albums } = await answer(server, { q: words }, headers);
   return albums;
 };
 
@@ -963,6 +1019,235 @@ test("a blank search is refused before Apple is asked, and a refused search asks
     expect(messageIn(limited)).toBe(
       "Apple Music is not answering. Try the search again."
     );
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("a series search names its series as the Top Result, and each group counts the DJ mixes the search marks with it", async () => {
+  const server = await start();
+  try {
+    const kicks = await answer(server, { q: "DJ-Kicks" });
+    expect(kicks.top).toEqual({ kind: "series", name: "DJ-Kicks" });
+    const marked = kicks.albums.filter((album) => album.series === "DJ-Kicks");
+    expect(
+      kicks.groups.series.find((group) => group.name === "DJ-Kicks")?.albumCount
+    ).toBe(marked.length);
+    // "DJ - Kicks: Djrum" is in the series; the studio "DJ - Kicks: Disclosure - EP" is no mix.
+    expect(marked.map(named)).toContain("DJ - Kicks: Djrum (DJ Mix) / Djrum");
+    expect(
+      kicks.albums.find(
+        (album) => album.title === "DJ - Kicks: Disclosure - EP"
+      )?.series
+    ).toBeNull();
+
+    const tops = new Map<string, Answer["top"]>();
+    const groups = new Map<string, Answer["groups"]>();
+    for (const [words] of EXPECTED_DJ_MIXES) {
+      // oxlint-disable-next-line no-await-in-loop -- Each search is checked on its own answer.
+      const found = await answer(server, { q: words });
+      const mixes = found.albums.filter((album) => album.djMix);
+      expect(found.albums.every((album) => album.djMix || !album.series)).toBe(
+        true
+      );
+      const kinds = [
+        [found.groups.djs, (album: FoundAlbum) => album.creator],
+        [found.groups.labels, (album: FoundAlbum) => album.recordLabel],
+        [found.groups.series, (album: FoundAlbum) => album.series],
+      ] as const;
+      for (const [list, nameOf] of kinds) {
+        for (const group of list) {
+          expect(
+            mixes.filter((album) => nameOf(album) === group.name).length
+          ).toBe(group.albumCount);
+        }
+      }
+      expect(
+        found.groups.djs.map((group) => group.name.toLowerCase())
+      ).not.toContain("various artists");
+      tops.set(words, found.top);
+      groups.set(words, found.groups);
+    }
+    // The check above is not empty: Essential Mix finds a Various Artists DJ mix.
+    const essential = await search(server, "Essential Mix");
+    expect(
+      essential.some(
+        (album) => album.djMix && album.creator === "Various Artists"
+      )
+    ).toBe(true);
+    expect(tops.get("Seth Troxler")).toEqual({
+      kind: "dj",
+      name: "Seth Troxler",
+    });
+    expect(tops.get("Radiohead")).toBeNull();
+    await record("search-groups", {
+      groups: Object.fromEntries(groups),
+      tops: Object.fromEntries(tops),
+    });
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("a search narrowed to a series, DJ, or label answers only that group's DJ mixes, newest first", async () => {
+  const server = await start();
+  try {
+    const whole = await answer(server, { q: "DJ-Kicks" });
+    const narrowed = await answer(server, {
+      q: "DJ-Kicks",
+      series: "DJ-Kicks",
+    });
+    const series = whole.groups.series.find(
+      (group) => group.name === "DJ-Kicks"
+    );
+    expect(narrowed.albums.length).toBe(series?.albumCount ?? -1);
+    expect(
+      narrowed.albums.every(
+        (album) => album.djMix && album.series === "DJ-Kicks"
+      )
+    ).toBe(true);
+    const released = narrowed.albums.map((album) => album.releasedAt ?? "");
+    const newestFirst = [...released];
+    newestFirst.sort((a, b) => b.localeCompare(a));
+    expect(released).toEqual(newestFirst);
+    expect(narrowed.groups).toEqual(whole.groups);
+    const blank = await answer(server, { q: "DJ-Kicks", series: " " });
+    expect(blank.albums).toEqual(whole.albums);
+    expect(narrowed.top).toEqual(whole.top);
+
+    const byLabel = await answer(server, {
+      label: "!k7 records",
+      q: "DJ-Kicks",
+    });
+    expect(byLabel.albums.length).toBe(
+      whole.groups.labels.find((group) => group.name === "!K7 Records")
+        ?.albumCount ?? -1
+    );
+    const byDj = await answer(server, {
+      creator: "Seth Troxler",
+      q: "Seth Troxler",
+    });
+    expect(byDj.albums.length).toBeGreaterThan(0);
+    expect(
+      byDj.albums.every(
+        (album) => album.djMix && album.creator === "Seth Troxler"
+      )
+    ).toBe(true);
+    await record("search-narrowed", {
+      byDj: byDj.albums.map(named),
+      byLabel: byLabel.albums.map(named),
+      series: narrowed.albums.map(
+        (album) => `${album.releasedAt} ${named(album)}`
+      ),
+    });
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("each found song starts at the sum of the song lengths before it, and the last song ends at the album's length", async () => {
+  const server = await start();
+  try {
+    const lengths = new Map(
+      [...recordings.values()].flatMap((recording) =>
+        (recording.body.data ?? []).map(
+          (album) =>
+            [
+              album.id,
+              album.relationships.tracks.data
+                .filter((track) => track.type === "songs")
+                .map((track) =>
+                  track.attributes?.durationInMillis === undefined
+                    ? null
+                    : track.attributes.durationInMillis / 1000
+                ),
+            ] as const
+        )
+      )
+    );
+    let checked = 0;
+    let unknown = 0;
+    for (const [words] of EXPECTED_DJ_MIXES) {
+      // oxlint-disable-next-line no-await-in-loop -- Each search is checked on its own answer.
+      for (const album of await search(server, words)) {
+        const songLengths = lengths.get(album.id) ?? [];
+        expect(album.songs.length).toBe(album.songCount);
+        expect(album.songs.length).toBe(songLengths.length);
+        let before: number | null = 0;
+        for (const [index, song] of album.songs.entries()) {
+          expect(song.startSeconds).toBe(
+            before === null ? null : Math.round(before)
+          );
+          const length = songLengths[index] ?? null;
+          before = before === null || length === null ? null : before + length;
+        }
+        if (before === null) {
+          unknown += 1;
+          expect(album.durationSeconds).toBeNull();
+        } else {
+          const last = album.songs.at(-1)?.startSeconds ?? 0;
+          const lastLength = songLengths.at(-1) ?? 0;
+          expect(
+            Math.abs(last + lastLength - (album.durationSeconds ?? 0))
+          ).toBeLessThan(1);
+          expect(Math.round(before)).toBe(album.durationSeconds ?? -1);
+        }
+        checked += 1;
+      }
+    }
+    // Essential Mix finds albums Apple gives a song no length for.
+    expect(unknown).toBeGreaterThan(0);
+    const troxlers = await search(server, "Seth Troxler");
+    const troxler = troxlers.find((album) => album.url === ALBUM_URL);
+    expect(
+      troxler?.songs.map(({ artist, startSeconds, title }) => ({
+        artist,
+        startSeconds,
+        title,
+      }))
+    ).toEqual(
+      EXPECTED_CUES.map(({ artist, startSeconds, title }) => ({
+        artist,
+        startSeconds,
+        title,
+      }))
+    );
+    await record("search-song-starts", {
+      albums: checked,
+      withoutLength: unknown,
+    });
+  } finally {
+    await server.dispose();
+  }
+});
+
+test("the same words within 10 minutes, or words that differ only in case or spaces, ask Apple once", async () => {
+  const server = await start();
+  try {
+    await search(server, "DJ-Kicks");
+    const asked = server.reads.length;
+    expect(asked).toBe(3);
+    await search(server, "DJ-Kicks");
+    await search(server, "  dj-kicks ");
+    await search(server, "DJ-KICKS");
+    await answer(server, { q: "dj-Kicks", series: "DJ-Kicks" });
+    expect(server.reads.length).toBe(asked);
+    await search(server, "Carl Cox");
+    expect(server.reads.length).toBe(asked + 3);
+
+    // A refused search is not kept: once Apple answers again, the same words find albums.
+    server.answer("rate-limit");
+    const limited = await request(server.app, {
+      method: "GET",
+      url: "/apple-music/search?q=Defected",
+    });
+    expect(limited.statusCode).toBe(503);
+    server.answer("recorded");
+    const defected = await search(server, "Defected");
+    expect(defected.length).toBeGreaterThan(0);
+    await record("search-kept", {
+      reads: server.reads.map((read) => read.url),
+    });
   } finally {
     await server.dispose();
   }

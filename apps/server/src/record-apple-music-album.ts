@@ -1,5 +1,5 @@
 /* oxlint-disable no-await-in-loop -- Apple answers 429 to a burst of reads, so they go one at a time. */
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 
@@ -46,10 +46,15 @@ const slug = (words: string) =>
  *
  *   bun run record:apple-music [album id...]
  *   bun run record:apple-music --search [words...]
+ *   bun run record:apple-music --albums
+ *
+ * `--albums` reads again only the albums of each search already recorded, so the albums gain the
+ * fields a search now reads while the recorded searches, and the tests' expected results, stay.
  */
 const main = async () => {
   const [first, ...rest] = process.argv.slice(2);
   const searching = first === "--search";
+  const albumsOnly = first === "--albums";
   const keyId = process.env.APPLE_MUSIC_KEY_ID ?? "R94UBZ4H8M";
   const teamId = process.env.APPLE_MUSIC_TEAM_ID ?? "JR398S689Z";
   const keyPath =
@@ -86,6 +91,31 @@ const main = async () => {
     console.log(`${response.status} ${url} -> ${path.relative(".", file)}`);
     return text;
   };
+
+  if (albumsOnly) {
+    const recorded = await readdir(FIXTURES);
+    for (const albumsName of recorded.filter((name) =>
+      name.endsWith("-albums.json")
+    )) {
+      const name = albumsName.replace(/-albums\.json$/u, "");
+      const found = await Promise.all(
+        [`${name}.json`, `${name}-dj-mix.json`].map(async (file) =>
+          decodeSearch(
+            JSON.parse(await readFile(path.join(FIXTURES, file), "utf-8")).body
+          )
+        )
+      );
+      if (
+        (await record(
+          appleMusicAlbumsRead(mergedAlbumIds(found)),
+          `${name}-albums`
+        )) === null
+      ) {
+        return 1;
+      }
+    }
+    return 0;
+  }
 
   if (!searching) {
     const albumIds = first ? [first, ...rest] : DEFAULT_ALBUM_IDS;
