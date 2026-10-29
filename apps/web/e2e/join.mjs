@@ -16,6 +16,7 @@ import {
   VALID_GROUP_PASSCODE,
   boxedCode,
   keyRecord,
+  signInWithKey,
   storedKey,
   textOf,
   waitFor,
@@ -227,6 +228,27 @@ try {
     await late.screenshot({ path: path.join(artifacts, "join-old-link.png") });
     await stranger.close();
     step("after a new passcode, the old link says it no longer works");
+
+    // (d) A signed-in browser gets no join form, so it keeps its Person's key.
+    const member = await browser.newContext();
+    const signedIn = await member.newPage();
+    await signInWithKey(signedIn, webUrl, hostKey);
+    await openLink(signedIn, replaced);
+    await signedIn
+      .getByText("You are already signed in as host.", { exact: true })
+      .waitFor();
+    assert.equal(signedIn.url(), `${webUrl}/join`);
+    assert.equal(
+      await signedIn.getByRole("form", { name: "Join on the web" }).count(),
+      0,
+      "a signed-in browser gets no join form"
+    );
+    assert.equal(await storedKey(signedIn), hostKey);
+    await signedIn.screenshot({
+      path: path.join(artifacts, "join-signed-in.png"),
+    });
+    await member.close();
+    step("a signed-in browser is told so and keeps its key");
 
     assert.deepEqual(violations, []);
     step("no Content Security Policy violations");
