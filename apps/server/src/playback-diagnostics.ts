@@ -1,3 +1,4 @@
+import { playbackLosses } from "@orbis/contracts/http-api";
 import type { PlaybackDiagnosticsPayload } from "@orbis/contracts/http-api";
 import { Schema } from "effect";
 
@@ -236,18 +237,19 @@ const logsFor = (batch: PlaybackDiagnosticsPayload, environment: string) => {
       timeUnixNano: nanoTime(entry.wallTime),
     };
   });
-  const missing =
-    batch.throughSequence - batch.afterSequence - batch.entries.length;
-  if (missing > 0) {
+  for (const loss of playbackLosses(batch)) {
     logs.push({
       attributes: [
         ...shared,
         text("event.name", "playback.loss"),
-        integer("playback.unacknowledged_count", missing),
-        integer("playback.after_sequence", batch.afterSequence),
-        integer("playback.through_sequence", batch.throughSequence),
+        integer(
+          "playback.lost_count",
+          loss.throughSequence - loss.afterSequence
+        ),
+        integer("playback.after_sequence", loss.afterSequence),
+        integer("playback.through_sequence", loss.throughSequence),
       ],
-      body: { stringValue: "Unacknowledged playback history" },
+      body: { stringValue: "Playback history the app could not deliver" },
       severityNumber: 13,
       severityText: "WARN",
       timeUnixNano: nanoTime(batch.entries.at(-1)?.wallTime ?? Date.now()),
@@ -424,11 +426,7 @@ export const makePlaybackDiagnosticsRelay = (
       } catch {
         return refused();
       }
-      const total =
-        batch.entries.length +
-        (batch.throughSequence - batch.afterSequence > batch.entries.length
-          ? 1
-          : 0);
+      const total = batch.entries.length + playbackLosses(batch).length;
       if (!Number.isSafeInteger(rejected) || rejected < 0 || rejected > total) {
         return refused();
       }

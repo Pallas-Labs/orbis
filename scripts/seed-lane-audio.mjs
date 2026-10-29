@@ -11,7 +11,10 @@ import { createServer } from "node:http";
 import path from "node:path";
 import { Readable } from "node:stream";
 
-import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playback-diagnostics.js";
+import {
+  decodePlaybackDiagnosticsBatch,
+  playbackLosses,
+} from "../packages/contracts/dist/playback-diagnostics.js";
 
 const [dataDirectory, fixture, port] = process.argv.slice(2);
 if (!dataDirectory || !fixture || !port) {
@@ -245,19 +248,41 @@ const handleStream = (route, request, response) => {
   return false;
 };
 
-let diagnostics = {
+// `fault` misbehaves the way a phone's connection can: `close-before-body` drops the socket
+// before reading the batch, and `close-after-body` keeps the batch, as the collector would,
+// then drops the socket without a response. `times` limits the fault, status, retry-after,
+// and hold to the first requests; later requests get 200. `delivered` and `lost` are what
+// the relay would write to SigNoz: every entry of a kept batch and its loss ranges.
+const freshDiagnostics = (control = {}) => ({
   bodies: [],
-  held: false,
+  delivered: [],
+  fault: control.fault ?? null,
+  held: control.held ?? false,
+  lost: [],
   requests: 0,
-  retryAfter: null,
-  status: 200,
+  retryAfter: control.retryAfter ?? null,
+  status: control.status ?? 200,
+  times: control.times ?? Number.POSITIVE_INFINITY,
   waiting: new Set(),
+});
+let diagnostics = freshDiagnostics();
+
+const keep = (state, body) => {
+  for (const entry of body.entries) {
+    state.delivered.push({
+      event: Object.keys(entry.event)[0],
+      sequence: entry.sequence,
+    });
+  }
+  state.lost.push(...playbackLosses(body));
 };
 
 const diagnosticsRequest = async (route, request, response) => {
   if (route === "/diagnostics-state") {
     respond(response, 200, {
       bodies: diagnostics.bodies,
+      delivered: diagnostics.delivered,
+      lost: diagnostics.lost,
       requests: diagnostics.requests,
       waiting: diagnostics.waiting.size,
     });
@@ -268,14 +293,7 @@ const diagnosticsRequest = async (route, request, response) => {
     for (const pending of diagnostics.waiting) {
       pending.end();
     }
-    diagnostics = {
-      bodies: [],
-      held: control.held,
-      requests: 0,
-      retryAfter: control.retryAfter ?? null,
-      status: control.status,
-      waiting: new Set(),
-    };
+    diagnostics = freshDiagnostics(control);
     respond(response, 204);
     return true;
   }
@@ -287,6 +305,12 @@ const diagnosticsRequest = async (route, request, response) => {
     return true;
   }
   const state = diagnostics;
+  const faulted = state.requests < state.times;
+  if (faulted && state.fault === "close-before-body") {
+    state.requests += 1;
+    request.socket.destroy();
+    return true;
+  }
   const body = decodePlaybackDiagnosticsBatch(
     await new Response(Readable.toWeb(request)).json()
   );
@@ -294,15 +318,24 @@ const diagnosticsRequest = async (route, request, response) => {
   if (state.bodies.length < 32) {
     state.bodies.push(body);
   }
-  if (state.held) {
+  if (faulted && state.fault === "close-after-body") {
+    keep(state, body);
+    request.socket.destroy();
+    return true;
+  }
+  if (faulted && state.held) {
     state.waiting.add(response);
     response.once("close", () => state.waiting.delete(response));
     return true;
   }
-  if (state.retryAfter) {
+  const status = faulted ? state.status : 200;
+  if (faulted && state.retryAfter) {
     response.setHeader("Retry-After", state.retryAfter);
   }
-  respond(response, state.status, {
+  if (status === 200) {
+    keep(state, body);
+  }
+  respond(response, status, {
     accepted: Math.max(0, body.entries.length - 1),
     rejected: Math.min(1, body.entries.length),
   });

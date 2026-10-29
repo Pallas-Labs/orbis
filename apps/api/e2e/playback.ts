@@ -21,6 +21,10 @@ const collector = Bun.serve({
     if (new URL(request.url).pathname === "/v1/logs") {
       return Response.json({});
     }
+    // A local tool (T3's port scan) can GET any new port; the relay only POSTs.
+    if (request.method !== "POST") {
+      return new Response(null, { status: 404 });
+    }
     assert.equal(request.headers.get("user-agent"), "Orbis-Playback-Relay/1");
     assert.equal(request.headers.get("cf-access-client-id"), "fixture-id");
     assert.equal(

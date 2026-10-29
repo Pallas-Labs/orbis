@@ -14,11 +14,15 @@ import {
 } from "./playback-diagnostics.js";
 import type { SetCaller } from "./set-caller.js";
 
-export type { PlaybackDiagnosticsPayload } from "./playback-diagnostics.js";
+export type {
+  PlaybackDiagnosticsPayload,
+  PlaybackLoss,
+} from "./playback-diagnostics.js";
 export {
   decodePlaybackDiagnosticsBatch,
   PlaybackDiagnosticsBatch,
   PlaybackDiagnosticsReceipt,
+  playbackLosses,
 } from "./playback-diagnostics.js";
 
 export { SetCaller } from "./set-caller.js";
