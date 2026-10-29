@@ -67,6 +67,14 @@ struct SignInView: View {
         }
       }
     }
+    // A Join Link opens Join Your Group with its passcode in place, and going back leaves the
+    // link behind, so the form asks for the passcode again.
+    .onChange(of: model.joinPasscode, initial: true) { _, passcode in
+      if passcode != nil { choice = .join }
+    }
+    .onChange(of: choice) { _, choice in
+      if choice != .join { model.joinPasscode = nil }
+    }
     // The splash is dark, so the page it hands over to is dark too: a light page here flashed
     // white as the splash faded.
     .preferredColorScheme(.dark)
@@ -146,7 +154,10 @@ struct JoinForm: View {
     case passcode
   }
 
-  private var isPasscodeFull: Bool { passcode.count == CodeFormat.groupPasscode.length }
+  /// The passcode a Join Link carried, which the form holds out of sight, or the one typed.
+  private var joining: String { model.joinPasscode ?? passcode }
+
+  private var isPasscodeFull: Bool { joining.count == CodeFormat.groupPasscode.length }
 
   private var canJoin: Bool {
     !username.isEmpty && isPasscodeFull && !model.isSigningIn
@@ -171,18 +182,16 @@ struct JoinForm: View {
             .multilineTextAlignment(.trailing)
             .accessibilityIdentifier("signin-username")
         }
+      } footer: {
+        if model.joinPasscode != nil {
+          Text("Your invite link has the Group Passcode. Choose a username to join.")
+        }
       }
-      Section("Group Passcode") {
-        // A generated code the Host shares, so it is shown as typed or pasted, like a
-        // Sign-in Code, rather than hidden like a password.
-        CodeField(
-          "Group Passcode", code: $passcode, format: .groupPasscode, focus: $focus,
-          equals: .passcode, isRefused: model.isCodeRefused, submit: passcodeFilled
-        )
-        .accessibilityIdentifier("signin-passcode")
-        .codeRow()
+      if model.joinPasscode != nil {
+        // The link's passcode has no field to show a refusal under, so the line sits here.
         RefusedCodeLine(message: model.refusedCode)
-        CodePasteButton(code: $passcode, format: .groupPasscode, identifier: "signin-passcode-paste")
+      } else {
+        passcodeSection
       }
       SignInFailureSection(failure: model.signInFailure)
     }
@@ -193,6 +202,21 @@ struct JoinForm: View {
       SignInSubmit(
         title: "Join", isWorking: model.isSigningIn, isEnabled: canJoin,
         identifier: "signin-join", action: join)
+    }
+  }
+
+  private var passcodeSection: some View {
+    Section("Group Passcode") {
+      // A generated code the Host shares, so it is shown as typed or pasted, like a
+      // Sign-in Code, rather than hidden like a password.
+      CodeField(
+        "Group Passcode", code: $passcode, format: .groupPasscode, focus: $focus,
+        equals: .passcode, isRefused: model.isCodeRefused, submit: passcodeFilled
+      )
+      .accessibilityIdentifier("signin-passcode")
+      .codeRow()
+      RefusedCodeLine(message: model.refusedCode)
+      CodePasteButton(code: $passcode, format: .groupPasscode, identifier: "signin-passcode-paste")
     }
   }
 
@@ -208,7 +232,7 @@ struct JoinForm: View {
 
   private func join() {
     guard canJoin else { return }
-    Task { await model.signIn(.join(username: username, passcode: passcode)) }
+    Task { await model.signIn(.join(username: username, passcode: joining)) }
   }
 }
 

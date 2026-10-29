@@ -41,21 +41,24 @@ const Slots = ({
  * alphabet never enter, lower case becomes capitals, and a pasted `abcd-efgh`
  * or link fills every slot, even when the slots already hold a code.
  * `onComplete` runs when the last slot fills or a whole new code is pasted.
+ * `initialCode` fills the slots when the field first appears.
  */
 export const CodeField = ({
   format,
   id,
+  initialCode = "",
   label,
   name,
   onComplete,
 }: {
   readonly format: CodeFormat;
   readonly id: string;
+  readonly initialCode?: string | undefined;
   readonly label: string;
   readonly name: string;
   readonly onComplete: () => void;
 }) => {
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(() => codeFromText(format, initialCode));
   // input-otp pastes at the selection, which is the last slot of a full field,
   // so a whole pasted code is kept here and replaces the field.
   const pastedCode = useRef<string | null>(null);

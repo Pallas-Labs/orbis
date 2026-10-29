@@ -19,6 +19,7 @@ import {
 import { ageText } from "@/lib/dates";
 import { approveSignInRequest, findSignInRequest } from "@/lib/devices";
 import type { ApprovalRequest } from "@/lib/devices";
+import { takeFragment } from "@/lib/fragment";
 import { fetchMe, problemFor } from "@/lib/orbis";
 import type { ApiResult, Credentials, Person } from "@/lib/orbis";
 import { forgetKey, readKey } from "@/lib/stored-key";
@@ -73,17 +74,9 @@ const refused = (
     : { kind: "failed", lookup, message: problemFor(result) };
 };
 
-/**
- * The Approval Code rides in the fragment, which the browser never sends to the
- * Worker. Reading it also takes it out of the address bar and this history entry.
- */
+/** The Approval Code the link's fragment carried, which `takeFragment` removes. */
 const takeCode = (): string | null => {
-  const code = window.location.hash.slice(1);
-  window.history.replaceState(
-    window.history.state,
-    "",
-    window.location.pathname
-  );
+  const code = takeFragment();
   return /^\d{6}$/u.test(code) ? code : null;
 };
 

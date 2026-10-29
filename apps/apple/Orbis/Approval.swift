@@ -7,19 +7,25 @@ import OrbisDesign
 nonisolated enum ApprovalLink {
   static let host = "orbis.p11a.xyz"
 
-  /// The Approval Code a link carries, or nil for any other address.
-  static func code(in url: URL) -> String? {
+  /// The fragment of `https://orbis.p11a.xyz/<path>#…` or `orbis://<path>#…`, or nil for any
+  /// other address.
+  static func fragment(of url: URL, path: String) -> String? {
     switch url.scheme?.lowercased() {
     case "https":
       guard url.host()?.lowercased() == host,
-        url.pathComponents.filter({ $0 != "/" }) == ["pair"]
+        url.pathComponents.filter({ $0 != "/" }) == [path]
       else { return nil }
     case "orbis":
-      guard url.host() == "pair", url.path().isEmpty else { return nil }
+      guard url.host() == path, url.path().isEmpty else { return nil }
     default:
       return nil
     }
-    guard let fragment = url.fragment(percentEncoded: false) else { return nil }
+    return url.fragment(percentEncoded: false)
+  }
+
+  /// The Approval Code a link carries, or nil for any other address.
+  static func code(in url: URL) -> String? {
+    guard let fragment = fragment(of: url, path: "pair") else { return nil }
     let code = fragment.filter { $0 != " " }
     guard code.wholeMatch(of: /[0-9]{6}/) != nil else { return nil }
     return code
@@ -28,6 +34,40 @@ nonisolated enum ApprovalLink {
   /// `482719` as `482 719`, the way the TV shows it.
   static func formatted(_ code: String) -> String {
     code.count == 6 ? "\(code.prefix(3)) \(code.suffix(3))" : code
+  }
+}
+
+/// The link a Host shares to invite a friend, `https://orbis.p11a.xyz/join#<Group Passcode>`
+/// (PAL-1005 §2.3), and the `orbis://join#<passcode>` form the lane opens. The passcode rides in
+/// the fragment, so no browser sends it to a server.
+nonisolated enum JoinLink {
+  static let host = ApprovalLink.host
+
+  /// The link to share for a passcode.
+  static func url(forPasscode passcode: String) -> URL {
+    URL(string: "https://\(host)/join#\(passcode)")!
+  }
+
+  /// The text "Invite a Friend" shares: the TestFlight step first, because the link only opens
+  /// Orbis once it is installed, then the link.
+  static func invitation(passcode: String) -> String {
+    """
+    Join me on Orbis.
+
+    1. On your iPhone, open the TestFlight email from Apple and install Orbis.
+    2. Then tap this link: \(url(forPasscode: passcode).absoluteString)
+    """
+  }
+
+  /// The Group Passcode a link carries, in capitals, or nil for any other address.
+  static func passcode(in url: URL) -> String? {
+    guard let fragment = ApprovalLink.fragment(of: url, path: "join") else { return nil }
+    let format = CodeFormat.groupPasscode
+    // Every character must belong to the passcode: a dropped 0 or O would join with a passcode
+    // the Host never shared.
+    let kept = fragment.uppercased().filter { $0 != "-" && $0 != " " }
+    guard kept.count == format.length, kept.allSatisfy(format.alphabet.contains) else { return nil }
+    return kept
   }
 }
 

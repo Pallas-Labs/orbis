@@ -326,14 +326,19 @@ final class SignInUITests: XCTestCase {
     XCTAssertNotNil(
       shown.label.range(of: Self.passcodePattern, options: .regularExpression),
       "the passcode is 12 characters without look-alikes or dashes: \(shown.label)")
-    XCTAssertTrue(app.buttons["settings-passcode-share"].exists, "the passcode can be shared")
+    let invite = app.buttons["settings-invite"]
+    XCTAssertTrue(invite.exists, "an open Group invites with a Join Link\n\(app.debugDescription)")
+    XCTAssertEqual(invite.label, "Invite a Friend")
+    XCTAssertFalse(app.buttons["settings-passcode-share"].exists, "Invite a Friend replaces Share Passcode")
     let copy = app.buttons["settings-passcode-copy"]
     XCTAssertTrue(copy.exists, "the passcode can be copied\n\(app.debugDescription)")
     copy.tap()
     XCTAssertTrue(
       waitUntil(timeout: 5) { copy.label == "Copied" }, "copying says so: \(copy.label)")
     capture("01-host-settings")
-    step("the Host's Settings shows the generated passcode and copies it", ["passcode": before])
+    step(
+      "the Host's Settings shows the generated passcode, copies it, and offers Invite a Friend",
+      ["passcode": before])
 
     let renew = app.buttons["settings-passcode-new"]
     reveal(renew, in: app)
@@ -407,6 +412,74 @@ final class SignInUITests: XCTestCase {
     step("turning joining on makes a new passcode at once", ["passcode": reopened ?? ""])
     app.terminate()
     record("host")
+  }
+
+  /// A fresh install opens a Join Link (PAL-1005 §2.3). A link to a passcode the Host replaced
+  /// says it no longer works once Join is tapped, because no route checks a passcode on its own.
+  /// The current link opens Join Your Group with only a Username field, and Join reaches the
+  /// welcome. A signed-in app that opens a link says who it is signed in as.
+  func testAJoinLinkAsksOnlyForAUsername() throws {
+    let host = try LaneService()
+    let old = try host.newPasscode()
+    let passcode = try host.newPasscode()
+    let username = "journey-link-\(Self.suffix())"
+    let app = launchOrbis(address: host.address)
+    XCTAssertTrue(app.buttons["signin-new"].waitForExistence(timeout: 30), "the app must open signed out")
+
+    app.open(try Self.joinLink(old))
+    let usernameField = app.textFields["signin-username"]
+    XCTAssertTrue(
+      usernameField.waitForExistence(timeout: 15),
+      "a Join Link opens Join Your Group\n\(app.debugDescription)")
+    usernameField.tap()
+    usernameField.typeText("journey-late-\(Self.suffix())")
+    app.buttons["signin-join"].tap()
+    let error = app.staticTexts["signin-error"]
+    XCTAssertTrue(
+      error.waitForExistence(timeout: 30), "the old link is refused after Join\n\(app.debugDescription)")
+    XCTAssertEqual(error.label, "This invite link no longer works. Ask your Host for a new one.")
+    capture("09-join-link-old")
+    step("an old Join Link says it no longer works after Join", ["message": error.label])
+
+    app.open(try Self.joinLink(passcode))
+    XCTAssertTrue(
+      usernameField.waitForExistence(timeout: 15),
+      "the Join Link opens Join Your Group\n\(app.debugDescription)")
+    XCTAssertFalse(app.textFields["signin-passcode"].exists, "the link's passcode has no field")
+    XCTAssertFalse(app.buttons["signin-passcode-paste"].exists, "and no Paste button")
+    XCTAssertFalse(app.staticTexts["signin-error"].exists, "a new link starts with no refusal")
+    capture("10-join-link-form")
+    step("a Join Link opens Join Your Group with only a Username field")
+
+    usernameField.tap()
+    usernameField.typeText(username)
+    app.buttons["signin-join"].tap()
+    let welcome = app.descendants(matching: .any)["signin-welcome"]
+    XCTAssertTrue(
+      welcome.waitForExistence(timeout: 30), "joining from the link greets the new Person\n\(app.debugDescription)")
+    capture("11-join-link-welcome")
+    XCTAssertTrue(
+      app.tabBars.buttons["Library"].waitForExistence(timeout: 30),
+      "the welcome hands over to the library\n\(app.debugDescription)")
+    XCTAssertTrue(try host.people().contains { $0.username == username }, "the Host's People list the new Person")
+    step("Join from the link reaches the welcome and the library", ["username": username])
+    app.terminate()
+
+    let signedIn = launchOrbis(address: host.address, token: host.token)
+    XCTAssertTrue(
+      signedIn.tabBars.buttons["Home"].waitForExistence(timeout: 60),
+      "the app must open signed in\n\(signedIn.debugDescription)")
+    signedIn.open(try Self.joinLink(passcode))
+    let notice = signedIn.alerts.staticTexts["You are already signed in as \(try host.me().username)."]
+    XCTAssertTrue(
+      notice.waitForExistence(timeout: 30),
+      "a signed-in app says who it is signed in as\n\(signedIn.debugDescription)")
+    capture("12-join-link-signed-in")
+    signedIn.alerts.buttons["OK"].tap()
+    XCTAssertTrue(signedIn.tabBars.buttons["Home"].waitForExistence(timeout: 10), "OK leaves the app as it was")
+    step("a signed-in app that opens a Join Link says who it is signed in as")
+    signedIn.terminate()
+    record("join-link")
   }
 
   /// A friend's Auto Download shows what the service stores, a change follows them across a
@@ -566,6 +639,11 @@ final class SignInUITests: XCTestCase {
       usleep(250_000)
     } while Date() < deadline
     return try condition()
+  }
+
+  /// The `orbis://` form, because a simulator cannot verify the orbis.p11a.xyz domain.
+  private static func joinLink(_ passcode: String) throws -> URL {
+    try XCTUnwrap(URL(string: "orbis://join#\(passcode)"))
   }
 
   private static func suffix() -> String {

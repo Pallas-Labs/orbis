@@ -48,6 +48,11 @@ final class AppModel {
 
   /// Another device this Person was asked to approve (ADR 0022), from a link or a typed code.
   var approval: Approval?
+  /// The Group Passcode a Join Link carried to this signed-out device. Join Your Group holds it
+  /// and asks only for a username.
+  var joinPasscode: String?
+  /// What a link could not do on this device, said once over whatever is on screen.
+  var linkNotice: String?
 
   var library: Loadable<[SavedSet]> = .idle {
     didSet {
@@ -466,7 +471,7 @@ final class AppModel {
         greeting = "Signed in as \(username)"
       }
     } catch {
-      if let refused = Self.refusal(of: request, error) {
+      if let refused = refusal(of: request, error) {
         refusedCode = refused
       } else {
         signInFailure = OrbisFailure.explaining(error, at: serviceAddress)
@@ -478,6 +483,7 @@ final class AppModel {
       return
     }
     welcome = greeting
+    joinPasscode = nil
     client = OrbisClient(address: serviceAddress, token: key, session: session)
     startDiagnosticsSender()
     // A link that arrived while signed out is shown now, if its request is still live.
@@ -493,10 +499,13 @@ final class AppModel {
   /// The line to show when the service refused the code itself: 404 for a Sign-in Code it does
   /// not hold, 403 for a passcode that is wrong or that a closed Group no longer takes. Anything
   /// else is not the code's fault.
-  private static func refusal(of request: SignIn, _ error: any Error) -> String? {
+  private func refusal(of request: SignIn, _ error: any Error) -> String? {
     guard case .server(let status, _) = error as? OrbisError else { return nil }
     switch (request, status) {
     case (.code, 404): return "That code didn't work. Ask for a new one."
+    case (.join(_, let passcode), 403) where passcode == joinPasscode:
+      // The service says no more about the passcode than that it does not open the Group.
+      return "This invite link no longer works. Ask your Host for a new one."
     case (.join, 403): return "Wrong passcode. Ask your Host for a new one."
     default: return nil
     }
@@ -554,6 +563,7 @@ final class AppModel {
     refusedCode = nil
     isShowingSettings = false
     approval = nil
+    linkNotice = nil
     // The next sign-in starts on Home, so the first Set opened lands in the stack on screen.
     destination = .home
     library = .idle
@@ -1811,14 +1821,32 @@ final class AppModel {
 
   var openedLink: OpenedLink?
 
-  /// Opens a link the system handed the app: an Approval link or an Orbis Link. Any other address
-  /// is ignored.
+  /// Opens a link the system handed the app: an Approval link, an Orbis Link, or a Join Link. Any
+  /// other address is ignored.
   func open(_ url: URL) async {
     if let code = ApprovalLink.code(in: url) {
       await openApproval(code)
     } else if let id = OrbisLink.setId(in: url) {
       await openLinkedSet(id)
+    } else if let passcode = JoinLink.passcode(in: url) {
+      await openJoinLink(passcode)
     }
+  }
+
+  // MARK: - A Join Link
+
+  /// A signed-out device opens Join Your Group with the link's passcode in place, so the
+  /// username is all it asks for. A signed-in one has no one to join as, and says who it is.
+  private func openJoinLink(_ passcode: String) async {
+    guard let client else {
+      signInFailure = nil
+      refusedCode = nil
+      joinPasscode = passcode
+      return
+    }
+    let username = try? await client.me().username
+    guard self.client?.token == client.token else { return }
+    linkNotice = username.map { "You are already signed in as \($0)." } ?? "You are already signed in."
   }
 
   /// Opens the Set an Orbis Link names. A Set in the Library opens its own page. Whether it is in
