@@ -79,21 +79,54 @@ export const TracklistSchema = Schema.Struct({
   cues: Schema.Array(CueSchema),
   state: SavedSetSchema.fields.tracklistState,
 });
+/** A song on a found album, starting where the lengths before it add up to, as its Cue will. */
+export const AppleMusicSongSchema = Schema.Struct({
+  artist: Schema.String,
+  startSeconds: CueSchema.fields.startSeconds,
+  title: Schema.String,
+});
 /** An album an Apple Music search found, ready to save by its Source Link (ADR 0021). */
 export const AppleMusicAlbumSchema = Schema.Struct({
   artworkUrl: Schema.NullOr(Schema.String),
   creator: Schema.NullOr(Schema.String),
   djMix: Schema.Boolean,
   durationSeconds: Schema.NullOr(Schema.Number),
+  /** Apple's catalog id for the album. */
+  id: Schema.String,
   inLibrary: Schema.Boolean,
+  recordLabel: Schema.NullOr(Schema.String),
   releasedAt: Schema.NullOr(Schema.String),
+  /** The known mix series a DJ mix belongs to; null for other albums. */
+  series: Schema.NullOr(Schema.String),
   songCount: Schema.Number,
+  songs: Schema.Array(AppleMusicSongSchema),
   title: Schema.String,
   url: Schema.String,
 });
-/** DJ mixes first, then other albums, each group in Apple's order. */
+/** A mix series, DJ, or label among the found DJ mixes. */
+export const AppleMusicGroupSchema = Schema.Struct({
+  albumCount: Schema.Number,
+  /** The Artwork of the group's first mix in Apple's order. */
+  artworkUrl: Schema.NullOr(Schema.String),
+  name: Schema.String,
+});
+export const AppleMusicGroupKind = Schema.Literals(["series", "dj", "label"]);
+/**
+ * DJ mixes first, then other albums, each in Apple's order. A search narrowed to one group answers
+ * only that group's DJ mixes, newest first. `groups` and `top` always describe the whole search:
+ * each group list is built from the DJ mixes, largest first, and `top` names the group whose name
+ * is the words, if any.
+ */
 export const AppleMusicSearchSchema = Schema.Struct({
   albums: Schema.Array(AppleMusicAlbumSchema),
+  groups: Schema.Struct({
+    djs: Schema.Array(AppleMusicGroupSchema),
+    labels: Schema.Array(AppleMusicGroupSchema),
+    series: Schema.Array(AppleMusicGroupSchema),
+  }),
+  top: Schema.NullOr(
+    Schema.Struct({ kind: AppleMusicGroupKind, name: Schema.String })
+  ),
 });
 /**
  * What anyone holding an Orbis Link sees: the Set's shared facts only (ADR 0023).
@@ -572,12 +605,18 @@ export const SetsApi = HttpApi.make("orbis").add(
     .middleware(SetAccess)
 );
 
+const AppleMusicWords = Schema.String.check(Schema.isMaxLength(200));
 const AppleMusicApi = SetsApi.add(
   HttpApiGroup.make("appleMusic")
     .add(
       HttpApiEndpoint.get("search", "/apple-music/search", {
         error: [BadRequest, ServiceUnavailable, InternalError],
-        query: { q: Schema.String.check(Schema.isMaxLength(200)) },
+        query: {
+          creator: Schema.optionalKey(AppleMusicWords),
+          label: Schema.optionalKey(AppleMusicWords),
+          q: AppleMusicWords,
+          series: Schema.optionalKey(AppleMusicWords),
+        },
         success: AppleMusicSearchSchema,
       })
     )

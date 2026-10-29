@@ -24,6 +24,7 @@
           },
           "isSingle": false,
           "name": "OK Computer",
+          "recordLabel": "XL Recordings",
           "releaseDate": "1997-05-21"
         },
         "relationships": {
@@ -44,13 +45,18 @@
                 "id": "1097861769",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861769",
-                "attributes": { "durationInMillis": 287880, "name": "Airbag" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 287880,
+                  "name": "Airbag"
+                }
               },
               {
                 "id": "1097861770",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861770",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 387213,
                   "name": "Paranoid Android"
                 }
@@ -60,6 +66,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861832",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 267693,
                   "name": "Subterranean Homesick Alien"
                 }
@@ -69,6 +76,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861833",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 267187,
                   "name": "Exit Music (For a Film)"
                 }
@@ -77,13 +85,18 @@
                 "id": "1097861834",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861834",
-                "attributes": { "durationInMillis": 299560, "name": "Let Down" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 299560,
+                  "name": "Let Down"
+                }
               },
               {
                 "id": "1097861836",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861836",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 264067,
                   "name": "Karma Police"
                 }
@@ -93,6 +106,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861838",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 117333,
                   "name": "Fitter Happier"
                 }
@@ -102,6 +116,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861839",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 230627,
                   "name": "Electioneering"
                 }
@@ -111,6 +126,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861841",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 285200,
                   "name": "Climbing Up the Walls"
                 }
@@ -120,6 +136,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861842",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 229120,
                   "name": "No Surprises"
                 }
@@ -128,13 +145,18 @@
                 "id": "1097861843",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861843",
-                "attributes": { "durationInMillis": 258813, "name": "Lucky" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 258813,
+                  "name": "Lucky"
+                }
               },
               {
                 "id": "1097861845",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097861845",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 326533,
                   "name": "The Tourist"
                 }
@@ -165,6 +187,7 @@
           },
           "isSingle": false,
           "name": "In Rainbows",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2007-10-10"
         },
         "relationships": {
@@ -185,13 +208,18 @@
                 "id": "1109715066",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715066",
-                "attributes": { "durationInMillis": 237293, "name": "15 Step" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 237293,
+                  "name": "15 Step"
+                }
               },
               {
                 "id": "1109715161",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715161",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 242293,
                   "name": "Bodysnatchers"
                 }
@@ -200,13 +228,18 @@
                 "id": "1109715165",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715165",
-                "attributes": { "durationInMillis": 255387, "name": "Nude" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 255387,
+                  "name": "Nude"
+                }
               },
               {
                 "id": "1109715168",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715168",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 318187,
                   "name": "Weird Fishes / Arpeggi"
                 }
@@ -216,6 +249,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715293",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 228747,
                   "name": "All I Need"
                 }
@@ -225,6 +259,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715308",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 129680,
                   "name": "Faust Arp"
                 }
@@ -233,13 +268,18 @@
                 "id": "1109715309",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715309",
-                "attributes": { "durationInMillis": 290213, "name": "Reckoner" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 290213,
+                  "name": "Reckoner"
+                }
               },
               {
                 "id": "1109715467",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715467",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 328293,
                   "name": "House of Cards"
                 }
@@ -249,6 +289,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715469",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 248893,
                   "name": "Jigsaw Falling Into Place"
                 }
@@ -258,6 +299,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715479",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 279634,
                   "name": "Videotape"
                 }
@@ -289,6 +331,7 @@
           },
           "isSingle": false,
           "name": "Kid A",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2000-10-02"
         },
         "relationships": {
@@ -310,6 +353,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863108",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 251427,
                   "name": "Everything In Its Right Place"
                 }
@@ -318,13 +362,18 @@
                 "id": "1097863120",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863120",
-                "attributes": { "durationInMillis": 284507, "name": "Kid A" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 284507,
+                  "name": "Kid A"
+                }
               },
               {
                 "id": "1097863241",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863241",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 351693,
                   "name": "The National Anthem"
                 }
@@ -334,6 +383,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863247",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 356333,
                   "name": "How to Disappear Completely"
                 }
@@ -343,6 +393,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863252",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 222600,
                   "name": "Treefingers"
                 }
@@ -352,6 +403,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863254",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 315973,
                   "name": "Optimistic"
                 }
@@ -360,13 +412,18 @@
                 "id": "1097863258",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863258",
-                "attributes": { "durationInMillis": 211000, "name": "In Limbo" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 211000,
+                  "name": "In Limbo"
+                }
               },
               {
                 "id": "1097863262",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863262",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 309093,
                   "name": "Idioteque"
                 }
@@ -376,6 +433,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863575",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 275800,
                   "name": "Morning Bell"
                 }
@@ -385,6 +443,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863579",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 200483,
                   "name": "Motion Picture Soundtrack"
                 }
@@ -393,7 +452,11 @@
                 "id": "1097863582",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863582",
-                "attributes": { "durationInMillis": 52695, "name": "Untitled" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 52695,
+                  "name": "Untitled"
+                }
               }
             ]
           }
@@ -421,6 +484,7 @@
           },
           "isSingle": false,
           "name": "The Bends",
+          "recordLabel": "XL Recordings",
           "releaseDate": "1995-03-08"
         },
         "relationships": {
@@ -442,6 +506,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862726",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 259200,
                   "name": "Planet Telex"
                 }
@@ -451,6 +516,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862821",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 246200,
                   "name": "The Bends"
                 }
@@ -460,6 +526,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862833",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 257480,
                   "name": "High and Dry"
                 }
@@ -469,6 +536,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862845",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 290707,
                   "name": "Fake Plastic Trees"
                 }
@@ -477,13 +545,18 @@
                 "id": "1097862889",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862889",
-                "attributes": { "durationInMillis": 189000, "name": "Bones" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 189000,
+                  "name": "Bones"
+                }
               },
               {
                 "id": "1097862894",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862894",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 233227,
                   "name": "(Nice Dream)"
                 }
@@ -492,13 +565,18 @@
                 "id": "1097862901",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862901",
-                "attributes": { "durationInMillis": 234800, "name": "Just" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 234800,
+                  "name": "Just"
+                }
               },
               {
                 "id": "1097863038",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863038",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 276427,
                   "name": "My Iron Lung"
                 }
@@ -508,6 +586,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863210",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 208733,
                   "name": "Bullet Proof ... I Wish I Was"
                 }
@@ -517,6 +596,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863219",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 247040,
                   "name": "Black Star"
                 }
@@ -525,13 +605,18 @@
                 "id": "1097863233",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863233",
-                "attributes": { "durationInMillis": 222960, "name": "Sulk" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 222960,
+                  "name": "Sulk"
+                }
               },
               {
                 "id": "1097863295",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863295",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 253853,
                   "name": "Street Spirit (Fade Out)"
                 }
@@ -562,6 +647,7 @@
           },
           "isSingle": false,
           "name": "Amnesiac",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2001-06-04"
         },
         "relationships": {
@@ -583,6 +669,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864284",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 240333,
                   "name": "Packt Like Sardines in a Crushed Tin Box"
                 }
@@ -592,6 +679,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864572",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 288733,
                   "name": "Pyramid Song"
                 }
@@ -601,6 +689,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864574",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 247267,
                   "name": "Pulk / Pull Revolving Doors"
                 }
@@ -610,6 +699,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864577",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 191000,
                   "name": "You and Whose Army?"
                 }
@@ -619,6 +709,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864580",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 293773,
                   "name": "I Might Be Wrong"
                 }
@@ -628,6 +719,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864582",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 254867,
                   "name": "Knives Out"
                 }
@@ -637,6 +729,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864836",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 194267,
                   "name": "Morning Bell / Amnesiac"
                 }
@@ -646,6 +739,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864898",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 291733,
                   "name": "Dollars & Cents"
                 }
@@ -655,6 +749,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864900",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 121200,
                   "name": "Hunting Bears"
                 }
@@ -664,6 +759,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864909",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 237467,
                   "name": "Like Spinning Plates"
                 }
@@ -673,6 +769,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097865056",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 276693,
                   "name": "Life in a Glasshouse"
                 }
@@ -703,6 +800,7 @@
           },
           "isSingle": false,
           "name": "A Moon Shaped Pool",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2016-05-08"
         },
         "relationships": {
@@ -724,6 +822,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111577770",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 220607,
                   "name": "Burn the Witch"
                 }
@@ -733,6 +832,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111577949",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 384439,
                   "name": "Daydreaming"
                 }
@@ -742,6 +842,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111577965",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 281011,
                   "name": "Decks Dark"
                 }
@@ -751,6 +852,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111577967",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 224698,
                   "name": "Desert Island Disk"
                 }
@@ -759,13 +861,18 @@
                 "id": "1111577976",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111577976",
-                "attributes": { "durationInMillis": 367349, "name": "Ful Stop" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 367349,
+                  "name": "Ful Stop"
+                }
               },
               {
                 "id": "1111577978",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111577978",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 172936,
                   "name": "Glass Eyes"
                 }
@@ -775,6 +882,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111578058",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 266644,
                   "name": "Identikit"
                 }
@@ -784,6 +892,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111578064",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 345887,
                   "name": "The Numbers"
                 }
@@ -793,6 +902,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111578065",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 306581,
                   "name": "Present Tense"
                 }
@@ -802,6 +912,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111578067",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 303689,
                   "name": "Tinker Tailor Soldier Sailor Rich Man Poor Man Beggar Man Thief"
                 }
@@ -811,6 +922,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111578103",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 283445,
                   "name": "True Love Waits"
                 }
@@ -841,6 +953,7 @@
           },
           "isSingle": false,
           "name": "Pablo Honey",
+          "recordLabel": "XL Recordings",
           "releaseDate": "1993-02-22"
         },
         "relationships": {
@@ -861,19 +974,28 @@
                 "id": "1097862228",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862228",
-                "attributes": { "durationInMillis": 208667, "name": "You" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 208667,
+                  "name": "You"
+                }
               },
               {
                 "id": "1097862231",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862231",
-                "attributes": { "durationInMillis": 238640, "name": "Creep" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 238640,
+                  "name": "Creep"
+                }
               },
               {
                 "id": "1097862232",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862232",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 132173,
                   "name": "How Do You?"
                 }
@@ -883,6 +1005,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862240",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 325627,
                   "name": "Stop Whispering"
                 }
@@ -892,6 +1015,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862419",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 161533,
                   "name": "Thinking About You"
                 }
@@ -901,6 +1025,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862427",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 217800,
                   "name": "Anyone Can Play Guitar"
                 }
@@ -909,13 +1034,18 @@
                 "id": "1097862430",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862430",
-                "attributes": { "durationInMillis": 189733, "name": "Ripcord" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 189733,
+                  "name": "Ripcord"
+                }
               },
               {
                 "id": "1097862432",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862432",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 192667,
                   "name": "Vegetable"
                 }
@@ -925,6 +1055,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862434",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 145373,
                   "name": "Prove Yourself"
                 }
@@ -933,19 +1064,31 @@
                 "id": "1097862437",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862437",
-                "attributes": { "durationInMillis": 253093, "name": "I Can't" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 253093,
+                  "name": "I Can't"
+                }
               },
               {
                 "id": "1097862439",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862439",
-                "attributes": { "durationInMillis": 187867, "name": "Lurgee" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 187867,
+                  "name": "Lurgee"
+                }
               },
               {
                 "id": "1097862440",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097862440",
-                "attributes": { "durationInMillis": 282067, "name": "Blow Out" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 282067,
+                  "name": "Blow Out"
+                }
               }
             ]
           }
@@ -973,6 +1116,7 @@
           },
           "isSingle": false,
           "name": "Hail to the Thief",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2003-06-09"
         },
         "relationships": {
@@ -994,6 +1138,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863810",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 199360,
                   "name": "2 + 2 = 5"
                 }
@@ -1003,6 +1148,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863817",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 259973,
                   "name": "Sit Down. Stand Up"
                 }
@@ -1012,6 +1158,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863819",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 258360,
                   "name": "Sail to the Moon"
                 }
@@ -1021,6 +1168,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863821",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 322600,
                   "name": "Backdrifts"
                 }
@@ -1030,6 +1178,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863823",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 201507,
                   "name": "Go to Sleep"
                 }
@@ -1039,6 +1188,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863827",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 269293,
                   "name": "Where I End and You Begin"
                 }
@@ -1048,6 +1198,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863828",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 296707,
                   "name": "We Suck Young Blood"
                 }
@@ -1057,6 +1208,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863831",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 212027,
                   "name": "The Gloaming"
                 }
@@ -1066,6 +1218,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097863832",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 323600,
                   "name": "There, There"
                 }
@@ -1074,13 +1227,18 @@
                 "id": "1097864220",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864220",
-                "attributes": { "durationInMillis": 119467, "name": "I Will" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 119467,
+                  "name": "I Will"
+                }
               },
               {
                 "id": "1097864250",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864250",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 297333,
                   "name": "A Punch Up at a Wedding"
                 }
@@ -1090,6 +1248,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864256",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 232533,
                   "name": "Myxomatosis"
                 }
@@ -1099,6 +1258,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864259",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 201707,
                   "name": "Scatterbrain"
                 }
@@ -1108,6 +1268,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097864364",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 201333,
                   "name": "A Wolf at the Door"
                 }
@@ -1138,6 +1299,7 @@
           },
           "isSingle": false,
           "name": "KID A MNESIA",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2021-11-05"
         },
         "relationships": {
@@ -1159,6 +1321,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786337",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 251427,
                   "name": "Everything In Its Right Place"
                 }
@@ -1167,13 +1330,18 @@
                 "id": "1581786339",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786339",
-                "attributes": { "durationInMillis": 284507, "name": "Kid A" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 284507,
+                  "name": "Kid A"
+                }
               },
               {
                 "id": "1581786343",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786343",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 351693,
                   "name": "The National Anthem"
                 }
@@ -1183,6 +1351,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786346",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 356333,
                   "name": "How to Disappear Completely"
                 }
@@ -1192,6 +1361,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786348",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 222600,
                   "name": "Treefingers"
                 }
@@ -1201,6 +1371,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786350",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 315973,
                   "name": "Optimistic"
                 }
@@ -1209,13 +1380,18 @@
                 "id": "1581786352",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786352",
-                "attributes": { "durationInMillis": 211000, "name": "In Limbo" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 211000,
+                  "name": "In Limbo"
+                }
               },
               {
                 "id": "1581786354",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786354",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 309093,
                   "name": "Idioteque"
                 }
@@ -1225,6 +1401,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786356",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 275800,
                   "name": "Morning Bell"
                 }
@@ -1234,6 +1411,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786358",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 200483,
                   "name": "Motion Picture Soundtrack"
                 }
@@ -1242,13 +1420,18 @@
                 "id": "1581786359",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786359",
-                "attributes": { "durationInMillis": 52695, "name": "Untitled" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 52695,
+                  "name": "Untitled"
+                }
               },
               {
                 "id": "1581786360",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786360",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 240333,
                   "name": "Packt Like Sardines In a Crushd Tin Box"
                 }
@@ -1258,6 +1441,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786364",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 288733,
                   "name": "Pyramid Song"
                 }
@@ -1267,6 +1451,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786696",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 247267,
                   "name": "Pulk/Pull Revolving Doors"
                 }
@@ -1276,6 +1461,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786698",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 191000,
                   "name": "You and Whose Army?"
                 }
@@ -1285,6 +1471,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786700",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 293773,
                   "name": "I Might Be Wrong"
                 }
@@ -1294,6 +1481,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786702",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 254867,
                   "name": "Knives Out"
                 }
@@ -1303,6 +1491,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786703",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 194267,
                   "name": "Morning Bell/Amnesiac"
                 }
@@ -1312,6 +1501,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786705",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 291733,
                   "name": "Dollars and Cents"
                 }
@@ -1321,6 +1511,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786706",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 121200,
                   "name": "Hunting Bears"
                 }
@@ -1330,6 +1521,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786707",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 237467,
                   "name": "Like Spinning Plates"
                 }
@@ -1339,6 +1531,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786709",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 276693,
                   "name": "Life In a Glasshouse"
                 }
@@ -1348,6 +1541,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786710",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 304631,
                   "name": "Like Spinning Plates ('Why Us?' Version)"
                 }
@@ -1357,6 +1551,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786714",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 108510,
                   "name": "Untitled V1"
                 }
@@ -1366,6 +1561,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786717",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 145443,
                   "name": "Fog (Again Again Version)"
                 }
@@ -1375,6 +1571,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786718",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 260733,
                   "name": "If You Say the Word"
                 }
@@ -1384,6 +1581,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786720",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 319288,
                   "name": "Follow Me Around"
                 }
@@ -1393,6 +1591,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581786725",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 166166,
                   "name": "Pulk/Pull (True Love Waits Version)"
                 }
@@ -1402,6 +1601,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581787116",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 46081,
                   "name": "Untitled V2"
                 }
@@ -1411,6 +1611,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581787118",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 120108,
                   "name": "The Morning Bell (In the Dark Version)"
                 }
@@ -1420,6 +1621,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581787121",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 78003,
                   "name": "Pyramid Strings"
                 }
@@ -1429,6 +1631,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581787126",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 92488,
                   "name": "Alt. Fast Track"
                 }
@@ -1438,6 +1641,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581787133",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 76519,
                   "name": "Untitled V3"
                 }
@@ -1447,6 +1651,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1581787137",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 332694,
                   "name": "How to Disappear into Strings"
                 }
@@ -1477,6 +1682,7 @@
           },
           "isSingle": false,
           "name": "The King of Limbs",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2011-02-18"
         },
         "relationships": {
@@ -1497,13 +1703,18 @@
                 "id": "1109715099",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715099",
-                "attributes": { "durationInMillis": 313671, "name": "Bloom" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 313671,
+                  "name": "Bloom"
+                }
               },
               {
                 "id": "1109715140",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715140",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 280719,
                   "name": "Morning Mr. Magpie"
                 }
@@ -1513,6 +1724,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715144",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 267154,
                   "name": "Little by Little"
                 }
@@ -1521,13 +1733,18 @@
                 "id": "1109715146",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715146",
-                "attributes": { "durationInMillis": 192743, "name": "Feral" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 192743,
+                  "name": "Feral"
+                }
               },
               {
                 "id": "1109715151",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715151",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 300219,
                   "name": "Lotus Flower"
                 }
@@ -1536,13 +1753,18 @@
                 "id": "1109715241",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715241",
-                "attributes": { "durationInMillis": 287067, "name": "Codex" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 287067,
+                  "name": "Codex"
+                }
               },
               {
                 "id": "1109715242",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715242",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 290067,
                   "name": "Give Up the Ghost"
                 }
@@ -1552,6 +1774,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1109715243",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 319249,
                   "name": "Separator"
                 }
@@ -1582,6 +1805,7 @@
           },
           "isSingle": false,
           "name": "OK Computer OKNOTOK 1997 2017",
+          "recordLabel": "XL Recordings",
           "releaseDate": "1997-06-16"
         },
         "relationships": {
@@ -1603,6 +1827,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489061",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 283800,
                   "name": "Airbag (Remastered)"
                 }
@@ -1612,6 +1837,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489062",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 383973,
                   "name": "Paranoid Android (Remastered)"
                 }
@@ -1621,6 +1847,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489064",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 269093,
                   "name": "Subterranean Homesick Alien (Remastered)"
                 }
@@ -1630,6 +1857,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489065",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 265053,
                   "name": "Exit Music (For a Film) [Remastered]"
                 }
@@ -1639,6 +1867,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489067",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 299280,
                   "name": "Let Down (Remastered)"
                 }
@@ -1648,6 +1877,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489069",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 261427,
                   "name": "Karma Police (Remastered)"
                 }
@@ -1657,6 +1887,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489070",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 117387,
                   "name": "Fitter Happier (Remastered)"
                 }
@@ -1666,6 +1897,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489581",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 230573,
                   "name": "Electioneering (Remastered)"
                 }
@@ -1675,6 +1907,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489584",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 285133,
                   "name": "Climbing Up the Walls (Remastered)"
                 }
@@ -1684,6 +1917,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489599",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 228387,
                   "name": "No Surprises (Remastered)"
                 }
@@ -1693,6 +1927,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489607",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 259960,
                   "name": "Lucky (Remastered)"
                 }
@@ -1702,6 +1937,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489609",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 323535,
                   "name": "The Tourist (Remastered)"
                 }
@@ -1711,6 +1947,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489610",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 239227,
                   "name": "I Promise"
                 }
@@ -1720,6 +1957,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489762",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 269093,
                   "name": "Man of War"
                 }
@@ -1728,13 +1966,18 @@
                 "id": "1239489763",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489763",
-                "attributes": { "durationInMillis": 246840, "name": "Lift" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 246840,
+                  "name": "Lift"
+                }
               },
               {
                 "id": "1239489764",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489764",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 145840,
                   "name": "Lull (Remastered)"
                 }
@@ -1744,6 +1987,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489765",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 187707,
                   "name": "Meeting In the Aisle (Remastered)"
                 }
@@ -1753,6 +1997,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489766",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 128733,
                   "name": "Melatonin (Remastered)"
                 }
@@ -1762,6 +2007,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489768",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 232387,
                   "name": "A Reminder (Remastered)"
                 }
@@ -1771,6 +2017,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489769",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 262467,
                   "name": "Polyethylene, Pts. 1 & 2 (Remastered)"
                 }
@@ -1780,6 +2027,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489770",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 218598,
                   "name": "Pearly (Remastered)"
                 }
@@ -1789,6 +2037,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489778",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 231816,
                   "name": "Palo Alto (Remastered)"
                 }
@@ -1798,6 +2047,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1239489779",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 187117,
                   "name": "How I Made My Millions (Remastered)"
                 }
@@ -1828,6 +2078,7 @@
           },
           "isSingle": false,
           "name": "Hail to the Thief (Live Recordings 2003-2009)",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2025-08-13"
         },
         "relationships": {
@@ -1849,6 +2100,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175829",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 216165,
                   "name": "2 + 2 = 5 (Live)"
                 }
@@ -1858,6 +2110,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175833",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 251738,
                   "name": "Sit Down. Stand Up (Live)"
                 }
@@ -1867,6 +2120,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175836",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 259159,
                   "name": "Sail To The Moon (Live)"
                 }
@@ -1876,6 +2130,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175837",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 225963,
                   "name": "Go To Sleep (Live)"
                 }
@@ -1885,6 +2140,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175840",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 250841,
                   "name": "Where I End and You Begin (Live)"
                 }
@@ -1894,6 +2150,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175843",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 297023,
                   "name": "We Suck Young Blood (Live)"
                 }
@@ -1903,6 +2160,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175845",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 239268,
                   "name": "The Gloaming (Live)"
                 }
@@ -1912,6 +2170,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175846",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 333514,
                   "name": "There, There (Live)"
                 }
@@ -1921,6 +2180,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828175847",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 129360,
                   "name": "I Will (Live)"
                 }
@@ -1930,6 +2190,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828176239",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 244658,
                   "name": "Myxomatosis (Live)"
                 }
@@ -1939,6 +2200,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828176242",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 205950,
                   "name": "Scatterbrain (Live)"
                 }
@@ -1948,6 +2210,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1828176255",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 210744,
                   "name": "A Wolf At the Door (Live)"
                 }
@@ -1978,6 +2241,7 @@
           },
           "isSingle": false,
           "name": "In Rainbows Disk 2",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2007-12-03"
         },
         "relationships": {
@@ -1998,13 +2262,18 @@
                 "id": "1160370460",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1160370460",
-                "attributes": { "durationInMillis": 62930, "name": "MK 1" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 62930,
+                  "name": "MK 1"
+                }
               },
               {
                 "id": "1160370501",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1160370501",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 299283,
                   "name": "Down Is the New Up"
                 }
@@ -2014,6 +2283,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1160370510",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 228236,
                   "name": "Go Slowly"
                 }
@@ -2022,13 +2292,18 @@
                 "id": "1160370518",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1160370518",
-                "attributes": { "durationInMillis": 53004, "name": "MK 2" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 53004,
+                  "name": "MK 2"
+                }
               },
               {
                 "id": "1160370559",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1160370559",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 266478,
                   "name": "Last Flowers"
                 }
@@ -2038,6 +2313,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1160370565",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 257170,
                   "name": "Up on the Ladder"
                 }
@@ -2047,6 +2323,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1160370573",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 199502,
                   "name": "Bangers + Mash"
                 }
@@ -2056,6 +2333,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1160370576",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 244285,
                   "name": "4 Minute Warning"
                 }
@@ -2082,6 +2360,7 @@
           },
           "isSingle": true,
           "name": "Spectre - Single",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2015-12-25"
         },
         "relationships": {
@@ -2102,7 +2381,11 @@
                 "id": "1113546470",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1113546470",
-                "attributes": { "durationInMillis": 199334, "name": "Spectre" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 199334,
+                  "name": "Spectre"
+                }
               }
             ]
           }
@@ -2126,6 +2409,7 @@
           },
           "isSingle": true,
           "name": "radiohead - Single",
+          "recordLabel": "nightly",
           "releaseDate": "2023-03-17"
         },
         "relationships": {
@@ -2147,6 +2431,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1687497050",
                 "attributes": {
+                  "artistName": "Nightly",
                   "durationInMillis": 197018,
                   "name": "radiohead"
                 }
@@ -2173,6 +2458,7 @@
           },
           "isSingle": true,
           "name": "Ill Wind - Single",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2016"
         },
         "relationships": {
@@ -2193,7 +2479,11 @@
                 "id": "1446881822",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1446881822",
-                "attributes": { "durationInMillis": 254113, "name": "Ill Wind" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 254113,
+                  "name": "Ill Wind"
+                }
               }
             ]
           }
@@ -2221,6 +2511,7 @@
           },
           "isSingle": true,
           "name": "Burn the Witch - Single",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2016-05-03"
         },
         "relationships": {
@@ -2242,6 +2533,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1110448421",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 220607,
                   "name": "Burn the Witch"
                 }
@@ -2268,6 +2560,7 @@
           },
           "isSingle": false,
           "name": "The Daily Mail / Staircase - Single",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2011-12-19"
         },
         "relationships": {
@@ -2289,6 +2582,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1114686716",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 217798,
                   "name": "The Daily Mail"
                 }
@@ -2298,6 +2592,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1114686718",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 271530,
                   "name": "Staircase"
                 }
@@ -2328,6 +2623,7 @@
           },
           "isSingle": false,
           "name": "I Might Be Wrong (Live)",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2001-11-12"
         },
         "relationships": {
@@ -2349,6 +2645,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097874288",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 297533,
                   "name": "The National Anthem (Live in France)"
                 }
@@ -2358,6 +2655,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097874296",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 292133,
                   "name": "I Might Be Wrong (Live)"
                 }
@@ -2367,6 +2665,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097874540",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 254067,
                   "name": "Morning Bell (Live in Oxford)"
                 }
@@ -2376,6 +2675,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097874652",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 232800,
                   "name": "Like Spinning Plates (Live)"
                 }
@@ -2385,6 +2685,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097874664",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 264840,
                   "name": "Idioteque (Live in Oxford)"
                 }
@@ -2394,6 +2695,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097874782",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 462800,
                   "name": "Everything in Its Right Place (Live in France)"
                 }
@@ -2403,6 +2705,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097874843",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 313000,
                   "name": "Dollars & Cents (Live)"
                 }
@@ -2412,6 +2715,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1097874850",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 304920,
                   "name": "True Love Waits (Live in Oslo)"
                 }
@@ -2438,6 +2742,7 @@
           },
           "isSingle": false,
           "name": "High & Dry / Planet Telex - EP",
+          "recordLabel": "XL Recordings",
           "releaseDate": "1995-02-27"
         },
         "relationships": {
@@ -2459,6 +2764,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112408820",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 257480,
                   "name": "High and Dry"
                 }
@@ -2468,6 +2774,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112409067",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 259200,
                   "name": "Planet Telex"
                 }
@@ -2477,6 +2784,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112409069",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 206867,
                   "name": "Maquiladora"
                 }
@@ -2486,6 +2794,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112409074",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 404800,
                   "name": "Planet Telex (Hexidecimal Mix)"
                 }
@@ -2495,6 +2804,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112409076",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 183893,
                   "name": "Killer Cars"
                 }
@@ -2504,6 +2814,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112409081",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 280240,
                   "name": "Planet Telex (L.F.O. DJ Mix)"
                 }
@@ -2530,6 +2841,7 @@
           },
           "isSingle": true,
           "name": "Daydreaming - Single",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2016-05-06"
         },
         "relationships": {
@@ -2551,6 +2863,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1111495824",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 384439,
                   "name": "Daydreaming"
                 }
@@ -2577,6 +2890,7 @@
           },
           "isSingle": false,
           "name": "My Iron Lung - EP",
+          "recordLabel": "XL Recordings",
           "releaseDate": "1994-09-26"
         },
         "relationships": {
@@ -2598,6 +2912,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112408388",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 276427,
                   "name": "My Iron Lung"
                 }
@@ -2607,6 +2922,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112408392",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 282293,
                   "name": "The Trickster"
                 }
@@ -2616,6 +2932,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112408395",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 200080,
                   "name": "Lewis (Mistreated)"
                 }
@@ -2625,6 +2942,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112408400",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 281227,
                   "name": "Punchdrunk Lovesick Singalong"
                 }
@@ -2634,6 +2952,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112408403",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 169253,
                   "name": "Permanent Daylight"
                 }
@@ -2643,6 +2962,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112408407",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 137227,
                   "name": "Lozenge of Love"
                 }
@@ -2652,6 +2972,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112408472",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 104440,
                   "name": "You Never Wash up After Yourself"
                 }
@@ -2678,6 +2999,7 @@
           },
           "isSingle": false,
           "name": "Street Spirit (Fade Out) - EP",
+          "recordLabel": "XL Recordings",
           "releaseDate": "1996-01-22"
         },
         "relationships": {
@@ -2699,6 +3021,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112425401",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 253853,
                   "name": "Street Spirit (Fade Out)"
                 }
@@ -2708,6 +3031,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112425458",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 281000,
                   "name": "Talk Show Host"
                 }
@@ -2717,6 +3041,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112425469",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 205040,
                   "name": "Bishop's Robes"
                 }
@@ -2726,6 +3051,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112425471",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 141680,
                   "name": "Banana Co"
                 }
@@ -2734,7 +3060,11 @@
                 "id": "1112425474",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112425474",
-                "attributes": { "durationInMillis": 147573, "name": "Molasses" }
+                "attributes": {
+                  "artistName": "Radiohead",
+                  "durationInMillis": 147573,
+                  "name": "Molasses"
+                }
               }
             ]
           }
@@ -2758,6 +3088,7 @@
           },
           "isSingle": false,
           "name": "Fake Plastic Trees - Single",
+          "recordLabel": "XL Recordings",
           "releaseDate": "1995-05-15"
         },
         "relationships": {
@@ -2779,6 +3110,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112407653",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 290707,
                   "name": "Fake Plastic Trees"
                 }
@@ -2788,6 +3120,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112407656",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 206320,
                   "name": "India Rubber"
                 }
@@ -2797,6 +3130,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1112407659",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 261947,
                   "name": "How Can You Be Sure?"
                 }
@@ -2823,6 +3157,7 @@
           },
           "isSingle": false,
           "name": "Com Lag: 2+2=5 - EP",
+          "recordLabel": "XL Recordings",
           "releaseDate": "2004-03-24"
         },
         "relationships": {
@@ -2844,6 +3179,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391760",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 215267,
                   "name": "2 + 2 = 5 (Live at Earls Court)"
                 }
@@ -2853,6 +3189,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391817",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 309920,
                   "name": "Remyxomatosis (Cristian Vogel RMX)"
                 }
@@ -2862,6 +3199,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391820",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 133240,
                   "name": "I Will (Los Angeles Version)"
                 }
@@ -2871,6 +3209,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391821",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 238280,
                   "name": "Paperbag Writer"
                 }
@@ -2880,6 +3219,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391822",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 186333,
                   "name": "I Am a Wicked Child"
                 }
@@ -2889,6 +3229,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391823",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 212600,
                   "name": "I Am Citizen Insane"
                 }
@@ -2898,6 +3239,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391824",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 265107,
                   "name": "Skttrbrain (Four Tet Remix)"
                 }
@@ -2907,6 +3249,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391825",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 216000,
                   "name": "Gagging Order"
                 }
@@ -2916,6 +3259,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391948",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 138400,
                   "name": "Fog (Again) [Live]"
                 }
@@ -2925,6 +3269,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1143391951",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 271253,
                   "name": "Where Bluebirds Fly"
                 }
@@ -2951,6 +3296,7 @@
           },
           "isSingle": true,
           "name": "Roses (Imanbek Remix) - Single",
+          "recordLabel": "Craft Recordings",
           "releaseDate": "2019-09-18"
         },
         "relationships": {
@@ -2972,6 +3318,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1712388494",
                 "attributes": {
+                  "artistName": "SAINt JHN",
                   "durationInMillis": 176219,
                   "name": "Roses (Imanbek Remix)"
                 }
@@ -2998,6 +3345,7 @@
           },
           "isSingle": true,
           "name": "Easy (Remix) [feat. Chris Brown] - Single",
+          "recordLabel": "Def Jam Recordings",
           "releaseDate": "2019-05-31"
         },
         "relationships": {
@@ -3019,6 +3367,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1467816528",
                 "attributes": {
+                  "artistName": "DaniLeigh",
                   "durationInMillis": 186564,
                   "name": "Easy (Remix) [feat. Chris Brown]"
                 }
@@ -3070,6 +3419,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803902",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 27731,
                   "name": "Commentary (from Boiler Room: Thom Yorke in London, Oct 11, 2011) [Mixed]"
                 }
@@ -3079,6 +3429,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803903",
                 "attributes": {
+                  "artistName": "Radiohead",
                   "durationInMillis": 232158,
                   "name": "Bloom (Blawan Rmx) [Mixed]"
                 }
@@ -3088,6 +3439,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803904",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 244263,
                   "name": "ID (from Boiler Room: Thom Yorke in London, Oct 11, 2011) [Mixed]"
                 }
@@ -3097,6 +3449,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803905",
                 "attributes": {
+                  "artistName": "Steve Moore",
                   "durationInMillis": 78377,
                   "name": "Bayern Kurve (Mixed)"
                 }
@@ -3106,6 +3459,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803906",
                 "attributes": {
+                  "artistName": "Anstam",
                   "durationInMillis": 197750,
                   "name": "Baldwin (Mixed)"
                 }
@@ -3115,6 +3469,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803907",
                 "attributes": {
+                  "artistName": "2562",
                   "durationInMillis": 197750,
                   "name": "The Wind-Up (Mixed)"
                 }
@@ -3124,6 +3479,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803908",
                 "attributes": {
+                  "artistName": "Africa HiTech",
                   "durationInMillis": 188415,
                   "name": "Blen (Remix) [Mixed]"
                 }
@@ -3133,6 +3489,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803909",
                 "attributes": {
+                  "artistName": "Headhunter",
                   "durationInMillis": 169489,
                   "name": "Prototype (Modeselektor's Broken Handbrake Remix) [Mixed]"
                 }
@@ -3142,6 +3499,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803910",
                 "attributes": {
+                  "artistName": "DJ Slugo",
                   "durationInMillis": 153569,
                   "name": "Juke Me from the Back Low (Mixed)"
                 }
@@ -3151,6 +3509,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803911",
                 "attributes": {
+                  "artistName": "Aphex Twin",
                   "durationInMillis": 128452,
                   "name": "To Cure a Weakling Child (Mixed)"
                 }
@@ -3160,6 +3519,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803912",
                 "attributes": {
+                  "artistName": "Ramadanman",
                   "durationInMillis": 90636,
                   "name": "Work Them (Mixed)"
                 }
@@ -3169,6 +3529,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1500803913",
                 "attributes": {
+                  "artistName": "Madvillain, Madlib & MF DOOM",
                   "durationInMillis": 210155,
                   "name": "America's Most Blunted (feat. Quasimoto) [Mixed]"
                 }
@@ -3195,6 +3556,7 @@
           },
           "isSingle": true,
           "name": "Girls Need Love (Remix) - Single",
+          "recordLabel": "OVO/LVRN/Interscope Records",
           "releaseDate": "2019-02-10"
         },
         "relationships": {
@@ -3221,6 +3583,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1454454066",
                 "attributes": {
+                  "artistName": "Summer Walker & Drake",
                   "durationInMillis": 222374,
                   "name": "Girls Need Love (Remix)"
                 }
@@ -3247,6 +3610,7 @@
           },
           "isSingle": true,
           "name": "Said Sum (Remix) [feat. City Girls & DaBaby] - Single",
+          "recordLabel": "N-Less Entertainment/Interscope Records",
           "releaseDate": "2020-09-17"
         },
         "relationships": {
@@ -3268,6 +3632,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1531791782",
                 "attributes": {
+                  "artistName": "Moneybagg Yo",
                   "durationInMillis": 177704,
                   "name": "Said Sum (Remix) [feat. City Girls & DaBaby]"
                 }
@@ -3319,6 +3684,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467380",
                 "attributes": {
+                  "artistName": "Lost Frequencies",
                   "durationInMillis": 294748,
                   "name": "Beat of My Heart (feat. Love Harder) [Deluxe Intro Edit] [Mixed]"
                 }
@@ -3328,6 +3694,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467382",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 122878,
                   "name": "ID (from Tomorrowland Around The World 2020: Lost Frequencies) [Mixed]"
                 }
@@ -3337,6 +3704,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467383",
                 "attributes": {
+                  "artistName": "Angèle",
                   "durationInMillis": 143773,
                   "name": "Flou (Lost Frequencies Remix) [Mixed]"
                 }
@@ -3346,6 +3714,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467384",
                 "attributes": {
+                  "artistName": "Red Hot Chili Peppers",
                   "durationInMillis": 261332,
                   "name": "Snow (Hey Oh) [Lost Frequencies Remix] [Mixed]"
                 }
@@ -3355,6 +3724,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467385",
                 "attributes": {
+                  "artistName": "Lost Frequencies, Zonderling & Kelvin Jones",
                   "durationInMillis": 136805,
                   "name": "Love to Go (Deluxe Mix) [Mixed]"
                 }
@@ -3364,6 +3734,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467386",
                 "attributes": {
+                  "artistName": "Mokita & Lost Frequencies",
                   "durationInMillis": 231155,
                   "name": "Black & Blue (Lost Frequencies Sunrise Club Mix) [Mixed]"
                 }
@@ -3373,6 +3744,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467387",
                 "attributes": {
+                  "artistName": "Moksi",
                   "durationInMillis": 175463,
                   "name": "Slow Burn (feat. Elayna Boynton) [Lost Frequencies Remix] [Mixed]"
                 }
@@ -3382,6 +3754,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467388",
                 "attributes": {
+                  "artistName": "Major Lazer",
                   "durationInMillis": 283830,
                   "name": "Lay Your Head On Me (feat. Marcus Mumford) [Lost Frequencies Remix] [Mixed]"
                 }
@@ -3391,6 +3764,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525467389",
                 "attributes": {
+                  "artistName": "Lost Frequencies",
                   "durationInMillis": 228537,
                   "name": "Electrified (feat. Kye Sones) [Mixed]"
                 }
@@ -3438,6 +3812,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640184",
                 "attributes": {
+                  "artistName": "Alan Walker & Alex Skrindo",
                   "durationInMillis": 216631,
                   "name": "Sky (Remix) / Alone (Acapella) [Mixed]"
                 }
@@ -3447,6 +3822,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640185",
                 "attributes": {
+                  "artistName": "Alan Walker",
                   "durationInMillis": 50709,
                   "name": "Darkside (feat. Au/Ra & Tomine Harket) [Afrojack Remix] [Mixed]"
                 }
@@ -3456,6 +3832,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640186",
                 "attributes": {
+                  "artistName": "Alan Walker",
                   "durationInMillis": 80468,
                   "name": "Darkside (feat. Au/Ra & Tomine Harket) [Mixed]"
                 }
@@ -3465,6 +3842,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640187",
                 "attributes": {
+                  "artistName": "Alan Walker & Planet Perfecto Knights",
                   "durationInMillis": 82274,
                   "name": "Sing Me to Sleep (Acapella) / Resurection (Maurice West Remix) [Mixed]"
                 }
@@ -3474,6 +3852,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640188",
                 "attributes": {
+                  "artistName": "Alan Walker & LUM!X",
                   "durationInMillis": 128377,
                   "name": "The Spectre / Elements (Mixed)"
                 }
@@ -3483,6 +3862,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640189",
                 "attributes": {
+                  "artistName": "Sia",
                   "durationInMillis": 89292,
                   "name": "Move Your Body (Alan Walker Remix) [Mixed]"
                 }
@@ -3492,6 +3872,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640190",
                 "attributes": {
+                  "artistName": "Alan Walker & Alex Skrindo",
                   "durationInMillis": 111303,
                   "name": "Sky (VIP Remix) [Mixed]"
                 }
@@ -3501,6 +3882,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640191",
                 "attributes": {
+                  "artistName": "Alan Walker & Hans Zimmer",
                   "durationInMillis": 275607,
                   "name": "Time (Alan Walker Extended Remix) [Mixed]"
                 }
@@ -3510,6 +3892,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640192",
                 "attributes": {
+                  "artistName": "Alan Walker & Hans Zimmer",
                   "durationInMillis": 31869,
                   "name": "Time (Alan Walker Festival Remix) [Mixed]"
                 }
@@ -3519,6 +3902,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640193",
                 "attributes": {
+                  "artistName": "Alan Walker, K-391 & Sofia Carson",
                   "durationInMillis": 63558,
                   "name": "Different World (feat. CORSAK) [NIVIRO Remix] [Mixed]"
                 }
@@ -3528,6 +3912,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640194",
                 "attributes": {
+                  "artistName": "Alan Walker",
                   "durationInMillis": 180029,
                   "name": "Tired (Steerner & Tobu Remix) [VIP] [Mixed]"
                 }
@@ -3537,6 +3922,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640195",
                 "attributes": {
+                  "artistName": "AFROJACK",
                   "durationInMillis": 59361,
                   "name": "It Goes Like (Mixed)"
                 }
@@ -3546,6 +3932,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640286",
                 "attributes": {
+                  "artistName": "Alan Walker, Noah Cyrus & Digital Farm Animals",
                   "durationInMillis": 149531,
                   "name": "All Falls Down (Mark Villa Remix) [Mixed]"
                 }
@@ -3555,6 +3942,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640287",
                 "attributes": {
+                  "artistName": "Alan Walker & Ava Max",
                   "durationInMillis": 168747,
                   "name": "Alone, Pt. II (Alex Skrindo & Sebastian Wibe Remix) [Mixed]"
                 }
@@ -3564,6 +3952,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640288",
                 "attributes": {
+                  "artistName": "K-391",
                   "durationInMillis": 128101,
                   "name": "Ignite (feat. Alan Walker, Julie Bergan & SeungRi) / Ignite (feat. Alan Walker, Julie Bergan & SeungRi) [Remix] [Mixed]"
                 }
@@ -3573,6 +3962,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640289",
                 "attributes": {
+                  "artistName": "Alan Walker",
                   "durationInMillis": 263273,
                   "name": "Faded (Remix) [Mixed]"
                 }
@@ -3582,6 +3972,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1525640290",
                 "attributes": {
+                  "artistName": "Alan Walker",
                   "durationInMillis": 74589,
                   "name": "Faded (Tiesto's Northern Lights Remix) [Mixed]"
                 }
@@ -3632,6 +4023,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030505",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 406992,
                   "name": "No Goodbye (Mixed)"
                 }
@@ -3641,6 +4033,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030509",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 300921,
                   "name": "Battery Park (Mixed)"
                 }
@@ -3650,6 +4043,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030510",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 284068,
                   "name": "Part Twelve (Mixed)"
                 }
@@ -3659,6 +4053,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030511",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 404668,
                   "name": "Altes Kamuffel (Mixed)"
                 }
@@ -3668,6 +4063,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030513",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 372084,
                   "name": "Feed Your Head (Mixed)"
                 }
@@ -3677,6 +4073,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030514",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 316292,
                   "name": "Der Buhold (Mixed)"
                 }
@@ -3686,6 +4083,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030515",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 167153,
                   "name": "Part Eight (Mixed)"
                 }
@@ -3695,6 +4093,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030516",
                 "attributes": {
+                  "artistName": "Michel Cleis & Totó La Momposina",
                   "durationInMillis": 283068,
                   "name": "La Mezcla (Paul Kalkbrenner Remix) [Mixed]"
                 }
@@ -3704,6 +4103,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030517",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 327433,
                   "name": "Part Four (Mixed)"
                 }
@@ -3713,6 +4113,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030518",
                 "attributes": {
+                  "artistName": "Michael Andrews",
                   "durationInMillis": 252765,
                   "name": "Mad World (feat. Gary Jules) [Remix] [Mixed]"
                 }
@@ -3722,6 +4123,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030519",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 223474,
                   "name": "Part Three (Mixed)"
                 }
@@ -3731,6 +4133,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030520",
                 "attributes": {
+                  "artistName": "Stromae",
                   "durationInMillis": 461082,
                   "name": "Te quiero (Paul Kalkbrenner Remix) [Mixed]"
                 }
@@ -3740,6 +4143,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030521",
                 "attributes": {
+                  "artistName": "Lexy & K-Paul",
                   "durationInMillis": 312784,
                   "name": "Happy Zombies (Mixed)"
                 }
@@ -3749,6 +4153,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030522",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 295391,
                   "name": "Part One (Mixed)"
                 }
@@ -3758,6 +4163,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030523",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 176080,
                   "name": "Bright Roller (Mixed)"
                 }
@@ -3767,6 +4173,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030524",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 333459,
                   "name": "ID (from LXM Festival: Paul Kalkbrenner in Lisbon, Dec 14, 2019) [Mixed]"
                 }
@@ -3776,6 +4183,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030525",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner & Fritz Kalkbrenner",
                   "durationInMillis": 391388,
                   "name": "Sky and Sand (Mixed)"
                 }
@@ -3785,6 +4193,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030766",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 276376,
                   "name": "Absynthe (Mixed)"
                 }
@@ -3794,6 +4203,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1496030767",
                 "attributes": {
+                  "artistName": "Paul Kalkbrenner",
                   "durationInMillis": 319523,
                   "name": "Aaron (Mixed)"
                 }
@@ -3824,6 +4234,7 @@
           },
           "isSingle": false,
           "name": "Mr. Morale & The Big Steppers",
+          "recordLabel": "pgLang/Top Dawg Entertainment/Aftermath/Interscope Records",
           "releaseDate": "2022-05-13"
         },
         "relationships": {
@@ -3845,6 +4256,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623854815",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 255378,
                   "name": "United In Grief"
                 }
@@ -3853,13 +4265,18 @@
                 "id": "1623854822",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623854822",
-                "attributes": { "durationInMillis": 195950, "name": "N95" }
+                "attributes": {
+                  "artistName": "Kendrick Lamar",
+                  "durationInMillis": 195950,
+                  "name": "N95"
+                }
               },
               {
                 "id": "1623854825",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623854825",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 203367,
                   "name": "Worldwide Steppers"
                 }
@@ -3868,13 +4285,18 @@
                 "id": "1623855343",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855343",
-                "attributes": { "durationInMillis": 239027, "name": "Die Hard" }
+                "attributes": {
+                  "artistName": "Kendrick Lamar, Blxst & Amanda Reifer",
+                  "durationInMillis": 239027,
+                  "name": "Die Hard"
+                }
               },
               {
                 "id": "1623855351",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855351",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 222497,
                   "name": "Father Time (feat. Sampha)"
                 }
@@ -3884,6 +4306,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855353",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 103319,
                   "name": "Rich (Interlude)"
                 }
@@ -3893,6 +4316,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855359",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 202286,
                   "name": "Rich Spirit"
                 }
@@ -3902,6 +4326,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855667",
                 "attributes": {
+                  "artistName": "Kendrick Lamar & Taylour Paige",
                   "durationInMillis": 341307,
                   "name": "We Cry Together"
                 }
@@ -3911,6 +4336,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855679",
                 "attributes": {
+                  "artistName": "Kendrick Lamar, Summer Walker & Ghostface Killah",
                   "durationInMillis": 329295,
                   "name": "Purple Hearts"
                 }
@@ -3920,6 +4346,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855685",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 283642,
                   "name": "Count Me Out"
                 }
@@ -3928,13 +4355,18 @@
                 "id": "1623855907",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855907",
-                "attributes": { "durationInMillis": 264299, "name": "Crown" }
+                "attributes": {
+                  "artistName": "Kendrick Lamar",
+                  "durationInMillis": 264299,
+                  "name": "Crown"
+                }
               },
               {
                 "id": "1623855917",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855917",
                 "attributes": {
+                  "artistName": "Kendrick Lamar & Kodak Black",
                   "durationInMillis": 220779,
                   "name": "Silent Hill"
                 }
@@ -3944,6 +4376,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623855921",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 152986,
                   "name": "Savior (Interlude)"
                 }
@@ -3952,13 +4385,18 @@
                 "id": "1623856060",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623856060",
-                "attributes": { "durationInMillis": 224466, "name": "Savior" }
+                "attributes": {
+                  "artistName": "Kendrick Lamar, Baby Keem & Sam Dew",
+                  "durationInMillis": 224466,
+                  "name": "Savior"
+                }
               },
               {
                 "id": "1623856066",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623856066",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 281070,
                   "name": "Auntie Diaries"
                 }
@@ -3968,6 +4406,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623856073",
                 "attributes": {
+                  "artistName": "Kendrick Lamar & Tanna Leone",
                   "durationInMillis": 210841,
                   "name": "Mr. Morale"
                 }
@@ -3977,6 +4416,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623856243",
                 "attributes": {
+                  "artistName": "Kendrick Lamar",
                   "durationInMillis": 406528,
                   "name": "Mother I Sober (feat. Beth Gibbons)"
                 }
@@ -3985,7 +4425,11 @@
                 "id": "1623856246",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1623856246",
-                "attributes": { "durationInMillis": 256008, "name": "Mirror" }
+                "attributes": {
+                  "artistName": "Kendrick Lamar",
+                  "durationInMillis": 256008,
+                  "name": "Mirror"
+                }
               }
             ]
           }
@@ -4009,6 +4453,7 @@
           },
           "isSingle": true,
           "name": "Rake It Up (feat. Nicki Minaj) [Diplo & Party Favor Remix] - Single",
+          "recordLabel": "Epic/CMG",
           "releaseDate": "2017-10-26"
         },
         "relationships": {
@@ -4030,6 +4475,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1300707518",
                 "attributes": {
+                  "artistName": "Yo Gotti",
                   "durationInMillis": 172987,
                   "name": "Rake It Up (feat. Nicki Minaj) [Diplo & Party Favor Remix]"
                 }
@@ -4056,6 +4502,7 @@
           },
           "isSingle": true,
           "name": "Falling Down (Travis Barker Remix) - Single",
+          "recordLabel": "Columbia",
           "releaseDate": "2019-07-11"
         },
         "relationships": {
@@ -4082,6 +4529,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1469404642",
                 "attributes": {
+                  "artistName": "Lil Peep & XXXTENTACION",
                   "durationInMillis": 241120,
                   "name": "Falling Down (Travis Barker Remix)"
                 }
@@ -4108,6 +4556,7 @@
           },
           "isSingle": true,
           "name": "Suicidal (Remix) [feat. Juice WRLD] - Single",
+          "recordLabel": "P2020",
           "releaseDate": "2020-03-13"
         },
         "relationships": {
@@ -4129,6 +4578,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1501765543",
                 "attributes": {
+                  "artistName": "YNW Melly",
                   "durationInMillis": 225857,
                   "name": "Suicidal (Remix) [feat. Juice WRLD]"
                 }
@@ -4158,6 +4608,7 @@
           },
           "isSingle": false,
           "name": "A Love Letter To You",
+          "recordLabel": "TenThousand Projects",
           "releaseDate": "2017-05-26"
         },
         "relationships": {
@@ -4179,6 +4630,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601766",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 143969,
                   "name": "Love Scars"
                 }
@@ -4188,6 +4640,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601770",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 155368,
                   "name": "Love Scars Pt. 2 / Rack City (feat. Antionia & Chris King)"
                 }
@@ -4197,6 +4650,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601913",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 208000,
                   "name": "Romeo & Juliet"
                 }
@@ -4206,6 +4660,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601931",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 200000,
                   "name": "Deeply Scared (feat. UnoTheActivist)"
                 }
@@ -4215,6 +4670,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601933",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 188029,
                   "name": "Blade Of Woe (feat. Famous Dex)"
                 }
@@ -4224,6 +4680,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601937",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 282667,
                   "name": "It Takes Time"
                 }
@@ -4233,6 +4690,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601945",
                 "attributes": {
+                  "artistName": "Trippie Redd & 6ix9ine",
                   "durationInMillis": 149576,
                   "name": "Poles 1469"
                 }
@@ -4242,6 +4700,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601947",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 147393,
                   "name": "No Smoke No Smoke 1400 B.C. / Sauce (feat. Pachino)"
                 }
@@ -4251,6 +4710,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711601950",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 140722,
                   "name": "Stoves On 14th (feat. Black Jezuss)"
                 }
@@ -4260,6 +4720,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711602266",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 240048,
                   "name": "Limitless"
                 }
@@ -4269,6 +4730,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711602282",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 162759,
                   "name": "Can You Rap Like Me?"
                 }
@@ -4278,6 +4740,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1711602360",
                 "attributes": {
+                  "artistName": "Trippie Redd",
                   "durationInMillis": 146511,
                   "name": "Never Ever Land"
                 }
@@ -4308,6 +4771,7 @@
           },
           "isSingle": true,
           "name": "Beautiful (feat. Camila Cabello) - Single",
+          "recordLabel": "iamcosmic",
           "releaseDate": "2018-08-02"
         },
         "relationships": {
@@ -4329,6 +4793,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1419758422",
                 "attributes": {
+                  "artistName": "Bazzi",
                   "durationInMillis": 180000,
                   "name": "Beautiful (feat. Camila Cabello)"
                 }
@@ -4355,6 +4820,7 @@
           },
           "isSingle": true,
           "name": "THICK (Remix) - Single",
+          "recordLabel": "DJ Chose",
           "releaseDate": "2020-10-30"
         },
         "relationships": {
@@ -4381,6 +4847,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1537889225",
                 "attributes": {
+                  "artistName": "DJ Chose & Megan Thee Stallion",
                   "durationInMillis": 205296,
                   "name": "THICK (Remix)"
                 }
@@ -4407,6 +4874,7 @@
           },
           "isSingle": true,
           "name": "New Light (Zookëper Remix) - Single",
+          "recordLabel": "Columbia",
           "releaseDate": "2018-08-10"
         },
         "relationships": {
@@ -4428,6 +4896,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1421953620",
                 "attributes": {
+                  "artistName": "John Mayer",
                   "durationInMillis": 237933,
                   "name": "New Light (Zookëper Remix)"
                 }
@@ -4459,6 +4928,7 @@
           },
           "isSingle": false,
           "name": "Norman F*****g Rockwell!",
+          "recordLabel": "Polydor Records",
           "releaseDate": "2019-08-30"
         },
         "relationships": {
@@ -4480,6 +4950,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669065",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 248934,
                   "name": "Norman f*****g Rockwell"
                 }
@@ -4489,6 +4960,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669066",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 247150,
                   "name": "Mariners Apartment Complex"
                 }
@@ -4498,6 +4970,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669067",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 577199,
                   "name": "Venice Bitch"
                 }
@@ -4507,6 +4980,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669068",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 218288,
                   "name": "F**k it I love you"
                 }
@@ -4516,6 +4990,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669071",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 202193,
                   "name": "Doin' Time"
                 }
@@ -4525,6 +5000,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669073",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 229326,
                   "name": "Love song"
                 }
@@ -4534,6 +5010,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669074",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 300683,
                   "name": "Cinnamon Girl"
                 }
@@ -4543,6 +5020,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669286",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 228071,
                   "name": "How to disappear"
                 }
@@ -4552,6 +5030,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669287",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 305900,
                   "name": "California"
                 }
@@ -4561,6 +5040,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669290",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 349347,
                   "name": "The Next Best American Record"
                 }
@@ -4570,6 +5050,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669292",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 300361,
                   "name": "The greatest"
                 }
@@ -4579,6 +5060,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669293",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 263441,
                   "name": "Bartender"
                 }
@@ -4588,6 +5070,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669295",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 272485,
                   "name": "Happiness is a butterfly"
                 }
@@ -4597,6 +5080,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1474669296",
                 "attributes": {
+                  "artistName": "Lana Del Rey",
                   "durationInMillis": 324540,
                   "name": "hope is a dangerous thing for a woman like me to have - but I have it"
                 }
@@ -4607,7 +5091,7 @@
       }
     ]
   },
-  "recordedAt": "2026-10-25T02:59:41.542Z",
+  "recordedAt": "2026-10-29T03:46:52.017Z",
   "status": 200,
-  "url": "https://api.music.apple.com/v1/catalog/us/albums?fields%5Balbums%5D=artistName%2Cartwork%2CeditorialNotes%2CisSingle%2Cname%2CreleaseDate&fields%5Bsongs%5D=durationInMillis%2Cname&ids=1097861387%2C1109714933%2C1097862870%2C1097862703%2C1097864180%2C1111577743%2C1097862062%2C1097863576%2C1581785974%2C1109714965%2C1239489060%2C1828175826%2C1160370310%2C1113546075%2C1687497049%2C1446881820%2C1110448315%2C1114686637%2C1097873905%2C1112408551%2C1111495817%2C1112408006%2C1112425223%2C1112407235%2C1143391524%2C1712388490%2C1467816521%2C1500803901%2C1454454062%2C1531791781%2C1525467379%2C1525640183%2C1496030499%2C1623854804%2C1300707517%2C1469404638%2C1501765538%2C1711601753%2C1419758421%2C1537889223%2C1421952733%2C1474669063&include=tracks"
+  "url": "https://api.music.apple.com/v1/catalog/us/albums?fields%5Balbums%5D=artistName%2Cartwork%2CeditorialNotes%2CisSingle%2Cname%2CrecordLabel%2CreleaseDate&fields%5Bsongs%5D=artistName%2CdurationInMillis%2Cname&ids=1097861387%2C1109714933%2C1097862870%2C1097862703%2C1097864180%2C1111577743%2C1097862062%2C1097863576%2C1581785974%2C1109714965%2C1239489060%2C1828175826%2C1160370310%2C1113546075%2C1687497049%2C1446881820%2C1110448315%2C1114686637%2C1097873905%2C1112408551%2C1111495817%2C1112408006%2C1112425223%2C1112407235%2C1143391524%2C1712388490%2C1467816521%2C1500803901%2C1454454062%2C1531791781%2C1525467379%2C1525640183%2C1496030499%2C1623854804%2C1300707517%2C1469404638%2C1501765538%2C1711601753%2C1419758421%2C1537889223%2C1421952733%2C1474669063&include=tracks"
 }

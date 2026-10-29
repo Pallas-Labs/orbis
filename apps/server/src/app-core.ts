@@ -75,6 +75,7 @@ import {
 } from "./admin.js";
 import {
   appleMusicDownloadRefused,
+  appleMusicSearchAnswer,
   appleMusicSearchRefusal,
 } from "./apple-music.js";
 import { makeApprovalRequests } from "./approval-requests.js";
@@ -1633,12 +1634,18 @@ export const createPortableApp = (options: {
                       Effect.fail(appleMusicSearchRefusal(error))
                     )
                   );
+                const answer = appleMusicSearchAnswer(words, found, {
+                  creator: query.creator,
+                  label: query.label,
+                  series: query.series,
+                });
                 const personal = yield* Library;
                 const saved = yield* personal.savedUrls(
-                  found.map((album) => album.url)
+                  answer.albums.map((album) => album.url)
                 );
                 return {
-                  albums: found.map((album) => ({
+                  ...answer,
+                  albums: answer.albums.map((album) => ({
                     ...album,
                     inLibrary: saved.has(album.url),
                   })),

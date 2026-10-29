@@ -40,6 +40,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380377",
                 "attributes": {
+                  "artistName": "Blakkat & David Morales",
                   "durationInMillis": 245634,
                   "name": "SECOND CHANCE (David Morales Zone Vocal Remix) [Mixed]"
                 }
@@ -49,6 +50,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380378",
                 "attributes": {
+                  "artistName": "Joeski",
                   "durationInMillis": 192196,
                   "name": "Frequencia (feat. UNNA X) [Mixed]"
                 }
@@ -58,6 +60,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380379",
                 "attributes": {
+                  "artistName": "Grace Bones",
                   "durationInMillis": 262201,
                   "name": "AfroFuturistic (Mixed)"
                 }
@@ -67,6 +70,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380380",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 184751,
                   "name": "ID1 (from Seth Troxler at Circoloco Thailand) [Mixed]"
                 }
@@ -76,6 +80,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380381",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 287975,
                   "name": "ID2 (from Seth Troxler at Circoloco Thailand) [Mixed]"
                 }
@@ -85,6 +90,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380382",
                 "attributes": {
+                  "artistName": "Ohm Hourani & Ananda Project",
                   "durationInMillis": 414017,
                   "name": "Barbara (Villalobos & Javasoul Remix) / Cascades of Colour (feat. Gaëlle) [Manoo’s Tribute Remix] [Mixed]"
                 }
@@ -94,6 +100,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380383",
                 "attributes": {
+                  "artistName": "David Morales",
                   "durationInMillis": 230559,
                   "name": "The Bonester (Mixed)"
                 }
@@ -103,6 +110,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380384",
                 "attributes": {
+                  "artistName": "Antonio Ocasio",
                   "durationInMillis": 292777,
                   "name": "Going to the Mountain (feat. Ed Ramsey) [Mixed]"
                 }
@@ -112,6 +120,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380565",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 170955,
                   "name": "ID3 (from Seth Troxler at Circoloco Thailand) [Mixed]"
                 }
@@ -121,6 +130,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380566",
                 "attributes": {
+                  "artistName": "Lil' Mo' Yin Yang",
                   "durationInMillis": 72931,
                   "name": "Reach (Little \"More\" Mix) [Mixed]"
                 }
@@ -130,6 +140,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380567",
                 "attributes": {
+                  "artistName": "Mikki Affllick",
                   "durationInMillis": 170301,
                   "name": "Kuna Dance (Kuna Tribe Mix) [Mixed]"
                 }
@@ -139,6 +150,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380568",
                 "attributes": {
+                  "artistName": "Alinka",
                   "durationInMillis": 144541,
                   "name": "Weather the Storm (Mixed)"
                 }
@@ -148,6 +160,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380569",
                 "attributes": {
+                  "artistName": "Milion",
                   "durationInMillis": 117105,
                   "name": "Space Invaders (Mixed)"
                 }
@@ -157,6 +170,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380570",
                 "attributes": {
+                  "artistName": "Dexter Troy",
                   "durationInMillis": 267245,
                   "name": "Kick It (Mixed)"
                 }
@@ -166,6 +180,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380571",
                 "attributes": {
+                  "artistName": "Moodena & Charles Levine",
                   "durationInMillis": 263394,
                   "name": "Badman (Mixed)"
                 }
@@ -175,6 +190,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380572",
                 "attributes": {
+                  "artistName": "Lorenz Rhode & Purple Disco Machine",
                   "durationInMillis": 274576,
                   "name": "Dirty Pleasures (feat. Jake Shears) [Erol Alkan Rework] [Mixed]"
                 }
@@ -184,6 +200,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380573",
                 "attributes": {
+                  "artistName": "Pryda & Chuck Roberts",
                   "durationInMillis": 184609,
                   "name": "Rakfunk / In The Beginning (There Was Jack) [feat. Monique Bingham] [Mixed]"
                 }
@@ -193,6 +210,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380574",
                 "attributes": {
+                  "artistName": "Byron Stingily",
                   "durationInMillis": 302069,
                   "name": "I Could Be That (Remix) [Mixed]"
                 }
@@ -202,6 +220,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380575",
                 "attributes": {
+                  "artistName": "Darran Nugent",
                   "durationInMillis": 165001,
                   "name": "The Messiah (An Abacus Story) [Mixed]"
                 }
@@ -211,6 +230,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380576",
                 "attributes": {
+                  "artistName": "Kölsch",
                   "durationInMillis": 210923,
                   "name": "Der Alte (Mixed)"
                 }
@@ -220,6 +240,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380577",
                 "attributes": {
+                  "artistName": "The Streets",
                   "durationInMillis": 118455,
                   "name": "Turn the Page (Mixed)"
                 }
@@ -229,6 +250,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380578",
                 "attributes": {
+                  "artistName": "Dennis Ferrer",
                   "durationInMillis": 348189,
                   "name": "The Red Room (Obj Vocal Mix) [Mixed]"
                 }
@@ -238,6 +260,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380579",
                 "attributes": {
+                  "artistName": "Kristin Velvet",
                   "durationInMillis": 232477,
                   "name": "The Same Old Heart (Mixed)"
                 }
@@ -247,6 +270,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1814380580",
                 "attributes": {
+                  "artistName": "Pitto",
                   "durationInMillis": 240201,
                   "name": "You (Mixed)"
                 }
@@ -294,6 +318,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220230",
                 "attributes": {
+                  "artistName": "Brooklyn Baby & Man/ipulate",
                   "durationInMillis": 341450,
                   "name": "Eternity (Alex Kassian's Ode to Sunshine Mix) / Only You (Mixed)"
                 }
@@ -303,6 +328,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220231",
                 "attributes": {
+                  "artistName": "Gloria Estefan & Miami Sound Machine & Gloria Estefan",
                   "durationInMillis": 293299,
                   "name": "Rhythm Is Gonna Get You (Remix) [Mixed]"
                 }
@@ -312,6 +338,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220232",
                 "attributes": {
+                  "artistName": "Gloria Estefan & Miami Sound Machine & Gloria Estefan",
                   "durationInMillis": 323152,
                   "name": "Conga (Remix) [Mixed]"
                 }
@@ -321,6 +348,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220233",
                 "attributes": {
+                  "artistName": "Saliva Commandos",
                   "durationInMillis": 158499,
                   "name": "Contacto (Mixed)"
                 }
@@ -330,6 +358,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220234",
                 "attributes": {
+                  "artistName": "Rodrigo Laffertt",
                   "durationInMillis": 350725,
                   "name": "Sacrilegio (Mixed)"
                 }
@@ -339,6 +368,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220235",
                 "attributes": {
+                  "artistName": "Gaba (BRA) & HOO",
                   "durationInMillis": 313699,
                   "name": "Foggy Carnival (Facundo Mohrr & Maxi Degrassi Remix) [Mixed]"
                 }
@@ -348,6 +378,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220236",
                 "attributes": {
+                  "artistName": "Roy \"Jazz\" Grant",
                   "durationInMillis": 201776,
                   "name": "Rump Shake (Mixed)"
                 }
@@ -357,6 +388,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220237",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 364098,
                   "name": "ID1 (from Seth Troxler at Circoloco Rio De Janeiro) [Mixed]"
                 }
@@ -366,6 +398,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220238",
                 "attributes": {
+                  "artistName": "Seth Troxler & HoneyLuv",
                   "durationInMillis": 218776,
                   "name": "Sex & The City (feat. Paul Johnson) [MK Remix] [Mixed]"
                 }
@@ -375,6 +408,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220239",
                 "attributes": {
+                  "artistName": "Matheo Velez & Javi Bora",
                   "durationInMillis": 175198,
                   "name": "Dancing With Mermaids (Mixed)"
                 }
@@ -384,6 +418,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220240",
                 "attributes": {
+                  "artistName": "Italobros",
                   "durationInMillis": 324114,
                   "name": "La via en rose (Mixed)"
                 }
@@ -393,6 +428,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220241",
                 "attributes": {
+                  "artistName": "Jorja Smith",
                   "durationInMillis": 232611,
                   "name": "Little Things (Remix) [Mixed]"
                 }
@@ -402,6 +438,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220242",
                 "attributes": {
+                  "artistName": "Plaster Hands & Marco Lys",
                   "durationInMillis": 278552,
                   "name": "Who Dares to Believe in Me (Mixed)"
                 }
@@ -411,6 +448,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220243",
                 "attributes": {
+                  "artistName": "Gaskin",
                   "durationInMillis": 298549,
                   "name": "Anthem (Mixed)"
                 }
@@ -420,6 +458,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220244",
                 "attributes": {
+                  "artistName": "X-Press 2",
                   "durationInMillis": 307648,
                   "name": "Lazy (feat. David Byrne) [Fatboy Slim Remix] [Mixed]"
                 }
@@ -429,6 +468,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220245",
                 "attributes": {
+                  "artistName": "Cajmere & Dajae",
                   "durationInMillis": 219875,
                   "name": "Brighter Days (DJ E-Clyps Remix) [Mixed]"
                 }
@@ -438,6 +478,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220246",
                 "attributes": {
+                  "artistName": "Keith Mansfield",
                   "durationInMillis": 40302,
                   "name": "Funky Fanfare (Edit) [Mixed]"
                 }
@@ -447,6 +488,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220397",
                 "attributes": {
+                  "artistName": "Fatboy Slim",
                   "durationInMillis": 177749,
                   "name": "Star 69 (Remix) [Mixed]"
                 }
@@ -456,6 +498,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220398",
                 "attributes": {
+                  "artistName": "ENiGMA Dubz & Window Kid",
                   "durationInMillis": 183400,
                   "name": "Playing Out (feat. Émilie Rachel) [Mixed]"
                 }
@@ -465,6 +508,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220399",
                 "attributes": {
+                  "artistName": "Raxon & Adam Beyer",
                   "durationInMillis": 234877,
                   "name": "The Signal (Day Mix) [Mixed]"
                 }
@@ -474,6 +518,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220400",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 329771,
                   "name": "ID2 (from Seth Troxler at Circoloco Rio De Janeiro) [Mixed]"
                 }
@@ -483,6 +528,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220401",
                 "attributes": {
+                  "artistName": "Armando",
                   "durationInMillis": 235677,
                   "name": "No Me Tocas (Mixed)"
                 }
@@ -492,6 +538,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220402",
                 "attributes": {
+                  "artistName": "Sally C",
                   "durationInMillis": 252872,
                   "name": "Control (Mixed)"
                 }
@@ -501,6 +548,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220403",
                 "attributes": {
+                  "artistName": "Butch & Jason Jinx",
                   "durationInMillis": 369101,
                   "name": "Pompino / Your First Time (feat. Paul Alexander) [Mixed]"
                 }
@@ -510,6 +558,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220404",
                 "attributes": {
+                  "artistName": "Aluna & Chris Lake",
                   "durationInMillis": 199449,
                   "name": "Beggin' (Mixed)"
                 }
@@ -519,6 +568,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220405",
                 "attributes": {
+                  "artistName": "Trilion & Kino Todo",
                   "durationInMillis": 247050,
                   "name": "Raver (Mixed)"
                 }
@@ -528,6 +578,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220406",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 214525,
                   "name": "ID3 (from Seth Troxler at Circoloco Rio De Janeiro) [Mixed]"
                 }
@@ -537,6 +588,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740220407",
                 "attributes": {
+                  "artistName": "Italobros",
                   "durationInMillis": 251381,
                   "name": "Gosadera (Mixed)"
                 }
@@ -594,6 +646,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215223",
                 "attributes": {
+                  "artistName": "Edson Conceição & ItaloBros",
                   "durationInMillis": 460952,
                   "name": "Gosadera / Filhos de Gandhi (Um Abraço em Gilberto Gil) [Mike Burns Edit] [Mixed]"
                 }
@@ -603,6 +656,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215224",
                 "attributes": {
+                  "artistName": "Abana",
                   "durationInMillis": 443376,
                   "name": "Sativa Jazz (Mixed)"
                 }
@@ -612,6 +666,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215225",
                 "attributes": {
+                  "artistName": "Blaze",
                   "durationInMillis": 206925,
                   "name": "Lovelee Dae (Remix) [Mixed]"
                 }
@@ -621,6 +676,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215226",
                 "attributes": {
+                  "artistName": "Nu Genea",
                   "durationInMillis": 221701,
                   "name": "Vesuvio (ItaloBros Remix) [Mixed]"
                 }
@@ -630,6 +686,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215227",
                 "attributes": {
+                  "artistName": "Tiga",
                   "durationInMillis": 295651,
                   "name": "You Gonna Want Me (Mixed)"
                 }
@@ -639,6 +696,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215228",
                 "attributes": {
+                  "artistName": "Tartan",
                   "durationInMillis": 258851,
                   "name": "Ayo! (Mixed)"
                 }
@@ -648,6 +706,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215229",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 244050,
                   "name": "ID (from Mochakk b2b DJ Tennis b2b Seth Troxler at Circoloco Rio De Janeiro) [Mixed]"
                 }
@@ -657,6 +716,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215230",
                 "attributes": {
+                  "artistName": "Mendo",
                   "durationInMillis": 310675,
                   "name": "Inocencia (Mixed)"
                 }
@@ -666,6 +726,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215231",
                 "attributes": {
+                  "artistName": "Jay Vegas",
                   "durationInMillis": 184477,
                   "name": "Break Ya Down (Mark Knight Remix) [Mixed]"
                 }
@@ -675,6 +736,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215232",
                 "attributes": {
+                  "artistName": "Tony Touch",
                   "durationInMillis": 305328,
                   "name": "Sacude 2021 (Manoo's Touch Latino Flute Short Mix) [Mixed]"
                 }
@@ -684,6 +746,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215233",
                 "attributes": {
+                  "artistName": "Mutiny",
                   "durationInMillis": 342048,
                   "name": "Ya'Self (Mixed)"
                 }
@@ -693,6 +756,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1740215234",
                 "attributes": {
+                  "artistName": "Larry Heard & Mr. White",
                   "durationInMillis": 178120,
                   "name": "The Sun Can't Compare (Mixed)"
                 }
@@ -740,6 +804,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111765",
                 "attributes": {
+                  "artistName": "Karizma, Thommy Davis & DJ Spen",
                   "durationInMillis": 296751,
                   "name": "Groove A 'K' Ordingly (Atjazz Floor Dub) / Voodoo Ray (Ooh-Ah-Pella) [Mixed]"
                 }
@@ -749,6 +814,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111766",
                 "attributes": {
+                  "artistName": "Osunlade",
                   "durationInMillis": 293271,
                   "name": "Electricity (Mixed)"
                 }
@@ -758,6 +824,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111767",
                 "attributes": {
+                  "artistName": "Diddy & H.E.R.",
                   "durationInMillis": 342349,
                   "name": "Space (Frankie Feliciano Remix) [Mixed]"
                 }
@@ -767,6 +834,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111768",
                 "attributes": {
+                  "artistName": "Bonetti & Lee Wilson",
                   "durationInMillis": 281701,
                   "name": "Under the Moon (We Dance) [Scott Diaz Dub] [Mixed]"
                 }
@@ -776,6 +844,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111769",
                 "attributes": {
+                  "artistName": "Nail",
                   "durationInMillis": 313072,
                   "name": "Houseaholic (Mixed)"
                 }
@@ -785,6 +854,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111770",
                 "attributes": {
+                  "artistName": "Radio Slave",
                   "durationInMillis": 244675,
                   "name": "Wild Life (Roy Davis Jr. & Byron The Aquarius Remix) [Mixed]"
                 }
@@ -794,6 +864,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111771",
                 "attributes": {
+                  "artistName": "Human Safari",
                   "durationInMillis": 282073,
                   "name": "Jazz Affair (Mixed)"
                 }
@@ -803,6 +874,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111772",
                 "attributes": {
+                  "artistName": "DjPope",
                   "durationInMillis": 359099,
                   "name": "Has to Be This Way (feat. Dana Weaver) [Funkhut Dub 2] [Mixed]"
                 }
@@ -812,6 +884,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111773",
                 "attributes": {
+                  "artistName": "Motion Severn",
                   "durationInMillis": 196299,
                   "name": "My Way (Motion Severn Spacelab Mix) [Mixed]"
                 }
@@ -821,6 +894,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111774",
                 "attributes": {
+                  "artistName": "Dave Lee & Swing Time Dee",
                   "durationInMillis": 280897,
                   "name": "You & I (Joey Negro Club Mix) [Mixed]"
                 }
@@ -830,6 +904,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111775",
                 "attributes": {
+                  "artistName": "Kerri Chandler & Dennis Quin",
                   "durationInMillis": 280674,
                   "name": "You Are in My System (feat. Troy Denari) [Mixed]"
                 }
@@ -839,6 +914,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111776",
                 "attributes": {
+                  "artistName": "Blaze",
                   "durationInMillis": 293350,
                   "name": "Lovelee Dae (Seth Troxler Remix) [Mixed]"
                 }
@@ -848,6 +924,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111837",
                 "attributes": {
+                  "artistName": "Stacy Kidd",
                   "durationInMillis": 166998,
                   "name": "Praise (Mixed)"
                 }
@@ -857,6 +934,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718111838",
                 "attributes": {
+                  "artistName": "Lost Souls Of Saturn",
                   "durationInMillis": 320063,
                   "name": "Lilac Chaser (feat. Protomartyr) [Mixed]"
                 }
@@ -904,6 +982,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753113",
                 "attributes": {
+                  "artistName": "Télépopmusik & Deep Dish",
                   "durationInMillis": 405591,
                   "name": "Stay Gold / Love Can Damage Your Health (Abicah Soul/Dennis Ferrer Remix) [Mixed]"
                 }
@@ -913,6 +992,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753114",
                 "attributes": {
+                  "artistName": "Silia & Christos Fourkis",
                   "durationInMillis": 208379,
                   "name": "Jazzy Walking (Mixed)"
                 }
@@ -922,6 +1002,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753115",
                 "attributes": {
+                  "artistName": "Kristin Velvet",
                   "durationInMillis": 209530,
                   "name": "Get Down (Fred P Reshape) [Mixed]"
                 }
@@ -931,6 +1012,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753116",
                 "attributes": {
+                  "artistName": "Praktika",
                   "durationInMillis": 267571,
                   "name": "Zélé (feat. Jahelle) [Palms Trax Remix] [Mixed]"
                 }
@@ -940,6 +1022,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753117",
                 "attributes": {
+                  "artistName": "Uncle Waffles & Tony Duardo",
                   "durationInMillis": 237521,
                   "name": "Tanzania (Rampa Remix) [Mixed]"
                 }
@@ -949,6 +1032,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753118",
                 "attributes": {
+                  "artistName": "Westvil",
                   "durationInMillis": 326678,
                   "name": "Tele (feat. Idd Aziz) [Mixed]"
                 }
@@ -958,6 +1042,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753239",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 284479,
                   "name": "ID1 (from Seth Troxler at III Points Music Festival 2024) [Mixed]"
                 }
@@ -967,6 +1052,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753240",
                 "attributes": {
+                  "artistName": "Dennis Ferrer",
                   "durationInMillis": 342378,
                   "name": "The Red Room (OBJ Vocal Mix) [Mixed]"
                 }
@@ -976,6 +1062,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753241",
                 "attributes": {
+                  "artistName": "Kristin Velvet",
                   "durationInMillis": 152441,
                   "name": "Wasp Nest (Mixed)"
                 }
@@ -985,6 +1072,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753242",
                 "attributes": {
+                  "artistName": "EDE",
                   "durationInMillis": 266776,
                   "name": "Do My Thing (Dixon Rework) [Mixed]"
                 }
@@ -994,6 +1082,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753243",
                 "attributes": {
+                  "artistName": "Ramon Bedoya",
                   "durationInMillis": 281680,
                   "name": "El Viaje (Mixed)"
                 }
@@ -1003,6 +1092,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753244",
                 "attributes": {
+                  "artistName": "Mattei & Omich",
                   "durationInMillis": 207726,
                   "name": "Tromba (Mixed)"
                 }
@@ -1012,6 +1102,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753245",
                 "attributes": {
+                  "artistName": "Smokin' Jo & D Ramirez",
                   "durationInMillis": 314047,
                   "name": "In the Night (Mixed)"
                 }
@@ -1021,6 +1112,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753246",
                 "attributes": {
+                  "artistName": "Dam Swindle",
                   "durationInMillis": 256048,
                   "name": "Forever and Ever (Mixed)"
                 }
@@ -1030,6 +1122,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753247",
                 "attributes": {
+                  "artistName": "Ryan Hayden",
                   "durationInMillis": 255551,
                   "name": "Hot Coffee (Mixed)"
                 }
@@ -1039,6 +1132,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753248",
                 "attributes": {
+                  "artistName": "Mason Maynard",
                   "durationInMillis": 237180,
                   "name": "Fallin' (Mixed)"
                 }
@@ -1048,6 +1142,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753249",
                 "attributes": {
+                  "artistName": "Easttown",
                   "durationInMillis": 251971,
                   "name": "Timeless (Mixed)"
                 }
@@ -1057,6 +1152,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753250",
                 "attributes": {
+                  "artistName": "Erik Bandt & ANOTR",
                   "durationInMillis": 237904,
                   "name": "How You Feel (feat. Leven Kali) [Mixed]"
                 }
@@ -1066,6 +1162,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753251",
                 "attributes": {
+                  "artistName": "Nick Curly",
                   "durationInMillis": 274150,
                   "name": "A Little Conversation (Mixed)"
                 }
@@ -1075,6 +1172,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753252",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 252482,
                   "name": "ID2 (from Seth Troxler at III Points Music Festival 2024) [Mixed]"
                 }
@@ -1084,6 +1182,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753253",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 349184,
                   "name": "ID3 (from Seth Troxler at III Points Music Festival 2024) [Mixed]"
                 }
@@ -1093,6 +1192,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753254",
                 "attributes": {
+                  "artistName": "Très Mortimer",
                   "durationInMillis": 289438,
                   "name": "At Night I Think Of You (Seth Troxler & Nick Morgan Remix) [Mixed]"
                 }
@@ -1102,6 +1202,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753255",
                 "attributes": {
+                  "artistName": "Seth Troxler & HoneyLuv",
                   "durationInMillis": 285673,
                   "name": "Sex & The City (feat. Paul Johnson) [Mixed]"
                 }
@@ -1111,6 +1212,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753256",
                 "attributes": {
+                  "artistName": "Steve Bug & Denney",
                   "durationInMillis": 270058,
                   "name": "That Beat (feat. Mikey V) [Mixed]"
                 }
@@ -1120,6 +1222,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753257",
                 "attributes": {
+                  "artistName": "Jordan Peak",
                   "durationInMillis": 238345,
                   "name": "I Need A Freak (Mixed)"
                 }
@@ -1129,6 +1232,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753258",
                 "attributes": {
+                  "artistName": "Lisbona Sisters",
                   "durationInMillis": 267259,
                   "name": "Articulation (Mixed)"
                 }
@@ -1138,6 +1242,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753259",
                 "attributes": {
+                  "artistName": "Cole Knight, Joseph Ashworth & KDA",
                   "durationInMillis": 222645,
                   "name": "Money (Mixed)"
                 }
@@ -1147,6 +1252,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753260",
                 "attributes": {
+                  "artistName": "Filta Freqz",
                   "durationInMillis": 227546,
                   "name": "The Centre (Mixed)"
                 }
@@ -1156,6 +1262,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753261",
                 "attributes": {
+                  "artistName": "Cajmere",
                   "durationInMillis": 271450,
                   "name": "Let Me Be '92 (Mixed)"
                 }
@@ -1165,6 +1272,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753262",
                 "attributes": {
+                  "artistName": "Jackmaster",
                   "durationInMillis": 281083,
                   "name": "Party Going On (Mixed)"
                 }
@@ -1174,6 +1282,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753263",
                 "attributes": {
+                  "artistName": "Everything But the Girl",
                   "durationInMillis": 281083,
                   "name": "Missing (Mixed)"
                 }
@@ -1183,6 +1292,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753264",
                 "attributes": {
+                  "artistName": "Azari & III & Max Dean",
                   "durationInMillis": 378027,
                   "name": "Reckless (Mixed)"
                 }
@@ -1192,6 +1302,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753265",
                 "attributes": {
+                  "artistName": "Nyra & Chloé Caillet",
                   "durationInMillis": 290703,
                   "name": "Last One For Today (Mixed)"
                 }
@@ -1201,6 +1312,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753266",
                 "attributes": {
+                  "artistName": "Radio Cargo",
                   "durationInMillis": 244525,
                   "name": "Like You Move (Mixed)"
                 }
@@ -1210,6 +1322,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753267",
                 "attributes": {
+                  "artistName": "Kyle Starkey & Dart",
                   "durationInMillis": 251871,
                   "name": "Dance N Move (Mixed)"
                 }
@@ -1219,6 +1332,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753268",
                 "attributes": {
+                  "artistName": "Scuba",
                   "durationInMillis": 251942,
                   "name": "Forever (Piano Mix) [Mixed]"
                 }
@@ -1228,6 +1342,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753269",
                 "attributes": {
+                  "artistName": "Hilit Kolet",
                   "durationInMillis": 253761,
                   "name": "Hot Mess (Mixed)"
                 }
@@ -1237,6 +1352,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753270",
                 "attributes": {
+                  "artistName": "Kevin Knapp",
                   "durationInMillis": 216890,
                   "name": "Worldwide (Kevin Knapp’s Across the World Remix) [Mixed]"
                 }
@@ -1246,6 +1362,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753271",
                 "attributes": {
+                  "artistName": "Rafael & Adam Ten",
                   "durationInMillis": 229806,
                   "name": "Call 911 (Mixed)"
                 }
@@ -1255,6 +1372,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753272",
                 "attributes": {
+                  "artistName": "Hicky & Kalo & Hernán Cattáneo",
                   "durationInMillis": 252454,
                   "name": "Voyage (Denis Horvat Remix) [Mixed]"
                 }
@@ -1264,6 +1382,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753273",
                 "attributes": {
+                  "artistName": "Torren Foot",
                   "durationInMillis": 258847,
                   "name": "Feed the Streets (Mixed)"
                 }
@@ -1273,6 +1392,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753274",
                 "attributes": {
+                  "artistName": "Radio Slave",
                   "durationInMillis": 348246,
                   "name": "The Lunatics (A Clinic Full Of Cynics Dub) [Mixed]"
                 }
@@ -1282,6 +1402,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753275",
                 "attributes": {
+                  "artistName": "Par-T-One",
                   "durationInMillis": 304982,
                   "name": "I'm so Crazy (Mixed)"
                 }
@@ -1291,6 +1412,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753276",
                 "attributes": {
+                  "artistName": "Depeche Mode",
                   "durationInMillis": 338343,
                   "name": "Enjoy the Silence (Remix) [Mixed]"
                 }
@@ -1300,6 +1422,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753277",
                 "attributes": {
+                  "artistName": "Real Velour",
                   "durationInMillis": 284707,
                   "name": "Champions (Mixed)"
                 }
@@ -1309,6 +1432,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753278",
                 "attributes": {
+                  "artistName": "New Order",
                   "durationInMillis": 422371,
                   "name": "Blue Monday (Mixed)"
                 }
@@ -1318,6 +1442,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753279",
                 "attributes": {
+                  "artistName": "Blur",
                   "durationInMillis": 401996,
                   "name": "Girls and Boys (Remix) [Mixed]"
                 }
@@ -1327,6 +1452,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753280",
                 "attributes": {
+                  "artistName": "Express of Sound",
                   "durationInMillis": 342222,
                   "name": "Real Vibration (Want Love) [Real Club Mix] [Mixed]"
                 }
@@ -1336,6 +1462,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753281",
                 "attributes": {
+                  "artistName": "PAWSA",
                   "durationInMillis": 312157,
                   "name": "COLLECT THE COMMAS (Mixed)"
                 }
@@ -1345,6 +1472,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753282",
                 "attributes": {
+                  "artistName": "Drake & 21 Savage",
                   "durationInMillis": 250905,
                   "name": "On BS (Remix) [Mixed]"
                 }
@@ -1354,6 +1482,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1790753283",
                 "attributes": {
+                  "artistName": "House Gospel Choir & Duane Harden",
                   "durationInMillis": 364731,
                   "name": "You Don't Know Me (Mixed)"
                 }
@@ -1401,6 +1530,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124186",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 292976,
                   "name": "ID1 (from Seth Troxler at Kappa FuturFestival 2024) [Mixed]"
                 }
@@ -1410,6 +1540,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124187",
                 "attributes": {
+                  "artistName": "Jesse Jacob",
                   "durationInMillis": 225274,
                   "name": "A Little Mo' (Mixed)"
                 }
@@ -1419,6 +1550,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124188",
                 "attributes": {
+                  "artistName": "Jansons",
                   "durationInMillis": 165224,
                   "name": "Hypnotic (feat. Dope Earth Alien) [Mixed]"
                 }
@@ -1428,6 +1560,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124189",
                 "attributes": {
+                  "artistName": "Tuccillo",
                   "durationInMillis": 240176,
                   "name": "Holding On (Mixed)"
                 }
@@ -1437,6 +1570,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124190",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 202723,
                   "name": "ID2 (from Seth Troxler at Kappa FuturFestival 2024) [Mixed]"
                 }
@@ -1446,6 +1580,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124191",
                 "attributes": {
+                  "artistName": "Nyra & Chloé Caillet",
                   "durationInMillis": 217752,
                   "name": "Last One For Today (Mixed)"
                 }
@@ -1455,6 +1590,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124192",
                 "attributes": {
+                  "artistName": "Gene Farris",
                   "durationInMillis": 180024,
                   "name": "Euphoria (Mixed)"
                 }
@@ -1464,6 +1600,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124193",
                 "attributes": {
+                  "artistName": "PAWSA",
                   "durationInMillis": 238923,
                   "name": "ON the MOVE (Mixed)"
                 }
@@ -1473,6 +1610,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124194",
                 "attributes": {
+                  "artistName": "Inland Knights",
                   "durationInMillis": 227050,
                   "name": "Slummin It (Mixed)"
                 }
@@ -1482,6 +1620,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124195",
                 "attributes": {
+                  "artistName": "Ari Bald & CJ Scott, CJ Scott & Ari Bald",
                   "durationInMillis": 286627,
                   "name": "Tropicana Thunder (Mixed)"
                 }
@@ -1491,6 +1630,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124196",
                 "attributes": {
+                  "artistName": "Backroom Productions",
                   "durationInMillis": 283072,
                   "name": "What Can You Do For Me (Dave Lee Classic Vibe Mix) [Mixed]"
                 }
@@ -1500,6 +1640,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124197",
                 "attributes": {
+                  "artistName": "Floorplan",
                   "durationInMillis": 356875,
                   "name": "Don't You Doubt It (Mixed)"
                 }
@@ -1509,6 +1650,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124198",
                 "attributes": {
+                  "artistName": "Nic Fanciulli",
                   "durationInMillis": 238074,
                   "name": "You Sure Do (Mixed)"
                 }
@@ -1518,6 +1660,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124199",
                 "attributes": {
+                  "artistName": "Easttown",
                   "durationInMillis": 222251,
                   "name": "Passion (Mixed)"
                 }
@@ -1527,6 +1670,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124200",
                 "attributes": {
+                  "artistName": "The Streets",
                   "durationInMillis": 333400,
                   "name": "Weak Become Heroes (Royksopp's Memory Lane Mix) [Mixed]"
                 }
@@ -1536,6 +1680,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124201",
                 "attributes": {
+                  "artistName": "DJ Fudge",
                   "durationInMillis": 252923,
                   "name": "Escapade (Mixed)"
                 }
@@ -1545,6 +1690,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124202",
                 "attributes": {
+                  "artistName": "Hard Ton",
                   "durationInMillis": 256728,
                   "name": "Believe (Mixed)"
                 }
@@ -1554,6 +1700,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124203",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 283546,
                   "name": "ID3 (from Seth Troxler at Kappa FuturFestival 2024) [Mixed]"
                 }
@@ -1563,6 +1710,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124204",
                 "attributes": {
+                  "artistName": "P.i.m.p.",
                   "durationInMillis": 212075,
                   "name": "The Light (Robbie Rivera's Big Pumping Mix Part 1) [Mixed]"
                 }
@@ -1572,6 +1720,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124205",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 256600,
                   "name": "ID4 (from Seth Troxler at Kappa FuturFestival 2024) [Mixed]"
                 }
@@ -1581,6 +1730,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124206",
                 "attributes": {
+                  "artistName": "Elton John",
                   "durationInMillis": 299499,
                   "name": "Rocket Man (I Think It's Going to Be a Long Long Time) [Remix] [Mixed]"
                 }
@@ -1590,6 +1740,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124207",
                 "attributes": {
+                  "artistName": "Samuel L Session",
                   "durationInMillis": 135675,
                   "name": "Body N' Soul (Mixed)"
                 }
@@ -1599,6 +1750,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124208",
                 "attributes": {
+                  "artistName": "Jerome Sydenham",
                   "durationInMillis": 297575,
                   "name": "Ma Foom Bey (Mixed)"
                 }
@@ -1608,6 +1760,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124209",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 163726,
                   "name": "ID5 (from Seth Troxler at Kappa FuturFestival 2024) [Mixed]"
                 }
@@ -1617,6 +1770,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124210",
                 "attributes": {
+                  "artistName": "Calisto",
                   "durationInMillis": 347800,
                   "name": "Get House (Mixed)"
                 }
@@ -1626,6 +1780,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124211",
                 "attributes": {
+                  "artistName": "Abbud & Marian",
                   "durationInMillis": 186000,
                   "name": "Loco Jungle (Mixed)"
                 }
@@ -1635,6 +1790,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124212",
                 "attributes": {
+                  "artistName": "Armando",
                   "durationInMillis": 296272,
                   "name": "No Me Tocas (Mixed)"
                 }
@@ -1644,6 +1800,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124213",
                 "attributes": {
+                  "artistName": "Ale Castro & Machito Ponce",
                   "durationInMillis": 283050,
                   "name": "Ponte a Brincar (2024 Remix) [Mixed]"
                 }
@@ -1653,6 +1810,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1768124214",
                 "attributes": {
+                  "artistName": "Pino Daniele",
                   "durationInMillis": 218468,
                   "name": "Yes I Know My Way (Jo Crimaldi Remix) [Mixed]"
                 }
@@ -1679,6 +1837,7 @@
           },
           "isSingle": false,
           "name": "DJ-Kicks (DJ Mix)",
+          "recordLabel": "!K7 Records",
           "releaseDate": "2015-10-16"
         },
         "relationships": {
@@ -1700,6 +1859,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502558",
                 "attributes": {
+                  "artistName": "Niki Nakazawa",
                   "durationInMillis": 181493,
                   "name": "Would It Be (Mixed)"
                 }
@@ -1709,6 +1869,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502562",
                 "attributes": {
+                  "artistName": "Matthew Herbert",
                   "durationInMillis": 193453,
                   "name": "Suddenly (Phil Parnell's Pianissimo Play Through) [Mixed]"
                 }
@@ -1718,6 +1879,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502567",
                 "attributes": {
+                  "artistName": "DJ Koze",
                   "durationInMillis": 235267,
                   "name": "Bodenweich (Mixed)"
                 }
@@ -1727,6 +1889,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502568",
                 "attributes": {
+                  "artistName": "Cobblestone Jazz",
                   "durationInMillis": 431733,
                   "name": "Northern Lights (Mixed)"
                 }
@@ -1736,6 +1899,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502569",
                 "attributes": {
+                  "artistName": "Wolfgang Haffner",
                   "durationInMillis": 240867,
                   "name": "Melodia Del Viento (Ricardo Villalobos & Max Loderbauer Meloopdia Remix) [Mixed]"
                 }
@@ -1745,6 +1909,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502844",
                 "attributes": {
+                  "artistName": "Seth Troxler, Tom Trago & T&T Music Factory",
                   "durationInMillis": 347787,
                   "name": "De Natte Cel (DJ-Kicks) [Mixed]"
                 }
@@ -1754,6 +1919,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502893",
                 "attributes": {
+                  "artistName": "Hauke Freer",
                   "durationInMillis": 282173,
                   "name": "XK (Mixed)"
                 }
@@ -1763,6 +1929,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502897",
                 "attributes": {
+                  "artistName": "Butch",
                   "durationInMillis": 349160,
                   "name": "Dope (Mixed)"
                 }
@@ -1772,6 +1939,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502898",
                 "attributes": {
+                  "artistName": "Session Victim",
                   "durationInMillis": 254893,
                   "name": "Stick Together (Mixed)"
                 }
@@ -1781,6 +1949,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502899",
                 "attributes": {
+                  "artistName": "Club Artists United",
                   "durationInMillis": 254533,
                   "name": "Sweet Chariot (Kerri \"Kaoz 6:23\" Chandler Dramatic Dub) [Mixed]"
                 }
@@ -1790,6 +1959,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502900",
                 "attributes": {
+                  "artistName": "Jasper St Company",
                   "durationInMillis": 356947,
                   "name": "Reach (Basement Sessions Main Vocal Mix) [Mixed]"
                 }
@@ -1799,6 +1969,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502902",
                 "attributes": {
+                  "artistName": "K-Alexi",
                   "durationInMillis": 138707,
                   "name": "Sex-N-R-001 (Vocal Mixx) [Mixed]"
                 }
@@ -1808,6 +1979,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502903",
                 "attributes": {
+                  "artistName": "Mood II Swing",
                   "durationInMillis": 286587,
                   "name": "Ohh (Mixed) [feat. John Ciafone]"
                 }
@@ -1817,6 +1989,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502904",
                 "attributes": {
+                  "artistName": "Derrick L. Carter",
                   "durationInMillis": 334000,
                   "name": "Dreaming Again (Mixed)"
                 }
@@ -1826,6 +1999,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502965",
                 "attributes": {
+                  "artistName": "Byron Stingily",
                   "durationInMillis": 222107,
                   "name": "Why Can't You Be Real (Danny's 12\" Version) [Mixed]"
                 }
@@ -1835,6 +2009,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502966",
                 "attributes": {
+                  "artistName": "Vanessa McMillian",
                   "durationInMillis": 285373,
                   "name": "Stay With Me (Kevin O Remix)"
                 }
@@ -1844,6 +2019,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502967",
                 "attributes": {
+                  "artistName": "Dean Street Crew",
                   "durationInMillis": 247080,
                   "name": "The Credit Card (Original Tribe Mix) [feat. Sweet P***y Pauline]"
                 }
@@ -1853,6 +2029,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1046502968",
                 "attributes": {
+                  "artistName": "Sun Ra & Sun Ra and His Arkestra",
                   "durationInMillis": 136147,
                   "name": "Enlightenment (Mixed)"
                 }
@@ -1879,6 +2056,7 @@
           },
           "isSingle": true,
           "name": "Lumartes (Extended) - Single",
+          "recordLabel": "CircoLoco Records",
           "releaseDate": "2021-05-24"
         },
         "relationships": {
@@ -1900,6 +2078,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1677680662",
                 "attributes": {
+                  "artistName": "Seth Troxler",
                   "durationInMillis": 508605,
                   "name": "Lumartes (Extended)"
                 }
@@ -1952,6 +2131,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318325",
                 "attributes": {
+                  "artistName": "ATFC",
                   "durationInMillis": 82465,
                   "name": "Das Dope (DJ Spen & Jihad Muhammad Radio Edit) [Mixed]"
                 }
@@ -1961,6 +2141,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318476",
                 "attributes": {
+                  "artistName": "Human By Nature",
                   "durationInMillis": 282337,
                   "name": "The HateLess (Mixed)"
                 }
@@ -1970,6 +2151,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318477",
                 "attributes": {
+                  "artistName": "Guillaume & The Coutu Dumonts",
                   "durationInMillis": 210931,
                   "name": "The Chase (feat. Dave Aju) [Harry Romero Extended Remix] [Mixed]"
                 }
@@ -1979,6 +2161,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318478",
                 "attributes": {
+                  "artistName": "Harvard Bass & Seth Troxler",
                   "durationInMillis": 438733,
                   "name": "I'm the One (Seth Troxler Remix) [Mixed]"
                 }
@@ -1988,6 +2171,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318479",
                 "attributes": {
+                  "artistName": "Nail",
                   "durationInMillis": 203282,
                   "name": "Sim City (Mixed)"
                 }
@@ -1997,6 +2181,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318480",
                 "attributes": {
+                  "artistName": "Mata Jones & Massi ISX",
                   "durationInMillis": 199263,
                   "name": "Breathe (Mixed)"
                 }
@@ -2006,6 +2191,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318481",
                 "attributes": {
+                  "artistName": "Gemini",
                   "durationInMillis": 241056,
                   "name": "Where Do I Go (1997 Mix) [Mixed]"
                 }
@@ -2015,6 +2201,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318482",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 224684,
                   "name": "ID1 (from Seth Troxler & Derrick Carter at ARC Music Festival, 2021) [Mixed]"
                 }
@@ -2024,6 +2211,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318483",
                 "attributes": {
+                  "artistName": "Lood & Masters At Work",
                   "durationInMillis": 128744,
                   "name": "Shout-N-Out (The DJ Dub) [feat. Donell Rush] [Mixed]"
                 }
@@ -2033,6 +2221,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318484",
                 "attributes": {
+                  "artistName": "Demuir, Rufus & Chaka Khan",
                   "durationInMillis": 219841,
                   "name": "Feels so Good / Any Love (feat. Chaka Khan) [Mixed]"
                 }
@@ -2042,6 +2231,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318485",
                 "attributes": {
+                  "artistName": "ID & Azealia Banks",
                   "durationInMillis": 315561,
                   "name": "ID2 (from Seth Troxler & Derrick Carter at ARC Music Festival, 2021) / Anna Wintour (Acapella) [Mixed]"
                 }
@@ -2051,6 +2241,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318486",
                 "attributes": {
+                  "artistName": "Pitch Deck & The Notorious B.I.G.",
                   "durationInMillis": 260274,
                   "name": "When We Do It / Hypnotize (Acapella) [Mixed]"
                 }
@@ -2060,6 +2251,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318487",
                 "attributes": {
+                  "artistName": "Blak Beat Niks",
                   "durationInMillis": 365103,
                   "name": "One Day at a Time (Stone's Big 10 Club Mix) [Mixed]"
                 }
@@ -2069,6 +2261,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318488",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 364228,
                   "name": "ID3 / ID4 (from Seth Troxler & Derrick Carter at ARC Music Festival, 2021) [Mixed]"
                 }
@@ -2078,6 +2271,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318489",
                 "attributes": {
+                  "artistName": "Joey Purp",
                   "durationInMillis": 165394,
                   "name": "Elastic (Remix) [Mixed]"
                 }
@@ -2087,6 +2281,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318490",
                 "attributes": {
+                  "artistName": "Gary's Gang & Maroon 5",
                   "durationInMillis": 297178,
                   "name": "Do It At the Disco (Remix) / This Love (Acapella) [Mixed]"
                 }
@@ -2096,6 +2291,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318491",
                 "attributes": {
+                  "artistName": "Kanye West",
                   "durationInMillis": 299671,
                   "name": "Flashing Lights (feat. Dwele) [Remix] [Mixed]"
                 }
@@ -2105,6 +2301,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318492",
                 "attributes": {
+                  "artistName": "ID & Blaze",
                   "durationInMillis": 247959,
                   "name": "ID5 (from Seth Troxler & Derrick Carter at ARC Music Festival, 2021) / My Beat (feat. Palmer Brown) [Acapella] [Mixed]"
                 }
@@ -2114,6 +2311,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318493",
                 "attributes": {
+                  "artistName": "Whitney Houston & ID",
                   "durationInMillis": 308389,
                   "name": "I'm Every Woman (Clivilles & Cole House Mix I) [Instrumental] / ID6 (from Seth Troxler & Derrick Carter at ARC Music Festival, 2021) [Mixed]"
                 }
@@ -2123,6 +2321,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318494",
                 "attributes": {
+                  "artistName": "Paperclip People & Missy Elliott",
                   "durationInMillis": 286739,
                   "name": "Parking Garage Politics (Eats Everything Edit) / Bomb Intro/Pass That Dutch (Mixed)"
                 }
@@ -2132,6 +2331,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318495",
                 "attributes": {
+                  "artistName": "Demuir & Missy Elliott",
                   "durationInMillis": 279683,
                   "name": "Legend / 4 My People (Acapella) [Mixed]"
                 }
@@ -2141,6 +2341,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318496",
                 "attributes": {
+                  "artistName": "ID & Rihanna",
                   "durationInMillis": 468528,
                   "name": "ID7 (from Seth Troxler & Derrick Carter at ARC Music Festival, 2021) / Pon de Replay (Acapella) [Mixed]"
                 }
@@ -2150,6 +2351,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318497",
                 "attributes": {
+                  "artistName": "The SyntheTigers",
                   "durationInMillis": 196473,
                   "name": "Nasty (Harness Yoself - Unreleased Mix) [Mixed]"
                 }
@@ -2159,6 +2361,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318498",
                 "attributes": {
+                  "artistName": "Rob Milton & Smith",
                   "durationInMillis": 273816,
                   "name": "Sunday Morning (Richard Earnshaw Remix) [Mixed]"
                 }
@@ -2168,6 +2371,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318499",
                 "attributes": {
+                  "artistName": "Milty Evans & Gil Scott-Heron",
                   "durationInMillis": 246882,
                   "name": "For Every Dream / The Revolution Will Not Be Televised (Acapella) [Mixed]"
                 }
@@ -2177,6 +2381,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1588318500",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 27903,
                   "name": "Commentary (from Seth Troxler & Derrick Carter at ARC Music Festival, 2021) [Mixed]"
                 }
@@ -2229,6 +2434,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545736",
                 "attributes": {
+                  "artistName": "Carl Craig",
                   "durationInMillis": 368723,
                   "name": "Attenuator (Moritz von Oswald Dub) [Mixed]"
                 }
@@ -2238,6 +2444,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545737",
                 "attributes": {
+                  "artistName": "Nicky Night Time, Dangerous Dan & Rhonda INTL.",
                   "durationInMillis": 244957,
                   "name": "A History (feat. Julian Mitchell) [Mixed]"
                 }
@@ -2247,6 +2454,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545738",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 227304,
                   "name": "ID1 (from Carl Craig b2b Seth Troxler at ARC Festival, 2022) [Mixed]"
                 }
@@ -2256,6 +2464,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545739",
                 "attributes": {
+                  "artistName": "Robert Hood",
                   "durationInMillis": 272587,
                   "name": "Dancer (Remix) [Mixed]"
                 }
@@ -2265,6 +2474,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545740",
                 "attributes": {
+                  "artistName": "Hunters & Blaze",
                   "durationInMillis": 219630,
                   "name": "Jungle Man (Remix) / My Beat (feat. Palmer Brown) [Accapella] [Mixed]"
                 }
@@ -2274,6 +2484,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545741",
                 "attributes": {
+                  "artistName": "Gene Farris",
                   "durationInMillis": 317240,
                   "name": "The Deputy (Mixed)"
                 }
@@ -2283,6 +2494,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545742",
                 "attributes": {
+                  "artistName": "Debbie Jacobs",
                   "durationInMillis": 276628,
                   "name": "Don't You Want My Love (Cratebug Extended Remix) [Mixed]"
                 }
@@ -2292,6 +2504,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545743",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 268954,
                   "name": "ID2 (from Carl Craig b2b Seth Troxler at ARC Festival, 2022) [Mixed]"
                 }
@@ -2301,6 +2514,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545744",
                 "attributes": {
+                  "artistName": "Jasper Street Co.",
                   "durationInMillis": 301736,
                   "name": "A Feelin' (Paradox Vocal) [Mixed]"
                 }
@@ -2310,6 +2524,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545745",
                 "attributes": {
+                  "artistName": "Floorplan",
                   "durationInMillis": 418791,
                   "name": "Tell You No Lie (Mixed)"
                 }
@@ -2319,6 +2534,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545746",
                 "attributes": {
+                  "artistName": "Davide Migliardi",
                   "durationInMillis": 195771,
                   "name": "Gold Times (Regroove Mix) [Mixed]"
                 }
@@ -2328,6 +2544,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545747",
                 "attributes": {
+                  "artistName": "Junior Jack",
                   "durationInMillis": 476202,
                   "name": "Thrill Me (Mixed)"
                 }
@@ -2337,6 +2554,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545748",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 185461,
                   "name": "ID3 (from Carl Craig b2b Seth Troxler at ARC Festival, 2022) [Mixed]"
                 }
@@ -2346,6 +2564,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545749",
                 "attributes": {
+                  "artistName": "LaBelle",
                   "durationInMillis": 292842,
                   "name": "What Can I Do for You? (Remix) [Mixed]"
                 }
@@ -2355,6 +2574,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545750",
                 "attributes": {
+                  "artistName": "Hannyta",
                   "durationInMillis": 252386,
                   "name": "Fluctuating (DJ Georgie Porgie's House Is A Feelin Dub) [Mixed]"
                 }
@@ -2364,6 +2584,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545751",
                 "attributes": {
+                  "artistName": "Déjà Vu",
                   "durationInMillis": 296985,
                   "name": "Move Your Waistline (Sweat Mix) [Mixed]"
                 }
@@ -2373,6 +2594,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545752",
                 "attributes": {
+                  "artistName": "Joey Beltram",
                   "durationInMillis": 236093,
                   "name": "My Medusa (Mixed)"
                 }
@@ -2382,6 +2604,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545755",
                 "attributes": {
+                  "artistName": "Wolfram",
                   "durationInMillis": 267815,
                   "name": "A Thing Called Love (feat. Haddaway) [Kink Remix] [Mixed]"
                 }
@@ -2391,6 +2614,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1652545846",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 321684,
                   "name": "ID4 (from Carl Craig b2b Seth Troxler at ARC Festival, 2022) / ID5 (from Carl Craig b2b Seth Troxler at ARC Festival, 2022) [Mixed]"
                 }
@@ -2417,6 +2641,7 @@
           },
           "isSingle": false,
           "name": "Play in the Dark - Single",
+          "recordLabel": "Crosstown Rebels",
           "releaseDate": "2021-02-19"
         },
         "relationships": {
@@ -2443,6 +2668,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1677704511",
                 "attributes": {
+                  "artistName": "Seth Troxler & The Martinez Brothers",
                   "durationInMillis": 295832,
                   "name": "Play In The Dark"
                 }
@@ -2452,6 +2678,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1677704515",
                 "attributes": {
+                  "artistName": "Seth Troxler & The Martinez Brothers",
                   "durationInMillis": 506039,
                   "name": "Play In The Dark (Steam Mix)"
                 }
@@ -2461,6 +2688,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1677704521",
                 "attributes": {
+                  "artistName": "Seth Troxler & The Martinez Brothers",
                   "durationInMillis": 535393,
                   "name": "Play In The Dark (Troxler's Freak Mix)"
                 }
@@ -2487,6 +2715,7 @@
           },
           "isSingle": true,
           "name": "Sex & The City (feat. Paul Johnson) [MK Remix] - Single",
+          "recordLabel": "Tuskegee",
           "releaseDate": "2023-04-05"
         },
         "relationships": {
@@ -2513,6 +2742,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1679444574",
                 "attributes": {
+                  "artistName": "HoneyLuv & Seth Troxler",
                   "durationInMillis": 187143,
                   "name": "Sex & The City (feat. Paul Johnson) [MK Remix]"
                 }
@@ -2565,6 +2795,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337820",
                 "attributes": {
+                  "artistName": "Filta Freqz",
                   "durationInMillis": 224925,
                   "name": "Sterns (Mensa Mix) [Mixed]"
                 }
@@ -2574,6 +2805,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337821",
                 "attributes": {
+                  "artistName": "Brett Johnson",
                   "durationInMillis": 176301,
                   "name": "Mr Johnson's Talk'n Now (OG Demo Mix) [Mixed]"
                 }
@@ -2583,6 +2815,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337822",
                 "attributes": {
+                  "artistName": "Michael Dangerous",
                   "durationInMillis": 210201,
                   "name": "Dangerous (Bailey Ibbs Remix) [Mixed]"
                 }
@@ -2592,6 +2825,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337823",
                 "attributes": {
+                  "artistName": "Audion",
                   "durationInMillis": 345299,
                   "name": "Mouth to Mouth (Riva Starr Remix) [Mixed]"
                 }
@@ -2601,6 +2835,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337824",
                 "attributes": {
+                  "artistName": "Gary Beck",
                   "durationInMillis": 195073,
                   "name": "Take You Back (Paco Osuna & Fer BR Remix) [Mixed]"
                 }
@@ -2610,6 +2845,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337826",
                 "attributes": {
+                  "artistName": "Geoffrey C",
                   "durationInMillis": 240202,
                   "name": "This Is Hot (Yes Indeedy) [Mixed]"
                 }
@@ -2619,6 +2855,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337947",
                 "attributes": {
+                  "artistName": "Leonce",
                   "durationInMillis": 225225,
                   "name": "Banana Runtz (Mixed)"
                 }
@@ -2628,6 +2865,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337948",
                 "attributes": {
+                  "artistName": "Copasetic",
                   "durationInMillis": 120073,
                   "name": "Ur Turn (Mixed)"
                 }
@@ -2637,6 +2875,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337949",
                 "attributes": {
+                  "artistName": "Yvan Genkins & Mihalis Safras",
                   "durationInMillis": 178800,
                   "name": "Las Solteras (Mixed)"
                 }
@@ -2646,6 +2885,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337950",
                 "attributes": {
+                  "artistName": "El Alfa",
                   "durationInMillis": 226925,
                   "name": "Tontoron Tonton (MewTunes Remix) [Mixed]"
                 }
@@ -2655,6 +2895,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337951",
                 "attributes": {
+                  "artistName": "Pangaea",
                   "durationInMillis": 163701,
                   "name": "Installation (Mixed)"
                 }
@@ -2664,6 +2905,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337952",
                 "attributes": {
+                  "artistName": "Shakedown",
                   "durationInMillis": 156198,
                   "name": "At Night (Kid Crème Club Mix) [Mixed]"
                 }
@@ -2673,6 +2915,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337953",
                 "attributes": {
+                  "artistName": "Paperclip People & Danny Brown",
                   "durationInMillis": 308727,
                   "name": "Throw (Slam's RTM Remix) / I Will (Mixed)"
                 }
@@ -2682,6 +2925,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337954",
                 "attributes": {
+                  "artistName": "Ciara",
                   "durationInMillis": 251849,
                   "name": "Goodies (feat. Petey Pablo) [Remix] [Mixed]"
                 }
@@ -2691,6 +2935,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337955",
                 "attributes": {
+                  "artistName": "Todd Terry",
                   "durationInMillis": 178524,
                   "name": "Together DUB #2 (Mixed)"
                 }
@@ -2700,6 +2945,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337956",
                 "attributes": {
+                  "artistName": "Marco Strous & ID",
                   "durationInMillis": 267650,
                   "name": "Kiki / ID1 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2709,6 +2955,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337957",
                 "attributes": {
+                  "artistName": "Bailey Ibbs",
                   "durationInMillis": 104075,
                   "name": "We Run (Mixed)"
                 }
@@ -2718,6 +2965,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337958",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 165300,
                   "name": "ID2 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2727,6 +2975,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337959",
                 "attributes": {
+                  "artistName": "Kevin Knapp & Andreas Henneberg",
                   "durationInMillis": 178126,
                   "name": "Funky Enough (Mixed)"
                 }
@@ -2736,6 +2985,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337960",
                 "attributes": {
+                  "artistName": "Claude VonStroke",
                   "durationInMillis": 311998,
                   "name": "Who's Afraid of Detroit? (10 Year Anniversary Mix) [Mixed]"
                 }
@@ -2745,6 +2995,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337961",
                 "attributes": {
+                  "artistName": "Jimi Jules",
                   "durationInMillis": 207827,
                   "name": "Speed Meditation (Mixed)"
                 }
@@ -2754,6 +3005,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337962",
                 "attributes": {
+                  "artistName": "Skatman",
                   "durationInMillis": 237598,
                   "name": "Funkadelic (Mixed)"
                 }
@@ -2763,6 +3015,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337964",
                 "attributes": {
+                  "artistName": "Raxon & ID",
                   "durationInMillis": 215427,
                   "name": "The Fall / ID3 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2772,6 +3025,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337965",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 213823,
                   "name": "ID4 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2781,6 +3035,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337966",
                 "attributes": {
+                  "artistName": "Kyle Watson",
                   "durationInMillis": 160978,
                   "name": "Kick Drums (Mixed)"
                 }
@@ -2790,6 +3045,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337967",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 176847,
                   "name": "ID5 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2799,6 +3055,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337968",
                 "attributes": {
+                  "artistName": "Four Tet, Skrillex & Fred again..",
                   "durationInMillis": 271075,
                   "name": "Baby again.. (Remix) [Mixed]"
                 }
@@ -2808,6 +3065,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337969",
                 "attributes": {
+                  "artistName": "Michael Bibi, KinAhau & Audio Bullys",
                   "durationInMillis": 235900,
                   "name": "Different Side (Mixed)"
                 }
@@ -2817,6 +3075,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337970",
                 "attributes": {
+                  "artistName": "Dominica",
                   "durationInMillis": 327126,
                   "name": "Gotta Let You Go (Original '95 Club Mix) [Mixed]"
                 }
@@ -2826,6 +3085,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337971",
                 "attributes": {
+                  "artistName": "Skream & Jackmaster",
                   "durationInMillis": 346224,
                   "name": "The Attention Deficit Track (Terrace Mix) [Mixed]"
                 }
@@ -2835,6 +3095,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337972",
                 "attributes": {
+                  "artistName": "Raxon",
                   "durationInMillis": 232400,
                   "name": "Kryptonite (Mixed)"
                 }
@@ -2844,6 +3105,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337973",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 303099,
                   "name": "ID6 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2853,6 +3115,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337974",
                 "attributes": {
+                  "artistName": "tobias.",
                   "durationInMillis": 199000,
                   "name": "Girts (Ricardo Villalobos & Max Loderbauer Remix) [Mixed]"
                 }
@@ -2862,6 +3125,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337975",
                 "attributes": {
+                  "artistName": "ID, Benga & Coki",
                   "durationInMillis": 252950,
                   "name": "Night (Remix) / ID7 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2871,6 +3135,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337976",
                 "attributes": {
+                  "artistName": "Ali Love & Prince Andre",
                   "durationInMillis": 267848,
                   "name": "Da da On (Mixed)"
                 }
@@ -2880,6 +3145,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337977",
                 "attributes": {
+                  "artistName": "Skream & Jansons",
                   "durationInMillis": 253002,
                   "name": "Track 3 (Mixed)"
                 }
@@ -2889,6 +3155,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337978",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 204173,
                   "name": "ID8 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2898,6 +3165,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337979",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 278477,
                   "name": "ID9 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2907,6 +3175,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337980",
                 "attributes": {
+                  "artistName": "Filta Freqz",
                   "durationInMillis": 323898,
                   "name": "Twisted (Mixed)"
                 }
@@ -2916,6 +3185,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337981",
                 "attributes": {
+                  "artistName": "Meli'sa Morgan",
                   "durationInMillis": 199027,
                   "name": "Fool's Paradise (Mixed)"
                 }
@@ -2925,6 +3195,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337982",
                 "attributes": {
+                  "artistName": "Dames Brown",
                   "durationInMillis": 354897,
                   "name": "Glory (feat. Waajeed) [Floorplan Extended Remix] [Mixed]"
                 }
@@ -2934,6 +3205,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337983",
                 "attributes": {
+                  "artistName": "Dukwa",
                   "durationInMillis": 216900,
                   "name": "Prune (Mixed)"
                 }
@@ -2943,6 +3215,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337984",
                 "attributes": {
+                  "artistName": "Nathan Fake",
                   "durationInMillis": 386502,
                   "name": "The Sky Was Pink (Holden Remix) [Mixed]"
                 }
@@ -2952,6 +3225,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337985",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 235523,
                   "name": "ID10 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2961,6 +3235,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337986",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 212300,
                   "name": "ID11 (from Shambhala 2023: Seth Troxler b2b Skream at the AMP Stage) [Mixed]"
                 }
@@ -2970,6 +3245,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1718337987",
                 "attributes": {
+                  "artistName": "Aretha Franklin",
                   "durationInMillis": 158007,
                   "name": "School Days (Mixed)"
                 }
@@ -2996,6 +3272,7 @@
           },
           "isSingle": true,
           "name": "(still) WON'T4GETU - Single",
+          "recordLabel": "Hell Beach",
           "releaseDate": "2023-03-17"
         },
         "relationships": {
@@ -3027,6 +3304,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/6767151566",
                 "attributes": {
+                  "artistName": "Shouse, Dennis Ferrer & Seth Troxler",
                   "durationInMillis": 374117,
                   "name": "(still) WON'T4GETU"
                 }
@@ -3053,6 +3331,7 @@
           },
           "isSingle": false,
           "name": "Seth Troxler - The Lab 03",
+          "recordLabel": "NRK Music",
           "releaseDate": "2011-10-10"
         },
         "relationships": {
@@ -3067,13 +3346,18 @@
                 "id": "462459448",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459448",
-                "attributes": { "durationInMillis": 561250, "name": "Big Mind" }
+                "attributes": {
+                  "artistName": "Hatikvah",
+                  "durationInMillis": 561250,
+                  "name": "Big Mind"
+                }
               },
               {
                 "id": "462459471",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459471",
                 "attributes": {
+                  "artistName": "Bearweasel",
                   "durationInMillis": 474371,
                   "name": "Button Down the Moose (Echologist Dub)"
                 }
@@ -3083,6 +3367,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459518",
                 "attributes": {
+                  "artistName": "Hati Munetsi",
                   "durationInMillis": 488342,
                   "name": "Ceremony (African Mix)"
                 }
@@ -3092,6 +3377,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459537",
                 "attributes": {
+                  "artistName": "Tommy Bones",
                   "durationInMillis": 404921,
                   "name": "After the Club"
                 }
@@ -3101,6 +3387,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459548",
                 "attributes": {
+                  "artistName": "Daze Maxim",
                   "durationInMillis": 482859,
                   "name": "Tomorrow Universe"
                 }
@@ -3110,6 +3397,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459558",
                 "attributes": {
+                  "artistName": "Deepak Sharma & Dieter Krause",
                   "durationInMillis": 362913,
                   "name": "Wolkenreise (DJ Qu Remix)"
                 }
@@ -3118,13 +3406,18 @@
                 "id": "462459584",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459584",
-                "attributes": { "durationInMillis": 493015, "name": "Farina" }
+                "attributes": {
+                  "artistName": "DeWalta",
+                  "durationInMillis": 493015,
+                  "name": "Farina"
+                }
               },
               {
                 "id": "462459598",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459598",
                 "attributes": {
+                  "artistName": "Ark",
                   "durationInMillis": 275787,
                   "name": "Arkuarium"
                 }
@@ -3134,6 +3427,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459645",
                 "attributes": {
+                  "artistName": "Westboy",
                   "durationInMillis": 500000,
                   "name": "S L I V A (Chaim Remix)"
                 }
@@ -3142,13 +3436,18 @@
                 "id": "462459700",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459700",
-                "attributes": { "durationInMillis": 501581, "name": "Fantasy" }
+                "attributes": {
+                  "artistName": "Daniel Bortz & Sascha Sibler",
+                  "durationInMillis": 501581,
+                  "name": "Fantasy"
+                }
               },
               {
                 "id": "462459717",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459717",
                 "attributes": {
+                  "artistName": "Home & Garden",
                   "durationInMillis": 398224,
                   "name": "Themes of Yesterday"
                 }
@@ -3157,13 +3456,18 @@
                 "id": "462459729",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459729",
-                "attributes": { "durationInMillis": 307053, "name": "Prowl" }
+                "attributes": {
+                  "artistName": "Exercise One",
+                  "durationInMillis": 307053,
+                  "name": "Prowl"
+                }
               },
               {
                 "id": "462459745",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459745",
                 "attributes": {
+                  "artistName": "Chaim",
                   "durationInMillis": 435537,
                   "name": "Alive (Deniz Kurtel Remix) [feat. Meital De Razon]"
                 }
@@ -3172,13 +3476,18 @@
                 "id": "462459777",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459777",
-                "attributes": { "durationInMillis": 514346, "name": "Rodeo" }
+                "attributes": {
+                  "artistName": "UND",
+                  "durationInMillis": 514346,
+                  "name": "Rodeo"
+                }
               },
               {
                 "id": "462459859",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459859",
                 "attributes": {
+                  "artistName": "Seth Troxler",
                   "durationInMillis": 4730302,
                   "name": "The Lab 03 - Continuous DJ Mix, Pt. 1"
                 }
@@ -3188,6 +3497,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/462459934",
                 "attributes": {
+                  "artistName": "Seth Troxler",
                   "durationInMillis": 4626809,
                   "name": "The Lab 03 - Continuous DJ Mix, Pt. 2"
                 }
@@ -3214,6 +3524,7 @@
           },
           "isSingle": false,
           "name": "CircoLoco (feat. Luna) - Single",
+          "recordLabel": "Slacker 85",
           "releaseDate": "2026-06-26"
         },
         "relationships": {
@@ -3235,6 +3546,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/6778772995",
                 "attributes": {
+                  "artistName": "Seth Troxler",
                   "durationInMillis": 408794,
                   "name": "CircoLoco (feat. Luna)"
                 }
@@ -3244,6 +3556,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/6778773447",
                 "attributes": {
+                  "artistName": "Seth Troxler",
                   "durationInMillis": 239485,
                   "name": "CircoLoco (feat. Luna) [Radio Edit]"
                 }
@@ -3270,6 +3583,7 @@
           },
           "isSingle": true,
           "name": "Pills - Single",
+          "recordLabel": "Slacker 85",
           "releaseDate": "2023-07-19"
         },
         "relationships": {
@@ -3290,7 +3604,11 @@
                 "id": "1695907032",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1695907032",
-                "attributes": { "durationInMillis": 369098, "name": "Pills" }
+                "attributes": {
+                  "artistName": "Seth Troxler",
+                  "durationInMillis": 369098,
+                  "name": "Pills"
+                }
               }
             ]
           }
@@ -3314,6 +3632,7 @@
           },
           "isSingle": false,
           "name": "Mixmag Presents Jamie Jones vs. Seth Troxler",
+          "recordLabel": "Mixmag Records",
           "releaseDate": "2010"
         },
         "relationships": {
@@ -3340,6 +3659,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214816",
                 "attributes": {
+                  "artistName": "Axel Boman",
                   "durationInMillis": 170640,
                   "name": "Holy Love (feat. J. Jonasson)"
                 }
@@ -3349,6 +3669,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214819",
                 "attributes": {
+                  "artistName": "40 Thieves",
                   "durationInMillis": 229347,
                   "name": "Don't Turn It Off (feat. Qzen)"
                 }
@@ -3358,6 +3679,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214824",
                 "attributes": {
+                  "artistName": "Victor",
                   "durationInMillis": 208080,
                   "name": "Go on Do It"
                 }
@@ -3366,13 +3688,18 @@
                 "id": "1329214829",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214829",
-                "attributes": { "durationInMillis": 108387, "name": "G Things" }
+                "attributes": {
+                  "artistName": "Tanner Ross & Sergio Santos",
+                  "durationInMillis": 108387,
+                  "name": "G Things"
+                }
               },
               {
                 "id": "1329214832",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214832",
                 "attributes": {
+                  "artistName": "Roska & Jamie George",
                   "durationInMillis": 313547,
                   "name": "Love 2 Nite"
                 }
@@ -3382,6 +3709,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214837",
                 "attributes": {
+                  "artistName": "Jamie Jones",
                   "durationInMillis": 286413,
                   "name": "Summertime (feat. O.S.T. & Kjex) [Jamie Jones & Robert James Dub Mix]"
                 }
@@ -3391,6 +3719,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214839",
                 "attributes": {
+                  "artistName": "Inxec & Shadi Megallaa",
                   "durationInMillis": 243160,
                   "name": "Put a String on It"
                 }
@@ -3400,6 +3729,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214963",
                 "attributes": {
+                  "artistName": "The 2 Bears",
                   "durationInMillis": 205893,
                   "name": "Follow the Bear"
                 }
@@ -3409,6 +3739,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214973",
                 "attributes": {
+                  "artistName": "De Signer",
                   "durationInMillis": 324987,
                   "name": "Suicide Girl (Robin Porter & Subb-An Remix)"
                 }
@@ -3418,6 +3749,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329214982",
                 "attributes": {
+                  "artistName": "Bomb the Bass",
                   "durationInMillis": 402587,
                   "name": "X Ray Eyes (feat. Kelley Polar) [John Tejada Remix]"
                 }
@@ -3427,6 +3759,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329215025",
                 "attributes": {
+                  "artistName": "Tracey Thorn",
                   "durationInMillis": 294187,
                   "name": "Swimming (Visionquest Remix)"
                 }
@@ -3435,13 +3768,18 @@
                 "id": "1329215097",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329215097",
-                "attributes": { "durationInMillis": 461160, "name": "Utopia" }
+                "attributes": {
+                  "artistName": "Footprintz",
+                  "durationInMillis": 461160,
+                  "name": "Utopia"
+                }
               },
               {
                 "id": "1329215102",
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1329215102",
                 "attributes": {
+                  "artistName": "Jamie Jones & Seth Troxler",
                   "durationInMillis": 283000,
                   "name": "Mixmag Presents Jamie Jones vs. Seth Troxler"
                 }
@@ -3489,6 +3827,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143146",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 90981,
                   "name": "ID1 (from Seth Troxler at Time Warp DE, 2023) [Mixed]"
                 }
@@ -3498,6 +3837,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143147",
                 "attributes": {
+                  "artistName": "ID & I-Robots",
                   "durationInMillis": 194345,
                   "name": "ID2 (from Seth Troxler at Time Warp DE, 2023) / Frau (Mixed)"
                 }
@@ -3507,6 +3847,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143148",
                 "attributes": {
+                  "artistName": "Turner",
                   "durationInMillis": 305700,
                   "name": "Been Out (Beloved \"Dirty Stop Out\" Mix) [Mixed]"
                 }
@@ -3516,6 +3857,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143149",
                 "attributes": {
+                  "artistName": "Nathan Alzon",
                   "durationInMillis": 305400,
                   "name": "Nairobi (Mixed)"
                 }
@@ -3525,6 +3867,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143150",
                 "attributes": {
+                  "artistName": "D'Julz",
                   "durationInMillis": 208498,
                   "name": "Highway (Janeret Remix) [Mixed]"
                 }
@@ -3534,6 +3877,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143151",
                 "attributes": {
+                  "artistName": "ESS",
                   "durationInMillis": 253275,
                   "name": "The Airplane Track (Mixed)"
                 }
@@ -3543,6 +3887,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143152",
                 "attributes": {
+                  "artistName": "Catz 'N Dogz",
                   "durationInMillis": 245275,
                   "name": "Reincarnation (Mixed)"
                 }
@@ -3552,6 +3897,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143153",
                 "attributes": {
+                  "artistName": "Steve Mac",
                   "durationInMillis": 268777,
                   "name": "The 313 (feat. Alana Marie) [Mixed]"
                 }
@@ -3561,6 +3907,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143154",
                 "attributes": {
+                  "artistName": "M. Rodriguez",
                   "durationInMillis": 253474,
                   "name": "Viseu (Mixed)"
                 }
@@ -3570,6 +3917,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143155",
                 "attributes": {
+                  "artistName": "Mark Broom",
                   "durationInMillis": 118524,
                   "name": "W.W.W.W.W.W.W.Work (Mixed)"
                 }
@@ -3579,6 +3927,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143456",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 234951,
                   "name": "ID3 (from Seth Troxler at Time Warp DE, 2023) [Mixed]"
                 }
@@ -3588,6 +3937,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143457",
                 "attributes": {
+                  "artistName": "Paperclip People",
                   "durationInMillis": 294548,
                   "name": "Throw (Slam's RTM Remix) [Mixed]"
                 }
@@ -3597,6 +3947,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143458",
                 "attributes": {
+                  "artistName": "Renato Cohen",
                   "durationInMillis": 311252,
                   "name": "Pontapé (Mixed)"
                 }
@@ -3606,6 +3957,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143459",
                 "attributes": {
+                  "artistName": "Filta Freqz",
                   "durationInMillis": 252125,
                   "name": "Twisted (Mixed)"
                 }
@@ -3615,6 +3967,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143460",
                 "attributes": {
+                  "artistName": "Eitan Reiter",
                   "durationInMillis": 215223,
                   "name": "Pump Up the Jam (Club Mix) [Mixed]"
                 }
@@ -3624,6 +3977,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143461",
                 "attributes": {
+                  "artistName": "Bakey",
                   "durationInMillis": 207676,
                   "name": "Take it Further (Mixed)"
                 }
@@ -3633,6 +3987,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143462",
                 "attributes": {
+                  "artistName": "Raxon",
                   "durationInMillis": 268948,
                   "name": "Destiny (Mixed)"
                 }
@@ -3642,6 +3997,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143463",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 286326,
                   "name": "ID4 (from Seth Troxler at Time Warp DE, 2023) [Mixed]"
                 }
@@ -3651,6 +4007,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143464",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 199750,
                   "name": "ID5 (from Seth Troxler at Time Warp DE, 2023) [Mixed]"
                 }
@@ -3660,6 +4017,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143465",
                 "attributes": {
+                  "artistName": "Franky Rizardo",
                   "durationInMillis": 182828,
                   "name": "Whatchagonnado (Mixed)"
                 }
@@ -3669,6 +4027,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143466",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 235671,
                   "name": "ID6 (from Seth Troxler at Time Warp DE, 2023) [Mixed]"
                 }
@@ -3678,6 +4037,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143467",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 381501,
                   "name": "ID7 (from Seth Troxler at Time Warp DE, 2023) [Mixed]"
                 }
@@ -3687,6 +4047,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143468",
                 "attributes": {
+                  "artistName": "Celeda & Danny Tenaglia",
                   "durationInMillis": 481898,
                   "name": "Music Is the Answer (DTour Groove Mix) [Mixed]"
                 }
@@ -3696,6 +4057,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143469",
                 "attributes": {
+                  "artistName": "Laurent Garnier",
                   "durationInMillis": 325900,
                   "name": "Coloured City (Mixed)"
                 }
@@ -3705,6 +4067,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143470",
                 "attributes": {
+                  "artistName": "ID, Tito Gobbi, Antonino Votto, Maria Callas, Teatro Alla Scala Orchestra, Coro del Teatro alla Scala di Milano & Tullio Serafin",
                   "durationInMillis": 292952,
                   "name": "ID8 (from Seth Troxler at Time Warp DE, 2023) / A tal colpa è nulla il pianto / Qui Radames Verra Aid (Mixed)"
                 }
@@ -3714,6 +4077,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143471",
                 "attributes": {
+                  "artistName": "Ramjac Corporation & Foremost Poets",
                   "durationInMillis": 337752,
                   "name": "Massif / Moonraker (Mixed)"
                 }
@@ -3723,6 +4087,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143472",
                 "attributes": {
+                  "artistName": "Harry Romero",
                   "durationInMillis": 117371,
                   "name": "Liquid Samba (Mixed)"
                 }
@@ -3732,6 +4097,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1703143473",
                 "attributes": {
+                  "artistName": "Seth Troxler, Shouse & Dennis Ferrer",
                   "durationInMillis": 316698,
                   "name": "(still) WON'T4GETU (Mixed)"
                 }
@@ -3784,6 +4150,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215413",
                 "attributes": {
+                  "artistName": "Billie Eilish & Leftfield",
                   "durationInMillis": 355663,
                   "name": "BLUE / Afro Left (Mixed)"
                 }
@@ -3793,6 +4160,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215414",
                 "attributes": {
+                  "artistName": "Kink",
                   "durationInMillis": 231624,
                   "name": "Beep Beep (Mixed)"
                 }
@@ -3802,6 +4170,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215415",
                 "attributes": {
+                  "artistName": "Classmatic & Ruffneck",
                   "durationInMillis": 198519,
                   "name": "Everybody Be Somebody (feat. Yavahn) [Mixed]"
                 }
@@ -3811,6 +4180,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215416",
                 "attributes": {
+                  "artistName": "Isaiah Firebrace",
                   "durationInMillis": 165953,
                   "name": "Soft Body (Mixed)"
                 }
@@ -3820,6 +4190,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215417",
                 "attributes": {
+                  "artistName": "Alex Culross",
                   "durationInMillis": 267145,
                   "name": "HeartBEAT (Mixed)"
                 }
@@ -3829,6 +4200,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215418",
                 "attributes": {
+                  "artistName": "Groove Armada",
                   "durationInMillis": 289310,
                   "name": "Get Down (feat. Stush & Red Rat) [Mark Knight Extended Mix] [Mixed]"
                 }
@@ -3838,6 +4210,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215599",
                 "attributes": {
+                  "artistName": "Blackchild",
                   "durationInMillis": 253903,
                   "name": "So Good (Heat Mix) [Mixed]"
                 }
@@ -3847,6 +4220,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215600",
                 "attributes": {
+                  "artistName": "Bassel Darwish",
                   "durationInMillis": 248532,
                   "name": "Paradise (Mixed)"
                 }
@@ -3856,6 +4230,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215601",
                 "attributes": {
+                  "artistName": "H20",
                   "durationInMillis": 273695,
                   "name": "Satisfied (feat. Billie) [Mixed]"
                 }
@@ -3865,6 +4240,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215602",
                 "attributes": {
+                  "artistName": "Trevor Rockcliffe",
                   "durationInMillis": 145877,
                   "name": "The Jam (Mixed)"
                 }
@@ -3874,6 +4250,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215603",
                 "attributes": {
+                  "artistName": "Sessomatto",
                   "durationInMillis": 158480,
                   "name": "Moody (Joey Negro Club Mix) [Mixed]"
                 }
@@ -3883,6 +4260,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215604",
                 "attributes": {
+                  "artistName": "Marlin (BE), Mr. V & Agent Greg",
                   "durationInMillis": 201801,
                   "name": "Bimbo (Move Forward) [Mixed]"
                 }
@@ -3892,6 +4270,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215605",
                 "attributes": {
+                  "artistName": "Alex Culross",
                   "durationInMillis": 311163,
                   "name": "Drum Tool (Mixed)"
                 }
@@ -3901,6 +4280,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215606",
                 "attributes": {
+                  "artistName": "Calisto",
                   "durationInMillis": 238302,
                   "name": "Get House (Josh Wink Interpretation) [Mixed]"
                 }
@@ -3910,6 +4290,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215607",
                 "attributes": {
+                  "artistName": "Hilit Kolet",
                   "durationInMillis": 287449,
                   "name": "Pov Siren (Mixed)"
                 }
@@ -3919,6 +4300,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215608",
                 "attributes": {
+                  "artistName": "Floorplan",
                   "durationInMillis": 231582,
                   "name": "Like Dat (Mixed)"
                 }
@@ -3928,6 +4310,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215609",
                 "attributes": {
+                  "artistName": "Skatman",
                   "durationInMillis": 231070,
                   "name": "What You Gonna Do (Future Hip House) [Mixed]"
                 }
@@ -3937,6 +4320,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215610",
                 "attributes": {
+                  "artistName": "Carpainter",
                   "durationInMillis": 287705,
                   "name": "Flame Theme (Mixed)"
                 }
@@ -3946,6 +4330,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215611",
                 "attributes": {
+                  "artistName": "Skream & Jackmaster",
                   "durationInMillis": 270456,
                   "name": "The Attention Deficit Track (Terrace Mix) [Edit] [Mixed]"
                 }
@@ -3955,6 +4340,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215612",
                 "attributes": {
+                  "artistName": "Azari & III & Max Dean",
                   "durationInMillis": 332717,
                   "name": "Reckless (Mixed)"
                 }
@@ -3964,6 +4350,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215613",
                 "attributes": {
+                  "artistName": "Dukwa",
                   "durationInMillis": 242707,
                   "name": "You Don't Want It (Mixed)"
                 }
@@ -3973,6 +4360,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215614",
                 "attributes": {
+                  "artistName": "Samuel L Session",
                   "durationInMillis": 252553,
                   "name": "The Stick Up (Mixed)"
                 }
@@ -3982,6 +4370,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215615",
                 "attributes": {
+                  "artistName": "Anthony Georges Patrice",
                   "durationInMillis": 366476,
                   "name": "Parallel Romance (SB Re-Arrange) [Mixed]"
                 }
@@ -3991,6 +4380,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215616",
                 "attributes": {
+                  "artistName": "Rolando",
                   "durationInMillis": 334549,
                   "name": "Hot Box (Ken Ishii Remix) [Mixed]"
                 }
@@ -4000,6 +4390,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215617",
                 "attributes": {
+                  "artistName": "Traumer",
                   "durationInMillis": 405889,
                   "name": "Cyclo (Mixed)"
                 }
@@ -4009,6 +4400,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1797215618",
                 "attributes": {
+                  "artistName": "Blur & Dan-E-MC",
                   "durationInMillis": 474879,
                   "name": "Girls and Boys (Remix) / Musica House (Mixed)"
                 }
@@ -4035,6 +4427,7 @@
           },
           "isSingle": false,
           "name": "Sex & The City EP (feat. Paul Johnson)",
+          "recordLabel": "Tuskegee",
           "releaseDate": "2023-05-05"
         },
         "relationships": {
@@ -4061,6 +4454,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1683160406",
                 "attributes": {
+                  "artistName": "HoneyLuv & Seth Troxler",
                   "durationInMillis": 466667,
                   "name": "Sex & The City (feat. Paul Johnson)"
                 }
@@ -4070,6 +4464,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1683160411",
                 "attributes": {
+                  "artistName": "HoneyLuv & Seth Troxler",
                   "durationInMillis": 373333,
                   "name": "Sex & The City (feat. Paul Johnson) [MK Extended Remix]"
                 }
@@ -4079,6 +4474,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1683160417",
                 "attributes": {
+                  "artistName": "HoneyLuv & Seth Troxler",
                   "durationInMillis": 466667,
                   "name": "Sex & The City (feat. Paul Johnson)"
                 }
@@ -4088,6 +4484,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1683160423",
                 "attributes": {
+                  "artistName": "HoneyLuv & Seth Troxler",
                   "durationInMillis": 252690,
                   "name": "Sex & The City (feat. Paul Johnson)"
                 }
@@ -4097,6 +4494,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1683160795",
                 "attributes": {
+                  "artistName": "HoneyLuv & Seth Troxler",
                   "durationInMillis": 187143,
                   "name": "Sex & The City (feat. Paul Johnson) [MK Remix]"
                 }
@@ -4123,6 +4521,7 @@
           },
           "isSingle": true,
           "name": "Me, You, Us (feat. Seth Troxler) - Single",
+          "recordLabel": "Play It Say It",
           "releaseDate": "2019-08-30"
         },
         "relationships": {
@@ -4144,6 +4543,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1678613700",
                 "attributes": {
+                  "artistName": "Day or Night",
                   "durationInMillis": 338384,
                   "name": "Me, You, Us (feat. Seth Troxler)"
                 }
@@ -4170,6 +4570,7 @@
           },
           "isSingle": false,
           "name": "Panic, Stop. Repeat! - EP",
+          "recordLabel": "Spectral Sound",
           "releaseDate": "2009-09-15"
         },
         "relationships": {
@@ -4191,6 +4592,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1526651497",
                 "attributes": {
+                  "artistName": "Seth Troxler",
                   "durationInMillis": 481133,
                   "name": "Panic, Stop. Repeat!"
                 }
@@ -4200,6 +4602,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1526651500",
                 "attributes": {
+                  "artistName": "Seth Troxler & Matthew Dear",
                   "durationInMillis": 366550,
                   "name": "Hurt (feat. Matthew Dear)"
                 }
@@ -4209,6 +4612,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1526651505",
                 "attributes": {
+                  "artistName": "Seth Troxler",
                   "durationInMillis": 415238,
                   "name": "Panic, Stop. Repeat! (Paco Osuna Remix)"
                 }
@@ -4218,6 +4622,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1526651508",
                 "attributes": {
+                  "artistName": "Seth Troxler",
                   "durationInMillis": 360000,
                   "name": "Panic, Stop. Repeat! (Sleepover Beats)"
                 }
@@ -4265,6 +4670,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169949",
                 "attributes": {
+                  "artistName": "Furious George",
                   "durationInMillis": 221136,
                   "name": "Closer (Mixed)"
                 }
@@ -4274,6 +4680,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169950",
                 "attributes": {
+                  "artistName": "Sinner & James",
                   "durationInMillis": 228812,
                   "name": "U Got Me (Mixed)"
                 }
@@ -4283,6 +4690,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169951",
                 "attributes": {
+                  "artistName": "Nick Curly & Jansons",
                   "durationInMillis": 157375,
                   "name": "Go (Mixed)"
                 }
@@ -4292,6 +4700,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169952",
                 "attributes": {
+                  "artistName": "Blak Beat Niks & StoneBridge",
                   "durationInMillis": 229071,
                   "name": "One Day at a Time (Stone's Big 10 Club Mix) [Mixed]"
                 }
@@ -4301,6 +4710,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169953",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 301736,
                   "name": "ID1 (from Seth Troxler at CRSSD Festival 2021: The Palms) [Mixed]"
                 }
@@ -4310,6 +4720,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169954",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 228843,
                   "name": "ID2 (from Seth Troxler at CRSSD Festival 2021: The Palms) [Mixed]"
                 }
@@ -4319,6 +4730,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169955",
                 "attributes": {
+                  "artistName": "Gemini",
                   "durationInMillis": 238462,
                   "name": "Where Do I Go (1997 Mix) [Remix] [Mixed]"
                 }
@@ -4328,6 +4740,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169956",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 272603,
                   "name": "ID3 (from Seth Troxler at CRSSD Festival 2021: The Palms) [Mixed]"
                 }
@@ -4337,6 +4750,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169957",
                 "attributes": {
+                  "artistName": "Kanye West",
                   "durationInMillis": 303243,
                   "name": "Flashing Lights (feat. Dwele) [Remix] [Mixed]"
                 }
@@ -4346,6 +4760,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169958",
                 "attributes": {
+                  "artistName": "Mihai Popoviciu",
                   "durationInMillis": 193145,
                   "name": "Feelin' (Luca Donzelli Remix) [Mixed]"
                 }
@@ -4355,6 +4770,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169959",
                 "attributes": {
+                  "artistName": "Guillaume & The Coutu Dumonts",
                   "durationInMillis": 227215,
                   "name": "The Chase (feat. Dave Aju) [Harry Romero Remix] [Mixed]"
                 }
@@ -4364,6 +4780,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169960",
                 "attributes": {
+                  "artistName": "John Roberts",
                   "durationInMillis": 312463,
                   "name": "Freaks (Harry Romero Remix) [Mixed]"
                 }
@@ -4373,6 +4790,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169961",
                 "attributes": {
+                  "artistName": "Lil' Mo Yin Yang",
                   "durationInMillis": 291992,
                   "name": "Reach (\"Little\" \"More\" Mix) [Mixed]"
                 }
@@ -4382,6 +4800,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169962",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 396045,
                   "name": "ID4 (from Seth Troxler at CRSSD Festival 2021: The Palms) [Mixed]"
                 }
@@ -4391,6 +4810,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169963",
                 "attributes": {
+                  "artistName": "Robbie Rivera",
                   "durationInMillis": 238557,
                   "name": "I Can't Take It (Mixed)"
                 }
@@ -4400,6 +4820,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169964",
                 "attributes": {
+                  "artistName": "The Streets",
                   "durationInMillis": 344831,
                   "name": "Who's Got The Bag (21st June) [Seth Troxler's Babaloop Remix] [Mixed]"
                 }
@@ -4409,6 +4830,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610169965",
                 "attributes": {
+                  "artistName": "Harvard Bass & Seth Troxler",
                   "durationInMillis": 431309,
                   "name": "I'm the One (Seth Troxler Remix) [Mixed]"
                 }
@@ -4418,6 +4840,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610170086",
                 "attributes": {
+                  "artistName": "Seth Troxler & The Martinez Brothers",
                   "durationInMillis": 358134,
                   "name": "Play in the Dark (Steam Mix) [Mixed]"
                 }
@@ -4427,6 +4850,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1610170087",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 356608,
                   "name": "ID5 (from Seth Troxler at CRSSD Festival 2021: The Palms) [Mixed]"
                 }
@@ -4474,6 +4898,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979672",
                 "attributes": {
+                  "artistName": "Rocket Vs Peretz",
                   "durationInMillis": 252181,
                   "name": "Rocket's 2000 Seeds Mix (Mixed)"
                 }
@@ -4483,6 +4908,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979675",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 476263,
                   "name": "ID1 (from Boiler Room: Seth Troxler in Warsaw, Oct 10, 2017) [Mixed]"
                 }
@@ -4492,6 +4918,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979676",
                 "attributes": {
+                  "artistName": "Floyd Lavine",
                   "durationInMillis": 213292,
                   "name": "Masala (Pablo Fierro Remix) [Mixed]"
                 }
@@ -4501,6 +4928,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979677",
                 "attributes": {
+                  "artistName": "Lost Souls Of Saturn",
                   "durationInMillis": 402153,
                   "name": "Holes in the Holoverse (Mixed)"
                 }
@@ -4510,6 +4938,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979678",
                 "attributes": {
+                  "artistName": "Heartthrob",
                   "durationInMillis": 236455,
                   "name": "Triangle (Another Epic Breakdown Mix) [Mixed]"
                 }
@@ -4519,6 +4948,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979679",
                 "attributes": {
+                  "artistName": "Sanasol & Thor",
                   "durationInMillis": 100048,
                   "name": "Flush (Mixed)"
                 }
@@ -4528,6 +4958,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979680",
                 "attributes": {
+                  "artistName": "ID & Pearson Sound",
                   "durationInMillis": 303327,
                   "name": "ID2 (from Boiler Room: Seth Troxler in Warsaw, Oct 10, 2017) / Robin Chasing Butterflies (Mixed)"
                 }
@@ -4537,6 +4968,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979681",
                 "attributes": {
+                  "artistName": "Inland",
                   "durationInMillis": 336579,
                   "name": "Coriolis (Mixed)"
                 }
@@ -4546,6 +4978,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979682",
                 "attributes": {
+                  "artistName": "Anders Hellberg & ID",
                   "durationInMillis": 381242,
                   "name": "Solida / ID3 (from Boiler Room: Seth Troxler in Warsaw, Oct 10, 2017) [Mixed]"
                 }
@@ -4555,6 +4988,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979683",
                 "attributes": {
+                  "artistName": "Lost Souls Of Saturn",
                   "durationInMillis": 286147,
                   "name": "World of the Wars (Mixed)"
                 }
@@ -4564,6 +4998,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979684",
                 "attributes": {
+                  "artistName": "Burnski",
                   "durationInMillis": 344342,
                   "name": "Flight 723 (Mixed)"
                 }
@@ -4573,6 +5008,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979685",
                 "attributes": {
+                  "artistName": "Subversive",
                   "durationInMillis": 157967,
                   "name": "Intergalactic (Mixed)"
                 }
@@ -4582,6 +5018,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979836",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 7138,
                   "name": "Commentary 1 (from Boiler Room: Seth Troxler in Warsaw, Oct 10, 2017) [Mixed]"
                 }
@@ -4591,6 +5028,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979837",
                 "attributes": {
+                  "artistName": "Protomartyr",
                   "durationInMillis": 131503,
                   "name": "The Chuckler (Mixed)"
                 }
@@ -4600,6 +5038,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1530979838",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 8491,
                   "name": "Commentary 2 (from Boiler Room: Seth Troxler in Warsaw, Oct 10, 2017) [Mixed]"
                 }
@@ -4626,6 +5065,7 @@
           },
           "isSingle": true,
           "name": "I'm the One (Seth Troxler Remix) - Single",
+          "recordLabel": "Bump City Records",
           "releaseDate": "2021-09-17"
         },
         "relationships": {
@@ -4652,6 +5092,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1583803289",
                 "attributes": {
+                  "artistName": "Harvard Bass & Seth Troxler",
                   "durationInMillis": 550345,
                   "name": "I'm the One (Seth Troxler Remix)"
                 }
@@ -4678,6 +5119,7 @@
           },
           "isSingle": false,
           "name": "Sex & The City (TB-203 Remix) [feat. Paul Johnson] - Single",
+          "recordLabel": "Tuskegee",
           "releaseDate": "2025-06-20"
         },
         "relationships": {
@@ -4704,6 +5146,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1816918966",
                 "attributes": {
+                  "artistName": "HoneyLuv & Seth Troxler",
                   "durationInMillis": 249677,
                   "name": "Sex & The City (feat. Paul Johnson) [TB-203 Remix]"
                 }
@@ -4713,6 +5156,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1816918978",
                 "attributes": {
+                  "artistName": "HoneyLuv & Seth Troxler",
                   "durationInMillis": 247742,
                   "name": "Sex & The City (feat. Paul Johnson) [TB-203 Remix]"
                 }
@@ -4739,6 +5183,7 @@
           },
           "isSingle": false,
           "name": "Lovelee Dae (Seth Troxler Remix) - Single",
+          "recordLabel": "Slip 'n' Slide",
           "releaseDate": "2024-05-17"
         },
         "relationships": {
@@ -4760,6 +5205,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1784004282",
                 "attributes": {
+                  "artistName": "Blaze",
                   "durationInMillis": 245069,
                   "name": "Lovelee Dae (Seth Troxler Remix)"
                 }
@@ -4769,6 +5215,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1784004283",
                 "attributes": {
+                  "artistName": "Blaze",
                   "durationInMillis": 408915,
                   "name": "Lovelee Dae (Seth Troxler Extended Remix)"
                 }
@@ -4795,6 +5242,7 @@
           },
           "isSingle": false,
           "name": "Your Love (Seth Troxler Remix) - Single",
+          "recordLabel": "Innervisions",
           "releaseDate": "2024-03-22"
         },
         "relationships": {
@@ -4816,6 +5264,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1733498278",
                 "attributes": {
+                  "artistName": "EDE",
                   "durationInMillis": 393480,
                   "name": "Your Love (Seth Troxler Remix)"
                 }
@@ -4825,6 +5274,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1733498280",
                 "attributes": {
+                  "artistName": "EDE",
                   "durationInMillis": 333267,
                   "name": "Your Love"
                 }
@@ -4851,6 +5301,7 @@
           },
           "isSingle": true,
           "name": "Nonostante Tutto (Seth Troxler vs Dukwa Remix) - Single",
+          "recordLabel": "Universal Music Italia srL.",
           "releaseDate": "2025-06-06"
         },
         "relationships": {
@@ -4882,6 +5333,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1817371176",
                 "attributes": {
+                  "artistName": "Cesare Cremonini, Elisa & Seth Troxler",
                   "durationInMillis": 305118,
                   "name": "Nonostante Tutto (Seth Troxler vs Dukwa Remix)"
                 }
@@ -4908,6 +5360,7 @@
           },
           "isSingle": true,
           "name": "At Night I Think Of You (Seth Troxler & Nick Morgan Remix) - Single",
+          "recordLabel": "Ministry of Sound Recordings",
           "releaseDate": "2024-07-12"
         },
         "relationships": {
@@ -4929,6 +5382,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1755224261",
                 "attributes": {
+                  "artistName": "Très Mortimer",
                   "durationInMillis": 219867,
                   "name": "At Night I Think Of You (Seth Troxler & Nick Morgan Remix)"
                 }
@@ -4976,6 +5430,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653439",
                 "attributes": {
+                  "artistName": "Alex Finkin & Rocco Rodamaal",
                   "durationInMillis": 73975,
                   "name": "In Da Hood (Mixed)"
                 }
@@ -4985,6 +5440,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653442",
                 "attributes": {
+                  "artistName": "Dames Brown",
                   "durationInMillis": 339726,
                   "name": "Glory (feat. Waajeed) [Floorplan Extended Remix] [Mixed]"
                 }
@@ -4994,6 +5450,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653443",
                 "attributes": {
+                  "artistName": "Housego",
                   "durationInMillis": 280648,
                   "name": "Southside (Mixed)"
                 }
@@ -5003,6 +5460,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653444",
                 "attributes": {
+                  "artistName": "Uffie",
                   "durationInMillis": 192177,
                   "name": "A.D.D. S.U.V. (Armand Van Helden Club Remix) [Mixed]"
                 }
@@ -5012,6 +5470,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653445",
                 "attributes": {
+                  "artistName": "DJ Tameil",
                   "durationInMillis": 186323,
                   "name": "Everybody (Mixed)"
                 }
@@ -5021,6 +5480,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653446",
                 "attributes": {
+                  "artistName": "Fresxsh",
                   "durationInMillis": 221051,
                   "name": "What You Going Play Now (Mixed)"
                 }
@@ -5030,6 +5490,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653447",
                 "attributes": {
+                  "artistName": "Gary Beck",
                   "durationInMillis": 213661,
                   "name": "Take You Back (Paco Osuna & Fer BR Remix) [Mixed]"
                 }
@@ -5039,6 +5500,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653448",
                 "attributes": {
+                  "artistName": "Renato Cohen & ID",
                   "durationInMillis": 198687,
                   "name": "Vodu (E Pra Jacu) / ID1 (from Seth Troxler at Kappa FuturFestival 2023) [Mixed]"
                 }
@@ -5048,6 +5510,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653449",
                 "attributes": {
+                  "artistName": "Sueno Latino & Valeria Vix",
                   "durationInMillis": 264226,
                   "name": "Viciosa (Vix Club Remix) [Mixed]"
                 }
@@ -5057,6 +5520,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653450",
                 "attributes": {
+                  "artistName": "FISHER & Aatig",
                   "durationInMillis": 264173,
                   "name": "TAKE IT OFF (Mixed)"
                 }
@@ -5066,6 +5530,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653451",
                 "attributes": {
+                  "artistName": "Hazel",
                   "durationInMillis": 300583,
                   "name": "Klub Connection (Mixed)"
                 }
@@ -5075,6 +5540,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653452",
                 "attributes": {
+                  "artistName": "Figi, San Proper & ID",
                   "durationInMillis": 168417,
                   "name": "A Place for Love (Tom Trago Remix) / ID2 (from Seth Troxler at Kappa FuturFestival 2023) [Mixed]"
                 }
@@ -5084,6 +5550,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653453",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 329224,
                   "name": "ID3 (from Seth Troxler at Kappa FuturFestival 2023) [Mixed]"
                 }
@@ -5093,6 +5560,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653454",
                 "attributes": {
+                  "artistName": "Groove Sector",
                   "durationInMillis": 263352,
                   "name": "The Love I Lost (Hyper Dance Mix) [Mixed]"
                 }
@@ -5102,6 +5570,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653455",
                 "attributes": {
+                  "artistName": "Ramirez & ID",
                   "durationInMillis": 182898,
                   "name": "ID4 (from Seth Troxler at Kappa FuturFestival 2023) / Terapia (Mixed)"
                 }
@@ -5111,6 +5580,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653456",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 109676,
                   "name": "ID5 (from Seth Troxler at Kappa FuturFestival 2023) [Mixed]"
                 }
@@ -5120,6 +5590,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653457",
                 "attributes": {
+                  "artistName": "Filta Freqz",
                   "durationInMillis": 292050,
                   "name": "Twisted (Mixed)"
                 }
@@ -5129,6 +5600,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653458",
                 "attributes": {
+                  "artistName": "Eitan Reiter",
                   "durationInMillis": 211774,
                   "name": "Pump Up the Jam (Club Mix) [Mixed]"
                 }
@@ -5138,6 +5610,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653459",
                 "attributes": {
+                  "artistName": "Dominica",
                   "durationInMillis": 212126,
                   "name": "Gotta Let You Go (Original '95 Club Mix) [Mixed]"
                 }
@@ -5147,6 +5620,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653460",
                 "attributes": {
+                  "artistName": "Dominica",
                   "durationInMillis": 177398,
                   "name": "Gotta Let You Go (Remix) [Mixed]"
                 }
@@ -5156,6 +5630,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653461",
                 "attributes": {
+                  "artistName": "Renato Cohen & Ramirez",
                   "durationInMillis": 205099,
                   "name": "Pontapé Remake 2013 / Terapia (Mixed)"
                 }
@@ -5165,6 +5640,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653462",
                 "attributes": {
+                  "artistName": "Paperclip People",
                   "durationInMillis": 333276,
                   "name": "Throw (Slam's RTM Remix) [Mixed]"
                 }
@@ -5174,6 +5650,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653463",
                 "attributes": {
+                  "artistName": "Jay Juniel, Men From The Nile & Roy Davis Jr.",
                   "durationInMillis": 115075,
                   "name": "Watch Them Come (feat. Peven Everett) [DJ Pierre Remix] [Mixed]"
                 }
@@ -5183,6 +5660,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653464",
                 "attributes": {
+                  "artistName": "Brokenears",
                   "durationInMillis": 250549,
                   "name": "Seduction (Mixed)"
                 }
@@ -5192,6 +5670,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653465",
                 "attributes": {
+                  "artistName": "ID & Groove Armada",
                   "durationInMillis": 278099,
                   "name": "Superstylin' (Mochakk Remix) / ID6 / ID7 (from Seth Troxler at Kappa FuturFestival 2023) [Mixed]"
                 }
@@ -5201,6 +5680,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653466",
                 "attributes": {
+                  "artistName": "Catz 'N Dogz",
                   "durationInMillis": 178475,
                   "name": "Chucky73 - Bzrp 43 (Mixed)"
                 }
@@ -5210,6 +5690,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653557",
                 "attributes": {
+                  "artistName": "Raxon, ID & Foremost Poets",
                   "durationInMillis": 360475,
                   "name": "The Fall / ID8 (from Seth Troxler at Kappa FuturFestival 2023) / Moonraker (Mixed)"
                 }
@@ -5219,6 +5700,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653558",
                 "attributes": {
+                  "artistName": "Call Super",
                   "durationInMillis": 360650,
                   "name": "I Love Like Your Men (Mixed)"
                 }
@@ -5228,6 +5710,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1732653559",
                 "attributes": {
+                  "artistName": "Ricardo Villalobos",
                   "durationInMillis": 304282,
                   "name": "H.E.I.K.E. (Ricardo Villalobos Mood Mix) [Mixed]"
                 }
@@ -5275,6 +5758,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997861",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 77551,
                   "name": "ID1 (from Seth Troxler at Movement Detroit 2023) [Mixed]"
                 }
@@ -5284,6 +5768,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997862",
                 "attributes": {
+                  "artistName": "Alex Finkin & Rocco Rodamaal",
                   "durationInMillis": 304124,
                   "name": "In Da Hood (Mixed)"
                 }
@@ -5293,6 +5778,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997863",
                 "attributes": {
+                  "artistName": "De Lux",
                   "durationInMillis": 131477,
                   "name": "What's Life (Idjut Boys Seven Slackers Remix) [Mixed]"
                 }
@@ -5302,6 +5788,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997864",
                 "attributes": {
+                  "artistName": "Johnny Fiasco, Mongo Skato & Chaos In The CBD",
                   "durationInMillis": 358623,
                   "name": "Brainstorm / Groove On (Joshua's Dancing On Stars Dub) [Mixed]"
                 }
@@ -5311,6 +5798,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997865",
                 "attributes": {
+                  "artistName": "Big Moses",
                   "durationInMillis": 249301,
                   "name": "Brighter Days (feat. Kenny Bobien) [Jerome Sydenham Remix] [Mixed]"
                 }
@@ -5320,6 +5808,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997866",
                 "attributes": {
+                  "artistName": "Blaze",
                   "durationInMillis": 260026,
                   "name": "Lovelee Dae (Bicep Remix) [Mixed]"
                 }
@@ -5329,6 +5818,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997867",
                 "attributes": {
+                  "artistName": "Call Super",
                   "durationInMillis": 267024,
                   "name": "I Love Like Your Men (Mixed)"
                 }
@@ -5338,6 +5828,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997868",
                 "attributes": {
+                  "artistName": "Nathan Alzon",
                   "durationInMillis": 196574,
                   "name": "Nairobi (Mixed)"
                 }
@@ -5347,6 +5838,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997869",
                 "attributes": {
+                  "artistName": "Sidney Charles",
                   "durationInMillis": 151177,
                   "name": "Sonar Plexus (Mixed)"
                 }
@@ -5356,6 +5848,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997870",
                 "attributes": {
+                  "artistName": "Seth Troxler & HoneyLuv",
                   "durationInMillis": 204100,
                   "name": "Sex & The City (feat. Paul Johnson) [MK Remix] [Mixed]"
                 }
@@ -5365,6 +5858,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997871",
                 "attributes": {
+                  "artistName": "Housego",
                   "durationInMillis": 234449,
                   "name": "Southside (Mixed)"
                 }
@@ -5374,6 +5868,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997872",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 143499,
                   "name": "ID2 (from Seth Troxler at Movement Detroit 2023) [Mixed]"
                 }
@@ -5383,6 +5878,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997873",
                 "attributes": {
+                  "artistName": "Abel Balder, ANOTR & Paperclip People",
                   "durationInMillis": 319051,
                   "name": "Throw (Slam's RTM Remix) / Relax My Eyes (Mixed)"
                 }
@@ -5392,6 +5888,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997874",
                 "attributes": {
+                  "artistName": "Hatiras",
                   "durationInMillis": 249049,
                   "name": "Marina Ocarina (Mixed)"
                 }
@@ -5401,6 +5898,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997875",
                 "attributes": {
+                  "artistName": "ID",
                   "durationInMillis": 203801,
                   "name": "ID3 (from Seth Troxler at Movement Detroit 2023) [Mixed]"
                 }
@@ -5410,6 +5908,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997876",
                 "attributes": {
+                  "artistName": "Raxon",
                   "durationInMillis": 166226,
                   "name": "Kryptonite (Mixed)"
                 }
@@ -5419,6 +5918,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997877",
                 "attributes": {
+                  "artistName": "Daphni",
                   "durationInMillis": 173073,
                   "name": "Mania (Mixed)"
                 }
@@ -5428,6 +5928,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997878",
                 "attributes": {
+                  "artistName": "Rihanna",
                   "durationInMillis": 151902,
                   "name": "Bitch Better Have My Money (Remix) [Mixed]"
                 }
@@ -5437,6 +5938,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997879",
                 "attributes": {
+                  "artistName": "Charlie Soul Clap",
                   "durationInMillis": 204025,
                   "name": "Virgo's Victory (Beats) [Mixed]"
                 }
@@ -5446,6 +5948,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997880",
                 "attributes": {
+                  "artistName": "Dames Brown",
                   "durationInMillis": 362423,
                   "name": "Glory (feat. Waajeed) [Floorplan Remix] [Mixed]"
                 }
@@ -5455,6 +5958,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997881",
                 "attributes": {
+                  "artistName": "Tuccillo",
                   "durationInMillis": 362626,
                   "name": "I Believe (feat. Howard Perry) [Mixed]"
                 }
@@ -5464,6 +5968,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997882",
                 "attributes": {
+                  "artistName": "Mason Maynard",
                   "durationInMillis": 227025,
                   "name": "In Your Eyez (Mixed)"
                 }
@@ -5473,6 +5978,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1721997883",
                 "attributes": {
+                  "artistName": "Filta Freqz",
                   "durationInMillis": 300872,
                   "name": "Twisted (Mixed)"
                 }
@@ -5499,6 +6005,7 @@
           },
           "isSingle": false,
           "name": "Each Step (Powerhouse Mix) - Single",
+          "recordLabel": "Defected Records",
           "releaseDate": "2026-02-27"
         },
         "relationships": {
@@ -5525,6 +6032,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1876852548",
                 "attributes": {
+                  "artistName": "Deetron & Seth Troxler",
                   "durationInMillis": 247737,
                   "name": "Each Step (Powerhouse Mix)"
                 }
@@ -5534,6 +6042,7 @@
                 "type": "songs",
                 "href": "/v1/catalog/us/songs/1876852549",
                 "attributes": {
+                  "artistName": "Deetron & Seth Troxler",
                   "durationInMillis": 458408,
                   "name": "Each Step (Powerhouse Extended Mix)"
                 }
@@ -5544,7 +6053,7 @@
       }
     ]
   },
-  "recordedAt": "2026-10-25T02:59:39.634Z",
+  "recordedAt": "2026-10-29T03:46:51.713Z",
   "status": 200,
-  "url": "https://api.music.apple.com/v1/catalog/us/albums?fields%5Balbums%5D=artistName%2Cartwork%2CeditorialNotes%2CisSingle%2Cname%2CreleaseDate&fields%5Bsongs%5D=durationInMillis%2Cname&ids=1814380376%2C1740220229%2C1740215220%2C1718111764%2C1790753112%2C1768124185%2C1046502556%2C1677680660%2C1588318323%2C1652545734%2C1677704509%2C1679444317%2C1718337819%2C1896402681%2C462459415%2C6778772993%2C1695907018%2C1329214811%2C1703143144%2C1797215412%2C1683160399%2C1678613694%2C1526651401%2C1610169948%2C1530979669%2C1583803288%2C1816918956%2C1784004281%2C1733498277%2C1817371165%2C1755224253%2C1732653437%2C1721997860%2C1876852547&include=tracks"
+  "url": "https://api.music.apple.com/v1/catalog/us/albums?fields%5Balbums%5D=artistName%2Cartwork%2CeditorialNotes%2CisSingle%2Cname%2CrecordLabel%2CreleaseDate&fields%5Bsongs%5D=artistName%2CdurationInMillis%2Cname&ids=1814380376%2C1740220229%2C1740215220%2C1718111764%2C1790753112%2C1768124185%2C1046502556%2C1677680660%2C1588318323%2C1652545734%2C1677704509%2C1679444317%2C1718337819%2C1896402681%2C462459415%2C6778772993%2C1695907018%2C1329214811%2C1703143144%2C1797215412%2C1683160399%2C1678613694%2C1526651401%2C1610169948%2C1530979669%2C1583803288%2C1816918956%2C1784004281%2C1733498277%2C1817371165%2C1755224253%2C1732653437%2C1721997860%2C1876852547&include=tracks"
 }
