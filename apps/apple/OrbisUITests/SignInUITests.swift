@@ -470,6 +470,10 @@ final class SignInUITests: XCTestCase {
   private func assertFits(_ field: XCUIElement, in window: XCUIElement) {
     XCTAssertGreaterThanOrEqual(field.frame.minX, window.frame.minX, "the code starts on screen")
     XCTAssertLessThanOrEqual(field.frame.maxX, window.frame.maxX, "the code ends on screen")
+    // A 360-pt iPhone leaves a form row about 320 pt between its margins. A code that fits that
+    // width here fits there at full size, before its text has to shrink.
+    XCTAssertLessThanOrEqual(
+      field.frame.width, 320, "the code fits a 360-pt iPhone's form: \(field.frame)")
   }
 
   /// Taps a form's Paste button with `text` on the pasteboard, as a person pastes a code from
