@@ -516,7 +516,15 @@ try {
   await until(silent.received, (text) =>
     text.includes(`"kind":"read-details"`)
   );
+  // On Vanta the node sees the link drop first and reconnects before the
+  // Group hears of it, as here: the Group still holds the old link open.
   const replacement = await connect();
+  const lost = await until(closesSince, (events) => events.length === 1);
+  assert.deepEqual(
+    lost.map((event) => [event.level, event.code, event.current]),
+    [["warn", undefined, true]],
+    "a reconnect over a link the Group holds open counts that link lost once"
+  );
   const moved = await readDetailsFor(replacement.commands, replacedSet.id);
   assert.ok(moved);
   assert.ok(
@@ -524,11 +532,19 @@ try {
     "the replacement carries the details read first sent on the replaced link"
   );
   silent.end();
-  const lateClose = await until(closesSince, (events) => events.length === 1);
+  const lateClose = await until(
+    () => groupEvents("group-node-replaced-closed"),
+    (events) => events.length === 1
+  );
   assert.deepEqual(
-    lateClose.map((event) => [event.code, event.current]),
-    [[1006, false]],
-    "a replaced link's late close is not the current link's"
+    lateClose.map((event) => [event.level, event.code]),
+    [["info", 1006]],
+    "a replaced link's late close is logged apart from lost links"
+  );
+  assert.equal(
+    closesSince().length,
+    1,
+    "a replaced link's late close does not count as a lost link again"
   );
   replacement.send({
     details,
@@ -548,7 +564,7 @@ try {
   assert.deepEqual(
     currentClose.map((event) => [event.code, event.current]),
     [
-      [1006, false],
+      [undefined, true],
       [4001, true],
     ]
   );
@@ -590,6 +606,7 @@ try {
   restored.socket.close();
   transcript.push({
     linkCloses: closesSince(),
+    linkReplacedCloses: groupEvents("group-node-replaced-closed"),
     lostLinkDetailsResolvedAfterReconnect: lostRead.requestId,
     replacedLinkDetailsResolvedOnReplacement: moved.requestId,
   });

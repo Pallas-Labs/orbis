@@ -155,6 +155,20 @@ export class GroupAudioNode {
     }
     const previous = this.ctx.getWebSockets("node");
     for (const replaced of previous) {
+      // The node reconnects only after it loses its link. A link still open
+      // here was lost before its close reached the Group, which can take minutes.
+      if (replaced.readyState === WebSocket.OPEN) {
+        logEvent(
+          "warn",
+          {
+            ageMs: Date.now() - GroupAudioNode.attachment(replaced).acceptedAt,
+            current: true,
+            event: "group-node-disconnected",
+            reason: "Node reconnected before the close arrived",
+          },
+          this.logging
+        );
+      }
       replaced.close(1000, "Node replaced");
     }
     const acceptedAt = Math.max(
@@ -453,17 +467,20 @@ export class GroupAudioNode {
     // 1005, 1006 and 1015 describe a close and cannot be sent, so close() throws on them.
     socket.close([1005, 1006, 1015].includes(code) ? 1011 : code);
     const { acceptedAt } = GroupAudioNode.attachment(socket);
+    const ageMs = Date.now() - acceptedAt;
+    // A replaced socket's close can arrive many minutes after its replacement,
+    // which `accept` already counted as lost if it was still open.
+    if (acceptedAt !== this.ctx.storage.kv.get<number>(ACCEPTED_AT_KEY)) {
+      logEvent(
+        "info",
+        { ageMs, code, event: "group-node-replaced-closed", reason },
+        this.logging
+      );
+      return;
+    }
     logEvent(
       code === 1000 ? "info" : "warn",
-      {
-        ageMs: Date.now() - acceptedAt,
-        code,
-        // A replaced socket's close can arrive many minutes after its replacement.
-        current:
-          acceptedAt === this.ctx.storage.kv.get<number>(ACCEPTED_AT_KEY),
-        event: "group-node-disconnected",
-        reason,
-      },
+      { ageMs, code, current: true, event: "group-node-disconnected", reason },
       this.logging
     );
   }
