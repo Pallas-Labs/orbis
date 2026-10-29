@@ -496,7 +496,7 @@ final class AppModel {
   private static func refusal(of request: SignIn, _ error: any Error) -> String? {
     guard case .server(let status, _) = error as? OrbisError else { return nil }
     switch (request, status) {
-    case (.code, 404): return "That code didn't work. Get a new one."
+    case (.code, 404): return "That code didn't work. Ask for a new one."
     case (.join, 403): return "Wrong passcode. Ask your Host for a new one."
     default: return nil
     }
