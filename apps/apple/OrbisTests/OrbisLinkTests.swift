@@ -10,7 +10,10 @@ import XCTest
 final class OrbisLinkTests: XCTestCase {
   nonisolated private static let id = "0f8e7c2a-5b1d-4e8f-9a3c-2d6b7e1f4a90"
   nonisolated private static let sourceLink = "https://www.youtube.com/watch?v=abcdefghijk"
-  private let link = URL(string: "https://orbis.p11a.xyz/s/\(OrbisLinkTests.id)")!
+  /// The link to this suite's Set, `https://orbis.p11a.xyz/s/<set id>`.
+  nonisolated private static func link(to id: String) throws -> URL {
+    try XCTUnwrap(URL(string: "https://orbis.p11a.xyz/s/\(id)"))
+  }
 
   nonisolated private static let savedBody = """
     {"id":"\(id)","url":"\(sourceLink)","title":"Night session","source":"youtube","tags":[],
@@ -52,9 +55,9 @@ final class OrbisLinkTests: XCTestCase {
 
   private func signedIn(
     log: RequestLog, library: [String], share: Int = 200
-  ) async -> AppModel {
+  ) async throws -> AppModel {
     let client = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!, token: "token",
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")), token: "token",
       session: StubProtocol.session(
         responder: Self.responder(log: log, library: { library }, share: { share })))
     let model = AppModel(client: client, settings: MemoryClientSettings())
@@ -63,7 +66,7 @@ final class OrbisLinkTests: XCTestCase {
     return model
   }
 
-  func testTheParserTakesBothFormsOfALink() {
+  func testTheParserTakesBothFormsOfALink() throws {
     let accepted = [
       "https://orbis.p11a.xyz/s/\(Self.id)",
       "https://orbis.p11a.xyz/s/\(Self.id)/",
@@ -73,11 +76,11 @@ final class OrbisLinkTests: XCTestCase {
       "orbis://s/\(Self.id)/",
     ]
     for text in accepted {
-      XCTAssertEqual(OrbisLink.setId(in: URL(string: text)!), Self.id, text)
+      XCTAssertEqual(OrbisLink.setId(in: try XCTUnwrap(URL(string: text))), Self.id, text)
     }
   }
 
-  func testTheParserRefusesEveryOtherAddress() {
+  func testTheParserRefusesEveryOtherAddress() throws {
     let refused = [
       "http://orbis.p11a.xyz/s/\(Self.id)",
       "https://orbis.p11a.xyz.example.com/s/\(Self.id)",
@@ -95,7 +98,7 @@ final class OrbisLinkTests: XCTestCase {
       Self.sourceLink,
     ]
     for text in refused {
-      XCTAssertNil(OrbisLink.setId(in: URL(string: text)!), text)
+      XCTAssertNil(OrbisLink.setId(in: try XCTUnwrap(URL(string: text))), text)
     }
   }
 
@@ -105,12 +108,12 @@ final class OrbisLinkTests: XCTestCase {
     XCTAssertEqual(OrbisLink.setId(in: shared), Self.id)
   }
 
-  func testALinkToASavedSetOpensItsPage() async {
+  func testALinkToASavedSetOpensItsPage() async throws {
     let log = RequestLog()
-    let model = await signedIn(log: log, library: [Self.savedBody])
+    let model = try await signedIn(log: log, library: [Self.savedBody])
     model.destination = .library
 
-    await model.open(link)
+    await model.open(try Self.link(to: Self.id))
 
     XCTAssertEqual(model.openedSetId, Self.id, "the link must push the Set's page")
     XCTAssertEqual(model.savedSet(Self.id)?.title, "Night session", "the page shows the saved Set")
@@ -119,11 +122,11 @@ final class OrbisLinkTests: XCTestCase {
   }
 
   /// People has no Set pages, so a link opened there would push into nothing.
-  func testALinkOpenedOnPeopleOpensOnHome() async {
-    let model = await signedIn(log: RequestLog(), library: [Self.savedBody])
+  func testALinkOpenedOnPeopleOpensOnHome() async throws {
+    let model = try await signedIn(log: RequestLog(), library: [Self.savedBody])
     model.destination = .people
 
-    await model.open(URL(string: "orbis://s/\(Self.id)")!)
+    await model.open(try XCTUnwrap(URL(string: "orbis://s/\(Self.id)")))
 
     XCTAssertEqual(model.destination, .home)
     XCTAssertEqual(model.openedSets[.home], Self.id)
@@ -131,10 +134,10 @@ final class OrbisLinkTests: XCTestCase {
 
   func testALinkToASetOutsideTheLibraryShowsItsSharedFactsAndSavesIt() async throws {
     let log = RequestLog()
-    let model = await signedIn(log: log, library: [])
+    let model = try await signedIn(log: log, library: [])
     model.destination = .library
 
-    await model.open(link)
+    await model.open(try Self.link(to: Self.id))
 
     XCTAssertEqual(model.openedSetId, Self.id)
     XCTAssertTrue(log.contains("GET /share/sets/\(Self.id)"), log.all.joined(separator: "\n"))
@@ -157,27 +160,27 @@ final class OrbisLinkTests: XCTestCase {
     XCTAssertNil(model.setFailure)
   }
 
-  func testAnUnknownLinkSaysTheSetIsNotAvailable() async {
-    let model = await signedIn(log: RequestLog(), library: [], share: 404)
+  func testAnUnknownLinkSaysTheSetIsNotAvailable() async throws {
+    let model = try await signedIn(log: RequestLog(), library: [], share: 404)
 
-    await model.open(link)
+    await model.open(try Self.link(to: Self.id))
 
     XCTAssertEqual(model.openedSetId, Self.id, "the page opens to say so")
     XCTAssertEqual(model.openedLink?.state, .unavailable)
   }
 
   /// A failed read is not a missing Set: it says why and can be tried again.
-  func testALinkThatCannotBeReadOffersToTryAgain() async {
+  func testALinkThatCannotBeReadOffersToTryAgain() async throws {
     let share = ShareStatus(503)
     let log = RequestLog()
     let client = OrbisClient(
-      address: URL(string: "https://vanta.example.ts.net")!, token: "token",
+      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")), token: "token",
       session: StubProtocol.session(
         responder: Self.responder(log: log, library: { [] }, share: { share.value })))
     let model = AppModel(client: client, settings: MemoryClientSettings())
     await model.loadLibrary()
 
-    await model.open(link)
+    await model.open(try Self.link(to: Self.id))
 
     guard case .failed(let failure) = model.openedLink?.state else {
       return XCTFail("a refused read must say so, not \(String(describing: model.openedLink))")
@@ -194,12 +197,12 @@ final class OrbisLinkTests: XCTestCase {
 
   /// A link that arrives while the Library is still loading cannot yet tell a saved Set from an
   /// unsaved one, so it waits for the Library instead of reading the shared facts.
-  func testALinkWaitsForTheLibraryBeforeDeciding() async {
+  func testALinkWaitsForTheLibraryBeforeDeciding() async throws {
     let log = RequestLog()
-    let model = await signedIn(log: log, library: [Self.savedBody])
+    let model = try await signedIn(log: log, library: [Self.savedBody])
     model.library = .loading
 
-    await model.open(link)
+    await model.open(try Self.link(to: Self.id))
 
     XCTAssertEqual(model.openedLink?.state, .opening)
     XCTAssertFalse(log.contains("/share/sets/"))
@@ -211,7 +214,7 @@ final class OrbisLinkTests: XCTestCase {
     XCTAssertFalse(log.contains("/share/sets/"))
   }
 
-  func testASignedOutLinkOpensTheSetAfterSignIn() async {
+  func testASignedOutLinkOpensTheSetAfterSignIn() async throws {
     let log = RequestLog()
     let model = AppModel(
       settings: MemoryClientSettings(),
@@ -219,7 +222,7 @@ final class OrbisLinkTests: XCTestCase {
         responder: Self.responder(log: log, library: { [Self.savedBody] }, share: { 200 })))
     XCTAssertFalse(model.isConfigured)
 
-    await model.open(link)
+    await model.open(try Self.link(to: Self.id))
 
     XCTAssertEqual(model.openedLink, AppModel.OpenedLink(setId: Self.id, state: .awaitingSignIn))
     XCTAssertTrue(model.openedSets.isEmpty, "nothing opens behind the sign-in screen")
@@ -233,13 +236,13 @@ final class OrbisLinkTests: XCTestCase {
     XCTAssertNil(model.openedLink)
   }
 
-  func testASignedOutLinkToAnUnsavedSetShowsItsSharedFactsAfterSignIn() async {
+  func testASignedOutLinkToAnUnsavedSetShowsItsSharedFactsAfterSignIn() async throws {
     let model = AppModel(
       settings: MemoryClientSettings(),
       session: StubProtocol.session(
         responder: Self.responder(log: RequestLog(), library: { [] }, share: { 200 })))
 
-    await model.open(link)
+    await model.open(try Self.link(to: Self.id))
     await model.signIn(.code("abcd efgh"))
 
     XCTAssertEqual(model.openedSets[.home], Self.id)
@@ -249,9 +252,9 @@ final class OrbisLinkTests: XCTestCase {
     XCTAssertEqual(shared.id, Self.id)
   }
 
-  func testSigningOutForgetsTheLink() async {
-    let model = await signedIn(log: RequestLog(), library: [], share: 404)
-    await model.open(link)
+  func testSigningOutForgetsTheLink() async throws {
+    let model = try await signedIn(log: RequestLog(), library: [], share: 404)
+    await model.open(try Self.link(to: Self.id))
 
     model.signOut()
 

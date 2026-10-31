@@ -6,11 +6,11 @@ import XCTest
 final class OrbisLinkUITests: LibraryJourney {
   private func youtubeURL() -> String {
     let letters = Array("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-    return "https://www.youtube.com/watch?v=" + String((0..<11).map { _ in letters.randomElement()! })
+    return "https://www.youtube.com/watch?v=" + String((0..<11).map { _ in letters.randomElement() ?? "a" })
   }
 
-  private func openLink(to id: String, in app: XCUIApplication) {
-    app.open(URL(string: "orbis://s/\(id)")!)
+  private func openLink(to id: String, in app: XCUIApplication) throws {
+    app.open(try XCTUnwrap(URL(string: "orbis://s/\(id)")))
   }
 
   func testShareOffersTheOrbisLinkFirst() throws {
@@ -59,7 +59,7 @@ final class OrbisLinkUITests: LibraryJourney {
       app.tabBars.buttons["Home"].waitForExistence(timeout: 60),
       "the app must open signed in\n\(app.debugDescription)")
 
-    openLink(to: seeded.id, in: app)
+    try openLink(to: seeded.id, in: app)
 
     let title = app.staticTexts["detail-title"]
     XCTAssertTrue(title.waitForExistence(timeout: 30), "the link must open the Set's page\n\(app.debugDescription)")
@@ -85,7 +85,7 @@ final class OrbisLinkUITests: LibraryJourney {
       app.tabBars.buttons["Home"].waitForExistence(timeout: 60),
       "the app must open signed in\n\(app.debugDescription)")
 
-    openLink(to: shared.id, in: app)
+    try openLink(to: shared.id, in: app)
 
     let save = app.buttons["linked-save"]
     XCTAssertTrue(
@@ -110,7 +110,7 @@ final class OrbisLinkUITests: LibraryJourney {
       app.tabBars.buttons["Home"].waitForExistence(timeout: 60),
       "the app must open signed in\n\(app.debugDescription)")
 
-    openLink(to: UUID().uuidString.lowercased(), in: app)
+    try openLink(to: UUID().uuidString.lowercased(), in: app)
 
     XCTAssertTrue(
       app.descendants(matching: .any)["linked-unavailable"].waitForExistence(timeout: 30),
