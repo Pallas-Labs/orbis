@@ -31,14 +31,14 @@ const ARTWORK = await Bun.file(
 ).bytes();
 
 /**
- * Serves Artwork by the video id in its path: `goodArtwork` answers with a JPEG and the
- * others fail the ways a provider's image host can.
+ * Serves Artwork by the video id in its path: `goodArtwork` and each id in `recovered`
+ * answer with a JPEG and the others fail the ways a provider's image host can.
  */
-const startArtworkHost = () =>
+const startArtworkHost = (recovered: ReadonlySet<string> = new Set()) =>
   Bun.serve({
     async fetch(request) {
-      const [, video] = new URL(request.url).pathname.split("/");
-      if (video === "goodArtwork") {
+      const [, video = ""] = new URL(request.url).pathname.split("/");
+      if (video === "goodArtwork" || recovered.has(video)) {
         return new Response(ARTWORK, {
           headers: { "content-type": "image/jpeg" },
         });
@@ -513,6 +513,72 @@ test("the preview image draws once per Set content version, however often and ho
     const redrawn = await server.open(rearted);
     expect(redrawn.status).toBe(200);
     expect(server.renders()).toBe(3);
+  } finally {
+    await server.dispose();
+    await artworkHost.stop(true);
+  }
+});
+
+test("the preview image asks the Artwork host again for a version it drew without the Artwork", async () => {
+  const recovered = new Set<string>();
+  const artworkHost = startArtworkHost(recovered);
+  const server = await startApp(artworkHost.url.origin);
+  try {
+    const { id } = await server.call(HOST_TOKEN, "POST", "/sets", {
+      url: "https://www.youtube.com/watch?v=flakyArtwrk",
+    });
+    const current = await server.imagePath(id);
+    const failed = await server.open(current);
+    expect(failed.status).toBe(200);
+    expect(failed.headers.get("cache-control")).toBe("public, max-age=3600");
+    const without = Buffer.from(await failed.bytes()).toString("base64");
+    expect(server.renders()).toBe(1);
+
+    recovered.add("flakyArtwrk");
+    expect(await server.imagePath(id)).toBe(current);
+    const retried = await server.open(current);
+    expect(retried.status).toBe(200);
+    expect(retried.headers.get("cache-control")).toBe(
+      "public, max-age=31536000, immutable"
+    );
+    expect(Buffer.from(await retried.bytes()).toString("base64")).not.toBe(
+      without
+    );
+    expect(server.renders()).toBe(2);
+
+    const kept = await server.open(current);
+    expect(kept.status).toBe(200);
+    expect(server.renders()).toBe(2);
+  } finally {
+    await server.dispose();
+    await artworkHost.stop(true);
+  }
+});
+
+test("the preview image of a Set with no Artwork draws once", async () => {
+  const artworkHost = startArtworkHost();
+  const server = await startApp(artworkHost.url.origin);
+  try {
+    const { id } = await server.call(HOST_TOKEN, "POST", "/sets", {
+      url: SOURCE_LINK,
+    });
+    const sqlite = new SqliteDatabase(server.databasePath);
+    sqlite
+      .query(
+        "UPDATE sets SET artwork_large_url = NULL, artwork_url = NULL WHERE id = ?"
+      )
+      .run(id);
+    sqlite.close();
+    const current = await server.imagePath(id);
+    for (const _ of [1, 2, 3]) {
+      // oxlint-disable-next-line no-await-in-loop -- Each request follows the last draw.
+      const response = await server.open(current);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("cache-control")).toBe(
+        "public, max-age=31536000, immutable"
+      );
+    }
+    expect(server.renders()).toBe(1);
   } finally {
     await server.dispose();
     await artworkHost.stop(true);
