@@ -80,12 +80,19 @@ shutil.copyfile(os.path.join(here, name), sys.argv[sys.argv.index('-o') + 1])
     { mode: 0o755 }
   );
   collector = Bun.serve({
-    fetch: async (request) => {
-      bodies.push(decodeOtlpBody(await request.json()));
-      return Response.json({});
-    },
+    fetch: () => new Response(null, { status: 404 }),
     hostname: "127.0.0.1",
     port: 0,
+    // Only the drain's POST is an event. Other local processes, such as T3's
+    // port discovery, can send `GET /` to any new localhost port.
+    routes: {
+      "/v1/logs": {
+        POST: async (request) => {
+          bodies.push(decodeOtlpBody(await request.json()));
+          return Response.json({});
+        },
+      },
+    },
   });
   // Our Cobalt cannot fetch SoundCloud's HLS AAC; here it refuses every source.
   cobalt = Bun.serve({
