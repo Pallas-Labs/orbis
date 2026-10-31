@@ -2460,22 +2460,31 @@ export const createPortableApp = (options: {
           return { drawn: known, image: "reused" as const };
         }
         const drawn = (async () => {
-          try {
-            const picture = await loadArtwork(artwork);
-            const png = await renderShareImage({
-              artwork: picture,
-              creator: set.creator,
-              source: set.source,
-              title: set.title,
-            });
-            return { artwork: picture !== null, png };
-          } catch (error) {
-            // The first await above puts this after the set below, so a failed draw is retried.
-            shareImages.delete(key);
-            throw error;
-          }
+          const picture = await loadArtwork(artwork);
+          const png = await renderShareImage({
+            artwork: picture,
+            creator: set.creator,
+            source: set.source,
+            title: set.title,
+          });
+          return { artwork: picture !== null, png };
         })();
         shareImages.set(key, drawn);
+        // A draw that failed, or that lacks Artwork the Set has, may come from a passing
+        // fault, so a request after it settles draws again.
+        void (async () => {
+          try {
+            const preview = await drawn;
+            if (preview.artwork || artwork.every((url) => url === null)) {
+              return;
+            }
+          } catch {
+            // The request that waits on the draw answers the failure.
+          }
+          if (shareImages.get(key) === drawn) {
+            shareImages.delete(key);
+          }
+        })();
         for (const oldest of shareImages.keys()) {
           if (shareImages.size <= 16) {
             break;
