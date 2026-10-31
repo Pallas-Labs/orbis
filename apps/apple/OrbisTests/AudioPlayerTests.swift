@@ -62,7 +62,7 @@ final class AudioPlayerTests: XCTestCase {
   }
 
   /// An address in a block no host answers, so the item waits and never sounds.
-  private let silentAddress = URL(string: "http://10.255.255.1:9")!
+  private var silentAddress: URL { get throws { try XCTUnwrap(URL(string: "http://10.255.255.1:9")) } }
 
   private func set(id: String = "1") -> SavedSet {
     SavedSet(
@@ -93,10 +93,10 @@ final class AudioPlayerTests: XCTestCase {
 
   /// Race 1: a pause that lands while the session is still activating must hold once the session
   /// answers.
-  func testAPauseWhileTheSessionStartsIsKept() async {
+  func testAPauseWhileTheSessionStartsIsKept() async throws {
     let gate = SessionGate()
     let player = AudioPlayer(session: gate.session)
-    player.play(set: set(), baseURL: silentAddress, token: "token")
+    player.play(set: set(), baseURL: try silentAddress, token: "token")
     await gate.waitForStart()
 
     player.pause()
@@ -110,15 +110,15 @@ final class AudioPlayerTests: XCTestCase {
 
   /// Race 1, through the mini player's button: pressing it while the Set loads is a pause. This
   /// one goes through the model with the system's own session, which answers on a later turn.
-  func testTheMiniPlayerToggleWhileLoadingPauses() async {
+  func testTheMiniPlayerToggleWhileLoadingPauses() async throws {
     let client = OrbisClient(
-      address: silentAddress,
+      address: try silentAddress,
       token: "token",
       session: StubProtocol.session(status: 200, body: "{}")
     )
     let model = AppModel(client: client, settings: MemoryClientSettings())
     let player = model.audioPlayer
-    player.play(set: set(), baseURL: silentAddress, token: "token")
+    player.play(set: set(), baseURL: try silentAddress, token: "token")
     XCTAssertEqual(player.state, .loading)
 
     model.togglePlayback()
@@ -131,10 +131,10 @@ final class AudioPlayerTests: XCTestCase {
 
   /// Race 3: a resume must wait for the session. Pausing during the start and resuming before the
   /// session answers leaves the player quiet until it does.
-  func testAResumeWaitsForTheSession() async {
+  func testAResumeWaitsForTheSession() async throws {
     let gate = SessionGate()
     let player = AudioPlayer(session: gate.session)
-    player.play(set: set(), baseURL: silentAddress, token: "token")
+    player.play(set: set(), baseURL: try silentAddress, token: "token")
     await gate.waitForStart()
     player.pause()
 
@@ -152,10 +152,10 @@ final class AudioPlayerTests: XCTestCase {
 
   /// Race 3, after the session failed: a resume asks for the session again rather than playing
   /// without one.
-  func testAResumeAfterAFailedSessionAsksForTheSessionAgain() async {
+  func testAResumeAfterAFailedSessionAsksForTheSessionAgain() async throws {
     let gate = SessionGate()
     let player = AudioPlayer(session: gate.session)
-    player.play(set: set(), baseURL: silentAddress, token: "token")
+    player.play(set: set(), baseURL: try silentAddress, token: "token")
     await gate.waitForStart()
     gate.release(false)
     await player.sessionWork?.value
@@ -172,10 +172,10 @@ final class AudioPlayerTests: XCTestCase {
 
   /// A start that fails while a later one waits behind it must not decide the outcome: the later
   /// press is what the person asked for last.
-  func testAFailedStartDoesNotOverrideTheStartQueuedBehindIt() async {
+  func testAFailedStartDoesNotOverrideTheStartQueuedBehindIt() async throws {
     let gate = SessionGate()
     let player = AudioPlayer(session: gate.session)
-    player.play(set: set(), baseURL: silentAddress, token: "token")
+    player.play(set: set(), baseURL: try silentAddress, token: "token")
     await gate.waitForStart()
     player.pause()
     player.resume()
@@ -212,10 +212,10 @@ final class AudioPlayerTests: XCTestCase {
 
     /// An interruption that ends with "should resume" brings back only a Set that was playing
     /// when it began. A Set the person had paused stays paused.
-    func testTheEndOfAnInterruptionLeavesAPausedSetPaused() async {
+    func testTheEndOfAnInterruptionLeavesAPausedSetPaused() async throws {
       let gate = SessionGate()
       let player = AudioPlayer(session: gate.session)
-      player.play(set: set(), baseURL: silentAddress, token: "token")
+      player.play(set: set(), baseURL: try silentAddress, token: "token")
       await gate.waitForStart()
       gate.release()
       await player.sessionWork?.value
@@ -234,10 +234,10 @@ final class AudioPlayerTests: XCTestCase {
     }
 
     /// A Set that was playing when the interruption began comes back through the session.
-    func testTheEndOfAnInterruptionResumesThroughTheSession() async {
+    func testTheEndOfAnInterruptionResumesThroughTheSession() async throws {
       let gate = SessionGate()
       let player = AudioPlayer(session: gate.session)
-      player.play(set: set(), baseURL: silentAddress, token: "token")
+      player.play(set: set(), baseURL: try silentAddress, token: "token")
       await gate.waitForStart()
       gate.release()
       await player.sessionWork?.value
@@ -261,10 +261,10 @@ final class AudioPlayerTests: XCTestCase {
     /// When the system interrupts, AVPlayer drops its own rate, and that change can reach the
     /// player before the interruption notification does. A stop the person did not ask for is not
     /// their pause, so the end of the interruption still brings the Set back.
-    func testAnInterruptionThatArrivesAfterTheRateDropStillResumes() async {
+    func testAnInterruptionThatArrivesAfterTheRateDropStillResumes() async throws {
       let gate = SessionGate()
       let player = AudioPlayer(session: gate.session)
-      player.play(set: set(), baseURL: silentAddress, token: "token")
+      player.play(set: set(), baseURL: try silentAddress, token: "token")
       await gate.waitForStart()
       gate.release()
       await player.sessionWork?.value

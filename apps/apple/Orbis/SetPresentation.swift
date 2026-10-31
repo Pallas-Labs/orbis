@@ -116,7 +116,9 @@ enum SetPresentation {
     let leading = recent.filter { newest[$0] != nil }
     let led = Set(leading)
     let rest = newest.keys.filter { !led.contains($0) }.sorted { a, b in
-      newest[a]! == newest[b]! ? a < b : newest[a]! > newest[b]!
+      let left = newest[a, default: ""]
+      let right = newest[b, default: ""]
+      return left == right ? a < b : left > right
     }
     return leading + rest
   }

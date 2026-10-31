@@ -336,12 +336,12 @@ final class StubProtocol: URLProtocol {
       status = stub.status
       body = stub.body
     }
-    let response = HTTPURLResponse(
-      url: request.url!,
-      statusCode: status,
-      httpVersion: nil,
-      headerFields: nil
-    )!
+    guard let url = request.url,
+      let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: nil, headerFields: nil)
+    else {
+      client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+      return
+    }
     let data = Data(body.utf8)
     let hold = stub.holdResponse?(buffered) ?? 0
     if hold > 0 {
