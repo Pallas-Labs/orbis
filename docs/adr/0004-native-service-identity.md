@@ -1,10 +1,12 @@
 # Authenticate native clients with a per-device token the host stores only as a digest
 
+Superseded in part by ADR 0018 on 2026-10-01: the API moved to a Durable Object, and the two loopback listeners this record describes were removed with the Electron app on 2026-10-05. The digest rule still holds, because every key is stored as its SHA-256 and none is stored in full.
+
 The Orbis service keeps binding to loopback. Native Apple clients reach it through a Tailscale Serve bridge on the tailnet address, so the Host header is no longer loopback and the first slice's local-only rule would reject them.
 
 The server decides in one place, in the `handler` wrapper in `apps/server/src/app.ts`. A request carrying any `Origin` header is refused with 403, because a browser must never reach the library. A request carrying an `Authorization: Bearer` header is refused with 401 unless the token's SHA-256 matches a record in `devices.json`. A request with no such header is accepted only on a local listener whose Host is loopback, which is exactly the rule the Electron client relies on, so the desktop app needs no change. Everything else is refused with 403.
 
-The listener supplies the access mode, never a request header. `apps/server/src/listeners.ts` starts two loopback listeners over one app: the local listener on `ORBIS_PORT` (4310) with mode `local`, and the device listener on `ORBIS_DEVICE_PORT` (4311) with mode `device`. Only `local` mode reaches the loopback Host rule. Tailscale Serve must target 4311, so a tailnet peer that presents `Host: localhost:4310` arrives on the device listener and receives 403 without a valid token. A caller-supplied Host header can no longer select the token-free policy.
+The listener supplies the access mode, never a request header. Two loopback listeners ran over one app: the local listener on `ORBIS_PORT` (4310) with mode `local`, and the device listener on `ORBIS_DEVICE_PORT` (4311) with mode `device`. Only `local` mode reached the loopback Host rule. Tailscale Serve had to target 4311, so a tailnet peer that presented `Host: localhost:4310` arrived on the device listener and received 403 without a valid token. A caller-supplied Host header could no longer select the token-free policy.
 
 The host stores only `sha256(token)` per device, never the token. A copy of `devices.json` therefore cannot authenticate against the library, and revoking one device is deleting one record, effective on the next request with no restart. Tokens are enrolled with `bun run trust add --label "<name>"`, which prints the token once and writes the store atomically at mode 0600.
 
