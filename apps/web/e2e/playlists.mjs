@@ -8,7 +8,7 @@ import { setTimeout } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
-import { signInWithKey } from "./helpers.mjs";
+import { signInWithKey, waitFor } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-playlists");
@@ -26,19 +26,6 @@ const sets = [
   { title: "Bravo", url: "https://www.youtube.com/watch?v=bbbbbbbbbbb" },
   { title: "Charlie", url: "https://www.youtube.com/watch?v=ccccccccccc" },
 ];
-
-const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 150; attempt += 1) {
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    const response = await fetch(url).catch(() => null);
-    if (response !== null) {
-      return;
-    }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(100);
-  }
-  throw new Error(`${url} did not start`);
-};
 
 const dataDirectory = await mkdtemp(path.join(tmpdir(), "orbis-playlists-"));
 await writeFile(
