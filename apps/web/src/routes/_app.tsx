@@ -68,8 +68,12 @@ const AppShell = ({ session }: { readonly session: Session }) => {
   );
 };
 
+// The session the shell shows. A reload while Orbis cannot be reached keeps it,
+// so the shell and its live stream stay up and show that they are reconnecting.
+let shown: Session | undefined;
+
 export const Route = createFileRoute("/_app")({
-  beforeLoad: async ({ context }) => {
+  beforeLoad: async ({ cause, context }) => {
     const key = readKey();
     if (key === null) {
       throw redirect({ to: "/sign-in" });
@@ -78,7 +82,15 @@ export const Route = createFileRoute("/_app")({
     const me = await fetchMe(credentials);
     if (me.ok) {
       const session: Session = { ...credentials, person: me.value };
+      shown = session;
       return { session };
+    }
+    if (
+      me.failure === "unreachable" &&
+      cause === "stay" &&
+      shown?.key === key
+    ) {
+      return { session: shown };
     }
     if (me.failure === "rejected") {
       forgetKey();

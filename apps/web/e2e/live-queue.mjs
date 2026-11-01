@@ -320,6 +320,20 @@ try {
 
     server.kill("SIGTERM");
     await page.getByText("Reconnecting…").waitFor();
+    // A reload while the API is down, as a `changed` frame's can be, keeps the
+    // page and its live stream instead of the "could not be reached" problem.
+    const reload = page.waitForEvent("requestfailed", (request) =>
+      request.url().endsWith("/me")
+    );
+    await page.getByRole("link", { name: "Queue" }).click();
+    await reload;
+    await page.waitForTimeout(500);
+    await page.screenshot({
+      path: path.join(artifacts, "queue-reload-while-api-down.png"),
+    });
+    assert.equal(await page.getByText("Orbis could not be reached").count(), 0);
+    await queue.getByText("Now: Second set").waitFor();
+    await page.getByText("Reconnecting…").waitFor();
     server = startApi();
     await waitFor(`${apiUrl}/health`);
     await api("PUT", "/queue/active", { setId: sets["First set"] });
