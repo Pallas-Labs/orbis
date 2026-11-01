@@ -4,19 +4,22 @@
 // checks passed.
 //
 // Usage:
-//   bun run ci                    # Linux checks here, macOS checks on cortex over ssh
-//   bun run ci --mac-host mac     # macOS checks on another ssh host
+//   bun run ci                    # Linux checks here, macOS checks on a leased Mac
+//   bun run ci --mac-host mac     # pin the lease to a Mac host: cortex or mac
 //   bun run ci --no-status        # run the checks, post no status
 //
-// On macOS, the macOS checks run in this checkout unless --mac-host is given. Elsewhere,
-// apps/apple at the starting commit is copied to ~/.cache/orbis-local-ci/<sha> on the host,
-// checked there and removed. React Doctor reports only issues that HEAD adds against --base
-// (origin/main). Just before posting, it checks the checkout still is the starting commit and
-// still clean; otherwise it posts nothing (PAL-1138).
+// On macOS, the macOS checks run in this checkout unless --mac-host is given. Elsewhere, they
+// take the factory's Xcode slot on a Mac through `factory lease run --needs xcode` (PAL-1336),
+// which copies this checkout to the Mac, runs them there and exits with their code. FACTORY_CLI
+// names the factory command, `~/.local/share/factory/bin/factory` by default. React Doctor
+// reports only issues that HEAD adds against --base (origin/main). Just before posting, it
+// checks the checkout still is the starting commit and still clean; otherwise it posts nothing
+// (PAL-1138).
 
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { readFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 // The checkout to check is the one this runs in, so a branch without this script can be checked
@@ -29,10 +32,12 @@ const argument = (name, fallback) => {
   return index === -1 ? fallback : process.argv[index + 1];
 };
 const postStatus = !process.argv.includes("--no-status");
-const macHost = argument(
-  "mac-host",
-  process.platform === "darwin" ? undefined : "cortex"
-);
+const macHost = argument("mac-host");
+const onThisMac = process.platform === "darwin" && macHost === undefined;
+const factory = (
+  process.env.FACTORY_CLI ??
+  path.join(os.homedir(), ".local/share/factory/bin/factory")
+).split(/\s+/u);
 const base = argument("base", "origin/main");
 const reactDoctor = "react-doctor@0.9.18";
 
@@ -58,22 +63,15 @@ const { scripts } = JSON.parse(
 
 /// Runs one command and returns its exit code. With `log`, output is collected there
 /// instead of streamed, so a parallel lane does not interleave with this one.
-const exec = async (command, { input, log, env } = {}) => {
+const exec = async (command, { log, env } = {}) => {
   const child = spawn(command[0], command.slice(1), {
     cwd: root,
     env: { ...process.env, ...env },
-    stdio: [
-      input ? "pipe" : "ignore",
-      log ? "pipe" : "inherit",
-      log ? "pipe" : "inherit",
-    ],
+    stdio: ["ignore", log ? "pipe" : "inherit", log ? "pipe" : "inherit"],
   });
   if (log) {
     child.stdout.on("data", (chunk) => log.push(chunk));
     child.stderr.on("data", (chunk) => log.push(chunk));
-  }
-  if (input) {
-    input.pipe(child.stdin);
   }
   try {
     const [code] = await once(child, "close");
@@ -85,8 +83,7 @@ const exec = async (command, { input, log, env } = {}) => {
 };
 
 /// Runs steps in order and stops at the first failure. Returns the failed step's name.
-/// Recursive rather than a loop, so each step is a separate await. A step's options may carry
-/// `run` instead of a command, for work that spans more than one process.
+/// Recursive rather than a loop, so each step is a separate await.
 const lane = async (name, [first, ...rest], log) => {
   if (!first) {
     return;
@@ -96,9 +93,7 @@ const lane = async (name, [first, ...rest], log) => {
     log ? log.push(Buffer.from(`${line}\n`)) : console.log(line);
   const started = performance.now();
   say(`\n[${name}] ${step}`);
-  const code = options.run
-    ? await options.run({ log })
-    : await exec(command, { ...options, log });
+  const code = await exec(command, { ...options, log });
   const seconds = ((performance.now() - started) / 1000).toFixed(0);
   say(
     `[${name}] ${step}: ${code === 0 ? "passed" : `exited ${code}`} in ${seconds} s`
@@ -141,68 +136,40 @@ const linux = () =>
 const designTest = (scratch) =>
   `swift test --package-path apps/apple/OrbisDesign --scratch-path ${scratch}`;
 
+// One lease for both remote steps. The checkout is clean at `sha`, so the copy is that commit. The
+// design package's build folder stays in the issue's sat- folder on the Mac until the PR merges, so
+// the next run builds warm.
+const leasedMacStep = [
+  "Check Swift style and test the design package",
+  [
+    ...factory,
+    "lease",
+    "run",
+    "--needs",
+    "xcode",
+    ...(macHost === undefined ? [] : ["--host", macHost]),
+    "--",
+    "sh",
+    "-c",
+    `${scripts["native:format"]} && ${designTest("apps/apple/OrbisDesign/.build")}`,
+  ],
+];
+
 const mac = async () => {
   const log = [];
-  let failed;
-  if (macHost === undefined) {
-    failed = await lane(
-      "macos",
-      [
-        ["Check Swift style", ["sh", "-c", scripts["native:format"]]],
+  const failed = onThisMac
+    ? await lane(
+        "macos",
         [
-          "Test the design package",
-          ["sh", "-c", designTest("apps/apple/OrbisDesign/.build")],
+          ["Check Swift style", ["sh", "-c", scripts["native:format"]]],
+          [
+            "Test the design package",
+            ["sh", "-c", designTest("apps/apple/OrbisDesign/.build")],
+          ],
         ],
-      ],
-      log
-    );
-  } else {
-    // Each argument reaches the host's login shell (fish on the Macs), so the commands go
-    // through `bash -c` in single quotes, and bash expands $HOME there.
-    const dir = `$HOME/.cache/orbis-local-ci/${sha}`;
-    const remote = (script) => ["ssh", macHost, "bash", "-c", `'${script}'`];
-    // The archive comes from the starting commit, not HEAD, so a commit during the run
-    // cannot change what the Mac checks. A failed archive fails the lane.
-    const copy = async ({ log: laneLog }) => {
-      const archive = spawn(
-        "git",
-        ["archive", "--format=tar", sha, "apps/apple", "package.json"],
-        { cwd: root, stdio: ["ignore", "pipe", "inherit"] }
-      );
-      const closed = once(archive, "close");
-      const code = await exec(
-        remote(`rm -rf ${dir} && mkdir -p ${dir} && tar -x -C ${dir}`),
-        { input: archive.stdout, log: laneLog }
-      );
-      const [archiveCode] = await closed;
-      if (archiveCode !== 0) {
-        laneLog?.push(
-          Buffer.from(`git archive at ${sha} exited ${archiveCode ?? 1}\n`)
-        );
-        return archiveCode ?? 1;
-      }
-      return code;
-    };
-    failed = await lane(
-      `macos on ${macHost}`,
-      [
-        // No command: the copy pipes git archive into ssh itself.
-        [`Copy apps/apple at ${sha}`, [], { run: copy }],
-        [
-          "Check Swift style",
-          remote(`cd ${dir} && ${scripts["native:format"]}`),
-        ],
-        [
-          "Test the design package",
-          remote(
-            `cd ${dir} && ${designTest("$HOME/.cache/orbis-local-ci/OrbisDesign-build")}`
-          ),
-        ],
-      ],
-      log
-    );
-    await exec(remote(`rm -rf ${dir}`), { log });
-  }
+        log
+      )
+    : await lane("macos on a leased Mac", [leasedMacStep], log);
   return { failed, log };
 };
 
@@ -252,7 +219,7 @@ const posted = spawnSync(
     "-f",
     "context=local-ci",
     "-f",
-    `description=bun run ci passed (macOS checks on ${macHost ?? "this Mac"})`,
+    `description=bun run ci passed (macOS checks on ${onThisMac ? "this Mac" : (macHost ?? "a leased Mac")})`,
     "--silent",
   ],
   { cwd: root, encoding: "utf-8" }
