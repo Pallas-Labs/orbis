@@ -8,11 +8,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { setTimeout } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
-import { signInWithKey } from "./helpers.mjs";
+import { signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-presence");
@@ -23,33 +22,6 @@ const webUrl = `http://127.0.0.1:${webPort}`;
 const tokens = {
   alice: randomBytes(24).toString("base64url"),
   bob: randomBytes(24).toString("base64url"),
-};
-
-const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 150; attempt += 1) {
-    try {
-      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-      await fetch(url);
-      return;
-    } catch {
-      // Not listening yet.
-    }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(100);
-  }
-  throw new Error(`${url} did not start`);
-};
-
-const waitUntil = async (check, message, attempts = 100) => {
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    if (await check()) {
-      return;
-    }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-    await setTimeout(200);
-  }
-  throw new Error(message);
 };
 
 const keyRecord = (personId, token) => ({

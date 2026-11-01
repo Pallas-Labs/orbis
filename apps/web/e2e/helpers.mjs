@@ -1,19 +1,44 @@
 import { createHash } from "node:crypto";
 import { setTimeout } from "node:timers/promises";
 
-export const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 150; attempt += 1) {
+/**
+ * Polls `url` until it answers, 150 attempts 100 ms apart. Recursive rather than
+ * a loop, so each attempt is a separate await the journeys share instead of
+ * copying.
+ */
+export const waitFor = (url) => {
+  const poll = async (attemptsLeft) => {
     try {
-      // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
       await fetch(url);
       return;
     } catch {
       // Not listening yet.
+      if (attemptsLeft <= 1) {
+        throw new Error(`${url} did not start`);
+      }
     }
-    // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
     await setTimeout(100);
-  }
-  throw new Error(`${url} did not start`);
+    return poll(attemptsLeft - 1);
+  };
+  return poll(150);
+};
+
+/**
+ * Polls `check` until it answers true, `attempts` times 200 ms apart, and
+ * throws `message` when every attempt answered false.
+ */
+export const waitUntil = (check, message, attempts = 100) => {
+  const poll = async (attemptsLeft) => {
+    if (await check()) {
+      return;
+    }
+    if (attemptsLeft <= 1) {
+      throw new Error(message);
+    }
+    await setTimeout(200);
+    return poll(attemptsLeft - 1);
+  };
+  return poll(attempts);
 };
 
 /** A key as the trust store's `devices.json` seeds it. */
