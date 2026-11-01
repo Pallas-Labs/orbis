@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 
 import { apiUrl } from "@/lib/api-url";
 
+import interLatin from "../fonts/inter-latin.woff2?url";
+
 import appCss from "../styles.css?url";
 
 // Only the Worker holds the API address, so the page asks it once per load.
@@ -29,7 +31,18 @@ const RootDocument = ({ children }: { readonly children: ReactNode }) => (
 export const Route = createRootRoute({
   beforeLoad: async () => ({ apiUrl: await loadApiUrl() }),
   head: () => ({
-    links: [{ href: appCss, rel: "stylesheet" }],
+    links: [
+      // Every page draws Latin text, so its font loads with the stylesheet
+      // instead of after it. Fonts load in CORS mode, even from this origin.
+      {
+        as: "font",
+        crossOrigin: "anonymous",
+        href: interLatin,
+        rel: "preload",
+        type: "font/woff2",
+      },
+      { href: appCss, rel: "stylesheet" },
+    ],
     meta: [
       { charSet: "utf-8" },
       { content: "width=device-width, initial-scale=1", name: "viewport" },

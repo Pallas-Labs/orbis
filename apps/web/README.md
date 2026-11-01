@@ -52,6 +52,20 @@ ORBIS_API_URL=https://vanta.example.ts.net:10000/api bun run dev
 
 The API allows browser requests from `http://localhost` and `http://127.0.0.1` only when the server runs with development origins enabled. Against the Funnel, test the deployed page.
 
+## Fonts
+
+The site draws text in Inter. `src/fonts` holds cut-down copies of the `@fontsource-variable/inter` files: they keep every character, weights 400 to 900, and only the OpenType features the site uses. Every page preloads `inter-latin.woff2`; a page downloads another file only when it shows one of that file's characters. The build does not process fonts. After a change that `scripts/subset-fonts.py` lists, such as a new font weight, write the files again and commit them:
+
+```sh
+uv run apps/web/scripts/subset-fonts.py
+```
+
+To prove the new files draw the same pixels, build the app before and after the change, copy each `apps/web/dist` to its own folder, and compare them. The script screenshots 13 pages with Latin, accented, Cyrillic, Greek, Vietnamese and CJK titles under each build and lists the font bytes each page downloads:
+
+```sh
+node apps/web/scripts/font-diff.mjs --out <dir> after=<after dist> before=<before dist>
+```
+
 ## Historical Funnel API behavior
 
 Before the Group cutover, the web client called the Funnel API. This section records the 2026-09-29 browser check; the current client calls its own API origin. On a device running Tailscale, MagicDNS resolves the Funnel name to Vanta's tailnet address (a `100.x` address). Chrome treats that as a local address and blocks a public site from calling it until the Person allows it: Chrome's Local Network Access prompt ("wants to access devices on your local network") appears on the first API call, once per site. A device without Tailscale resolves the public Funnel relay and sees no prompt. Safari does not have the rule. Checked on 2026-09-29 with Playwright's Chromium: denied, the request fails; granted, or resolved to the public relay, the API answers.
