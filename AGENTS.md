@@ -26,7 +26,7 @@ The server's expect tests print a flow as text, one `request  -> answer` line pe
 
 ## Simulator and Xcode tests on a Mac host
 
-From Vanta, run every simulator or Xcode test on a Mac host (Cortex or the MacBook) through the factory's lease wrapper. Never boot a simulator or run `xcodebuild` there over a bare `ssh cortex` or `ssh mac`. Cortex has 8 GB and holds one simulator; two at once took it to load 98–120 on 2026-10-28.
+From any worker host, run every simulator or Xcode step on a Mac host (Cortex or the MacBook) through the factory's lease wrapper, and drive a simulator only through the T3 device hub on a held lease. Never boot a simulator or run `xcodebuild` or `swift test` there over a bare `ssh cortex` or `ssh mac`. `factory` is `~/.local/share/factory/bin/factory` on Vanta. On Anvil, update `~/Developer/factory` to `origin/main`, run `bun install` there, and use `FACTORY_LEASE_LOG=vanta bun ~/Developer/factory/apps/observer/src/cli/main.ts`.
 
 ```sh
 ~/.local/share/factory/bin/factory lease run --needs simulator --device "iPhone 17 Pro" -- \
@@ -35,10 +35,12 @@ From Vanta, run every simulator or Xcode test on a Mac host (Cortex or the MacBo
 
 - The base device is `iPhone 17 Pro`. The wrapper clones it as a `lease-` simulator, so pass the clone with `--udid "$LEASE_SIMULATOR_UDID"`. A host without the base device gets one.
 - The wrapper waits for a free simulator slot. A second test waits; it does not boot a second simulator. After 30 min it exits 75 and prints why it waited: report that reason on the issue.
-- It copies the checkout's tracked and unignored files to the Mac host, runs the command from the same directory, streams the output, removes the simulator and the copy, and exits with the command's code. The copy has no `node_modules` or `dist`, so the command runs `bun install` and builds `@orbis/contracts`, which the lanes' temporary service imports.
+- It copies the checkout's tracked and unignored files, uncommitted changes included, to the issue's `~/.cache/agent-scratch/sat-orbis-<issue>/` folder on the Mac host, runs the command from the same directory, streams the output, removes the simulator, and exits with the command's code. The folder, its build folders and its DerivedData stay until the PR merges, so the next step builds warm. The first copy has no `node_modules` or `dist`, so the command runs `bun install` and builds `@orbis/contracts`, which the lanes' temporary service imports.
+- `--out <dir>` gives the command an empty folder in `$LEASE_OUT` and copies what it writes there, such as an `.app`, an `.xcresult` or logs, back to `<dir>`.
 - A full `--journeys` run tests on two clones of the simulator in parallel. On the 8 GB Cortex, run one journey class at a time with `--only`.
-- For an Xcode build or test with no simulator, such as `--unit --macos`, use `--needs xcode`.
-- The wrapper tries Cortex first, then the MacBook, which holds 2 booted simulators at most, Parth's own included. `--host cortex` or `--host mac` pins the host. The MacBook takes tests only from 23:00 to 09:00 America/Los_Angeles, or when Parth opens it.
+- For an Xcode build or test with no simulator, such as `--unit --macos` or `swift test`, use `--needs xcode`. It boots nothing. `bun run ci` runs its macOS checks this way.
+- For a UI check by hand, hold the simulator instead: `factory lease run --hold --needs simulator --device "iPhone 17 Pro"` in the background prints `{ lease, host, hubHostId, udid }`. Run each build or `simctl` step with `factory lease run --lease <lease> [--out <dir>] -- <command>`, drive the app with `device_open` on that `hubHostId` and `udid`, and end with `device_close` and `factory lease release <lease>`. `docs/agents/ui-verification.md` has the steps.
+- Cortex takes Xcode steps only. Simulators go to the MacBook, which holds 2 booted simulators at most, Parth's own included. `--host cortex` or `--host mac` pins the host. The MacBook takes tests only from 23:00 to 09:00 America/Los_Angeles, or when Parth opens it.
 
 ## Local Effect Source
 
