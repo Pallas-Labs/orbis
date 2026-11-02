@@ -60,7 +60,7 @@ The site draws text in Inter. `src/fonts` holds cut-down copies of the `@fontsou
 uv run apps/web/scripts/subset-fonts.py
 ```
 
-To prove the new files draw the same pixels, build the app before and after the change, copy each `apps/web/dist` to its own folder, and compare them. The script screenshots 13 pages with Latin, accented, Cyrillic, Greek, Vietnamese and CJK titles under each build and lists the font bytes each page downloads:
+To prove the new files draw the same pixels, build the app before and after the change, copy each build's output to its own folder, and compare them. The script screenshots 13 pages with Latin, accented, Cyrillic, Greek, Vietnamese and CJK titles under each build and lists the font bytes each page downloads:
 
 ```sh
 node apps/web/scripts/font-diff.mjs --out <dir> after=<after dist> before=<before dist>
