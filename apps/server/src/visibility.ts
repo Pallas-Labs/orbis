@@ -1,5 +1,5 @@
-import { eq, sql } from "drizzle-orm";
-import { Effect, Option } from "effect";
+import { eq, inArray, sql } from "drizzle-orm";
+import { Effect } from "effect";
 
 import { libraryEntries, sets } from "./db/schema.js";
 import { Database } from "./db/service.js";
@@ -80,6 +80,91 @@ export const listFilterablePeople = (
 const notFound = () =>
   new LibraryError({ message: "Set not found.", statusCode: 404 });
 
+type SetRow = typeof sets.$inferSelect;
+
+const canSee = (
+  people: readonly PersonRecord[],
+  viewerId: string,
+  targetId: string
+) => {
+  try {
+    resolveVisiblePerson(people, viewerId, targetId);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Which of these Sets the Person can see: one in their own Library, a host Set no one has
+ * a Library entry for, one they queued or put in their own playlist, or one in the Library
+ * of another Person visible to them. Three reads at most, however many Sets.
+ */
+export const visibleSetIds = Effect.fn("Visibility.visibleSetIds")(
+  function* visibleSets(input: {
+    readonly rows: readonly Pick<SetRow, "id" | "hostRemoved">[];
+    readonly personId: string;
+    readonly people: readonly PersonRecord[];
+  }) {
+    const visible = new Set<string>();
+    if (input.rows.length === 0) {
+      return visible;
+    }
+    const db = yield* Database;
+    const entries = yield* db
+      .select({
+        personId: libraryEntries.personId,
+        setId: libraryEntries.setId,
+      })
+      .from(libraryEntries)
+      .where(
+        inArray(
+          libraryEntries.setId,
+          input.rows.map((row) => row.id)
+        )
+      );
+    const held = new Set(entries.map((entry) => entry.setId));
+    for (const entry of entries) {
+      if (entry.personId === input.personId) {
+        visible.add(entry.setId);
+      }
+    }
+    for (const row of input.rows) {
+      if (input.personId === "host" && !row.hostRemoved && !held.has(row.id)) {
+        visible.add(row.id);
+      }
+    }
+    const pending = input.rows.filter((row) => !visible.has(row.id));
+    if (pending.length === 0) {
+      return visible;
+    }
+    const pendingIds = sql.join(
+      pending.map((row) => sql`${row.id}`),
+      sql`, `
+    );
+    const owned = yield* db.all<{ readonly setId: string }>(sql`
+    SELECT set_id AS setId FROM queue_entries
+      WHERE person_id = ${input.personId} AND set_id IN (${pendingIds})
+    UNION
+    SELECT playlist_sets.set_id AS setId FROM playlist_sets
+      INNER JOIN playlists ON playlists.id = playlist_sets.playlist_id
+      WHERE playlists.creator_id = ${input.personId} AND playlist_sets.set_id IN (${pendingIds})
+  `);
+    for (const row of owned) {
+      visible.add(row.setId);
+    }
+    for (const entry of entries) {
+      if (visible.has(entry.setId)) {
+        continue;
+      }
+      if (canSee(input.people, input.personId, entry.personId)) {
+        visible.add(entry.setId);
+      }
+    }
+    return visible;
+  }
+);
+
 /** Resolves a Set through an owned reference or another visible Person's Library. */
 export const resolveVisibleSet = Effect.fn("Visibility.resolveSet")(
   function* resolveSet(input: {
@@ -92,36 +177,14 @@ export const resolveVisibleSet = Effect.fn("Visibility.resolveSet")(
     if (!row) {
       return yield* Effect.fail(notFound());
     }
-    const entries = yield* db
-      .select({ personId: libraryEntries.personId })
-      .from(libraryEntries)
-      .where(eq(libraryEntries.setId, input.id));
-    if (
-      entries.some((entry) => entry.personId === input.personId) ||
-      (input.personId === "host" && !row.hostRemoved && entries.length === 0)
-    ) {
-      return row;
+    const visible = yield* visibleSetIds({
+      people: input.people,
+      personId: input.personId,
+      rows: [row],
+    });
+    if (!visible.has(row.id)) {
+      return yield* Effect.fail(notFound());
     }
-    const [owned] = yield* db.all<{ readonly present: number }>(sql`
-    SELECT 1 AS present FROM queue_entries WHERE person_id = ${input.personId} AND set_id = ${input.id}
-    UNION ALL
-    SELECT 1 AS present FROM playlist_sets INNER JOIN playlists ON playlists.id = playlist_sets.playlist_id
-      WHERE playlists.creator_id = ${input.personId} AND playlist_sets.set_id = ${input.id}
-    LIMIT 1
-  `);
-    if (owned) {
-      return row;
-    }
-    for (const entry of entries) {
-      const visible = yield* Effect.try({
-        catch: () => notFound(),
-        try: () =>
-          resolveVisiblePerson(input.people, input.personId, entry.personId),
-      }).pipe(Effect.option);
-      if (Option.isSome(visible)) {
-        return row;
-      }
-    }
-    return yield* Effect.fail(notFound());
+    return row;
   }
 );

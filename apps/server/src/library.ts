@@ -32,7 +32,7 @@ import {
 import { LibraryPerson } from "./library-person.js";
 import type { EnrichedMetadata, SourceExtras } from "./metadata.js";
 import { normalizeSourceUrl } from "./source-url.js";
-import { resolveVisibleSet } from "./visibility.js";
+import { resolveVisibleSet, visibleSetIds } from "./visibility.js";
 import type { SourceDetails } from "./ytdlp-metadata.js";
 
 interface LibraryOptions {
@@ -231,81 +231,119 @@ export class Library extends Context.Service<
           )
           .limit(1);
 
-      const playlistIdsFor = (setId: string) =>
+      const listenStats = db
+        .select({
+          finishCount: sql<number>`COUNT(${listens.finishedAt})`.as(
+            "finish_count"
+          ),
+          lastListenedAt: sql<
+            string | null
+          >`MAX(CASE WHEN ${listens.startKnown} = 1 THEN ${listens.startedAt} END)`.as(
+            "last_listened_at"
+          ),
+          listenCount: sql<number>`COUNT(*)`.as("listen_count"),
+          setId: listens.setId,
+        })
+        .from(listens)
+        .where(eq(listens.personId, personId))
+        .groupBy(listens.setId)
+        .as("listen_stats");
+
+      // Each Set with this Person's entry, position, listen totals and playlists, in one read.
+      const builtSets = () =>
         db
-          .select({ playlistId: playlistSets.playlistId })
-          .from(playlistSets)
-          .innerJoin(playlists, eq(playlistSets.playlistId, playlists.id))
-          .where(
+          .select({
+            entrySavedAt: libraryEntries.savedAt,
+            entryTags: libraryEntries.tags,
+            entryTitleOverride: libraryEntries.titleOverride,
+            finishCount: listenStats.finishCount,
+            lastListenedAt: listenStats.lastListenedAt,
+            listenCount: listenStats.listenCount,
+            playlistIds: sql<string>`(
+              SELECT COALESCE(
+                json_group_array(${playlistSets.playlistId} ORDER BY ${playlistSets.playlistId}),
+                '[]'
+              )
+              FROM ${playlistSets}
+              INNER JOIN ${playlists} ON ${playlists.id} = ${playlistSets.playlistId}
+              WHERE ${playlistSets.setId} = ${sets.id} AND ${playlists.creatorId} = ${personId}
+            )`,
+            positionSeconds: playbackPositions.seconds,
+            set: sets,
+          })
+          .from(sets)
+          .leftJoin(
+            libraryEntries,
             and(
-              eq(playlistSets.setId, setId),
-              eq(playlists.creatorId, personId)
+              eq(libraryEntries.setId, sets.id),
+              eq(libraryEntries.personId, personId)
             )
           )
-          .orderBy(asc(playlistSets.playlistId))
-          .pipe(Effect.map((rows) => rows.map((row) => row.playlistId)));
+          .leftJoin(
+            playbackPositions,
+            and(
+              eq(playbackPositions.setId, sets.id),
+              eq(playbackPositions.personId, personId)
+            )
+          )
+          .leftJoin(listenStats, eq(listenStats.setId, sets.id))
+          .$dynamic();
 
-      const hydrateSet = Effect.fn("Library.hydrateSet")(
-        (
-          row: SetRow,
-          playlistIds: Effect.Effect<string[], unknown> = playlistIdsFor(row.id)
-        ) =>
-          Effect.gen(function* hydrateSetEffect() {
-            const [entry] = yield* entryFor(row.id);
-            const [position] = yield* db
-              .select({ seconds: playbackPositions.seconds })
-              .from(playbackPositions)
-              .where(
-                and(
-                  eq(playbackPositions.personId, personId),
-                  eq(playbackPositions.setId, row.id)
-                )
-              )
-              .limit(1);
-            const [stats] = yield* db
-              .select({
-                finishCount: sql<number>`COUNT(${listens.finishedAt})`,
-                lastListenedAt: sql<
-                  string | null
-                >`MAX(CASE WHEN ${listens.startKnown} = 1 THEN ${listens.startedAt} END)`,
-                listenCount: sql<number>`COUNT(*)`,
-              })
-              .from(listens)
-              .where(
-                and(eq(listens.personId, personId), eq(listens.setId, row.id))
-              );
-            const tags = yield* decodeJsonArray(
-              entry?.tags ?? (personId === "host" ? row.tags : "[]")
-            );
-            // The source details stay on the server; the client contract does not carry them.
-            const {
-              creatorUrl: _creatorUrl,
-              description: _description,
-              detailsState: _detailsState,
-              tracklistRunId: _tracklistRunId,
-              tracklistRunStartedAt: _tracklistRunStartedAt,
-              genre: _genre,
-              hostRemoved: _hostRemoved,
-              sourceChapters: _sourceChapters,
-              sourceTags: _sourceTags,
-              ...visible
-            } = row;
-            return {
-              ...visible,
-              createdAt: entry?.savedAt ?? row.createdAt,
-              finishCount: stats?.finishCount ?? 0,
-              lastListenedAt: stats?.lastListenedAt ?? null,
-              listenCount: stats?.listenCount ?? 0,
-              playbackPositionSeconds: position?.seconds ?? 0,
-              playlistIds: yield* playlistIds,
-              tags,
-              title: entry?.titleOverride ?? row.title,
-              titleEditedByUser: entry
-                ? entry.titleOverride !== null
-                : personId === "host" && row.titleEditedByUser,
-            };
-          })
+      type BuiltSet = Omit<
+        Effect.Success<ReturnType<typeof builtSets>>[number],
+        "set"
+      >;
+
+      const buildSavedSet = Effect.fn("Library.buildSavedSet")(function* build(
+        row: SetRow,
+        built: BuiltSet
+      ) {
+        const tags = yield* decodeJsonArray(
+          built.entryTags ?? (personId === "host" ? row.tags : "[]")
+        );
+        // The source details stay on the server; the client contract does not carry them.
+        const {
+          creatorUrl: _creatorUrl,
+          description: _description,
+          detailsState: _detailsState,
+          tracklistRunId: _tracklistRunId,
+          tracklistRunStartedAt: _tracklistRunStartedAt,
+          genre: _genre,
+          hostRemoved: _hostRemoved,
+          sourceChapters: _sourceChapters,
+          sourceTags: _sourceTags,
+          ...visible
+        } = row;
+        return {
+          ...visible,
+          createdAt: built.entrySavedAt ?? row.createdAt,
+          finishCount: built.finishCount ?? 0,
+          lastListenedAt: built.lastListenedAt,
+          listenCount: built.listenCount ?? 0,
+          playbackPositionSeconds: built.positionSeconds ?? 0,
+          playlistIds: yield* decodeJsonArray(built.playlistIds),
+          tags,
+          title: built.entryTitleOverride ?? row.title,
+          titleEditedByUser:
+            built.entrySavedAt === null
+              ? personId === "host" && row.titleEditedByUser
+              : built.entryTitleOverride !== null,
+        };
+      });
+
+      const buildAll = Effect.forEach((built: BuiltSet & { set: SetRow }) =>
+        buildSavedSet(built.set, built)
       );
+
+      const hydrateSet = Effect.fn("Library.hydrateSet")(function* hydrate(
+        row: SetRow
+      ) {
+        const [built] = yield* builtSets().where(eq(sets.id, row.id)).limit(1);
+        if (!built) {
+          return yield* setNotFound();
+        }
+        return yield* buildSavedSet(row, built);
+      });
 
       const findRow = (id: string) =>
         db.select().from(sets).where(eq(sets.id, id)).limit(1);
@@ -439,25 +477,13 @@ export class Library extends Context.Service<
             const conditions = playlistId
               ? []
               : [
-                  sql`(EXISTS (
-                SELECT 1 FROM ${libraryEntries}
-                WHERE ${libraryEntries.setId} = ${sets.id}
-                  AND ${libraryEntries.personId} = ${personId}
-              ) OR (${personId} = 'host' AND ${sets.hostRemoved} = 0 AND NOT EXISTS (
-                SELECT 1 FROM ${libraryEntries}
-                WHERE ${libraryEntries.setId} = ${sets.id}
+                  sql`(${libraryEntries.personId} IS NOT NULL OR (${personId} = 'host' AND ${sets.hostRemoved} = 0 AND NOT EXISTS (
+                SELECT 1 FROM ${libraryEntries} AS held
+                WHERE held.set_id = ${sets.id}
               )))`,
                 ];
-            const entryTitle = sql`coalesce((
-              SELECT ${libraryEntries.titleOverride} FROM ${libraryEntries}
-              WHERE ${libraryEntries.setId} = ${sets.id}
-                AND ${libraryEntries.personId} = ${personId}
-            ), ${sets.title})`;
-            const entryTags = sql`coalesce((
-              SELECT ${libraryEntries.tags} FROM ${libraryEntries}
-              WHERE ${libraryEntries.setId} = ${sets.id}
-                AND ${libraryEntries.personId} = ${personId}
-            ), ${sets.tags})`;
+            const entryTitle = sql`coalesce(${libraryEntries.titleOverride}, ${sets.title})`;
+            const entryTags = sql`coalesce(${libraryEntries.tags}, ${sets.tags})`;
             if (filters.q?.trim()) {
               const query = filters.q.trim();
               conditions.push(
@@ -483,15 +509,6 @@ export class Library extends Context.Service<
               );
             }
 
-            const playlistIds = sql<string>`(
-              SELECT COALESCE(
-                json_group_array(${playlistSets.playlistId} ORDER BY ${playlistSets.playlistId}),
-                '[]'
-              )
-              FROM ${playlistSets}
-              INNER JOIN ${playlists} ON ${playlists.id} = ${playlistSets.playlistId}
-              WHERE ${playlistSets.setId} = ${sets.id} AND ${playlists.creatorId} = ${personId}
-            )`;
             if (playlistId) {
               const playlist = yield* db
                 .select({ id: playlists.id })
@@ -506,27 +523,21 @@ export class Library extends Context.Service<
               if (!playlist[0]) {
                 return yield* Effect.fail(playlistNotFound());
               }
-              const rows = yield* db
-                .select({ playlistIds, set: sets })
-                .from(sets)
-                .innerJoin(playlistSets, eq(playlistSets.setId, sets.id))
-                .where(
-                  and(...conditions, eq(playlistSets.playlistId, playlistId))
-                )
-                .orderBy(asc(playlistSets.position));
-              return yield* Effect.forEach((row: (typeof rows)[number]) =>
-                hydrateSet(row.set, decodeJsonArray(row.playlistIds))
-              )(rows);
+              return yield* buildAll(
+                yield* builtSets()
+                  .innerJoin(playlistSets, eq(playlistSets.setId, sets.id))
+                  .where(
+                    and(...conditions, eq(playlistSets.playlistId, playlistId))
+                  )
+                  .orderBy(asc(playlistSets.position))
+              );
             }
 
-            const rows = yield* db
-              .select({ playlistIds, set: sets })
-              .from(sets)
-              .where(and(...conditions))
-              .orderBy(desc(sets.createdAt), desc(sql`rowid`));
-            return yield* Effect.forEach((row: (typeof rows)[number]) =>
-              hydrateSet(row.set, decodeJsonArray(row.playlistIds))
-            )(rows);
+            return yield* buildAll(
+              yield* builtSets()
+                .where(and(...conditions))
+                .orderBy(desc(sets.createdAt), desc(sql`${sets}.rowid`))
+            );
           })
         )
       );
@@ -636,8 +647,27 @@ export class Library extends Context.Service<
             if (ids.length === 0) {
               return [];
             }
+            const rows = yield* builtSets().where(
+              inArray(sets.id, [...new Set(ids)])
+            );
+            const visible = yield* visibleSetIds({
+              people: options.people?.() ?? [],
+              personId,
+              rows: rows.map((row) => row.set),
+            }).pipe(Effect.provideService(Database, db));
+            const found = new Map(
+              rows
+                .filter((row) => visible.has(row.set.id))
+                .map((row) => [row.set.id, row])
+            );
             return yield* Effect.forEach((id: string) =>
-              resolve(id).pipe(Effect.flatMap((row) => hydrateSet(row)))
+              Effect.gen(function* byIdEffect() {
+                const built = found.get(id);
+                if (!built) {
+                  return yield* setNotFound();
+                }
+                return yield* buildSavedSet(built.set, built);
+              })
             )(ids);
           })
         )
