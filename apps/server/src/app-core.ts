@@ -1893,9 +1893,10 @@ export const createPortableApp = (options: {
                 const history = yield* Effect.provide(
                   Effect.gen(function* hydrateFriendListens() {
                     const personal = yield* Library;
-                    const sets = yield* personal.byIds(
-                      rows.map((row) => row.setId)
-                    );
+                    // A friend replays the same Sets, so build each one once.
+                    const sets = yield* personal.byIds([
+                      ...new Set(rows.map((row) => row.setId)),
+                    ]);
                     const byId = new Map(sets.map((set) => [set.id, set]));
                     return rows.flatMap((row) => {
                       const set = byId.get(row.setId);

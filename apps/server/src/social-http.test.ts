@@ -96,11 +96,12 @@ test("People see a friend's full Library only while both sides allow it", async 
       .run(playlistId, outside.json().id);
     // Newer than the Listens this test records below, whenever it runs.
     const tomorrow = "2100-01-01T00:00:00.000Z";
-    sqlite
-      .query(
-        "INSERT INTO listens (person_id, set_id, started_at, finished_at) VALUES ('b', ?, ?, NULL)"
-      )
-      .run(outside.json().id, tomorrow);
+    const insertListen = sqlite.query(
+      "INSERT INTO listens (person_id, set_id, started_at, finished_at) VALUES ('b', ?, ?, NULL)"
+    );
+    insertListen.run(outside.json().id, tomorrow);
+    // Older than every other Listen: a second play of a Set gets its own row.
+    insertListen.run(first.json().id, "2000-01-01T00:00:00.000Z");
     sqlite.close();
     expect(
       await status("b", "PUT", "/queue/active", { setId: first.json().id })
@@ -146,6 +147,7 @@ test("People see a friend's full Library only while both sides allow it", async 
       [outside.json().id, false],
       [second.json().id, false],
       [first.json().id, true],
+      [first.json().id, false],
     ]);
     expect(await body("a", "GET", "/people")).toMatchObject({
       people: [{ id: "b", username: "bob" }],
