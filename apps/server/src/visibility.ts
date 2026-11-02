@@ -1,6 +1,7 @@
 import { eq, inArray, sql } from "drizzle-orm";
 import { Effect } from "effect";
 
+import { boundBatches } from "./db/batches.js";
 import { libraryEntries, sets } from "./db/schema.js";
 import { Database } from "./db/service.js";
 import { LibraryError } from "./errors.js";
@@ -98,7 +99,7 @@ const canSee = (
 /**
  * Which of these Sets the Person can see: one in their own Library, a host Set no one has
  * a Library entry for, one they queued or put in their own playlist, or one in the Library
- * of another Person visible to them. Three reads at most, however many Sets.
+ * of another Person visible to them. Two reads for each batch the Group's bind limit allows.
  */
 export const visibleSetIds = Effect.fn("Visibility.visibleSetIds")(
   function* visibleSets(input: {
@@ -111,18 +112,21 @@ export const visibleSetIds = Effect.fn("Visibility.visibleSetIds")(
       return visible;
     }
     const db = yield* Database;
-    const entries = yield* db
-      .select({
-        personId: libraryEntries.personId,
-        setId: libraryEntries.setId,
-      })
-      .from(libraryEntries)
-      .where(
-        inArray(
-          libraryEntries.setId,
-          input.rows.map((row) => row.id)
-        )
-      );
+    const entryBatches = yield* Effect.forEach(
+      boundBatches(
+        input.rows.map((row) => row.id),
+        { fixed: 0, perValue: 1 }
+      ),
+      (ids) =>
+        db
+          .select({
+            personId: libraryEntries.personId,
+            setId: libraryEntries.setId,
+          })
+          .from(libraryEntries)
+          .where(inArray(libraryEntries.setId, ids))
+    );
+    const entries = entryBatches.flat();
     const held = new Set(entries.map((entry) => entry.setId));
     for (const entry of entries) {
       if (entry.personId === input.personId) {
@@ -138,11 +142,15 @@ export const visibleSetIds = Effect.fn("Visibility.visibleSetIds")(
     if (pending.length === 0) {
       return visible;
     }
-    const pendingIds = sql.join(
-      pending.map((row) => sql`${row.id}`),
-      sql`, `
-    );
-    const owned = yield* db.all<{ readonly setId: string }>(sql`
+    // Binds the Person twice and each pending ID twice.
+    const ownedBatches = yield* Effect.forEach(
+      boundBatches(pending, { fixed: 2, perValue: 2 }),
+      (batch) => {
+        const pendingIds = sql.join(
+          batch.map((row) => sql`${row.id}`),
+          sql`, `
+        );
+        return db.all<{ readonly setId: string }>(sql`
     SELECT set_id AS setId FROM queue_entries
       WHERE person_id = ${input.personId} AND set_id IN (${pendingIds})
     UNION
@@ -150,7 +158,9 @@ export const visibleSetIds = Effect.fn("Visibility.visibleSetIds")(
       INNER JOIN playlists ON playlists.id = playlist_sets.playlist_id
       WHERE playlists.creator_id = ${input.personId} AND playlist_sets.set_id IN (${pendingIds})
   `);
-    for (const row of owned) {
+      }
+    );
+    for (const row of ownedBatches.flat()) {
       visible.add(row.setId);
     }
     for (const entry of entries) {

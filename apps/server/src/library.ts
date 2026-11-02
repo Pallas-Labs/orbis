@@ -10,7 +10,7 @@ import { Context, Effect, Layer, Schema } from "effect";
 
 import { albumCues, appleMusicDownloadRefused } from "./apple-music.js";
 import { releaseAudio } from "./audio-release.js";
-import { insertBatches } from "./db/batches.js";
+import { boundBatches, insertBatches } from "./db/batches.js";
 import {
   downloadJobs,
   downloadRequesters,
@@ -647,9 +647,12 @@ export class Library extends Context.Service<
             if (ids.length === 0) {
               return [];
             }
-            const rows = yield* builtSets().where(
-              inArray(sets.id, [...new Set(ids)])
+            // `builtSets` binds the Person 4 times, then one value for each ID.
+            const batches = yield* Effect.forEach(
+              boundBatches([...new Set(ids)], { fixed: 4, perValue: 1 }),
+              (batch) => builtSets().where(inArray(sets.id, batch))
             );
+            const rows = batches.flat();
             const visible = yield* visibleSetIds({
               people: options.people?.() ?? [],
               personId,

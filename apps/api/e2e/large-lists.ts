@@ -7,9 +7,12 @@ import { Miniflare } from "miniflare";
 
 import { workerModules } from "./worker-modules.js";
 
-// The Group's SQLite binds at most 100 values in one statement. 40 Sets is more than one
-// insert can hold for a playlist (3 values a row) or a queue (4 values a row).
-const SET_COUNT = 40;
+// The Group's SQLite binds at most 100 values in one statement. 150 Sets is more than one
+// insert can hold for a playlist (3 values a row) or a queue (4 values a row), and more
+// than one read can bind when it builds the queue's Sets by ID.
+const SET_COUNT = 150;
+// Queued Sets that no Library holds. The visibility check binds each of these twice.
+const QUEUED_ONLY_COUNT = 60;
 
 const artifact = path.resolve(
   import.meta.dir,
@@ -65,6 +68,9 @@ const call = async (route: string, method = "GET", body?: string) => {
 try {
   await call("/__seed-tracklist");
   await call("/__seed-library");
+  await call("/__seed-queue");
+  const queuedOnly = Schema.decodeUnknownSync(Queue)(await call("/queue"));
+  assert.equal(queuedOnly.queue.entries.length, QUEUED_ONLY_COUNT);
   const setIds = Array.from(
     { length: SET_COUNT },
     (_, index) => `library-set-${index}`
@@ -94,6 +100,7 @@ try {
       {
         playlistSets: stored.sets.length,
         queueEntries: queue.queue.entries.length,
+        queuedOnlyEntries: queuedOnly.queue.entries.length,
       },
       null,
       2
