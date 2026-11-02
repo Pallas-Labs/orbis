@@ -25,6 +25,24 @@ const get = (app: ReturnType<typeof createApp>, url: string) =>
     url,
   });
 
+/**
+ * Times `runs` requests one after another, so each reading covers one request
+ * alone. Recursive rather than a loop, so each request is its own await.
+ */
+const timeRequests = async (
+  app: ReturnType<typeof createApp>,
+  times: number[],
+  runsLeft: number
+): Promise<void> => {
+  if (runsLeft <= 0) {
+    return;
+  }
+  const started = performance.now();
+  await get(app, "/people/b/listens");
+  times.push(performance.now() - started);
+  await timeRequests(app, times, runsLeft - 1);
+};
+
 const measure = async (listenCount: number) => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-bench-listens-"));
   try {
@@ -91,12 +109,7 @@ const measure = async (listenCount: number) => {
         );
       }
       const times: number[] = [];
-      for (let run = 0; run < runs; run += 1) {
-        const started = performance.now();
-        // oxlint-disable-next-line no-await-in-loop -- Each request is timed alone.
-        await get(app, "/people/b/listens");
-        times.push(performance.now() - started);
-      }
+      await timeRequests(app, times, runs);
       times.sort((left, right) => left - right);
       return {
         bytes: JSON.stringify(payload).length,
@@ -114,7 +127,15 @@ const measure = async (listenCount: number) => {
   }
 };
 
-for (const listenCount of [36, 200, 1000]) {
-  // oxlint-disable-next-line no-await-in-loop -- Each Listen count is timed alone.
+const listenCounts = [36, 200, 1000];
+
+const measureAll = async (index: number): Promise<void> => {
+  const listenCount = listenCounts[index];
+  if (listenCount === undefined) {
+    return;
+  }
   console.log(JSON.stringify(await measure(listenCount)));
-}
+  await measureAll(index + 1);
+};
+
+await measureAll(0);
