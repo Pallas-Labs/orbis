@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/node.ts",
+    "bench:sets": "bun src/bench-sets.ts",
     "backfill:artwork": "bun src/backfill-artwork.ts",
     "backfill:details": "bun src/backfill-details.ts",
     "backfill:tracklists": "bun src/backfill-tracklists.ts",

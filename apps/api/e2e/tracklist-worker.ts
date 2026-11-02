@@ -36,7 +36,7 @@ export class Group extends ProductionGroup {
     }
     if (pathname === "/__seed-library") {
       const now = new Date().toISOString();
-      for (let index = 0; index < 40; index += 1) {
+      for (let index = 0; index < 150; index += 1) {
         const id = `library-set-${index}`;
         this.ctx.storage.sql.exec(
           `INSERT OR IGNORE INTO sets (id, url, title, source, tags, created_at, title_edited_by_user, details_state, download_state)
@@ -50,6 +50,28 @@ export class Group extends ProductionGroup {
           "INSERT OR IGNORE INTO library_entries (person_id, set_id, saved_at, tags) VALUES ('listener', ?, ?, '[]')",
           id,
           now
+        );
+      }
+      return new Response("seeded");
+    }
+    // Sets in the listener's queue that no Person holds in a Library: the listener sees
+    // each one only because they queued it.
+    if (pathname === "/__seed-queue") {
+      const now = new Date().toISOString();
+      for (let index = 0; index < 60; index += 1) {
+        const id = `queued-set-${index}`;
+        this.ctx.storage.sql.exec(
+          `INSERT OR IGNORE INTO sets (id, url, title, source, tags, created_at, title_edited_by_user, details_state, download_state)
+           VALUES (?, ?, ?, 'youtube', '[]', ?, 1, 'filled', 'ready')`,
+          id,
+          `https://www.youtube.com/watch?v=${id}`,
+          id,
+          now
+        );
+        this.ctx.storage.sql.exec(
+          "INSERT OR IGNORE INTO queue_entries (person_id, set_id, position, is_active) VALUES ('listener', ?, ?, 0)",
+          id,
+          index
         );
       }
       return new Response("seeded");
