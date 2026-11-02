@@ -7,7 +7,6 @@
  * median of 15 timed requests after one warm-up, and a SHA-256 of the first response body so
  * two runs can show they answered the same bytes.
  */
-/* oxlint-disable no-await-in-loop -- Sizes and timed requests run one at a time so each time is its own. */
 import { Database as Sqlite } from "bun:sqlite";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -18,8 +17,27 @@ import { request } from "./test-http.js";
 
 const sizes = process.argv.slice(2).map(Number);
 const runs = 15;
+const sizesToMeasure = sizes.length > 0 ? sizes : [50, 2000];
 
-for (const size of sizes.length > 0 ? sizes : [50, 2000]) {
+/**
+ * Times `runs` requests one after another, so each reading covers one request
+ * alone. Recursive rather than a loop, so each request is its own await.
+ */
+const timeRequests = async (
+  app: ReturnType<typeof createTestApp>,
+  times: number[],
+  runsLeft: number
+): Promise<void> => {
+  if (runsLeft <= 0) {
+    return;
+  }
+  const started = performance.now();
+  await request(app, { method: "GET", url: "/sets" });
+  times.push(performance.now() - started);
+  await timeRequests(app, times, runsLeft - 1);
+};
+
+const measureSize = async (size: number): Promise<void> => {
   const directory = mkdtempSync(path.join(tmpdir(), "orbis-bench-sets-"));
   const databasePath = path.join(directory, "library.sqlite");
   const migrate = createTestApp({ databasePath, logging: { silent: true } });
@@ -66,11 +84,7 @@ for (const size of sizes.length > 0 ? sizes : [50, 2000]) {
     .update(JSON.stringify(body))
     .digest("hex");
   const times: number[] = [];
-  for (let run = 0; run < runs; run += 1) {
-    const started = performance.now();
-    await request(app, { method: "GET", url: "/sets" });
-    times.push(performance.now() - started);
-  }
+  await timeRequests(app, times, runs);
   await app.dispose();
   rmSync(directory, { force: true, recursive: true });
 
@@ -85,4 +99,15 @@ for (const size of sizes.length > 0 ? sizes : [50, 2000]) {
       sha256,
     })
   );
-}
+};
+
+const measureAll = async (index: number): Promise<void> => {
+  const size = sizesToMeasure[index];
+  if (size === undefined) {
+    return;
+  }
+  await measureSize(size);
+  await measureAll(index + 1);
+};
+
+await measureAll(0);
