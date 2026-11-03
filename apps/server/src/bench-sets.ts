@@ -37,6 +37,20 @@ const timeRequests = async (
   await timeRequests(app, times, runsLeft - 1);
 };
 
+/**
+ * Whether a `GET /sets` body carries a `sets` array. The bench reads the
+ * response twice, the whole body for its hash and `sets` for its count, so the
+ * check happens once here rather than at the read.
+ */
+const isSetsBody = (
+  value: unknown
+): value is { readonly sets: readonly unknown[] } => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  return "sets" in value && Array.isArray(value.sets);
+};
+
 const measureSize = async (size: number): Promise<void> => {
   const directory = mkdtempSync(path.join(tmpdir(), "orbis-bench-sets-"));
   const databasePath = path.join(directory, "library.sqlite");
@@ -78,8 +92,12 @@ const measureSize = async (size: number): Promise<void> => {
 
   const app = createTestApp({ databasePath, logging: { silent: true } });
   const first = await request(app, { method: "GET", url: "/sets" });
-  // SAFETY: `GET /sets` answers `{ sets: SavedSet[] }`; the hash covers the whole body anyway.
-  const body = first.json() as { readonly sets: readonly unknown[] };
+  const body: unknown = first.json();
+  if (!isSetsBody(body)) {
+    throw new TypeError(
+      `GET /sets did not answer a Set list: ${first.statusCode}`
+    );
+  }
   const sha256 = new Bun.CryptoHasher("sha256")
     .update(JSON.stringify(body))
     .digest("hex");
