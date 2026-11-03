@@ -11,6 +11,7 @@ import type { WideEvent } from "evlog";
 import { createApp } from "./app.js";
 import { hashToken } from "./identity.js";
 import { Metadata } from "./metadata.js";
+import { runInOrder, runTimesInOrder } from "./test-http.js";
 
 const HOST_TOKEN = "share-host-key";
 const FRIEND_TOKEN = "share-friend-key";
@@ -408,13 +409,12 @@ test("the preview image is a 1200x630 PNG that draws the Artwork, and draws with
       "localFileXX",
     ];
     const ids: string[] = [];
-    for (const video of videos) {
-      // oxlint-disable-next-line no-await-in-loop -- Saves run in order so the ids line up.
+    await runInOrder(videos, async (video) => {
       const saved = await server.call(HOST_TOKEN, "POST", "/sets", {
         url: `https://www.youtube.com/watch?v=${video}`,
       });
       ids.push(saved.id);
-    }
+    });
     const images = await Promise.all(
       ids.map(async (id, index) => {
         const response = await server.open(await server.imagePath(id));
@@ -570,14 +570,13 @@ test("the preview image of a Set with no Artwork draws once", async () => {
       .run(id);
     sqlite.close();
     const current = await server.imagePath(id);
-    for (const _ of [1, 2, 3]) {
-      // oxlint-disable-next-line no-await-in-loop -- Each request follows the last draw.
+    await runTimesInOrder(3, async () => {
       const response = await server.open(current);
       expect(response.status).toBe(200);
       expect(response.headers.get("cache-control")).toBe(
         "public, max-age=31536000, immutable"
       );
-    }
+    });
     expect(server.renders()).toBe(1);
   } finally {
     await server.dispose();

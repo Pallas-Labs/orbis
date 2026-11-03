@@ -96,6 +96,38 @@ export const transcript = () => {
   };
 };
 
+/**
+ * Runs `run` once for each item, one at a time in the order given. A test that
+ * paces a client against a rate limit depends on that order, and
+ * `no-await-in-loop` cannot tell it apart from a loop that should run in
+ * parallel, so the sequencing lives here rather than in a suppressed loop. A
+ * throwing step stops the rest, as a `for … await` loop does.
+ */
+export const runInOrder = async <Item>(
+  items: Iterable<Item>,
+  run: (item: Item, index: number) => Promise<void>
+): Promise<void> => {
+  const iterator = items[Symbol.iterator]();
+  const step = async (index: number): Promise<void> => {
+    const next = iterator.next();
+    if (next.done === true) {
+      return;
+    }
+    await run(next.value, index);
+    await step(index + 1);
+  };
+  await step(0);
+};
+
+/** `runInOrder` over the indexes from `0` to `count - 1`. */
+export const runTimesInOrder = async (
+  count: number,
+  run: (index: number) => Promise<void>
+): Promise<void> => {
+  const indexes = Array.from({ length: count }, (_, index) => index);
+  await runInOrder(indexes, run);
+};
+
 const isRefusal = Schema.is(Schema.Struct({ message: Schema.String }));
 
 /** A status, with the sentence a refusal carried: `404 "Not found."`. */
