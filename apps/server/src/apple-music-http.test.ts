@@ -11,7 +11,7 @@ import { appleMusicRecordings, musicKitPem } from "./apple-music-recordings.js";
 import { hashToken } from "./identity.js";
 import { Metadata } from "./metadata.js";
 import { createTestApp as createApp } from "./test-app.js";
-import { request } from "./test-http.js";
+import { request, runInOrder } from "./test-http.js";
 import { messageIn, setsInLibrary } from "./test-library.js";
 import { Versos } from "./versos.js";
 
@@ -517,8 +517,7 @@ test("an Apple Music album link saves once, read from the US catalog with the Ho
     expect(refusedLinks.some((url) => url.includes("/artist/"))).toBe(true);
     expect(refusedLinks.some((url) => url.includes("/station/"))).toBe(true);
     expect(refusedLinks.some((url) => url.includes("/song/"))).toBe(true);
-    for (const url of refusedLinks) {
-      // oxlint-disable-next-line no-await-in-loop -- Each refusal is one save, in order.
+    await runInOrder(refusedLinks, async (url) => {
       const refused = await request(server.app, {
         method: "POST",
         payload: { url },
@@ -526,7 +525,7 @@ test("an Apple Music album link saves once, read from the US catalog with the Ho
       });
       expect(refused.statusCode).toBe(400);
       expect(messageIn(refused)).toBe(SOURCE_URL_MESSAGE);
-    }
+    });
     expect(server.reads).toEqual([]);
 
     const saved = await request(server.app, {
@@ -896,9 +895,8 @@ const named = (album: FoundAlbum) => `${album.title} / ${album.creator}`;
 test("each recorded search shows Apple's labelled DJ mixes first, in Apple's order, from two US searches and one album read", async () => {
   const server = await start();
   try {
-    for (const [words, mixes] of EXPECTED_DJ_MIXES) {
+    await runInOrder(EXPECTED_DJ_MIXES, async ([words, mixes]) => {
       const before = server.reads.length;
-      // oxlint-disable-next-line no-await-in-loop -- Each search is checked against its own reads.
       const albums = await search(server, words);
       const reads = server.reads.slice(before).map((read) => new URL(read.url));
       expect(reads.map((url) => url.pathname)).toEqual([
@@ -934,7 +932,6 @@ test("each recorded search shows Apple's labelled DJ mixes first, in Apple's ord
           album.djMix || typed.has(album.url.split("/").at(-1) ?? "")
         ).toBe(true);
       }
-      // oxlint-disable-next-line no-await-in-loop -- One evidence file per search.
       await record(`search-${words.toLowerCase().replaceAll(/\W+/gu, "-")}`, {
         albums: albums.map((album) => ({
           djMix: album.djMix,
@@ -943,12 +940,11 @@ test("each recorded search shows Apple's labelled DJ mixes first, in Apple's ord
         })),
         reads: reads.map(String),
       });
-    }
-    for (const [words, mix] of UNLABELLED_MIXES) {
-      // oxlint-disable-next-line no-await-in-loop -- Each known miss is read from its search.
+    });
+    await runInOrder(UNLABELLED_MIXES, async ([words, mix]) => {
       const albums = await search(server, words);
       expect(albums.find((album) => named(album) === mix)?.djMix).toBe(false);
-    }
+    });
   } finally {
     await server.dispose();
   }
@@ -1043,8 +1039,7 @@ test("a series search names its series as the Top Result, and each group counts 
 
     const tops = new Map<string, Answer["top"]>();
     const groups = new Map<string, Answer["groups"]>();
-    for (const [words] of EXPECTED_DJ_MIXES) {
-      // oxlint-disable-next-line no-await-in-loop -- Each search is checked on its own answer.
+    await runInOrder(EXPECTED_DJ_MIXES, async ([words]) => {
       const found = await answer(server, { q: words });
       const mixes = found.albums.filter((album) => album.djMix);
       expect(found.albums.every((album) => album.djMix || !album.series)).toBe(
@@ -1067,7 +1062,7 @@ test("a series search names its series as the Top Result, and each group counts 
       ).not.toContain("various artists");
       tops.set(words, found.top);
       groups.set(words, found.groups);
-    }
+    });
     // The check above is not empty: Essential Mix finds a Various Artists DJ mix.
     const essential = await search(server, "Essential Mix");
     expect(
@@ -1167,8 +1162,7 @@ test("each found song starts at the sum of the song lengths before it, and the l
     );
     let checked = 0;
     let unknown = 0;
-    for (const [words] of EXPECTED_DJ_MIXES) {
-      // oxlint-disable-next-line no-await-in-loop -- Each search is checked on its own answer.
+    await runInOrder(EXPECTED_DJ_MIXES, async ([words]) => {
       for (const album of await search(server, words)) {
         const songLengths = lengths.get(album.id) ?? [];
         expect(album.songs.length).toBe(album.songCount);
@@ -1194,7 +1188,7 @@ test("each found song starts at the sum of the song lengths before it, and the l
         }
         checked += 1;
       }
-    }
+    });
     // Essential Mix finds albums Apple gives a song no length for.
     expect(unknown).toBeGreaterThan(0);
     const troxlers = await search(server, "Seth Troxler");

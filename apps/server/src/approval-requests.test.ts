@@ -44,7 +44,14 @@ import type { WideEvent } from "evlog";
 import { createApp } from "./app.js";
 import { hashToken, readTrustStrict } from "./identity.js";
 import { storedKey } from "./test-app.js";
-import { relativeTime, request, statusLine, transcript } from "./test-http.js";
+import {
+  relativeTime,
+  request,
+  runInOrder,
+  runTimesInOrder,
+  statusLine,
+  transcript,
+} from "./test-http.js";
 
 const FRIEND_DAILY = "approval-friend-daily";
 const NODE = "approval-node";
@@ -412,11 +419,10 @@ test("wrong codes and secrets count as failed sign-in attempts, and the waiting 
     const wrong = (attempt: number) =>
       String((Number(pairing.code) + attempt + 1) % 1_000_000).padStart(6, "0");
     const statuses: number[] = [];
-    for (let attempt = 0; attempt < 21; attempt += 1) {
+    await runTimesInOrder(21, async (attempt) => {
       const guess = attempt % 2 === 0 ? find : approve;
-      // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
       statuses.push(await statusOf(guess(app, wrong(attempt))));
-    }
+    });
     expect(statuses.slice(0, 20)).toEqual(
       Array.from({ length: 20 }, () => 404)
     );
@@ -427,12 +433,9 @@ test("wrong codes and secrets count as failed sign-in attempts, and the waiting 
     expect(await statusOf(find(app, pairing.code, "100.64.2.2"))).toBe(200);
 
     const secrets: number[] = [];
-    for (let attempt = 0; attempt < 21; attempt += 1) {
-      secrets.push(
-        // oxlint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
-        await statusOf(wait(app, `guess-${attempt}`, "100.64.4.1"))
-      );
-    }
+    await runTimesInOrder(21, async (attempt) => {
+      secrets.push(await statusOf(wait(app, `guess-${attempt}`, "100.64.4.1")));
+    });
     expect(secrets.slice(0, 20)).toEqual(Array.from({ length: 20 }, () => 404));
     expect(secrets[20]).toBe(429);
     // The device waiting on its own request is not locked out.
@@ -461,14 +464,12 @@ test("after 2 minutes a request cannot be found, approved, or collected", async 
 test("one client holds 3 live requests and the Group holds 20", async () => {
   const { app, cleanup, clock } = await setup();
   try {
-    for (const address of [
-      "2001:db8:1:2::1",
-      "2001:db8:1:2::2",
-      "2001:db8:1:2::3",
-    ]) {
-      // oxlint-disable-next-line no-await-in-loop -- requests start in order so the 4th is the one refused
-      expect(await statusOf(start(app, address))).toBe(201);
-    }
+    await runInOrder(
+      ["2001:db8:1:2::1", "2001:db8:1:2::2", "2001:db8:1:2::3"],
+      async (address) => {
+        expect(await statusOf(start(app, address))).toBe(201);
+      }
+    );
     const fourth = await start(app, "2001:db8:1:2::4");
     expect(fourth.status).toBe(429);
     expect(fourth.body).toEqual({
@@ -476,10 +477,9 @@ test("one client holds 3 live requests and the Group holds 20", async () => {
         "Too many devices are waiting to sign in. Try again in two minutes.",
     });
 
-    for (let index = 0; index < 17; index += 1) {
-      // oxlint-disable-next-line no-await-in-loop -- requests start in order so the 21st is the one refused
+    await runTimesInOrder(17, async (index) => {
       expect(await statusOf(start(app, `100.64.5.${index}`))).toBe(201);
-    }
+    });
     expect(await statusOf(start(app, "100.64.6.1"))).toBe(429);
 
     clock.now += TWO_MINUTES;
