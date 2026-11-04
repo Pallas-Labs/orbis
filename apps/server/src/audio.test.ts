@@ -7,7 +7,7 @@ import { Schema } from "effect";
 
 import type { AudioOptions } from "./audio.js";
 import { createTestApp as createApp, storedKey } from "./test-app.js";
-import { idIn, request } from "./test-http.js";
+import { idIn, request, runInOrder, runTimesInOrder } from "./test-http.js";
 
 const youTubeUrl = "https://www.youtube.com/watch?v=aqzKEbpKQAA";
 const haveFfmpeg =
@@ -364,11 +364,10 @@ test("canceling mid-flight returns to none with no files", async () => {
     tunnel: (_url) => {
       const stream = new ReadableStream({
         async start(controller) {
-          for (let index = 0; index < 40; index += 1) {
-            // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
+          await runTimesInOrder(40, async () => {
             await Bun.sleep(50);
             controller.enqueue(new Uint8Array(1024));
-          }
+          });
           controller.close();
         },
       });
@@ -510,11 +509,10 @@ test("device ingress without a token is rejected on every audio route", async ()
       ["GET", `/sets/${id}/audio`],
       ["DELETE", `/sets/${id}/audio/download`],
     ] as const;
-    for (const [method, url] of routes) {
-      // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
+    await runInOrder(routes, async ([method, url]) => {
       const response = await rawRequest(app, method, url, {}, "device", false);
       expect(response.status).toBe(403);
-    }
+    });
   } finally {
     await cleanup();
   }

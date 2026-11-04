@@ -10,7 +10,7 @@ import path from "node:path";
 
 import { chromium } from "playwright";
 
-import { signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
+import { runInOrder, signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-player");
@@ -108,18 +108,18 @@ try {
 
   // Two Sets with kept audio, saved from "another device".
   const sets = {};
-  for (const [name, link] of [
-    ["First set", "https://www.youtube.com/watch?v=aaaaaaaaaaa"],
-    ["Second set", "https://www.youtube.com/watch?v=bbbbbbbbbbb"],
-  ]) {
-    // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
-    const saved = await api("POST", "/sets", { url: link });
-    // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
-    await api("PATCH", `/sets/${saved.id}/title`, { title: name });
-    // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
-    await api("POST", `/sets/${saved.id}/audio/download`);
-    sets[name] = saved.id;
-  }
+  await runInOrder(
+    [
+      ["First set", "https://www.youtube.com/watch?v=aaaaaaaaaaa"],
+      ["Second set", "https://www.youtube.com/watch?v=bbbbbbbbbbb"],
+    ],
+    async ([name, link]) => {
+      const saved = await api("POST", "/sets", { url: link });
+      await api("PATCH", `/sets/${saved.id}/title`, { title: name });
+      await api("POST", `/sets/${saved.id}/audio/download`);
+      sets[name] = saved.id;
+    }
+  );
   await waitUntil(async () => {
     const { sets: library } = await api("GET", "/sets");
     return library.every((set) => set.downloadState === "ready");

@@ -4,11 +4,10 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { setTimeout } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
-import { signInWithKey, waitFor } from "./helpers.mjs";
+import { runInOrder, signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-playlists");
@@ -111,8 +110,7 @@ try {
   await Promise.all([waitFor(`${apiUrl}/health`), waitFor(webUrl)]);
   await mkdir(artifacts, { recursive: true });
 
-  for (const set of sets) {
-    // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
+  await runInOrder(sets, async (set) => {
     const saved = await fetch(`${apiUrl}/sets`, {
       body: JSON.stringify(set),
       headers: {
@@ -122,18 +120,16 @@ try {
       method: "POST",
     });
     assert.equal(saved.status, 201);
-    // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
     const { id } = await saved.json();
     setIds[set.title] = id;
     if (set.title !== "Alpha") {
-      // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
       const download = await fetch(`${apiUrl}/sets/${id}/audio/download`, {
         headers: { authorization: `Bearer ${keys.host}` },
         method: "POST",
       });
       assert.equal(download.status, 202);
     }
-  }
+  });
   step("the Host has three Sets", { titles: sets.map((set) => set.title) });
 
   const browser = await chromium.launch({ headless: true });
@@ -157,16 +153,11 @@ try {
       return page;
     };
     const expectOrder = async (page, titles) => {
-      for (let attempt = 0; attempt < 100; attempt += 1) {
-        // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-        const current = await order(page);
-        if (JSON.stringify(current) === JSON.stringify(titles)) {
-          return;
-        }
-        // eslint-disable-next-line no-await-in-loop -- polling loop: each attempt waits for the previous one
-        await setTimeout(100);
-      }
-      assert.deepEqual(await order(page), titles);
+      await waitUntil(
+        async () =>
+          JSON.stringify(await order(page)) === JSON.stringify(titles),
+        `the Playlists page never showed ${titles.join(", ")}`
+      );
     };
     const shot = (page, name) =>
       page.screenshot({ fullPage: true, path: path.join(artifacts, name) });
@@ -190,10 +181,9 @@ try {
 
     await host.getByRole("button", { name: "Add Sets…" }).click();
     const picker = host.getByRole("dialog");
-    for (const { title } of sets) {
-      // eslint-disable-next-line no-await-in-loop -- steps run in order; each depends on the previous response
+    await runInOrder(sets, async ({ title }) => {
       await picker.getByRole("checkbox", { name: title }).click();
-    }
+    });
     await picker.getByRole("button", { name: "Add 3 Sets" }).click();
     await expectOrder(host, ["Alpha", "Bravo", "Charlie"]);
     await picker.waitFor({ state: "detached" });

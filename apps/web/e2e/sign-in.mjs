@@ -18,6 +18,7 @@ import {
   boxGroups,
   keyRecord,
   paste,
+  runTimesInOrder,
   signInWithKey,
   storedKey,
   textOf,
@@ -315,10 +316,7 @@ try {
 
     await page.getByRole("button", { name: "Sign out" }).click();
     await page.getByRole("heading", { name: "Sign in to Orbis" }).waitFor();
-    for (let attempt = 0; attempt < 25; attempt += 1) {
-      // eslint-disable-next-line no-await-in-loop -- attempts run in order; each counts toward the limit under test
-      await guessCode();
-    }
+    await runTimesInOrder(25, () => guessCode());
     const limited = await typeCode("zzzzzzzz");
     await expectRefusal(codeForm, limited, 429);
     step("after many wrong guesses the API's rate-limit message shows", {
