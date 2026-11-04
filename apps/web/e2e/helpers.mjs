@@ -41,6 +41,32 @@ export const waitUntil = (check, message, attempts = 100) => {
   return poll(attempts);
 };
 
+/**
+ * Runs `run` once for each item, one at a time in the order given. A journey whose
+ * steps build on each other depends on that order, and `no-await-in-loop` cannot
+ * tell it apart from a loop that should run in parallel, so the sequencing lives
+ * here rather than in a suppressed loop. A throwing step stops the rest, as a
+ * `for … await` loop does.
+ */
+export const runInOrder = async (items, run) => {
+  const iterator = items[Symbol.iterator]();
+  const step = async (index) => {
+    const next = iterator.next();
+    if (next.done === true) {
+      return;
+    }
+    await run(next.value, index);
+    await step(index + 1);
+  };
+  await step(0);
+};
+
+/** `runInOrder` over the indexes from `0` to `count - 1`. */
+export const runTimesInOrder = async (count, run) => {
+  const indexes = Array.from({ length: count }, (_, index) => index);
+  await runInOrder(indexes, run);
+};
+
 /** A key as the trust store's `devices.json` seeds it. */
 export const keyRecord = (id, label, personId, token, scope = "daily") => ({
   addedAt: new Date().toISOString(),
@@ -93,10 +119,9 @@ export const answerTo = async (page, pathname, act) => {
 /** Fills a form's fields by label, submits it, and returns the API's answer. */
 export const submitForm = (form, pathname, fields) =>
   answerTo(form.page(), pathname, async () => {
-    for (const [label, value] of Object.entries(fields)) {
-      // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
+    await runInOrder(Object.entries(fields), async ([label, value]) => {
       await form.getByLabel(label).fill(value);
-    }
+    });
     await form.getByRole("button").click();
   });
 

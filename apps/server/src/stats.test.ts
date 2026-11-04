@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 
+import { runTimesInOrder } from "./test-http.js";
 import {
   addToQueue,
   complete,
@@ -31,10 +32,9 @@ test("becoming the active Set counts one Listen and dates it", async () => {
 
 test("pausing and resuming the active Set leaves the Listen count alone", async () => {
   await withSeededApp(ready(["a"]), async (app) => {
-    for (let cycle = 0; cycle < 5; cycle += 1) {
-      // eslint-disable-next-line no-await-in-loop -- cases run in order so a failure names the first bad one
+    await runTimesInOrder(5, async () => {
       await play(app, "a");
-    }
+    });
 
     const read1 = await savedSet(app, "a");
     expect(read1.listenCount).toBe(1);
