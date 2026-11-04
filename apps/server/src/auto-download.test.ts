@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- Ordered saves exercise the queue's capacity boundary. */
 import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -9,6 +8,7 @@ import { Schema } from "effect";
 import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
+import { runTimesInOrder, waitUntil } from "./test-http.js";
 
 const Saved = Schema.Struct({
   autoDownloadResult: Schema.String,
@@ -150,12 +150,11 @@ const fixture = async (startWorker: boolean, hold = false) => {
     return decodeAudioState(body).state;
   };
   const ready = async (key: string, id: string) => {
-    for (let attempt = 0; (await state(key, id)) !== "ready"; attempt += 1) {
-      if (attempt >= 500) {
-        throw new Error("Auto Download did not become playable");
-      }
-      await Bun.sleep(20);
-    }
+    await waitUntil(async () => (await state(key, id)) === "ready", {
+      attempts: 500,
+      interval: 20,
+      message: "Auto Download did not become playable",
+    });
   };
   return {
     jobs: () => jobs,
@@ -268,10 +267,10 @@ test("saving shared ready or running audio starts no second Download", async () 
 test("the 20-job cap preserves a successful save with an explicit outcome", async () => {
   const lane = await fixture(false);
   try {
-    for (let i = 0; i < 20; i += 1) {
+    await runTimesInOrder(20, async (i) => {
       const saved = await lane.save("a1", 100 + i);
       expect(saved.autoDownloadResult).toBe("queued");
-    }
+    });
     const full = await lane.save("a2", 120);
     expect(full).toMatchObject({
       autoDownloadResult: "queueFull",

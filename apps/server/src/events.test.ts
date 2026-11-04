@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- SSE frames and ordered client actions are observed in sequence. */
 import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -12,6 +11,7 @@ import { revokeKey } from "./admin.js";
 import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
+import { eventStream } from "./test-http.js";
 
 const decodeIdOnly = Schema.decodeUnknownSync(
   Schema.Struct({ id: Schema.String })
@@ -29,39 +29,23 @@ const Event = Schema.Union([
 const decodeEventJson = Schema.decodeUnknownSync(Schema.fromJsonString(Event));
 
 const frames = (response: Response) => {
-  const reader = response.body?.getReader();
-  if (!reader) {
-    throw new Error("The event response has no stream");
-  }
-  const decoder = new TextDecoder();
-  let pending = "";
+  const stream = eventStream(response);
   const nextFrame = async () => {
-    while (!pending.includes("\n\n")) {
-      const chunk = await reader.read();
-      if (chunk.done) {
-        throw new Error("The event stream closed");
-      }
-      pending += decoder.decode(chunk.value, { stream: true });
+    const raw = await stream.next();
+    if (raw === null) {
+      throw new Error("The event stream closed");
     }
-    const boundary = pending.indexOf("\n\n");
-    const frame = pending.slice(0, boundary);
-    pending = pending.slice(boundary + 2);
-    const data = frame
-      .split("\n")
-      .filter((line) => line.startsWith("data:"))
-      .map((line) => line.slice(5).trimStart())
-      .join("\n");
-    return decodeEventJson(data);
+    return decodeEventJson(raw);
   };
   return {
-    close: () => reader.cancel(),
-    next: async () => {
-      for (;;) {
+    close: () => stream.close(),
+    /** The next frame that is not a Presence frame, which this suite leaves to its own test. */
+    next: (): Promise<ReturnType<typeof decodeEventJson>> => {
+      const attempt = async (): Promise<ReturnType<typeof decodeEventJson>> => {
         const event = await nextFrame();
-        if (event.kind !== "presence") {
-          return event;
-        }
-      }
+        return event.kind === "presence" ? attempt() : event;
+      };
+      return attempt();
     },
   };
 };
