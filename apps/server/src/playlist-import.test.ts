@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- Imports and their event frames are observed in order. */
 import { Database } from "bun:sqlite";
 import { afterEach, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -15,7 +14,7 @@ import { Schedule, Schema } from "effect";
 import { hashToken } from "./identity.js";
 import { Metadata } from "./metadata.js";
 import { createTestApp } from "./test-app.js";
-import { request } from "./test-http.js";
+import { eventStream, request, runInOrder } from "./test-http.js";
 
 const evidence = path.resolve(
   import.meta.dir,
@@ -297,40 +296,24 @@ const openEvents = async (app: Lane, token?: string) => {
     "device"
   );
   expect(response.status).toBe(200);
-  const reader = response.body?.getReader();
-  if (!reader) {
-    throw new Error("The event response has no stream");
-  }
-  const decoder = new TextDecoder();
-  let pending = "";
+  const stream = eventStream(response);
   const nextEvent = async () => {
-    while (!pending.includes("\n\n")) {
-      const chunk = await reader.read();
-      if (chunk.done) {
-        throw new Error("The event stream closed");
-      }
-      pending += decoder.decode(chunk.value, { stream: true });
+    const raw = await stream.next();
+    if (raw === null) {
+      throw new Error("The event stream closed");
     }
-    const boundary = pending.indexOf("\n\n");
-    const frame = pending.slice(0, boundary);
-    pending = pending.slice(boundary + 2);
-    const data = frame
-      .split("\n")
-      .filter((line) => line.startsWith("data:"))
-      .map((line) => line.slice(5).trimStart())
-      .join("\n");
-    return decodeEvent(data);
+    return decodeEvent(raw);
   };
   // The first frame proves the stream runs, so no change published after it is missed.
   await nextEvent();
   const imports: PlaylistImport[] = [];
   return {
-    close: () => reader.cancel().catch(() => null),
+    close: () => stream.close(),
     imports,
     nextEvent,
     /** Reads until this import ends, keeping every import frame it passes. */
-    untilEnded: async (id: string) => {
-      for (;;) {
+    untilEnded: (id: string): Promise<PlaylistImport> => {
+      const attempt = async (): Promise<PlaylistImport> => {
         const event = await nextEvent();
         if (event.kind === "playlistImport") {
           imports.push(event.playlistImport);
@@ -341,7 +324,9 @@ const openEvents = async (app: Lane, token?: string) => {
             return event.playlistImport;
           }
         }
-      }
+        return attempt();
+      };
+      return attempt();
     },
   };
 };
@@ -421,13 +406,15 @@ test("the import answers 202 before any track is saved, then fills an ordered Pl
       payload: { name: "Mine" },
       url: "/playlists",
     });
-    let otherFrame = await other.nextEvent();
-    while (
-      otherFrame.kind !== "changed" &&
-      otherFrame.kind !== "playlistImport"
-    ) {
-      otherFrame = await other.nextEvent();
-    }
+    const nextOwnFrame = async (): Promise<
+      Awaited<ReturnType<typeof other.nextEvent>>
+    > => {
+      const frame = await other.nextEvent();
+      return frame.kind === "changed" || frame.kind === "playlistImport"
+        ? frame
+        : nextOwnFrame();
+    };
+    const otherFrame = await nextOwnFrame();
     expect(otherFrame).toEqual({ kind: "changed", topic: "playlist" });
     const foreign = await request(app, {
       headers: { authorization: `Bearer ${OTHER_TOKEN}` },
@@ -583,13 +570,13 @@ test("a restart between pages resumes at the next page with no Set or member twi
       expectedMix.slice(0, 49)
     );
     // The crash comes after page two's Sets are saved but before they join the Playlist.
-    for (const n of [49, 50, 51]) {
+    await runInOrder([49, 50, 51], async (n) => {
       await request(app, {
         method: "POST",
         payload: { url: watchUrl(n) },
         url: "/sets",
       });
-    }
+    });
   } finally {
     await app.dispose();
   }

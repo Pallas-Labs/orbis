@@ -4,13 +4,13 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-/* oxlint-disable no-await-in-loop -- Sequential requests define the queue order and exercise its capacity boundary. */
 import type { SaveSetInput } from "@orbis/contracts";
 import { Schema } from "effect";
 
 import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
+import { runInOrder, runTimesInOrder, waitUntil } from "./test-http.js";
 
 const statusOf = async (response: Promise<Response>) => {
   const result = await response;
@@ -36,14 +36,11 @@ const artifactDirectory = path.resolve(
   "../../../.cache/download-scheduling"
 );
 
-const waitUntil = async (condition: () => boolean) => {
-  for (let attempt = 0; !condition(); attempt += 1) {
-    if (attempt >= 1000) {
-      throw new Error("The worker did not reach the expected job");
-    }
-    await Bun.sleep(10);
-  }
-};
+/** Waits until the worker reaches the state the step expects. */
+const waitForJob = (condition: () => boolean) =>
+  waitUntil(condition, {
+    message: "The worker did not reach the expected job",
+  });
 
 const fixture = async (startWorker: boolean) => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-scheduling-"));
@@ -165,21 +162,24 @@ test("downloads preserve Person turns and queued order across a restart", async 
     expect(
       await statusOf(lane.request("a", `/sets/${a0.id}/audio/download`, "POST"))
     ).toBe(202);
-    await waitUntil(() => lane.order.length === 1);
-    for (const [person, set] of [
-      ["a", a1],
-      ["a", a2],
-      ["b", b0],
-      ["b", b1],
-    ] as const) {
-      expect(
-        await statusOf(
-          lane.request(person, `/sets/${set.id}/audio/download`, "POST")
-        )
-      ).toBe(202);
-    }
+    await waitForJob(() => lane.order.length === 1);
+    await runInOrder(
+      [
+        ["a", a1],
+        ["a", a2],
+        ["b", b0],
+        ["b", b1],
+      ] as const,
+      async ([person, set]) => {
+        expect(
+          await statusOf(
+            lane.request(person, `/sets/${set.id}/audio/download`, "POST")
+          )
+        ).toBe(202);
+      }
+    );
     await lane.restart();
-    await waitUntil(() => lane.order.length === 6);
+    await waitForJob(() => lane.order.length === 6);
     const expected = [a0.url, b0.url, a0.url, b1.url, a1.url, a2.url];
     expect(lane.order).toEqual(expected);
     await mkdir(artifactDirectory, { recursive: true });
@@ -201,9 +201,9 @@ test("only twenty waiting Downloads per Person, with duplicates and cancellation
         lane.request("a", `/sets/${active.id}/audio/download`, "POST")
       )
     ).toBe(202);
-    await waitUntil(() => lane.order.length === 1);
+    await waitForJob(() => lane.order.length === 1);
     const waiting: string[] = [];
-    for (let index = 0; index < 20; index += 1) {
+    await runTimesInOrder(20, async (index) => {
       const set = await lane.save("a", 101 + index);
       expect(
         await statusOf(
@@ -211,7 +211,7 @@ test("only twenty waiting Downloads per Person, with duplicates and cancellation
         )
       ).toBe(202);
       waiting.push(set.id);
-    }
+    });
     expect(
       await statusOf(
         lane.request("a", `/sets/${active.id}/audio/download`, "POST")
@@ -269,10 +269,10 @@ test("only twenty waiting Downloads per Person, with duplicates and cancellation
 test("a legacy backlog of thirty jobs stays fair and keeps its order", async () => {
   const lane = await fixture(false);
   try {
-    const old = [];
-    for (let index = 0; index < 30; index += 1) {
+    const old: { id: string; url: string }[] = [];
+    await runTimesInOrder(30, async (index) => {
       old.push(await lane.save("host", 200 + index));
-    }
+    });
     const db = new Database(path.join(lane.root, "library.sqlite"));
     for (const [index, set] of old.entries()) {
       db.query(
@@ -298,7 +298,7 @@ test("a legacy backlog of thirty jobs stays fair and keeps its order", async () 
     ).toBe(202);
     lane.release();
     await lane.restart(true);
-    await waitUntil(() => lane.order.length === 31);
+    await waitForJob(() => lane.order.length === 31);
     expect(lane.order.indexOf(b.url)).toBeLessThanOrEqual(1);
     expect(lane.order.filter((url) => url !== b.url)).toEqual(
       old.map((set) => set.url)

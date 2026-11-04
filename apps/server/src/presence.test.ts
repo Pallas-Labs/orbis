@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- SSE frames are observed in sequence. */
 import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -11,6 +10,7 @@ import { Schema } from "effect";
 import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
+import { eventStream } from "./test-http.js";
 
 const decodeIdOnly = Schema.decodeUnknownSync(
   Schema.Struct({ id: Schema.String })
@@ -19,41 +19,32 @@ const decodeIdOnly = Schema.decodeUnknownSync(
 const decode = Schema.decodeUnknownSync(
   Schema.fromJsonString(QueueEventSchema)
 );
+type PresenceEntry = Extract<
+  ReturnType<typeof decode>,
+  { kind: "presence" }
+>["presence"][number];
+
 const stream = (response: Response) => {
-  const reader = response.body?.getReader();
-  if (!reader) {
-    throw new Error("The event response has no stream");
-  }
-  const decoder = new TextDecoder();
-  let pending = "";
+  const frames = eventStream(response);
   const read = async () => {
-    while (!pending.includes("\n\n")) {
-      const chunk = await reader.read();
-      if (chunk.done) {
-        throw new Error("The event stream closed");
-      }
-      pending += decoder.decode(chunk.value, { stream: true });
+    const raw = await frames.next();
+    if (raw === null) {
+      throw new Error("The event stream closed");
     }
-    const boundary = pending.indexOf("\n\n");
-    const frame = pending.slice(0, boundary);
-    pending = pending.slice(boundary + 2);
-    return decode(
-      frame
-        .split("\n")
-        .filter((line) => line.startsWith("data:"))
-        .map((line) => line.slice(5).trimStart())
-        .join("\n")
-    );
+    return decode(raw);
   };
   return {
-    close: () => reader.cancel(),
+    close: () => frames.close(),
     /** Reads frames until a presence event satisfies `accept`; fails after `ms`. */
-    presence: async (accept: (usernames: string[]) => boolean, ms = 6000) => {
+    presence: (
+      accept: (usernames: string[]) => boolean,
+      ms = 6000
+    ): Promise<readonly PresenceEntry[]> => {
       const timer = Bun.sleep(ms).then(() => null);
-      for (;;) {
+      const attempt = async (): Promise<readonly PresenceEntry[]> => {
         const event = await Promise.race([read(), timer]);
         if (event === null) {
-          break;
+          throw new Error("No matching presence event arrived");
         }
         if (event.kind === "presence") {
           const names = event.presence.map((entry) => entry.username);
@@ -61,8 +52,9 @@ const stream = (response: Response) => {
             return event.presence;
           }
         }
-      }
-      throw new Error("No matching presence event arrived");
+        return attempt();
+      };
+      return attempt();
     },
   };
 };

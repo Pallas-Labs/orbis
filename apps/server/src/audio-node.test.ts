@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- The journey observes ordered WebSocket messages and cleans resources in reverse order. */
 import { afterEach, expect, test } from "bun:test";
 import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -12,6 +11,7 @@ import type { WideEvent } from "evlog";
 import { startAudioNode } from "./audio-node.js";
 import { configureLogging } from "./logging.js";
 import type { LoggingOptions } from "./logging.js";
+import { runInOrder, waitUntil } from "./test-http.js";
 
 const decodeNodeMessage = Schema.decodeUnknownSync(NodeMessageSchema);
 
@@ -32,22 +32,23 @@ const collect = () => {
 };
 
 const cleanups: (() => Promise<void>)[] = [];
-afterEach(async () => {
-  while (cleanups.length > 0) {
-    const cleanup = cleanups.pop();
+/** The pushed resources in release order: the last one pushed is released first. */
+const lastPushedFirst = (): (() => Promise<void>)[] => {
+  const pending = cleanups.splice(0);
+  const order: (() => Promise<void>)[] = [];
+  for (let index = pending.length - 1; index >= 0; index -= 1) {
+    const cleanup = pending[index];
     if (cleanup) {
-      await cleanup();
+      order.push(cleanup);
     }
   }
-});
-const until = async (predicate: () => boolean) => {
-  for (let attempt = 0; !predicate(); attempt += 1) {
-    if (attempt >= 1000) {
-      throw new Error("Timed out waiting for node");
-    }
-    await Bun.sleep(10);
-  }
+  return order;
 };
+afterEach(async () => {
+  await runInOrder(lastPushedFirst(), (cleanup) => cleanup());
+});
+const until = (predicate: () => boolean) =>
+  waitUntil(predicate, { message: "Timed out waiting for node" });
 
 test("real node reconnects and handles duplicate download, details and release commands without a database", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "orbis-node-"));

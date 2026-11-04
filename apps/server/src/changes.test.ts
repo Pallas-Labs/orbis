@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- SSE frames and ordered client actions are observed in sequence. */
 import { Database } from "bun:sqlite";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -14,6 +13,7 @@ import { Schema } from "effect";
 import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
+import { eventStream } from "./test-http.js";
 
 // The union that shipped before `changed` existed: what a cached web bundle decodes with.
 const OldEvent = Schema.Union([
@@ -126,44 +126,21 @@ const open = async (key: Key, route = "/events?changes=1") => {
     headers: { authorization: `Bearer ${key}` },
   });
   expect(response.status).toBe(200);
-  const reader = response.body?.getReader();
-  if (!reader) {
-    throw new Error("The event response has no stream");
-  }
-  const decoder = new TextDecoder();
-  let pending = "";
-  const data = async () => {
-    while (!pending.includes("\n\n")) {
-      const chunk = await reader.read();
-      if (chunk.done) {
-        return null;
-      }
-      pending += decoder.decode(chunk.value, { stream: true });
-    }
-    const boundary = pending.indexOf("\n\n");
-    const frame = pending.slice(0, boundary);
-    pending = pending.slice(boundary + 2);
-    return frame
-      .split("\n")
-      .filter((line) => line.startsWith("data:"))
-      .map((line) => line.slice(5).trimStart())
-      .join("\n");
-  };
+  const stream = eventStream(response);
   return {
-    close: () => reader.cancel().catch(() => null),
-    data,
+    close: () => stream.close(),
+    data: () => stream.next(),
     /** The next `changed` topic, skipping Queue, Presence, and heartbeat frames. */
-    nextTopic: async () => {
-      for (;;) {
-        const raw = await data();
+    nextTopic: (): Promise<string> => {
+      const attempt = async (): Promise<string> => {
+        const raw = await stream.next();
         if (raw === null) {
           throw new Error("The event stream closed");
         }
         const event = decodeNew(raw);
-        if (event.kind === "changed") {
-          return event.topic;
-        }
-      }
+        return event.kind === "changed" ? event.topic : attempt();
+      };
+      return attempt();
     },
   };
 };
@@ -235,7 +212,7 @@ test("an old client decoder reads the plain stream, and would reject a changed f
     const kinds: string[] = [];
     // The plain stream opens with the Queue snapshot; a tag change adds nothing to it.
     await call("a2", "/queue/active", "PUT", { setId: "s1" });
-    for (;;) {
+    const readUntilActive = async (): Promise<void> => {
       const raw = await plain.data();
       if (raw === null) {
         throw new Error("The event stream closed");
@@ -243,9 +220,11 @@ test("an old client decoder reads the plain stream, and would reject a changed f
       const event = decodeOld(raw);
       kinds.push(event.kind);
       if (event.kind === "queue" && event.queue.activeSetId === "s1") {
-        break;
+        return;
       }
-    }
+      await readUntilActive();
+    };
+    await readUntilActive();
     expect(kinds).not.toContain("changed");
     expect(() =>
       decodeOld(JSON.stringify({ kind: "changed", topic: "library" }))
@@ -259,13 +238,12 @@ test("an old client decoder reads the plain stream, and would reject a changed f
 test("revoking a key closes its open stream", async () => {
   const a2 = await open("a2", "/events");
   await a2.data();
-  const closed = (async () => {
-    for (;;) {
-      if ((await a2.data()) === null) {
-        return true;
-      }
-    }
-  })();
+  // Reads frames as they arrive; the stream's close resolves it with `true`.
+  const awaitClose = async (): Promise<boolean> => {
+    const raw = await a2.data();
+    return raw === null ? true : awaitClose();
+  };
+  const closed = awaitClose();
   await call("a1", "/me/devices/a2", "DELETE");
   expect(await Promise.race([closed, Bun.sleep(1500).then(() => false)])).toBe(
     true

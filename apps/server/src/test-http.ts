@@ -128,6 +128,84 @@ export const runTimesInOrder = async (
   await runInOrder(indexes, run);
 };
 
+/**
+ * Waits until `check` holds, looking again every `interval` ms and failing after
+ * `attempts` tries with `message`. A suite that watches a worker, a download or
+ * a lease reach a state waits here, so the wait is stated once instead of as a
+ * suppressed polling loop in every file that needs one.
+ */
+export const waitUntil = async (
+  check: () => boolean | Promise<boolean>,
+  options: { attempts?: number; interval?: number; message?: string } = {}
+): Promise<void> => {
+  const {
+    attempts = 1000,
+    interval = 10,
+    message = "The expected state did not arrive",
+  } = options;
+  const attempt = async (tryNumber: number): Promise<void> => {
+    if (await check()) {
+      return;
+    }
+    if (tryNumber >= attempts) {
+      throw new Error(message);
+    }
+    await Bun.sleep(interval);
+    await attempt(tryNumber + 1);
+  };
+  await attempt(0);
+};
+
+/**
+ * One `text/event-stream` response, read frame by frame. `next` gives the
+ * `data:` payload of the next frame, decoded by the caller, or `null` once the
+ * server closes the stream. Reading chunk by chunk is a loop that waits inside
+ * itself, so the reading lives here rather than in a suppressed loop in every
+ * suite that opens a stream.
+ */
+export const eventStream = (response: Response) => {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("The event response has no stream");
+  }
+  const decoder = new TextDecoder();
+  let pending = "";
+  const fill = async (): Promise<string | null> => {
+    if (pending.includes("\n\n")) {
+      return pending;
+    }
+    const chunk = await reader.read();
+    if (chunk.done) {
+      return null;
+    }
+    pending += decoder.decode(chunk.value, { stream: true });
+    return fill();
+  };
+  return {
+    close: async (): Promise<void> => {
+      try {
+        await reader.cancel();
+      } catch {
+        // A reader the server already closed rejects the cancel.
+      }
+    },
+    next: async (): Promise<string | null> => {
+      const filled = await fill();
+      if (filled === null) {
+        return null;
+      }
+      const boundary = filled.indexOf("\n\n");
+      const frame = filled.slice(0, boundary);
+      pending = filled.slice(boundary + 2);
+      return frame
+        .split("\n")
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice(5).trimStart())
+        .join("\n");
+    },
+  };
+};
+
 const isRefusal = Schema.is(Schema.Struct({ message: Schema.String }));
 
 /** A status, with the sentence a refusal carried: `404 "Not found."`. */

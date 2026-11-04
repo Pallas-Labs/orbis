@@ -1,5 +1,4 @@
 import { Database } from "bun:sqlite";
-/* oxlint-disable no-await-in-loop -- The HTTP journey observes ordered reference changes. */
 import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -11,6 +10,7 @@ import { Schema } from "effect";
 import { startFixtureServer } from "./fixture-server.js";
 import { hashToken } from "./identity.js";
 import { createTestApp as createApp } from "./test-app.js";
+import { runInOrder, waitUntil } from "./test-http.js";
 
 const decodeSavedSet = Schema.decodeUnknownSync(SavedSetSchema);
 
@@ -139,16 +139,15 @@ test("visible Sets share audio and storage releases only the last reference over
   };
   const download = async (key: string, id: string) => {
     expect(await status(key, `/sets/${id}/audio/download`, "POST")).toBe(202);
-    for (let attempt = 0; attempt < 500; attempt += 1) {
-      const response = await send(key, `/sets/${id}/audio/state`);
-      expect(response.status).toBe(200);
-      const body: unknown = await response.json();
-      if (decodeAudio(body).state === "ready") {
-        return;
-      }
-      await Bun.sleep(20);
-    }
-    throw new Error("Shared Download did not finish");
+    await waitUntil(
+      async () => {
+        const response = await send(key, `/sets/${id}/audio/state`);
+        expect(response.status).toBe(200);
+        const body: unknown = await response.json();
+        return decodeAudio(body).state === "ready";
+      },
+      { attempts: 500, interval: 20, message: "Shared Download did not finish" }
+    );
   };
   const retained = (id: string) =>
     Bun.file(path.join(audioDir, `${id}.m4a`)).exists();
@@ -165,12 +164,12 @@ test("visible Sets share audio and storage releases only the last reference over
     expect(await status("b", `/sets/${set.id}/audio/download`, "DELETE")).toBe(
       400
     );
-    for (const key of ["a", "b"]) {
+    await runInOrder(["a", "b"], async (key) => {
       const audio = await send(key, `/sets/${set.id}/audio`);
       expect(audio.status).toBe(200);
       const bytes = await audio.arrayBuffer();
       expect(bytes.byteLength).toBeGreaterThan(1000);
-    }
+    });
     expect(await status("a", "/queue/active", "PUT", { setId: set.id })).toBe(
       200
     );
@@ -194,14 +193,17 @@ test("visible Sets share audio and storage releases only the last reference over
       "one save creates A's entry with provider title and no copied tags"
     );
     const hidden = await save("hidden", "hidden00001");
-    for (const [route, method, payload] of [
-      [`/sets/${hidden.id}/audio`, "GET", undefined],
-      [`/sets/${hidden.id}/audio/grant`, "POST", undefined],
-      [`/sets/${hidden.id}/audio/download`, "POST", undefined],
-      ["/queue/active", "PUT", { setId: hidden.id }],
-    ] satisfies [string, string, Payload | undefined][]) {
-      expect(await status("a", route, method, payload)).toBe(404);
-    }
+    await runInOrder(
+      [
+        [`/sets/${hidden.id}/audio`, "GET", undefined],
+        [`/sets/${hidden.id}/audio/grant`, "POST", undefined],
+        [`/sets/${hidden.id}/audio/download`, "POST", undefined],
+        ["/queue/active", "PUT", { setId: hidden.id }],
+      ] satisfies [string, string, Payload | undefined][],
+      async ([route, method, payload]) => {
+        expect(await status("a", route, method, payload)).toBe(404);
+      }
+    );
     evidence.push(
       "hidden audio, grant, download and Queue activation all return 404"
     );
@@ -222,7 +224,7 @@ test("visible Sets share audio and storage releases only the last reference over
     evidence.push(
       "Library Entry, Playlist and Queue retain bytes; final Queue completion deletes them despite Listen/position history"
     );
-    for (const mode of ["delete", "replace"]) {
+    await runInOrder(["delete", "replace"], async (mode) => {
       const other = await save(
         "b",
         mode === "delete" ? "shared00002" : "shared00003"
@@ -245,7 +247,7 @@ test("visible Sets share audio and storage releases only the last reference over
         )
       ).toBe(200);
       expect(await retained(other.id)).toBe(false);
-    }
+    });
     evidence.push(
       "last Playlist deletion and membership replacement both release bytes"
     );

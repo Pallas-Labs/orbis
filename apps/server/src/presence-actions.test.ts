@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- SSE frames and ordered client actions are observed in sequence. */
 import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -20,6 +19,7 @@ import { PresenceJournal } from "./presence-journal.js";
 import type { PresenceTransition } from "./presence-journal.js";
 import { Presence } from "./presence.js";
 import { createTestApp as createApp } from "./test-app.js";
+import { eventStream, waitUntil } from "./test-http.js";
 
 const decodeQueueEntries = Schema.decodeUnknownSync(
   Schema.Struct({
@@ -277,30 +277,13 @@ const harness = (databasePath: string, transcript: Transcript) => {
       const response = await fetch(new URL("/events", listeners.url), {
         headers: { authorization: `Bearer ${key}` },
       });
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("The event response has no stream");
-      }
-      const decoder = new TextDecoder();
-      let pending = "";
+      const stream = eventStream(response);
       const read = async () => {
-        while (!pending.includes("\n\n")) {
-          const chunk = await reader.read();
-          if (chunk.done) {
-            throw new Error("The event stream closed");
-          }
-          pending += decoder.decode(chunk.value, { stream: true });
+        const raw = await stream.next();
+        if (raw === null) {
+          throw new Error("The event stream closed");
         }
-        const boundary = pending.indexOf("\n\n");
-        const frame = pending.slice(0, boundary);
-        pending = pending.slice(boundary + 2);
-        const event = decodeEvent(
-          frame
-            .split("\n")
-            .filter((line) => line.startsWith("data:"))
-            .map((line) => line.slice(5).trimStart())
-            .join("\n")
-        );
+        const event = decodeEvent(raw);
         if (event.kind === "presence") {
           transcript.push({
             at: clock.now,
@@ -317,44 +300,46 @@ const harness = (databasePath: string, transcript: Transcript) => {
       // frame left over from an earlier step can never satisfy a later one.
       let lastReturn = Date.now();
       const frames: { at: number; consumed: boolean; entries: Entries }[] = [];
-      const pump = (async () => {
-        for (;;) {
-          const event = await read();
-          if (event.kind === "presence") {
-            frames.push({
-              at: Date.now(),
-              consumed: false,
-              entries: event.presence.map((entry) => ({
-                personId: entry.personId,
-                setId: entry.set.id,
-              })),
-            });
-          }
+      const pump = async (): Promise<void> => {
+        const event = await read();
+        if (event.kind === "presence") {
+          frames.push({
+            at: Date.now(),
+            consumed: false,
+            entries: event.presence.map((entry) => ({
+              personId: entry.personId,
+              setId: entry.set.id,
+            })),
+          });
         }
-      })().catch(() => null);
+        await pump();
+      };
+      const pumping = pump().catch(() => null);
       return {
         close: async () => {
-          await reader.cancel();
-          await pump;
+          await stream.close();
+          await pumping;
         },
         presence: async (accept: (entries: Entries) => boolean, ms = 6000) => {
           const since = lastReturn;
-          const deadline = Date.now() + ms;
-          while (Date.now() < deadline) {
-            const frame = frames.find(
+          const matching = () =>
+            frames.find(
               (candidate) =>
                 !candidate.consumed &&
                 candidate.at >= since &&
                 accept(candidate.entries)
             );
-            if (frame) {
-              frame.consumed = true;
-              lastReturn = Date.now();
-              return frame.entries;
-            }
-            await Bun.sleep(10);
+          await waitUntil(() => matching() !== undefined, {
+            attempts: Math.ceil(ms / 10),
+            message: "No matching presence event arrived",
+          });
+          const frame = matching();
+          if (!frame) {
+            throw new Error("No matching presence event arrived");
           }
-          throw new Error("No matching presence event arrived");
+          frame.consumed = true;
+          lastReturn = Date.now();
+          return frame.entries;
         },
       };
     };
@@ -455,7 +440,11 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
     let actionNumber = 1;
     let lastDeadline = firstDeadline;
     const transitionsBeforeRenewals = transitions.length;
-    while (clock.now < firstDeadline + LEASE_MS / 2) {
+    // Renewals run until the clock passes halfway through the first lease.
+    const renew = async (): Promise<void> => {
+      if (clock.now >= firstDeadline + LEASE_MS / 2) {
+        return;
+      }
       actionNumber += 1;
       const renewed = await server.accepted("a-phone", {
         actionId: `r${actionNumber}`,
@@ -472,7 +461,9 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
       );
       lastDeadline = Date.parse(renewed.session.leaseExpiresAt);
       await server.advance(LEASE_MS / 4);
-    }
+      await renew();
+    };
+    await renew();
     expect(transitions).toHaveLength(transitionsBeforeRenewals);
 
     expect(
