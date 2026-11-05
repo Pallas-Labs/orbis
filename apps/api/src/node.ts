@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- Reconciliation finishes each database change before dispatching the next command. */
 /* oxlint-disable unicorn/no-array-method-this-argument -- Effect.flatMap accepts an Effect and callback, not an Array thisArg. */
 import { NodeMessageSchema } from "@orbis/contracts/node";
 import type {
@@ -620,7 +619,13 @@ export class GroupAudioNode {
         }
       }
     });
-    for (const file of files) {
+    // Reconciliation finishes each database change before dispatching the next
+    // command, so each file is settled before the next is looked at.
+    const reconcileFile = async (rest: typeof files): Promise<void> => {
+      const [file, ...remaining] = rest;
+      if (file === undefined) {
+        return;
+      }
       const [state] = this.ctx.storage.sql
         .exec<{ state: string; referenced: number }>(
           `SELECT download_state AS state, EXISTS(SELECT 1 FROM library_entries WHERE set_id = sets.id UNION ALL SELECT 1 FROM playlist_sets WHERE set_id = sets.id UNION ALL SELECT 1 FROM queue_entries WHERE set_id = sets.id) AS referenced FROM sets WHERE id = ?`,
@@ -643,7 +648,9 @@ export class GroupAudioNode {
           )
         );
       }
-    }
+      await reconcileFile(remaining);
+    };
+    await reconcileFile(files);
     await this.runtime.runPromise(
       Library.pipe(Effect.flatMap((library) => library.resetStuckDownloads()))
     );

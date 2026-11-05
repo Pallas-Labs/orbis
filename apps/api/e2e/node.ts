@@ -7,7 +7,6 @@ import path from "node:path";
 
 import type { SaveSetInput } from "@orbis/contracts";
 import { AudioStateSchema, SavedSetSchema } from "@orbis/contracts/http-api";
-/* oxlint-disable no-await-in-loop -- Ordered HTTP requests define queue fairness and capacity; polling waits for observed state. */
 /* oxlint-disable unicorn/no-await-expression-member -- HTTP assertions read each completed response in place. */
 import type { NodeCommand, NodeMessage } from "@orbis/contracts/node";
 import { NodeCommandSchema } from "@orbis/contracts/node";
@@ -15,6 +14,7 @@ import { Schema } from "effect";
 import { Miniflare } from "miniflare";
 
 import { issueStreamGrant } from "../../server/src/stream-grant-core.js";
+import { runInOrder, runTimesInOrder } from "../../server/src/test-http.js";
 import { workerModules } from "./worker-modules.js";
 
 const decodeDetailsState = Schema.decodeUnknownSync(
@@ -124,12 +124,12 @@ const groupEvents = (name: string) =>
     .flatMap((text) => text.split("\n"))
     .filter((line) => line.includes(`"event":"${name}"`))
     .map((line) => decodeGroupEvent(JSON.parse(line)));
-const until = async <T>(
+const until = <T>(
   read: () => Promise<T> | T,
   matches: (value: T) => boolean
 ): Promise<T> => {
   const deadline = Date.now() + 10_000;
-  while (true) {
+  const attempt = async (): Promise<T> => {
     const value = await read();
     if (matches(value)) {
       return value;
@@ -138,7 +138,9 @@ const until = async <T>(
       throw new Error(`Timed out: ${JSON.stringify(value)}`);
     }
     await Bun.sleep(20);
-  }
+    return attempt();
+  };
+  return attempt();
 };
 const connect = async (
   files: Extract<NodeMessage, { kind: "inventory" }>["files"] = []
@@ -449,9 +451,9 @@ try {
   reconnected.socket.close();
   await Bun.sleep(30);
   const queued: { id: string }[] = [];
-  for (let index = 0; index < 21; index += 1) {
+  await runTimesInOrder(21, async (index) => {
     queued.push(await save(`limit-${index}`));
-  }
+  });
   const overflow = queued.at(20);
   assert.ok(overflow);
   assert.equal(
@@ -493,9 +495,9 @@ try {
   );
   assert.ok(following);
   assert.equal(following.setId, queued[0]?.id);
-  for (const pending of queued) {
+  await runInOrder(queued, async (pending) => {
     await request(`/sets/${pending.id}/audio/download`, "DELETE");
-  }
+  });
   fair.socket.close();
   transcript.push({
     nextPerson: following.setId,
@@ -600,9 +602,9 @@ try {
     () => state(replacedSet.id),
     (value) => value.state === "ready"
   );
-  for (const id of [replacedSet.id, lostSet.id]) {
+  await runInOrder([replacedSet.id, lostSet.id], async (id) => {
     await request(`/sets/${id}`, "DELETE");
-  }
+  });
   restored.socket.close();
   transcript.push({
     linkCloses: closesSince(),

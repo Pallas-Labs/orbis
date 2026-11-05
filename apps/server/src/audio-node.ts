@@ -1,6 +1,5 @@
 import { rm } from "node:fs/promises";
 
-/* oxlint-disable no-await-in-loop -- Download backends run in fallback order against one partial file. */
 import type { NodeCommand, NodeMessage } from "@orbis/contracts/node";
 import { NodeCommandSchema, NodeMessageSchema } from "@orbis/contracts/node";
 import { Effect, Layer, ManagedRuntime, Schema } from "effect";
@@ -8,6 +7,7 @@ import { Effect, Layer, ManagedRuntime, Schema } from "effect";
 import { Cobalt } from "./cobalt.js";
 import type { CobaltOptions } from "./cobalt.js";
 import { DownloadBackends } from "./download-backends.js";
+import type { BackendName } from "./download-backends.js";
 import {
   describeCause,
   logEvent,
@@ -125,9 +125,14 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       }
       let lastError = new Error("No download backend is configured.");
       let fetched = false;
-      for (const backend of backends.forSource(command.source)) {
-        if (signal.aborted) {
-          break;
+      // The backends run in fallback order against one partial file, so each
+      // attempt finishes before the next starts.
+      const attemptBackend = async (
+        rest: readonly BackendName[]
+      ): Promise<void> => {
+        const [backend, ...remaining] = rest;
+        if (backend === undefined || signal.aborted) {
+          return;
         }
         await rm(tmp, { force: true });
         try {
@@ -155,11 +160,11 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
           attempts.push({ backend, ok: true });
           job.annotate({ backend });
           fetched = true;
-          break;
+          return;
         } catch (error) {
           lastError = error instanceof Error ? error : new Error(String(error));
           if (signal.aborted) {
-            break;
+            return;
           }
           attempts.push({
             backend,
@@ -167,7 +172,9 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
             reason: describeCause(lastError).message,
           });
         }
-      }
+        await attemptBackend(remaining);
+      };
+      await attemptBackend(backends.forSource(command.source));
       if (!fetched) {
         throw lastError;
       }
