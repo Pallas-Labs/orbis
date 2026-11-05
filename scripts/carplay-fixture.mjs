@@ -31,19 +31,36 @@ const unusedPort = async () => {
   return port;
 };
 
+/** Runs `run` once for each item, one at a time in the order given. */
+const runInOrder = async (items, run) => {
+  const iterator = items[Symbol.iterator]();
+  const step = async (index) => {
+    const next = iterator.next();
+    if (next.done === true) {
+      return;
+    }
+    await run(next.value, index);
+    await step(index + 1);
+  };
+  await step(0);
+};
+
+/** Polls `url` until it answers, 100 attempts 100 ms apart. */
 const waitFor = async (url) => {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  const attempt = async (attemptsLeft) => {
     try {
-      // oxlint-disable-next-line no-await-in-loop -- Poll until the service answers.
       await fetch(url);
       return;
     } catch {
       // Not listening yet.
+      if (attemptsLeft <= 1) {
+        throw new Error(`${url} did not answer`);
+      }
     }
-    // oxlint-disable-next-line no-await-in-loop -- Poll until the service answers.
     await Bun.sleep(100);
-  }
-  throw new Error(`${url} did not answer`);
+    await attempt(attemptsLeft - 1);
+  };
+  await attempt(100);
 };
 
 const dataDirectory = mkdtempSync(path.join(tmpdir(), "orbis-carplay-"));
@@ -154,7 +171,8 @@ const seed = async (route) => {
 
 const db = new Database(path.join(dataDirectory, "library.sqlite"));
 const saved = [];
-for (const [index, [title, creator, colors]] of sets.entries()) {
+// Sets are filed in order, newest last.
+await runInOrder(sets.entries(), async ([index, [title, creator, colors]]) => {
   const [from, to] = colors.split(":");
   const image = path.join(artworkDirectory, `${index}.png`);
   const made = spawnSync("ffmpeg", [
@@ -172,7 +190,6 @@ for (const [index, [title, creator, colors]] of sets.entries()) {
   if (made.status !== 0) {
     throw new Error(`ffmpeg could not draw ${image}`);
   }
-  // oxlint-disable-next-line no-await-in-loop -- Sets are filed in order, newest last.
   const set = await api("POST", "sets", {
     tags: ["techno"],
     title,
@@ -184,21 +201,18 @@ for (const [index, [title, creator, colors]] of sets.entries()) {
     set.id
   );
   saved.push(set);
-}
+});
 
 const [downloading, ...playable] = saved;
-for (const set of playable) {
-  // oxlint-disable-next-line no-await-in-loop -- The seed server copies one file at a time.
-  await seed(`ready-audio/${set.id}`);
-}
+// The seed server copies one file at a time.
+await runInOrder(playable, (set) => seed(`ready-audio/${set.id}`));
 await seed(`tracklist/${playable[0].id}`);
 
-for (const set of playable.slice(0, 3)) {
-  // oxlint-disable-next-line no-await-in-loop -- Each Listen starts after the last.
+// Each Listen starts after the last.
+await runInOrder(playable.slice(0, 3), async (set) => {
   await api("PUT", "queue/active", { setId: set.id });
-  // oxlint-disable-next-line no-await-in-loop -- Each Listen starts after the last.
   await api("PUT", `sets/${set.id}/position`, { seconds: 10 });
-}
+});
 
 const late = await api("POST", "playlists", { name: "Late night" });
 await api("PUT", `playlists/${late.id}/sets`, {

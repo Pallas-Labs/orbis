@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- The pages share one API, one server and one origin, so each step waits for the one before. */
 // Proves a font change draws the same pixels, and measures font bytes per page.
 //
 //   node apps/web/scripts/font-diff.mjs --out <dir> after=<dist> before=<dist> [name=<dist>...]
@@ -22,7 +21,7 @@ import path from "node:path";
 
 import { chromium } from "playwright";
 
-import { keyRecord, waitFor, waitUntil } from "../e2e/helpers.mjs";
+import { keyRecord, runInOrder, waitFor, waitUntil } from "../e2e/helpers.mjs";
 
 const web = path.resolve(import.meta.dirname, "..");
 const root = path.resolve(web, "../..");
@@ -178,14 +177,18 @@ const stylesheet = async (dist) => {
 };
 
 // Waits until no font is loading, then for two drawn frames.
-const settle = (page) =>
-  page.evaluate(async () => {
-    await document.fonts.ready;
-    for (const _ of [1, 2]) {
+const settle = async (page) => {
+  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(
+    () =>
       // eslint-disable-next-line promise/avoid-new -- requestAnimationFrame takes a callback
-      await new Promise(requestAnimationFrame);
-    }
-  });
+      new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      })
+  );
+};
 
 // The live events stream keeps the network busy, so wait for the page's
 // heading and, where the page names one, a text its data draws.
@@ -284,7 +287,7 @@ const compare = (page, first, second) =>
 
 const seed = async () => {
   const sets = [];
-  for (const [index, title] of titles.entries()) {
+  await runInOrder(titles.entries(), async ([index, title]) => {
     const url = `https://www.youtube.com/watch?v=${String(index).repeat(11)}`;
     sets.push(
       await api("/sets", keys.host, {
@@ -292,7 +295,7 @@ const seed = async () => {
         method: "POST",
       })
     );
-  }
+  });
   await api(`/sets/${sets[0].id}/audio/download`, keys.host, {
     method: "POST",
   });
@@ -398,7 +401,9 @@ const fetchedFonts = (page) =>
 
 const pictures = async (browser, list, sheets) => {
   const results = {};
-  for (const entry of list) {
+  // Each page is opened, dressed and pictured before the next, so the pictures
+  // and the fonts they fetched describe the same page state.
+  await runInOrder(list, async (entry) => {
     const { context, page } = await open(browser, entry);
     // Serve every build's files from disk, so the first build's server can
     // answer the others' stylesheets and fonts.
@@ -419,7 +424,9 @@ const pictures = async (browser, list, sheets) => {
     // swap reached that build's fonts.
     const fetched = {};
     // The first build twice, last again, shows whether the page itself moves.
-    for (const name of [...builds.map((build) => build.name), builds[0].name]) {
+    const names = builds.map((build) => build.name);
+    await runInOrder([...names, `${names[0]}-again`], async (key) => {
+      const name = key.replace(/-again$/u, "");
       await page.evaluate((href) => {
         document.querySelector('link[rel="stylesheet"]').href = href;
       }, sheets[name]);
@@ -429,7 +436,6 @@ const pictures = async (browser, list, sheets) => {
         sheets[name]
       );
       await settle(page);
-      const key = shots[name] ? `${name}-again` : name;
       const fonts = await fetchedFonts(page);
       fetched[key] = fonts.map(({ file }) => file);
       shots[key] = await page.screenshot({
@@ -437,9 +443,9 @@ const pictures = async (browser, list, sheets) => {
         fullPage: true,
         path: path.join(out, entry.name, `${key}.png`),
       });
-    }
+    });
     const differences = {};
-    for (const key of Object.keys(shots).slice(1)) {
+    await runInOrder(Object.keys(shots).slice(1), async (key) => {
       const { png, ...result } = await compare(
         page,
         shots[builds[0].name],
@@ -452,21 +458,21 @@ const pictures = async (browser, list, sheets) => {
           Buffer.from(png, "base64")
         );
       }
-    }
+    });
     results[entry.name] = {
       differences,
       fetched,
       fontUse: await fontUse(page),
     };
     await context.close();
-  }
+  });
   return results;
 };
 
 // Loads each page fresh, with an empty cache, and lists the fonts it fetched.
 const fontBytes = async (browser, list) => {
   const results = {};
-  for (const entry of list) {
+  await runInOrder(list, async (entry) => {
     const { context, page } = await open(browser, entry);
     await show(page, entry);
     const fonts = await fetchedFonts(page);
@@ -480,7 +486,7 @@ const fontBytes = async (browser, list) => {
       ),
     };
     await context.close();
-  }
+  });
   return results;
 };
 
@@ -495,14 +501,14 @@ try {
       builds.map(async ({ dist, name }) => [name, await stylesheet(dist)])
     )
   );
-  for (const build of builds) {
+  await runInOrder(builds, async (build) => {
     const server = await startWeb(build.dist);
     try {
       report.bytes[build.name] = await fontBytes(browser, list);
     } finally {
       await stop(server, webUrl);
     }
-  }
+  });
   const server = await startWeb(builds[0].dist);
   try {
     report.pages = await pictures(browser, list, sheets);
