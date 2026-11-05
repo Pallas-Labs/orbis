@@ -157,6 +157,35 @@ export const waitUntil = async (
 };
 
 /**
+ * Waits until `check` answers something other than `null` or `undefined`, and
+ * returns that answer. A journey that polls a cache or an endpoint until it
+ * reports the state it waits for reads the answer here, so the wait is stated
+ * once instead of as a suppressed polling loop in every journey that needs one.
+ */
+export const pollUntil = <Value>(
+  check: () => Promise<Value | null | undefined>,
+  options: { attempts?: number; interval?: number; message?: string } = {}
+): Promise<Value> => {
+  const {
+    attempts = 1000,
+    interval = 10,
+    message = "The expected answer did not arrive",
+  } = options;
+  const attempt = async (tryNumber: number): Promise<Value> => {
+    const answer = await check();
+    if (answer !== null && answer !== undefined) {
+      return answer;
+    }
+    if (tryNumber >= attempts) {
+      throw new Error(message);
+    }
+    await Bun.sleep(interval);
+    return attempt(tryNumber + 1);
+  };
+  return attempt(0);
+};
+
+/**
  * One `text/event-stream` response, read frame by frame. `next` gives the
  * `data:` payload of the next frame, decoded by the caller, or `null` once the
  * server closes the stream. Reading chunk by chunk is a loop that waits inside

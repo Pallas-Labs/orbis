@@ -16,6 +16,7 @@ import {
   renderDump,
   tableChecksums,
 } from "../../server/src/sql-transfer.js";
+import { runInOrder } from "../../server/src/test-http.js";
 import { audioLayer } from "../src/audio.js";
 import { workerModules } from "./worker-modules.js";
 
@@ -205,8 +206,7 @@ try {
     ...playlistIds.map(({ id }) => `/playlists/${id}`),
   ];
   try {
-    // oxlint-disable eslint/no-await-in-loop -- Each journey checks all three databases before advancing.
-    for (const route of routes) {
+    await runInOrder(routes, async (route) => {
       const original = await sourceApp.handler(
         new Request(`http://localhost${route}`, {
           headers: { authorization: `Bearer ${hostToken}` },
@@ -232,8 +232,7 @@ try {
         (await bun.text()) === expected,
         `Restored readback differs at ${route}`
       );
-    }
-    // oxlint-enable eslint/no-await-in-loop
+    });
   } finally {
     await sourceApp.dispose();
     await restoredApp.dispose();

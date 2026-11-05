@@ -9,19 +9,13 @@ const readCapped = async (response: Response): Promise<Uint8Array | null> => {
   if (!response.body) {
     return null;
   }
-  const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
-  for (;;) {
-    // oxlint-disable-next-line no-await-in-loop -- A stream is read one chunk at a time.
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
+  // `for await` reads one chunk at a time and cancels the stream when the loop
+  // exits early, so the bound needs no suppressed read and no explicit cancel.
+  for await (const value of response.body) {
     total += value.length;
     if (total > MAX_BYTES) {
-      // oxlint-disable-next-line no-await-in-loop -- The read stops here; nothing follows it.
-      await reader.cancel();
       return null;
     }
     chunks.push(value);
@@ -68,14 +62,20 @@ const load = async (
  * The first of `urls` that loads as a JPEG within the shared time limit, or null. Every
  * failure, from a refused address to a corrupt file, means the image draws without Artwork.
  */
-export const loadArtwork = async (
+export const loadArtwork = (
   urls: readonly (string | null)[]
 ): Promise<Bitmap | null> => {
   const signal = AbortSignal.timeout(TIMEOUT_MS);
-  for (const url of new Set(urls)) {
-    if (url) {
+  const candidates = [...new Set(urls)];
+  // Each address is tried only after the one before fails, so the fallback is
+  // stated as a step that names the next one rather than as a suppressed loop.
+  const attempt = async (index: number): Promise<Bitmap | null> => {
+    const url = candidates[index];
+    if (url === undefined) {
+      return null;
+    }
+    if (url !== null) {
       try {
-        // oxlint-disable-next-line no-await-in-loop -- A fallback runs only after the one before fails.
         const image = await load(url, signal);
         if (image) {
           return image;
@@ -84,6 +84,7 @@ export const loadArtwork = async (
         // The next address, or no Artwork.
       }
     }
-  }
-  return null;
+    return attempt(index + 1);
+  };
+  return attempt(0);
 };

@@ -416,6 +416,15 @@ const withFailureResponse = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
     onSuccess: (body) => body,
   });
 
+/** Keeps a proxy from buffering the frames of an event stream. */
+const withOrigin = (response: Response): Response => {
+  if (response.headers.get("content-type")?.startsWith("text/event-stream")) {
+    response.headers.set("cache-control", "no-cache, no-transform");
+    response.headers.set("x-accel-buffering", "no");
+  }
+  return response;
+};
+
 export const createPortableApp = (options: {
   audio: Layer.Layer<Audio, never, Library>;
   audioResponse: (
@@ -2701,20 +2710,12 @@ export const createPortableApp = (options: {
       new Request("http://orbis.internal/health"),
       Context.empty() as Context.Context<Library | Queue | ClientAddress>
     );
-  // oxlint-disable-next-line eslint/sort-keys -- Lifecycle methods precede the request boundary.
   return {
     dispose: app.dispose,
-    initialize,
     expirePresence: async (): Promise<void> => {
       await initialize();
       if (presenceService) {
         await Effect.runPromise(presenceService.expire(presenceNow()));
-      }
-    },
-    resumeImports: async (): Promise<void> => {
-      await initialize();
-      if (importerService) {
-        await Effect.runPromise(importerService.resume());
       }
     },
     handler: async (
@@ -2722,16 +2723,6 @@ export const createPortableApp = (options: {
       mode: AccessMode,
       clientAddress = "unknown"
     ): Promise<Response> => {
-      // oxlint-disable-next-line unicorn/consistent-function-scoping -- Kept at the boundary that owns stream headers.
-      const withOrigin = (response: Response): Response => {
-        if (
-          response.headers.get("content-type")?.startsWith("text/event-stream")
-        ) {
-          response.headers.set("cache-control", "no-cache, no-transform");
-          response.headers.set("x-accel-buffering", "no");
-        }
-        return response;
-      };
       const host = request.headers.get("host") ?? new URL(request.url).host;
       const authorization = request.headers.get("authorization");
       const open =
@@ -2828,6 +2819,13 @@ export const createPortableApp = (options: {
       return withOrigin(
         forwardedResponse(request, response, registry.store, decision.keyId)
       );
+    },
+    initialize,
+    resumeImports: async (): Promise<void> => {
+      await initialize();
+      if (importerService) {
+        await Effect.runPromise(importerService.resume());
+      }
     },
   };
 };

@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- Observe each heartbeat over the real idle interval. */
 import assert from "node:assert/strict";
 import { once } from "node:events";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
@@ -66,7 +65,7 @@ const address = Schema.decodeUnknownSync(
   Schema.Struct({ port: Schema.Number })
 )(proxy.address());
 const controller = new AbortController();
-let reader;
+let stream;
 try {
   const started = Date.now();
   const response = await fetch(`http://127.0.0.1:${address.port}/events`, {
@@ -75,16 +74,19 @@ try {
   });
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type"), /text\/event-stream/u);
-  reader = response.body.getReader();
+  assert.ok(response.body);
+  stream = response.body;
   const decoder = new TextDecoder();
   const chunks = [];
-  while (Date.now() - started < duration) {
-    const chunk = await reader.read();
-    assert.equal(chunk.done, false);
+  // `for await` reads one frame at a time and stops at the end of the interval.
+  for await (const chunk of stream) {
     chunks.push({
       elapsedMs: Date.now() - started,
-      text: decoder.decode(chunk.value),
+      text: decoder.decode(chunk),
     });
+    if (Date.now() - started >= duration) {
+      break;
+    }
   }
   const heartbeats = chunks.filter((chunk) =>
     chunk.text.includes('"heartbeat"')
@@ -111,7 +113,7 @@ try {
   );
 } finally {
   controller.abort();
-  await reader?.cancel().catch(() => null);
+  await stream?.cancel().catch(() => null);
   proxy.closeAllConnections();
   const closed = once(proxy, "close");
   proxy.close();

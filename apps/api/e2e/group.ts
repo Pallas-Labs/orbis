@@ -13,6 +13,7 @@ import { createPortableApp } from "../../server/src/app-core.js";
 import { releaseAudio } from "../../server/src/audio-release.js";
 import { layer } from "../../server/src/db/database.js";
 import { hashToken } from "../../server/src/identity.js";
+import { pollUntil, runInOrder } from "../../server/src/test-http.js";
 import { audioLayer } from "../src/audio.js";
 import { workerModules } from "./worker-modules.js";
 
@@ -124,18 +125,12 @@ const checkShareRoutes = async (
     };
     /** Waits for the Worker's `waitUntil` to store the image, which ends after the response. */
     const stored = async (route: string) => {
-      for (let wait = 0; wait < 100; wait += 1) {
-        // oxlint-disable-next-line no-await-in-loop -- Polls one entry until it lands.
-        const hit = await cache.match(cacheKey(route));
-        if (hit) {
-          // oxlint-disable-next-line no-await-in-loop -- Returns right after.
-          await hit.arrayBuffer();
-          return;
-        }
-        // oxlint-disable-next-line no-await-in-loop -- Polls one entry until it lands.
-        await Bun.sleep(50);
-      }
-      assert.fail(`${route} never entered the Worker's cache`);
+      const hit = await pollUntil(() => cache.match(cacheKey(route)), {
+        attempts: 100,
+        interval: 50,
+        message: `${route} never entered the Worker's cache`,
+      });
+      await hit.arrayBuffer();
     };
     const fetchImage = async (route: string) => {
       const image = await miniflare.dispatchFetch(`http://orbis${route}`, {
@@ -158,11 +153,10 @@ const checkShareRoutes = async (
       `${imagePath}&x=1`,
       imagePath.replace("/share/sets/", "/share//sets/").replace("?", "?x=2&"),
     ];
-    for (const route of repeats) {
-      // oxlint-disable-next-line no-await-in-loop -- Each repeat follows the first in order.
+    await runInOrder(repeats, async (route) => {
       const repeat = await fetchImage(route);
       assert.ok(repeat.equals(png), route);
-    }
+    });
     const afterRepeats = await arrivals();
     const repeatArrivals = afterRepeats - before;
     assert.equal(repeatArrivals, 1);
@@ -203,14 +197,16 @@ const checkShareRoutes = async (
     const me = await keyed("/me?v=1");
     assert.equal(me.status, 200);
     await me.arrayBuffer();
-    for (const route of [
-      "/api/me?v=1",
-      `/api/share/sets/${id}/image.png`,
-      `/api/share/sets/${id}/image.png?v=0000000000000000`,
-    ]) {
-      // oxlint-disable-next-line no-await-in-loop -- Each key is checked alone.
-      assert.equal(await cache.match(cacheKey(route)), undefined, route);
-    }
+    await runInOrder(
+      [
+        "/api/me?v=1",
+        `/api/share/sets/${id}/image.png`,
+        `/api/share/sets/${id}/image.png?v=0000000000000000`,
+      ],
+      async (route) => {
+        assert.equal(await cache.match(cacheKey(route)), undefined, route);
+      }
+    );
 
     const header = new DataView(png.buffer, png.byteOffset, png.byteLength);
     assert.equal(new TextDecoder().decode(png.subarray(12, 16)), "IHDR");
