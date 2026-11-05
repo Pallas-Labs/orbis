@@ -18,6 +18,7 @@ import { createApp } from "../apps/server/src/app.js";
 import { hashToken } from "../apps/server/src/identity.js";
 import type { LoggedRecord } from "../apps/server/src/logging.js";
 import { Metadata } from "../apps/server/src/metadata.js";
+import { runTimesInOrder } from "../apps/server/src/test-http.js";
 
 const { values } = parseArgs({
   options: { out: { type: "string" }, serve: { type: "boolean" } },
@@ -106,12 +107,10 @@ const { id } = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(
 const page = await fetch(`${base}/share/sets/${id}/page`);
 await writeFile(path.join(out, "share-page.html"), await page.text());
 let png = new Uint8Array();
-for (let run = 0; run < 10; run += 1) {
-  // oxlint-disable-next-line no-await-in-loop -- Each render is timed alone.
+await runTimesInOrder(10, async () => {
   const image = await fetch(`${base}/share/sets/${id}/image.png`);
-  // oxlint-disable-next-line no-await-in-loop -- Each render is timed alone.
   png = await image.bytes();
-}
+});
 await writeFile(path.join(out, "share-image.png"), png);
 await writeFile(
   path.join(out, "bun-timings.json"),

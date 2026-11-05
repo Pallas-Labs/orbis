@@ -1,4 +1,3 @@
-/* oxlint-disable no-await-in-loop -- Polling the Group defines the journey. */
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -6,6 +5,7 @@ import path from "node:path";
 import { Schema } from "effect";
 import { Miniflare } from "miniflare";
 
+import { pollUntil } from "../../server/src/test-http.js";
 import { workerModules } from "./worker-modules.js";
 
 // Versos answers a Tracklist request in seconds, long after the Group has answered the retry
@@ -109,22 +109,22 @@ const call = async (route: string, method = "GET") => {
   });
   return { status: response.status, text: await response.text() };
 };
-const waitForReady = async (id: string) => {
+const waitForReady = (id: string) => {
   const deadline = Date.now() + READY_AFTER_MS + 20_000;
   let last = "";
-  while (Date.now() < deadline) {
+  const ask = async () => {
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `${id} never became ready; last answer ${last}; Versos saw ${calls.join(", ")}`
+      );
+    }
     const tracklist = await call(`/sets/${id}/tracklist`);
     assert.equal(tracklist.status, 200, tracklist.text);
     last = tracklist.text;
     const answer = decodeTracklist(JSON.parse(last));
-    if (answer.state === "ready") {
-      return answer;
-    }
-    await Bun.sleep(500);
-  }
-  throw new Error(
-    `${id} never became ready; last answer ${last}; Versos saw ${calls.join(", ")}`
-  );
+    return answer.state === "ready" ? answer : null;
+  };
+  return pollUntil(ask, { interval: 500 });
 };
 try {
   const seeded = await call("/__seed-tracklist");
