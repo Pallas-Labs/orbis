@@ -53,7 +53,14 @@ export const checkStreamGrant = (
     return { kind: "malformed" };
   }
   const { expiry: expiryText, personId, mac } = match.groups;
-  if (!expiryText || !personId || !mac) {
+  if (
+    expiryText === undefined ||
+    expiryText === "" ||
+    personId === undefined ||
+    personId === "" ||
+    mac === undefined ||
+    mac === ""
+  ) {
     return { kind: "malformed" };
   }
   const expiry = Number(expiryText);

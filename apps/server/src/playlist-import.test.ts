@@ -293,9 +293,10 @@ const library = async (app: Lane) => setUrls(await getJson(app, "/sets")).sets;
 const openEvents = async (app: Lane, token?: string) => {
   const response = await app.handler(
     new Request("http://127.0.0.1:4310/events?changes=1", {
-      headers: token
-        ? { authorization: `Bearer ${token}` }
-        : { "x-orbis-test-auth": "fixture" },
+      headers:
+        token === undefined
+          ? { "x-orbis-test-auth": "fixture" }
+          : { authorization: `Bearer ${token}` },
     }),
     "device"
   );

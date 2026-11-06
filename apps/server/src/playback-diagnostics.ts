@@ -218,7 +218,7 @@ const logsFor = (batch: PlaybackDiagnosticsPayload, environment: string) => {
       text("playback.waiting_reason", entry.snapshot.waitingReason),
       bool("playback.session_ready", entry.snapshot.sessionReady),
       ...maybeDouble("playback.actual_time", entry.snapshot.actualTime),
-      ...(entry.snapshot.setId
+      ...(entry.snapshot.setId !== undefined && entry.snapshot.setId !== ""
         ? [text("orbis.set_id", entry.snapshot.setId)]
         : []),
       ...attributes,
@@ -350,7 +350,7 @@ export const readBoundedBody = async (
 };
 
 const retryHeaders = (value: string | null) => {
-  if (!value || value.length > 128) {
+  if (value === null || value === "" || value.length > 128) {
     return { "retry-after": "1" };
   }
   if (/^\d+$/u.test(value)) {
@@ -386,9 +386,10 @@ export const makePlaybackDiagnosticsRelay = (
     signal: AbortSignal
   ): Promise<Response> => {
     if (
-      !options?.url ||
-      !options.accessClientId ||
-      !options.accessClientSecret ||
+      options === undefined ||
+      options.url === "" ||
+      options.accessClientId === "" ||
+      options.accessClientSecret === "" ||
       active >= 2
     ) {
       return unavailable();
@@ -419,7 +420,7 @@ export const makePlaybackDiagnosticsRelay = (
       let rejected: number;
       try {
         const receipt = decodeCollectorReceipt(
-          JSON.parse(receiptText || "{}"),
+          JSON.parse(receiptText === "" ? "{}" : receiptText),
           { onExcessProperty: "error" }
         );
         rejected = receipt.partialSuccess?.rejectedLogRecords ?? 0;

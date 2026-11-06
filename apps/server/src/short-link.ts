@@ -46,7 +46,12 @@ export const expandShortLink = Effect.fn("ShortLink.expand")(
       try: async (signal) => await request(value.trim(), signal),
     });
     const location = response.headers.get("location");
-    if (response.status < 300 || response.status >= 400 || !location) {
+    if (
+      response.status < 300 ||
+      response.status >= 400 ||
+      location === null ||
+      location === ""
+    ) {
       return yield* Effect.fail(unresolved());
     }
     return yield* Effect.try({

@@ -100,7 +100,7 @@ export const otlpFromEnvironment = (
   component: OtlpOptions["component"]
 ): OtlpOptions | undefined => {
   const url = process.env.ORBIS_OTLP_LOGS_URL;
-  return url ? { component, url } : undefined;
+  return url === undefined || url === "" ? undefined : { component, url };
 };
 
 export type RequestOutcome = "success" | "rejected" | "failure" | "cancelled";
@@ -639,7 +639,8 @@ export const startJobLog = (
     },
     finish: (outcome, failure) => {
       if (failure !== undefined) {
-        logger.set({ reason: describeCause(failure).message || "unknown" });
+        const { message } = describeCause(failure);
+        logger.set({ reason: message === "" ? "unknown" : message });
       }
       finishRequestLog(logger, { outcome }, options);
     },

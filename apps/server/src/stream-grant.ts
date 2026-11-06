@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 export { checkStreamGrant, issueStreamGrant } from "./stream-grant-core.js";
 export type { StreamGrantVerdict } from "./stream-grant-core.js";
 export const grantSecret = (file: string | undefined): Buffer => {
-  if (!file) {
+  if (file === undefined || file === "") {
     return randomBytes(32);
   }
   let secret: Buffer;

@@ -177,16 +177,16 @@ export const wrap = (
   let line = "";
   const words = text.trim().split(/\s+/u).filter(Boolean);
   for (const word of words) {
-    const joined = line ? `${line} ${word}` : word;
+    const joined = line === "" ? word : `${line} ${word}`;
     if (fits(joined)) {
       line = joined;
     } else {
-      if (line) {
+      if (line !== "") {
         lines.push(line);
       }
       line = "";
       for (const character of word) {
-        if (line && !fits(line + character)) {
+        if (line !== "" && !fits(line + character)) {
           lines.push(line);
           line = "";
         }
@@ -194,7 +194,7 @@ export const wrap = (
       }
     }
   }
-  if (line) {
+  if (line !== "") {
     lines.push(line);
   }
   if (lines.length <= maxLines) {

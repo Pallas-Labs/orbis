@@ -241,7 +241,7 @@ export const PlaybackDiagnosticsBatch = Schema.Struct({
   Schema.makeFilter((batch) => {
     if (
       batch.throughSequence < batch.afterSequence ||
-      (batch.entries.length === 0 && !batch.lost?.length)
+      (batch.entries.length === 0 && (batch.lost ?? []).length === 0)
     ) {
       return false;
     }

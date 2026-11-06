@@ -27,7 +27,11 @@ export const startFixtureServer = (
   const server = Bun.serve({
     fetch: async (request, listener) => {
       const origin = request.headers.get("origin");
-      if (origin && origin !== options.allowedOrigin) {
+      if (
+        origin !== null &&
+        origin !== "" &&
+        origin !== options.allowedOrigin
+      ) {
         return Response.json(
           { message: "This browser Origin is not allowed." },
           { status: 403 }

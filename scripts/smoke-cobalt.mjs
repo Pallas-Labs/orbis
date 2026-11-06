@@ -952,7 +952,9 @@ function runCommand(command, args, signal, toolName) {
   let killTimer;
   const abort = () => {
     child.kill("SIGTERM");
-    killTimer = setTimeout(() => child.kill("SIGKILL"), CHILD_KILL_GRACE_MS);
+    killTimer = setTimeout(() => {
+      child.kill("SIGKILL");
+    }, CHILD_KILL_GRACE_MS);
     killTimer.unref?.();
   };
   const finish = (settle, value) => {

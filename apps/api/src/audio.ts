@@ -10,7 +10,11 @@ export const makeAudioLayer = (node?: GroupAudioNode) =>
     audioFile: Effect.fn("Audio.audioFile")(function* audioFile(id: string) {
       const library = yield* Library;
       const set = yield* library.find(id);
-      if (set.downloadState !== "ready" || !set.retainedAudioFormat) {
+      if (
+        set.downloadState !== "ready" ||
+        set.retainedAudioFormat === null ||
+        set.retainedAudioFormat === ""
+      ) {
         return yield* new LibraryError({
           message: "This set has no audio yet.",
           statusCode: 404,

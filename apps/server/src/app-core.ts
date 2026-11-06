@@ -195,7 +195,7 @@ const grantAccess = (
   }
   const url = new URL(request.url);
   const match = /^\/sets\/(?<id>[^/]+)\/audio$/u.exec(url.pathname);
-  if (!match?.groups?.id || !url.searchParams.has("grant")) {
+  if (match?.groups?.id === undefined || !url.searchParams.has("grant")) {
     return null;
   }
   const set = decodeURIComponent(match.groups.id);
@@ -419,7 +419,10 @@ const withFailureResponse = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
 
 /** Keeps a proxy from buffering the frames of an event stream. */
 const withOrigin = (response: Response): Response => {
-  if (response.headers.get("content-type")?.startsWith("text/event-stream")) {
+  if (
+    response.headers.get("content-type")?.startsWith("text/event-stream") ===
+    true
+  ) {
     response.headers.set("cache-control", "no-cache, no-transform");
     response.headers.set("x-accel-buffering", "no");
   }
@@ -517,7 +520,7 @@ export const createPortableApp = (options: {
   };
   const trustCall = <A>(action: (storePath: string) => A) =>
     trustOperation(() => {
-      if (!trustPath) {
+      if (trustPath === undefined || trustPath === "") {
         throw new AdminError(500, "The trust store is unavailable.");
       }
       return action(trustPath);
@@ -1239,7 +1242,7 @@ export const createPortableApp = (options: {
               )
             )
             .limit(1);
-          if (!playlist?.collaborative) {
+          if (playlist?.collaborative !== true) {
             return yield* Effect.fail(missingPlaylist());
           }
           return editor.creatorId;
@@ -1364,7 +1367,7 @@ export const createPortableApp = (options: {
                     ImportPlaylistPayload
                   );
                   const sourcePlaylistId = youTubePlaylistId(input.url);
-                  if (!sourcePlaylistId) {
+                  if (sourcePlaylistId === null) {
                     return yield* Effect.fail(
                       new LibraryError({
                         message:
@@ -1649,7 +1652,7 @@ export const createPortableApp = (options: {
             withFailureResponse(
               Effect.gen(function* searchAppleMusic() {
                 const words = query.q.trim().replaceAll(/\s+/gu, " ");
-                if (!words) {
+                if (words === "") {
                   return yield* Effect.fail(
                     new LibraryError({
                       message: "Type what to find on Apple Music.",
@@ -2728,7 +2731,7 @@ export const createPortableApp = (options: {
         request.method === "POST"
           ? OPEN_ROUTES.get(routePath(request.url))
           : undefined;
-      if (open) {
+      if (open !== undefined) {
         return await openRoute(request, clientAddress, open);
       }
       if (isShareRoute(request)) {

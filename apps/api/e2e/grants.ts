@@ -22,7 +22,7 @@ const bundle = await Bun.build({
 });
 assert.equal(bundle.success, true, String(bundle.logs));
 const [output] = bundle.outputs;
-assert.ok(output);
+assert.ok(output !== undefined);
 const secret = Buffer.from("ab".repeat(32), "hex");
 const groupUrl = new URL("http://127.0.0.1:0/api");
 const audioDirectory = path.join(artifact, "audio");
@@ -83,7 +83,10 @@ try {
   const audio = (value: string, authorization?: string) =>
     runtime.dispatchFetch(
       `http://orbis/api/sets/${saved.id}/audio?grant=${encodeURIComponent(value)}`,
-      { headers: authorization ? { authorization } : {}, redirect: "manual" }
+      {
+        headers: authorization === undefined ? {} : { authorization },
+        redirect: "manual",
+      }
     );
   const response = await audio(grant, "Bearer invalid-key");
   assert.equal(response.status, 302, await response.clone().text());

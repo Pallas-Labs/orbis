@@ -9,7 +9,7 @@ import {
 export default async function SaveClipboard() {
   const toast = await startProgressToast();
   const text = await Clipboard.readText();
-  if (!text?.trim()) {
+  if (text === undefined || text.trim() === "") {
     toast.style = Toast.Style.Failure;
     toast.title = "No link on the clipboard";
     toast.message = "Copy a YouTube or SoundCloud link first.";

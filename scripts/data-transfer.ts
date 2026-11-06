@@ -26,7 +26,7 @@ const nodeRequest = async (
   body?: string
 ) => {
   const key = process.env.ORBIS_NODE_KEY;
-  if (!key) {
+  if (key === undefined || key === "") {
     throw new Error("Set ORBIS_NODE_KEY to the node key.");
   }
   const options: RequestInit = {
@@ -49,8 +49,8 @@ const nodeRequest = async (
   }
   return response;
 };
-const [command, source, target] = process.argv.slice(2);
-if (!command || !source || !target) {
+const [command = "", source = "", target = ""] = process.argv.slice(2);
+if (command === "" || source === "" || target === "") {
   throw new Error(
     "Usage: bun scripts/data-transfer.ts export <sqlite> <sql> | import <sql> <api-url> | restore <sql> <sqlite> | backup <api-url> <directory>"
   );
@@ -81,7 +81,7 @@ if (command === "export") {
 } else if (command === "restore") {
   const sql = await Bun.file(source).text();
   parseDump(sql);
-  if (await Bun.file(target).exists()) {
+  if ((await Bun.file(target).exists()) === true) {
     throw new Error("Restore destination already exists.");
   }
   const temporary = `${target}.${crypto.randomUUID()}.tmp`;

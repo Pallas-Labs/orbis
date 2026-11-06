@@ -24,6 +24,10 @@ import { GroupAudioNode } from "./node.js";
 import { recoverHost } from "./recovery.js";
 import { registerTrustStorage } from "./trust-storage.js";
 
+/** An environment variable that holds a value. */
+const present = (value: string | undefined): value is string =>
+  value !== undefined && value !== "";
+
 /**
  * The Group's events go to Workers Logs and, with Access credentials, to SigNoz
  * through the endpoint the playback relay already uses.
@@ -35,7 +39,7 @@ const groupLogging = (
   const id = env.SIGNOZ_OTLP_ACCESS_CLIENT_ID;
   const secret = env.SIGNOZ_OTLP_ACCESS_CLIENT_SECRET;
   const otlp =
-    id && secret
+    present(id) && present(secret)
       ? {
           component: "group" as const,
           headers: {
@@ -112,9 +116,9 @@ export class Group extends DurableObject<Environment> {
       logging: this.logging,
       metadata: Metadata.layer({
         appleMusic:
-          env.APPLE_MUSIC_TEAM_ID &&
-          env.APPLE_MUSIC_KEY_ID &&
-          env.APPLE_MUSIC_PRIVATE_KEY
+          present(env.APPLE_MUSIC_TEAM_ID) &&
+          present(env.APPLE_MUSIC_KEY_ID) &&
+          present(env.APPLE_MUSIC_PRIVATE_KEY)
             ? {
                 keyId: env.APPLE_MUSIC_KEY_ID,
                 privateKey: env.APPLE_MUSIC_PRIVATE_KEY,
@@ -138,7 +142,7 @@ export class Group extends DurableObject<Environment> {
       titleReviser: TitleReviser.layer({ apiKey: env.OPENROUTER_API_KEY }),
       trustPath,
       versos:
-        env.VERSOS_URL && env.VERSOS_API_KEY
+        present(env.VERSOS_URL) && present(env.VERSOS_API_KEY)
           ? Versos.layer({
               key: Redacted.make(env.VERSOS_API_KEY),
               url: env.VERSOS_URL,

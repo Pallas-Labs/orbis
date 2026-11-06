@@ -57,7 +57,7 @@ export const extractSourceUrl = (text: string): string | null => {
     const canonical = canonicalSourceUrl(
       match.replace(TRAILING_PUNCTUATION, "")
     );
-    if (canonical) {
+    if (canonical !== null) {
       return canonical;
     }
   }
@@ -83,9 +83,13 @@ export const SIGN_IN_HINT = "Run Sign In to Orbis with a Sign-in Code.";
  */
 const readDeviceToken = async (
   preferences: Preferences
-): Promise<string | null> =>
-  (await LocalStorage.getItem<string>(DEVICE_TOKEN_KEY)) ??
-  (preferences.deviceToken?.trim() || null);
+): Promise<string | null> => {
+  const preference = preferences.deviceToken?.trim() ?? "";
+  return (
+    (await LocalStorage.getItem<string>(DEVICE_TOKEN_KEY)) ??
+    (preference === "" ? null : preference)
+  );
+};
 
 const makeClient = (service: string, token: string | null) =>
   HttpApiClient.make(OrbisApi, {
@@ -239,7 +243,7 @@ export const signIn = async (
   options: CallOptions = {}
 ): Promise<SignInResult> => {
   const presented = code.trim();
-  if (!presented) {
+  if (presented === "") {
     return {
       kind: "failed",
       message: "Type the Sign-in Code from Orbis Settings.",

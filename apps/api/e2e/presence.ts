@@ -23,7 +23,7 @@ const bundle = await Bun.build({
 });
 assert.equal(bundle.success, true, String(bundle.logs));
 const [output] = bundle.outputs;
-assert.ok(output);
+assert.ok(output !== undefined);
 const options = {
   bindings: {
     AUDIO_NODE_URL: "https://audio.example",

@@ -48,15 +48,21 @@ const proxy = createServer((incoming, outgoing) => {
     },
     (response) => {
       outgoing.writeHead(response.statusCode ?? 502, response.headers);
-      response.setTimeout(45_000, () =>
-        response.destroy(new Error("Proxy idle timeout"))
-      );
-      response.on("error", () => outgoing.destroy());
+      response.setTimeout(45_000, () => {
+        response.destroy(new Error("Proxy idle timeout"));
+      });
+      response.on("error", () => {
+        outgoing.destroy();
+      });
       response.pipe(outgoing);
     }
   );
-  upstream.on("error", () => outgoing.destroy());
-  outgoing.on("close", () => upstream.destroy());
+  upstream.on("error", () => {
+    outgoing.destroy();
+  });
+  outgoing.on("close", () => {
+    upstream.destroy();
+  });
   incoming.pipe(upstream);
 });
 proxy.listen(0, "127.0.0.1");

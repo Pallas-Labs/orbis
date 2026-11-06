@@ -8,7 +8,10 @@ import { makeNodeAudioHandler } from "../../server/src/node-audio-http.js";
 import { workerModules } from "./worker-modules.js";
 
 const directory = process.env.ORBIS_DATA_DIR;
-assert.ok(directory, "ORBIS_DATA_DIR is required");
+assert.ok(
+  directory !== undefined && directory !== "",
+  "ORBIS_DATA_DIR is required"
+);
 const fixture = path.resolve(
   import.meta.dir,
   "../../../scripts/fixtures/ready-set.m4a"
@@ -28,7 +31,7 @@ const bundle = await Bun.build({
   target: "browser",
 });
 assert.equal(bundle.success, true, String(bundle.logs));
-assert.ok(bundle.outputs[0]);
+assert.ok(bundle.outputs[0] !== undefined);
 const runtime = new Miniflare({
   bindings: {
     AUDIO_NODE_URL: audio.url.origin,
@@ -78,7 +81,7 @@ const api = Bun.serve({
       method: request.method,
       redirect: "manual",
     });
-    if (origin) {
+    if (origin !== null) {
       response.headers.set("access-control-allow-origin", origin);
       response.headers.set(
         "access-control-allow-headers",

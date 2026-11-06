@@ -60,7 +60,12 @@ test("a failed download emits one event that names each backend's cause", async 
         ),
     },
     databasePath: path.join(root, "library.sqlite"),
-    logging: { onEvent: (event) => events.push(event), silent: true },
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
   });
   try {
     const saved = await request(app, {
@@ -184,7 +189,12 @@ test.each(cobaltFailures)(
         startWorker: true,
       },
       databasePath: path.join(root, "library.sqlite"),
-      logging: { onEvent: (event) => events.push(event), silent: true },
+      logging: {
+        onEvent: (event) => {
+          events.push(event);
+        },
+        silent: true,
+      },
     });
     try {
       const saved = await request(app, {

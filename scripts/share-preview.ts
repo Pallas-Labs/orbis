@@ -23,7 +23,7 @@ import { runTimesInOrder } from "../apps/server/src/test-http.js";
 const { values } = parseArgs({
   options: { out: { type: "string" }, serve: { type: "boolean" } },
 });
-if (!values.out) {
+if (values.out === undefined || values.out === "") {
   throw new Error("Pass --out <directory>.");
 }
 const out = path.resolve(values.out);
@@ -66,7 +66,7 @@ const app = createApp({
   devicesPath,
   logging: {
     onEvent: (event) => {
-      if (event.share) {
+      if (event.share !== undefined) {
         timings.push(event.share);
       }
     },
@@ -122,7 +122,7 @@ await writeFile(
   `${JSON.stringify(timings, null, 2)}\n`
 );
 console.log(JSON.stringify({ address: base, id, out, ready: true }));
-if (!values.serve) {
+if (values.serve !== true) {
   await server.stop(true);
   await artworkHost.stop(true);
   await app.dispose();

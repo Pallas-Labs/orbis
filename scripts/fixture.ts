@@ -10,7 +10,7 @@ import { Metadata } from "../apps/server/src/metadata.js";
 
 const required = (name: string): string => {
   const value = process.env[name];
-  if (!value) {
+  if (value === undefined || value === "") {
     throw new Error(`${name} is required.`);
   }
   return value;
@@ -25,7 +25,7 @@ const settingsToken =
 const devicesPath = path.join(dataDirectory, "devices.json");
 const databasePath = path.join(dataDirectory, "library.sqlite");
 await mkdir(dataDirectory, { recursive: true });
-if (await Bun.file(devicesPath).exists()) {
+if ((await Bun.file(devicesPath).exists()) === true) {
   throw new Error("ORBIS_FIXTURE_DATA_DIR must not contain devices.json.");
 }
 const addedAt = new Date().toISOString();
@@ -65,10 +65,11 @@ await writeFile(
   })
 );
 const audioFile = process.env.ORBIS_FIXTURE_AUDIO_FILE;
-const cobaltUrl = audioFile
+const fixtureAudioFile = audioFile !== undefined && audioFile !== "";
+const cobaltUrl = fixtureAudioFile
   ? "http://cobalt.fixture.test/"
   : process.env.ORBIS_COBALT_URL;
-const fixtureAudio = audioFile ? Bun.file(audioFile) : undefined;
+const fixtureAudio = fixtureAudioFile ? Bun.file(audioFile) : undefined;
 /**
  * The Data API as the lane sees it: one public playlist, answered from memory the way Google
  * would, so an import journey needs no network and no key. It has 60 entries, more than one
@@ -134,7 +135,7 @@ const laneYouTube = async (url: string) => {
     const ids = new Set(parsed.searchParams.get("id")?.split(","));
     return answer({
       items: LANE_PLAYLIST.entries
-        .filter(([id, title]) => ids.has(id) && title)
+        .filter(([id, title]) => ids.has(id) && title !== "")
         .map(([id, title, channelTitle]) => ({
           contentDetails: { duration: "PT58M12S" },
           id,
@@ -154,12 +155,15 @@ const appleMusic = await appleMusicReplay();
 // The tvOS lane shortens an Approval Request's life, so its journey sees the TV replace a code.
 const approvalLifetime = process.env.ORBIS_FIXTURE_APPROVAL_LIFETIME_MS;
 const app = createApp({
-  approvalLifetimeMs: approvalLifetime ? Number(approvalLifetime) : undefined,
+  approvalLifetimeMs:
+    approvalLifetime === undefined || approvalLifetime === ""
+      ? undefined
+      : Number(approvalLifetime),
   audio: {
     audioDir: path.join(dataDirectory, "audio"),
     cobaltApiKey: process.env.ORBIS_COBALT_API_KEY,
     cobaltUrl,
-    fetch: fixtureAudio
+    fetch: fixtureAudioFile
       ? async (url) =>
           url.startsWith(cobaltUrl ?? "")
             ? Response.json({

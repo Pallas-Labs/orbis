@@ -35,7 +35,7 @@ const fetchWithFallback = (
   signal: AbortSignal
 ): Effect.Effect<BackendName, LibraryError> => {
   const [current, ...rest] = names;
-  if (!current) {
+  if (current === undefined) {
     return Effect.fail(
       new LibraryError({
         message: "No download backend is configured.",

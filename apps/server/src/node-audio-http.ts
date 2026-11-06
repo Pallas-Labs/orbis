@@ -23,7 +23,7 @@ type AudioRange =
   | { readonly kind: "unsatisfiable" };
 
 const parseRange = (header: string | null, size: number): AudioRange => {
-  if (!header) {
+  if (header === null || header === "") {
     return { kind: "full" };
   }
   const match = /^bytes=(?<first>\d*)-(?<last>\d*)$/u.exec(header.trim());
@@ -73,7 +73,7 @@ const serveAudio = async (
     url.pathname
   );
   const id = match?.groups?.id;
-  if (!id) {
+  if (id === undefined || id === "") {
     return new Response(null, { status: 404 });
   }
   record({ set: id });

@@ -37,7 +37,7 @@ const bundle = await Bun.build({
 });
 assert.equal(bundle.success, true, String(bundle.logs));
 const [output] = bundle.outputs;
-assert.ok(output);
+assert.ok(output !== undefined);
 const miniflareOptions = {
   bindings: {
     AUDIO_NODE_URL: "https://audio.example",
@@ -55,7 +55,7 @@ const call = (
   options: { method?: string; key?: string; body?: unknown } = {}
 ) => {
   const headers = new Headers({ "CF-Connecting-IP": "192.0.2.1" });
-  if (options.key) {
+  if (options.key !== undefined) {
     headers.set("authorization", `Bearer ${options.key}`);
   }
   if (options.body !== undefined) {
@@ -142,7 +142,7 @@ try {
   const cliCode = /Sign-in Code for the Host: (?<code>\S+)/u.exec(
     fromCli.stdout
   )?.groups?.code;
-  assert.ok(cliCode);
+  assert.ok(cliCode !== undefined);
   assert.match(cliCode, CODE);
   assert.match(fromCli.stdout, /Expires at /u);
   assert.equal(await statusOf(redeem(cliCode)), 200);

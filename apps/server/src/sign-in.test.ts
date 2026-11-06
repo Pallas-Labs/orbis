@@ -108,7 +108,10 @@ const call = (
   request(app, {
     accessMode: "device",
     clientAddress: options.client ?? "100.64.0.1",
-    headers: options.key ? { authorization: `Bearer ${options.key}` } : {},
+    headers:
+      options.key === undefined
+        ? {}
+        : { authorization: `Bearer ${options.key}` },
     host: "vanta.example.ts.net",
     method,
     payload: options.payload,

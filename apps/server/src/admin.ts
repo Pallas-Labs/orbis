@@ -45,11 +45,14 @@ export const listPeople = (path: string) =>
 
 export const listKeys = (path: string, personId?: string) => {
   const store = read(path);
-  if (personId) {
+  if (personId !== undefined && personId !== "") {
     requirePerson(store, personId);
   }
   return store.keys
-    .filter((key) => !personId || key.personId === personId)
+    .filter(
+      (key) =>
+        personId === undefined || personId === "" || key.personId === personId
+    )
     .map(({ tokenHash: _hash, ...key }) => key);
 };
 
@@ -70,7 +73,7 @@ export const listDevices = (
 
 const validUsername = (input: string) => {
   const username = input.trim();
-  if (!username || username.length > 40) {
+  if (username === "" || username.length > 40) {
     throw new AdminError(400, "Choose a username with 1 to 40 characters.");
   }
   return username;
@@ -78,7 +81,7 @@ const validUsername = (input: string) => {
 
 export const validLabel = (input: string) => {
   const label = input.trim();
-  if (!label || label.length > 100) {
+  if (label === "" || label.length > 100) {
     throw new AdminError(400, "Choose a label with 1 to 100 characters.");
   }
   return label;
@@ -167,13 +170,17 @@ export const joinGroup = (
     path,
     () => read(path),
     (store) => {
-      if (!store.passcode) {
+      if (
+        store.passcode === undefined ||
+        store.passcode === null ||
+        store.passcode === ""
+      ) {
         throw new AdminError(403, "Joining is closed.");
       }
       // Compares normalized forms, so `abcd-efgh jkmn` matches `ABCDEFGHJKMN`.
       const presented = normalizeSignInCode(input.passcode);
       if (
-        !presented ||
+        presented === "" ||
         !matchesTokenHash(
           hashToken(normalizeSignInCode(store.passcode)),
           presented

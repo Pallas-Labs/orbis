@@ -52,9 +52,9 @@ const forwardApiRequest = async (
   const source = new URL(request.url);
   const target = new URL(apiUrl);
   const pathname = source.pathname.startsWith("/api")
-    ? source.pathname.slice(4) || "/"
+    ? source.pathname.slice(4)
     : source.pathname;
-  target.pathname = `${target.pathname}${pathname}`;
+  target.pathname = `${target.pathname}${pathname === "" ? "/" : pathname}`;
   target.search = source.search;
   const headers = new Headers(request.headers);
   headers.set("x-orbis-ingress", "funnel-forward");
@@ -69,7 +69,7 @@ const forwardApiRequest = async (
         ? await Bun.fetch(prepared, { decompress: false })
         : await requestFetch(prepared);
     const keyLabel = response.headers.get("x-orbis-key-label");
-    if (keyLabel) {
+    if (keyLabel !== null && keyLabel !== "") {
       logger.set({ keyLabel: decodeURIComponent(keyLabel) });
     }
     response.headers.delete("x-orbis-key-label");

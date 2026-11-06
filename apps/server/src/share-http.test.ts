@@ -97,7 +97,12 @@ const startApp = async (artworkHost: string) => {
   const app = createApp({
     databasePath,
     devicesPath,
-    logging: { onEvent: (event) => events.push(event), silent: true },
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
     metadata: Metadata.layerOf({
       enrich: ({ url }) => {
         const video = new URL(url).searchParams.get("v");

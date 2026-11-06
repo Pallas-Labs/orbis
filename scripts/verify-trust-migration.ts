@@ -10,8 +10,8 @@ import {
   readTrustStrict,
 } from "../apps/server/src/identity.js";
 
-const [source, scratch] = process.argv.slice(2);
-if (!source || !scratch) {
+const [source = "", scratch = ""] = process.argv.slice(2);
+if (source === "" || scratch === "") {
   throw new Error(
     "Usage: bun scripts/verify-trust-migration.ts <source directory> <new scratch directory>"
   );

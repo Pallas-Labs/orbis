@@ -295,7 +295,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
           continue;
         }
         const streamed = STREAMED_CONTENT.get(operation.operationId);
-        if (streamed) {
+        if (streamed !== undefined) {
           expect(operation.responses["200"]?.content?.[streamed]).toBeDefined();
           checked += 1;
           continue;

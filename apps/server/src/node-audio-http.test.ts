@@ -36,7 +36,12 @@ test("the audio node records one wide event per request, with the grant verdict 
   const events: WideEvent[] = [];
   const audio = makeNodeAudioHandler({
     audioDir,
-    logging: { onEvent: (event) => events.push(event), silent: true },
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
     streamSecret,
   });
   const send = async (target: string, init?: RequestInit) => {

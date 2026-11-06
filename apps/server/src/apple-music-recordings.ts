@@ -57,7 +57,7 @@ export const appleMusicReplay = async () => {
     }
     const albumId = /\/albums\/(?<id>\d+)\?include=tracks$/u.exec(url)?.groups
       ?.id;
-    const album = albumId ? albums.get(albumId) : undefined;
+    const album = albumId === undefined ? undefined : albums.get(albumId);
     return album
       ? Response.json({ data: [album] })
       : Response.json({ errors: [] }, { status: 404 });

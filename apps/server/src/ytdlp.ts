@@ -69,10 +69,10 @@ export const ytdlpArgs = (
   "bestaudio",
   "-o",
   destination,
-  ...(playerClient
+  ...(playerClient !== undefined && playerClient !== ""
     ? ["--extractor-args", `youtube:player_client=${playerClient}`]
     : []),
-  ...(cookies ? ["--cookies", cookies] : []),
+  ...(cookies !== undefined && cookies !== "" ? ["--cookies", cookies] : []),
   "--",
   url,
 ];
@@ -100,7 +100,7 @@ export class Ytdlp extends Context.Service<
     return Layer.effect(
       Ytdlp,
       Effect.gen(function* buildYtdlp() {
-        if (!bin) {
+        if (bin === undefined || bin === "") {
           return Ytdlp.of({
             download: () =>
               Effect.fail(downloadFailed("yt-dlp is not configured.")),
@@ -199,13 +199,16 @@ export class Ytdlp extends Context.Service<
             // YouTube's default anonymous clients can be refused with a sign-in challenge
             // while the supported web_embedded client still serves the same audio, so one
             // alternate-client attempt follows the default before credentials are tried.
-            const alternateClient = youTubeVideoId(sourceUrl)
-              ? "web_embedded"
-              : undefined;
+            const alternateClient =
+              youTubeVideoId(sourceUrl) === null ? undefined : "web_embedded";
             const plan: readonly DownloadAttempt[] = [
               {},
-              ...(alternateClient ? [{ playerClient: alternateClient }] : []),
-              ...(cookies && cookies.length > 0 ? [{ cookies }] : []),
+              ...(alternateClient === undefined
+                ? []
+                : [{ playerClient: alternateClient }]),
+              ...(cookies !== undefined && cookies.length > 0
+                ? [{ cookies }]
+                : []),
             ];
             // The plan always starts with the anonymous default attempt.
             const [primary = {}, ...fallbacks] = plan;

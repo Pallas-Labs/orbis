@@ -41,7 +41,7 @@ const writePreviousDatabase = (databasePath: string) => {
     `);
     for (const migration of migrations) {
       for (const statement of migration.sql) {
-        if (statement.trim()) {
+        if (statement.trim() !== "") {
           database.run(statement);
         }
       }

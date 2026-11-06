@@ -56,7 +56,7 @@ const bundle = await Bun.build({
 });
 assert.equal(bundle.success, true, String(bundle.logs));
 const [output] = bundle.outputs;
-assert.ok(output);
+assert.ok(output !== undefined);
 const runtime = new Miniflare({
   bindings: {
     APPLE_MUSIC_KEY_ID: appleMusic.credentials.keyId,
@@ -109,7 +109,7 @@ try {
   const [chosen] = Schema.decodeUnknownSync(Search)(
     JSON.parse(search.text)
   ).albums;
-  assert.ok(chosen, `"${SEARCH}" found no albums`);
+  assert.ok(chosen !== undefined, `"${SEARCH}" found no albums`);
   assert.ok(chosen.djMix, `${chosen.title} is not a DJ mix`);
   assert.ok(chosen.songCount > 14, `${chosen.title} fits in one insert`);
 

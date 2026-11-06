@@ -22,7 +22,7 @@ const bundle = await Bun.build({
 assert.equal(bundle.success, true, String(bundle.logs));
 const [output] = bundle.outputs;
 const script = await output?.text();
-assert.ok(output);
+assert.ok(output !== undefined);
 
 const PAGE = 50;
 const videoIds = Array.from(

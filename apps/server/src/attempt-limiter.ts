@@ -23,12 +23,12 @@ export const clientBucket = (address: string): string => {
     return address;
   }
   const mapped = MAPPED_V4.exec(address)?.groups?.v4;
-  if (mapped) {
+  if (mapped !== undefined) {
     return mapped;
   }
   const [head = "", tail = ""] = (address.split("%")[0] ?? address).split("::");
-  const headGroups = head ? head.split(":") : [];
-  const tailGroups = tail ? tail.split(":") : [];
+  const headGroups = head === "" ? [] : head.split(":");
+  const tailGroups = tail === "" ? [] : tail.split(":");
   const groups = [
     ...headGroups,
     ...Array.from<string>({

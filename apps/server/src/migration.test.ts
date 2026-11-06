@@ -123,7 +123,7 @@ const writeVersionOneDatabase = (
     insertMembership.run("first-playlist", "provider-set", 0);
     insertMembership.run("first-playlist", "kept-set", 1);
     insertMembership.run("second-playlist", "kept-set", 0);
-    if (options.withReverseIndex) {
+    if (options.withReverseIndex === true) {
       database.run(
         `CREATE INDEX ${REVERSE_INDEX} ON playlist_sets(set_id, playlist_id)`
       );

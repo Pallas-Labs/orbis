@@ -90,7 +90,12 @@ const setup = async () => {
     approvalWaitMs: WAIT_MS,
     databasePath: path.join(directory, "library.sqlite"),
     devicesPath,
-    logging: { onEvent: (event) => events.push(event), silent: true },
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
     signInCodeNow: () => clock.now,
   });
   const store = () => readTrustStrict(devicesPath);
@@ -117,7 +122,10 @@ const send = async (
   const response = await request(app, {
     accessMode: "device",
     clientAddress: options.client,
-    headers: options.key ? { authorization: `Bearer ${options.key}` } : {},
+    headers:
+      options.key === undefined
+        ? {}
+        : { authorization: `Bearer ${options.key}` },
     host: "vanta.example.ts.net",
     method: "POST",
     payload: options.payload,

@@ -820,7 +820,11 @@ test("backfill skips a live HTTP run and an expired run cannot replace newer Cue
           "SELECT tracklist_run_id FROM sets WHERE id = ?"
         )
         .get(id);
-      if (!row?.tracklist_run_id) {
+      if (
+        row === null ||
+        row.tracklist_run_id === null ||
+        row.tracklist_run_id === ""
+      ) {
         throw new Error("The live run did not claim the Set.");
       }
       staleToken = row.tracklist_run_id;
@@ -1012,7 +1016,12 @@ test("a Versos failure after the save response is logged in its own event", asyn
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-tracklists-log-"));
   const app = createApp({
     databasePath: path.join(directory, "library.sqlite"),
-    logging: { onEvent: (event) => events.push(event), silent: true },
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
     metadata: Metadata.layerOf({
       details: () => Effect.succeed(DETAILS),
       enrich: () => Effect.die("title supplied by caller"),

@@ -40,9 +40,10 @@ const fixtureKey = storedKey(
 export const createTestApp = (
   options: Parameters<typeof createApp>[0] = {}
 ): ReturnType<typeof createApp> => {
-  const temporary = options.databasePath
-    ? undefined
-    : mkdtempSync(path.join(tmpdir(), "orbis-test-app-"));
+  const temporary =
+    options.databasePath !== undefined && options.databasePath !== ""
+      ? undefined
+      : mkdtempSync(path.join(tmpdir(), "orbis-test-app-"));
   const databasePath =
     options.databasePath ?? path.join(temporary ?? "", "library.sqlite");
   const devicesPath =
@@ -76,7 +77,7 @@ export const createTestApp = (
     ...app,
     dispose: async () => {
       await app.dispose();
-      if (temporary) {
+      if (temporary !== undefined) {
         rmSync(temporary, { force: true, recursive: true });
       }
     },

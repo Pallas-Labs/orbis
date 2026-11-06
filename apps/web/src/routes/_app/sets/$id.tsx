@@ -229,16 +229,16 @@ const SetPage = ({
         Library
       </Link>
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end">
-        {(set.artworkLargeUrl ?? set.artworkUrl) ? (
+        {(set.artworkLargeUrl ?? set.artworkUrl ?? "") === "" ? (
+          <div
+            aria-hidden
+            className="bg-muted aspect-square w-32 shrink-0 rounded-md sm:w-48"
+          />
+        ) : (
           <img
             alt=""
             className="aspect-square w-32 shrink-0 rounded-md object-cover sm:w-48"
             src={set.artworkLargeUrl ?? set.artworkUrl ?? ""}
-          />
-        ) : (
-          <div
-            aria-hidden
-            className="bg-muted aspect-square w-32 shrink-0 rounded-md sm:w-48"
           />
         )}
         <div className="flex min-w-0 flex-col items-start gap-3">

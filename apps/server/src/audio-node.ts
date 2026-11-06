@@ -54,9 +54,10 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
   const media = await runtime.runPromise(MediaStore);
   const backends = await runtime.runPromise(DownloadBackends);
   await runtime.runPromise(media.ensureDirectory);
-  const metadata = options.ytdlpBin
-    ? ytDlpMetadata({ binPath: options.ytdlpBin })
-    : undefined;
+  const metadata =
+    options.ytdlpBin !== undefined && options.ytdlpBin !== ""
+      ? ytDlpMetadata({ binPath: options.ytdlpBin })
+      : undefined;
   let closed = false;
   let socket: WebSocket | undefined;
   let retry: ReturnType<typeof setTimeout> | undefined;
@@ -79,7 +80,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
   const finish = (command: NodeCommand, message: NodeMessage) => {
     completed.set(`${command.kind}:${command.requestId}`, message);
     const oldest = completed.keys().next().value;
-    if (completed.size > 256 && oldest) {
+    if (completed.size > 256 && oldest !== undefined) {
       completed.delete(oldest);
     }
     send(message);
@@ -88,8 +89,8 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
     const current = active;
     if (
       current &&
-      (!setId || current.command.setId === setId) &&
-      (!requestId || current.command.requestId === requestId)
+      (setId === undefined || current.command.setId === setId) &&
+      (requestId === undefined || current.command.requestId === requestId)
     ) {
       current.abort.abort();
       await current.done;
