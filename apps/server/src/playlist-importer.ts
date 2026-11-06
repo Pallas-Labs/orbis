@@ -107,9 +107,10 @@ const stateOf = (row: ImportRow): ImportState => {
     case "done": {
       return State.Done();
     }
-    default: {
+    case "failed": {
       return State.Failed({ message: row.failure ?? "" });
     }
+    // no default
   }
 };
 
@@ -168,12 +169,16 @@ export const playlistImportRefusal = (error: MetadataError) => {
         statusCode: 503,
       });
     }
-    default: {
+    case "not-found":
+    case "provider-unavailable":
+    case "unexpected-response":
+    case "unsupported-source": {
       return new LibraryError({
         message: "YouTube is not answering. Try the import again.",
         statusCode: 503,
       });
     }
+    // no default
   }
 };
 

@@ -172,7 +172,7 @@ const harness = (databasePath: string, transcript: Transcript) => {
       );
     }
   };
-  const start = async () => {
+  const start = () => {
     let wakeAt: number | null = null;
     const app = createApp({
       databasePath,
@@ -199,7 +199,7 @@ const harness = (databasePath: string, transcript: Transcript) => {
       },
       presenceWindowMs: LEGACY_WINDOW_MS,
     });
-    const listeners = await startFixtureServer({
+    const listeners = startFixtureServer({
       app,
       port: 0,
       token: "seeded-test-fixture",
@@ -385,7 +385,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
   const transcript: Transcript = [];
   const databasePath = await seed(root);
   const { clock, start, transitions } = harness(databasePath, transcript);
-  let server = await start();
+  let server = start();
   const opened: { close: () => Promise<void> }[] = [];
   try {
     let viewer = await server.watch("c-phone", "c");
@@ -653,7 +653,7 @@ test("explicit actions own live Presence through play, pause, resume, stale devi
     });
     await viewer.close();
     await server.stop();
-    server = await start();
+    server = start();
     viewer = await server.watch("c-phone", "c");
     opened.push(viewer);
     expect(await server.accepted("a-laptop", replay)).toEqual({
@@ -749,7 +749,7 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
     databasePath,
     transcript
   );
-  const server = await start();
+  const server = start();
   const opened: { close: () => Promise<void> }[] = [];
   try {
     const viewer = await server.watch("c-phone", "c");

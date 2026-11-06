@@ -234,12 +234,20 @@ export class MediaStore extends Context.Service<
               downloadFailed("The audio exceeded the size bound.")
             );
           }
-          writer.write(value);
+          // A full buffer makes the sink return a promise that settles once it flushes.
+          yield* Effect.tryPromise({
+            catch: () => downloadFailed("Could not write the audio."),
+            try: () => Promise.resolve(writer.write(value)),
+          });
           onProgress(next, Number.isFinite(total) ? total : null);
           return yield* drain(reader, next);
         });
         yield* drain(response.body.getReader(), 0).pipe(
-          Effect.ensuring(Effect.sync(() => writer.end()))
+          Effect.ensuring(
+            Effect.promise(async () => {
+              await writer.end();
+            })
+          )
         );
       }
     );

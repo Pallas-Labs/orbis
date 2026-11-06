@@ -86,7 +86,7 @@ beforeAll(async () => {
     );
   }
   sqlite.close();
-  const listeners = await startFixtureServer({
+  const listeners = startFixtureServer({
     app: createApp({ databasePath, logging: { silent: true } }),
     port: 0,
     token: "seeded-test-fixture",

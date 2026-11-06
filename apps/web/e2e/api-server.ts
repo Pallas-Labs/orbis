@@ -45,7 +45,7 @@ const app = createApp({
       ),
   }),
 });
-await startFixtureServer({
+startFixtureServer({
   allowedOrigin: process.env.ORBIS_FIXTURE_ORIGIN,
   app,
   port: Number(process.env.ORBIS_FIXTURE_PORT),

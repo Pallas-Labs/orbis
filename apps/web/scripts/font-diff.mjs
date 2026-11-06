@@ -229,7 +229,7 @@ const fontUse = (page) =>
     return Object.fromEntries(
       [...uses].map(([key, text]) => [
         key,
-        [...new Set(text)].toSorted().join(""),
+        [...new Set(text)].toSorted((a, b) => a.localeCompare(b)).join(""),
       ])
     );
   });

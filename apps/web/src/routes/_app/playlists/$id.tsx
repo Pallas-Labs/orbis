@@ -5,7 +5,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { usePlayer } from "@/components/player/player";
 import { CollaborationCard } from "@/components/playlists/collaboration";
@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { detach } from "@/lib/detach";
+import { formField } from "@/lib/form";
 import { listSets } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
@@ -69,11 +71,9 @@ const RenameDialog = ({
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  const rename = async (event: FormEvent<HTMLFormElement>) => {
+  const rename = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const name = String(
-      new FormData(event.currentTarget).get("name") ?? ""
-    ).trim();
+    const name = formField(new FormData(event.currentTarget), "name");
     if (name === "") {
       setProblem("Enter a Playlist name.");
       return;
@@ -99,7 +99,7 @@ const RenameDialog = ({
         Rename…
       </DialogTrigger>
       <DialogContent>
-        <form className="flex flex-col gap-4" onSubmit={rename}>
+        <form className="flex flex-col gap-4" onSubmit={detach(rename)}>
           <DialogHeader>
             <DialogTitle>Rename {playlist.name}</DialogTitle>
           </DialogHeader>
@@ -172,7 +172,7 @@ const DeleteDialog = ({
           <AlertDialogCancel>Keep</AlertDialogCancel>
           <AlertDialogAction
             disabled={pending}
-            onClick={remove}
+            onClick={detach(remove)}
             variant="destructive"
           >
             Delete
@@ -235,7 +235,7 @@ const PlaylistPage = ({
               pending ||
               !playlist.sets.some((set) => set.downloadState === "ready")
             }
-            onClick={play}
+            onClick={detach(play)}
           >
             Play Playlist
           </Button>

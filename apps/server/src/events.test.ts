@@ -72,7 +72,7 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
       version: 2,
     })
   );
-  const listeners = await startFixtureServer({
+  const listeners = startFixtureServer({
     app: createApp({ databasePath, logging: { silent: true } }),
     port: 0,
     token: "seeded-test-fixture",
@@ -182,6 +182,7 @@ test("live Queue snapshots stay personal and reconnect to current state", async 
     revokeKey(path.join(root, "devices.json"), "a1");
     const replay = await call("a2", "/queue/active", "PUT", { setId: set.id });
     expect(replay.status).toBe(200);
+    // oxlint-disable-next-line typescript/await-thenable -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
     await expect(reconnected.next()).rejects.toThrow("The event stream closed");
     await mkdir(path.resolve(import.meta.dir, "../../../.cache/queue-events"), {
       recursive: true,

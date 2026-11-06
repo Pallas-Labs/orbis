@@ -70,7 +70,7 @@ export class DownloadWorker extends Context.Service<
   DownloadWorker,
   {
     readonly wake: Effect.Effect<void>;
-    readonly processNext: Effect.Effect<boolean, never>;
+    readonly processNext: Effect.Effect<boolean>;
     readonly progressFor: (id: string) => DownloadProgress | undefined;
     readonly abort: (id: string) => void;
   }

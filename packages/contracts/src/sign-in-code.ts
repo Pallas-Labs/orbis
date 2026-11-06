@@ -43,6 +43,7 @@ const linkFragment = (text: string): string | null => {
  * such as `https://orbis.p11a.xyz/join#K7Q2M9XH4RPA` keeps only its passcode.
  */
 export const codeFromText = (format: CodeFormat, text: string): string =>
+  // oxlint-disable-next-line typescript/no-misused-spread -- sign-in codes are ASCII, so each code point is one character.
   [...(linkFragment(text) ?? text).toUpperCase()]
     .filter((character) => format.alphabet.includes(character))
     .join("")

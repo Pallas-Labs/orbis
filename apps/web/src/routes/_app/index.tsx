@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-router";
 import { Schema } from "effect";
 import { useRef, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, SubmitEvent } from "react";
 
 import { AppleMusicSearch } from "@/components/library/apple-music-search";
 import { SOURCE_LABELS, SetRow } from "@/components/library/set-row";
@@ -19,6 +19,8 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
+import { detach } from "@/lib/detach";
+import { formField } from "@/lib/form";
 import { listSets, listTags, saveSet, setAutoDownload } from "@/lib/library";
 import type {
   AutoDownloadResult,
@@ -50,9 +52,13 @@ const saveNotice = (result: AutoDownloadResult): string | null => {
     case "unavailable": {
       return "Saved. Downloads are unavailable right now.";
     }
-    default: {
+    case "disabled":
+    case "inProgress":
+    case "queued":
+    case "ready": {
       return null;
     }
+    // no default
   }
 };
 
@@ -64,10 +70,10 @@ const SaveSetForm = ({
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const save = async (event: FormEvent<HTMLFormElement>) => {
+  const save = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
-    const url = String(new FormData(form).get("url") ?? "").trim();
+    const url = formField(new FormData(form), "url");
     if (url === "") {
       setMessage("Paste a YouTube, SoundCloud, or Apple Music link.");
       return;
@@ -93,7 +99,7 @@ const SaveSetForm = ({
     await router.invalidate();
   };
   return (
-    <form className="flex flex-col gap-2" onSubmit={save}>
+    <form className="flex flex-col gap-2" onSubmit={detach(save)}>
       <Label htmlFor="source-link">Source Link</Label>
       <div className="flex gap-2">
         <Input
@@ -211,7 +217,7 @@ const AutoDownloadSwitch = ({ session }: { readonly session: Session }) => {
           aria-label="Auto Download"
           checked={session.person.autoDownload}
           disabled={pending}
-          onCheckedChange={change}
+          onCheckedChange={detach(change)}
         />
         <span aria-hidden>Auto Download</span>
       </div>

@@ -77,6 +77,7 @@ const DumpedJson = Schema.Struct({
   uploader_url: NullableString,
 });
 const decodeDumpedJsonOption = Schema.decodeUnknownOption(DumpedJson);
+const parseJson = Schema.decodeSync(Schema.fromJsonString(Schema.Unknown));
 
 type Dumped = typeof DumpedJson.Type;
 
@@ -205,7 +206,7 @@ export const ytDlpMetadata = (
     const body: unknown = yield* Effect.try({
       catch: () =>
         failure("yt-dlp did not answer with JSON.", "unexpected-response"),
-      try: () => JSON.parse(output),
+      try: () => parseJson(output),
     });
     const decoded = decodeDumpedJsonOption(body);
     if (Option.isNone(decoded)) {

@@ -36,7 +36,7 @@ test("trims the trailing slash from the configured service URL", async () => {
   const urls: string[] = [];
   await saveSourceUrl("https://youtu.be/abcdefghijk", {
     fetch: (input) => {
-      urls.push(String(input));
+      urls.push(input);
       return Promise.resolve(new Response(null, { status: 201 }));
     },
     preferences: { ...preferences, serviceUrl: "https://orbis.test/" },
@@ -49,7 +49,7 @@ test("keeps a path on the configured service URL", async () => {
   const urls: string[] = [];
   await saveSourceUrl("https://youtu.be/abcdefghijk", {
     fetch: (input) => {
-      urls.push(String(input));
+      urls.push(input);
       return Promise.resolve(new Response(null, { status: 201 }));
     },
     preferences: {

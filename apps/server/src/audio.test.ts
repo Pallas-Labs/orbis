@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { Schema } from "effect";
+import { Predicate, Schema } from "effect";
 
 import type { AudioOptions } from "./audio.js";
 import { createTestApp as createApp, storedKey } from "./test-app.js";
@@ -44,7 +44,11 @@ const stubFetch =
     if (target.startsWith("http://cobalt.test/")) {
       // The stub only reads url for routing; the worker Schema-decodes the rest.
       return Promise.resolve(
-        handlers.cobalt(decodeCobaltProbeBody(JSON.parse(String(init?.body))))
+        handlers.cobalt(
+          decodeCobaltProbeBody(
+            JSON.parse(Predicate.isString(init?.body) ? init.body : "")
+          )
+        )
       );
     }
     // Route handlers always pass a signal; the stub forwards it to paced tunnels.

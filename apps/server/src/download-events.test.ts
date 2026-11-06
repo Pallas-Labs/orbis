@@ -40,7 +40,7 @@ test("a failed download emits one event that names each backend's cause", async 
       cobaltUrl: "http://cobalt.test/",
       fetch: (target) =>
         Promise.resolve(
-          String(target).startsWith("http://cobalt.test/")
+          target.startsWith("http://cobalt.test/")
             ? Response.json({ status: "tunnel", url: "http://cdn.test/a" })
             : new Response(new Uint8Array(0), {
                 headers: { "content-length": "0" },

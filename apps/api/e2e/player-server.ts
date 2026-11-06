@@ -102,9 +102,12 @@ console.log(
     token: "smoke-token",
   })
 );
-process.on("SIGTERM", async () => {
+const stop = async () => {
   await api.stop(true);
   await audio.stop(true);
   await runtime.dispose();
   process.exit(0);
+};
+process.on("SIGTERM", () => {
+  void stop();
 });

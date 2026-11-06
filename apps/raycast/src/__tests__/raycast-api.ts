@@ -103,7 +103,7 @@ const trackToast = (options: ToastSnapshot) =>
  * toast state so a test can assert what the user would see. Call before importing a command.
  */
 export const installRaycastApi = () => {
-  mock.module("@raycast/api", () => ({
+  void mock.module("@raycast/api", () => ({
     BrowserExtension: {
       getContent: () =>
         raycast.focusedTitle === undefined

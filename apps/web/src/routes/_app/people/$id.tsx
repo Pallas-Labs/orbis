@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { detach } from "@/lib/detach";
 import { listSets, requestDownload, saveSet } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
@@ -115,7 +116,7 @@ const FriendSetRow = ({
           <Button
             aria-label={`Play ${set.title}`}
             disabled={pending}
-            onClick={() => act(() => player.play(set))}
+            onClick={detach(() => act(() => player.play(set)))}
             size="sm"
             variant="outline"
           >
@@ -126,7 +127,9 @@ const FriendSetRow = ({
           <Button
             aria-label={`Download ${set.title}`}
             disabled={pending}
-            onClick={() => act(() => requestDownload(credentials, set.id))}
+            onClick={detach(() =>
+              act(() => requestDownload(credentials, set.id))
+            )}
             size="sm"
             variant="outline"
           >
@@ -141,7 +144,7 @@ const FriendSetRow = ({
           <Button
             aria-label={`Save ${set.title}`}
             disabled={pending}
-            onClick={() => act(() => saveSet(credentials, set.url))}
+            onClick={detach(() => act(() => saveSet(credentials, set.url)))}
             size="sm"
           >
             Save

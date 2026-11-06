@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatDate, lastUsedText } from "@/lib/dates";
+import { detach } from "@/lib/detach";
 import { listDevices, requestSignInCode, revokeDevice } from "@/lib/devices";
 import type { Device } from "@/lib/devices";
 import { problemFor } from "@/lib/orbis";
@@ -99,7 +100,7 @@ const SignInAnotherDevice = ({ session }: { readonly session: Session }) => {
       <Button
         className="self-start"
         disabled={busy}
-        onClick={request}
+        onClick={detach(request)}
         variant={code === null ? "default" : "outline"}
       >
         {code === null ? "Sign in another device" : "Get a new code"}

@@ -159,7 +159,13 @@ const connect = async (
       pongs += 1;
       return;
     }
-    const command = decodeNodeCommand(JSON.parse(String(event.data)));
+    const command = decodeNodeCommand(
+      JSON.parse(
+        event.data instanceof ArrayBuffer
+          ? new TextDecoder().decode(event.data)
+          : event.data
+      )
+    );
     commands.push(command);
     transcript.push(command);
   });

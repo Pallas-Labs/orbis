@@ -764,7 +764,9 @@ async function fetchInstanceInfo(options, parentSignal) {
   }
   return {
     apiUrl: typeof cobalt.url === "string" ? cobalt.url : null,
-    services: services.map((service) => service.toLowerCase()).toSorted(),
+    services: services
+      .map((service) => service.toLowerCase())
+      .toSorted((a, b) => a.localeCompare(b)),
     version: typeof cobalt.version === "string" ? cobalt.version : null,
   };
 }

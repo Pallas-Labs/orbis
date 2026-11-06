@@ -196,7 +196,7 @@ const app = createApp({
       "https://otlp.parthm.me/v1/logs",
   },
 });
-const fixture = await startFixtureServer({
+const fixture = startFixtureServer({
   allowedOrigin: process.env.ORBIS_FIXTURE_ORIGIN,
   app,
   port: Number(process.env.ORBIS_FIXTURE_PORT ?? 0),
@@ -216,5 +216,9 @@ const close = async () => {
   }
   process.exit(0);
 };
-process.once("SIGINT", () => close());
-process.once("SIGTERM", () => close());
+process.once("SIGINT", () => {
+  void close();
+});
+process.once("SIGTERM", () => {
+  void close();
+});

@@ -354,7 +354,7 @@ test("an existing trust database drops Invites and keeps the passcode across res
   const devicesPath = path.join(directory, "devices.json");
   const database = new Database(databasePath, { create: true });
   try {
-    database.exec(PRE_PASSCODE_TRUST);
+    database.run(PRE_PASSCODE_TRUST);
     database
       .query(
         "INSERT INTO api_keys VALUES ('host-admin', ?, 'Recovery', 'admin', 'host', '2026-01-01T00:00:00.000Z', NULL)"
@@ -415,7 +415,7 @@ test("a key stored as admin reports Presence after the upgrade and keeps Host po
   const devicesPath = path.join(directory, "devices.json");
   const database = new Database(databasePath, { create: true });
   try {
-    database.exec(PRE_PASSCODE_TRUST);
+    database.run(PRE_PASSCODE_TRUST);
     database
       .query(
         "INSERT INTO api_keys VALUES ('host-iphone', ?, 'iPhone', 'admin', 'host', '2026-01-01T00:00:00.000Z', NULL)"

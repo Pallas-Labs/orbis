@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,8 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
+import { detach } from "@/lib/detach";
+import { formText } from "@/lib/form";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
 import { setCollaborative, setEditors } from "@/lib/playlists";
@@ -56,9 +58,9 @@ export const CollaborationCard = ({
     people.find((person) => person.id === id)?.username ??
     "A Person you cannot see";
   const candidates = people.filter((person) => !editorIds.includes(person.id));
-  const addEditor = (event: FormEvent<HTMLFormElement>) => {
+  const addEditor = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const id = String(new FormData(event.currentTarget).get("editor") ?? "");
+    const id = formText(new FormData(event.currentTarget), "editor");
     if (id !== "") {
       void settle(
         setEditors(credentials, playlistId, [...editorIds, id]),
@@ -82,12 +84,12 @@ export const CollaborationCard = ({
           <Switch
             checked={collaboration.collaborative}
             disabled={pending}
-            onCheckedChange={(checked) =>
+            onCheckedChange={detach((checked) =>
               settle(
                 setCollaborative(credentials, playlistId, checked),
                 FAILURE_MESSAGES.failed
               )
-            }
+            )}
           />
           Collaborative
         </Label>
@@ -106,7 +108,7 @@ export const CollaborationCard = ({
                     <Button
                       aria-label={`Remove editor ${nameOf(id)}`}
                       disabled={pending}
-                      onClick={() =>
+                      onClick={detach(() =>
                         settle(
                           setEditors(
                             credentials,
@@ -115,7 +117,7 @@ export const CollaborationCard = ({
                           ),
                           FAILURE_MESSAGES.failed
                         )
-                      }
+                      )}
                       size="sm"
                       variant="outline"
                     >

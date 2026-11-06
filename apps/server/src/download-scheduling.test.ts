@@ -97,7 +97,7 @@ const fixture = async (startWorker: boolean) => {
       port: 0,
       token: "seeded-test-fixture",
     });
-  let listeners = await open();
+  let listeners = open();
   const request = (
     person: string,
     route: string,
@@ -138,7 +138,7 @@ const fixture = async (startWorker: boolean) => {
       workerEnabled = enabled;
       await listeners.stop();
       held.resolve(new Response(null, { status: 503 }));
-      listeners = await open();
+      listeners = open();
     },
     root,
     save,

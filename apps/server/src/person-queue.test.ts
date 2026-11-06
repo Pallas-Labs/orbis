@@ -32,7 +32,7 @@ const writePreviousDatabase = (databasePath: string) => {
     }).filter(
       (migration) => migration.name <= "20260928140000_library_entries"
     );
-    database.exec(`
+    database.run(`
       PRAGMA foreign_keys = ON;
       CREATE TABLE __drizzle_migrations (
         id INTEGER PRIMARY KEY, hash TEXT NOT NULL, created_at numeric,
@@ -42,7 +42,7 @@ const writePreviousDatabase = (databasePath: string) => {
     for (const migration of migrations) {
       for (const statement of migration.sql) {
         if (statement.trim()) {
-          database.exec(statement);
+          database.run(statement);
         }
       }
       database
@@ -51,7 +51,7 @@ const writePreviousDatabase = (databasePath: string) => {
         )
         .run(migration.hash, migration.folderMillis, migration.name);
     }
-    database.exec("PRAGMA user_version = 2");
+    database.run("PRAGMA user_version = 2");
     const insertSet = database.query(`
       INSERT INTO sets (id, url, title, source, tags, created_at,
         download_state, retained_audio_format, playback_position_seconds,
@@ -77,7 +77,7 @@ const writePreviousDatabase = (databasePath: string) => {
       0,
       null
     );
-    database.exec(`
+    database.run(`
       INSERT INTO library_entries (person_id, set_id, saved_at, tags)
       VALUES ('host', 'a', '2026-01-01T00:00:00.000Z', '[]'),
              ('host', 'b', '2026-01-01T00:00:00.000Z', '[]');

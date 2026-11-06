@@ -32,7 +32,7 @@ export default Alchemy.Stack(
     state: Cloudflare.state(),
   },
   Effect.gen(function* deployWeb() {
-    const secrets: Record<string, Redacted.Redacted<string>> = {};
+    const secrets: Record<string, Redacted.Redacted> = {};
     const kept: string[] = [];
     for (const name of SECRETS) {
       const value = yield* readSecret(name);

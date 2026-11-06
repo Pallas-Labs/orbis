@@ -287,6 +287,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       return;
     }
     // SAFETY: Bun implements this headers overload; lib.dom only declares the browser overload.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
     const BunSocket = WebSocket as typeof WebSocket & {
       new (url: string, options: Bun.WebSocketOptions): WebSocket;
     };
@@ -303,7 +304,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
     // A long silence before a close points at an idle timeout; a short one, at a drop mid-traffic.
     let lastMessageAt = 0;
     let heartbeat: ReturnType<typeof setInterval> | undefined;
-    current.addEventListener("open", async () => {
+    const onOpen = async () => {
       opened = true;
       openedAt = Date.now();
       lastMessageAt = openedAt;
@@ -336,6 +337,9 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       } catch {
         current.close();
       }
+    };
+    current.addEventListener("open", () => {
+      void onOpen();
     });
     current.addEventListener("message", (event) => {
       lastMessageAt = Date.now();
@@ -371,7 +375,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       }
     });
     current.addEventListener("error", () => current.close());
-    current.addEventListener("close", async (event) => {
+    const onClose = async (event: CloseEvent) => {
       clearInterval(heartbeat);
       // A connect that never opened is reported by the reconnect that follows it.
       if (opened) {
@@ -411,6 +415,9 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
         options.logging
       );
       retry = setTimeout(connect, delay);
+    };
+    current.addEventListener("close", (event) => {
+      void onClose(event);
     });
   };
   connect();

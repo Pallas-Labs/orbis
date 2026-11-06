@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { detach } from "@/lib/detach";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
 import { listPeopleFilters, setFilter, setSocial } from "@/lib/people";
@@ -64,9 +65,9 @@ const SocialSwitch = ({ session }: { readonly session: Session }) => {
           aria-labelledby={labelId}
           checked={session.person.social}
           disabled={pending}
-          onCheckedChange={(checked) =>
+          onCheckedChange={detach((checked) =>
             change(() => setSocial(session, checked))
-          }
+          )}
         />
       </div>
       <Problem problem={problem} />
@@ -142,18 +143,18 @@ const PersonRow = ({
           disabled={pending}
           label="See"
           name={`See ${person.username}`}
-          onChange={(see) =>
+          onChange={detach((see) =>
             change(() => setFilter(credentials, person.id, { see }))
-          }
+          )}
         />
         <FilterSwitch
           checked={person.appear}
           disabled={pending}
           label="Appear"
           name={`Appear to ${person.username}`}
-          onChange={(appear) =>
+          onChange={detach((appear) =>
             change(() => setFilter(credentials, person.id, { appear }))
-          }
+          )}
         />
       </div>
       <Problem problem={problem} />
