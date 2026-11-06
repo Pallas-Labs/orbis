@@ -85,7 +85,7 @@ const app = createApp({
   }),
 });
 const server = Bun.serve({
-  fetch: (request) => app.handler(request, "device", "127.0.0.1"),
+  fetch: async (request) => await app.handler(request, "device", "127.0.0.1"),
   hostname: "127.0.0.1",
   port: 0,
 });

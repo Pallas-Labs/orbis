@@ -78,7 +78,7 @@ const AddSetsDialog = ({
         <DialogFooter>
           <Button
             disabled={pending || chosen.length === 0}
-            onClick={detach(() => onAdd(chosen))}
+            onClick={detach(async () => await onAdd(chosen))}
           >
             {chosen.length > 1 ? `Add ${chosen.length} Sets` : "Add"}
           </Button>
@@ -177,8 +177,8 @@ export const Members = ({
               <Button
                 aria-label={`Remove ${set.title} from ${playlist.name}`}
                 disabled={pending}
-                onClick={detach(() =>
-                  change(ids.filter((id) => id !== set.id))
+                onClick={detach(
+                  async () => await change(ids.filter((id) => id !== set.id))
                 )}
                 size="sm"
                 variant="outline"
@@ -193,7 +193,7 @@ export const Members = ({
         <AddSetsDialog
           candidates={library.filter((set) => !members.has(set.id))}
           emptyLibrary={library.length === 0}
-          onAdd={(setIds) => change([...ids, ...setIds])}
+          onAdd={async (setIds) => await change([...ids, ...setIds])}
           onClose={() => setAdding(false)}
           pending={pending}
           playlistName={playlist.name}

@@ -41,7 +41,9 @@ const SignIn = () => {
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           <SignInForm
-            call={(form) => redeemSignInCode(apiUrl, formField(form, "code"))}
+            call={async (form) =>
+              await redeemSignInCode(apiUrl, formField(form, "code"))
+            }
             check={(form) =>
               formField(form, "code").length === SIGN_IN_CODE.length
                 ? null
@@ -67,8 +69,8 @@ const SignIn = () => {
           </SignInForm>
           <Separator />
           <SignInForm
-            call={(form) =>
-              joinGroup(
+            call={async (form) =>
+              await joinGroup(
                 apiUrl,
                 formField(form, "username"),
                 formField(form, "passcode")

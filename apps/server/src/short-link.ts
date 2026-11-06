@@ -18,8 +18,8 @@ const unresolved = () =>
     statusCode: 400,
   });
 
-const defaultFetch: RedirectFetch = (url, signal) =>
-  fetch(url, { redirect: "manual", signal });
+const defaultFetch: RedirectFetch = async (url, signal) =>
+  await fetch(url, { redirect: "manual", signal });
 
 const isShortLink = (value: string) => {
   try {
@@ -43,7 +43,7 @@ export const expandShortLink = Effect.fn("ShortLink.expand")(
     }
     const response = yield* Effect.tryPromise({
       catch: unresolved,
-      try: (signal) => request(value.trim(), signal),
+      try: async (signal) => await request(value.trim(), signal),
     });
     const location = response.headers.get("location");
     if (response.status < 300 || response.status >= 400 || !location) {

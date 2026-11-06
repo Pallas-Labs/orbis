@@ -62,7 +62,7 @@ const load = async (
  * The first of `urls` that loads as a JPEG within the shared time limit, or null. Every
  * failure, from a refused address to a corrupt file, means the image draws without Artwork.
  */
-export const loadArtwork = (
+export const loadArtwork = async (
   urls: readonly (string | null)[]
 ): Promise<Bitmap | null> => {
   const signal = AbortSignal.timeout(TIMEOUT_MS);
@@ -86,5 +86,5 @@ export const loadArtwork = (
     }
     return await attempt(index + 1);
   };
-  return attempt(0);
+  return await attempt(0);
 };

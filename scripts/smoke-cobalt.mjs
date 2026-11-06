@@ -571,8 +571,8 @@ async function cancelResponse(response) {
   }
 }
 
-function requestJson(url, init, parentSignal, timeoutMs) {
-  return withDeadline(parentSignal, timeoutMs, async (signal) => {
+async function requestJson(url, init, parentSignal, timeoutMs) {
+  return await withDeadline(parentSignal, timeoutMs, async (signal) => {
     const response = await fetch(url, { ...init, redirect: "manual", signal });
     if (response.status >= 300 && response.status < 400) {
       await cancelResponse(response);
@@ -872,14 +872,14 @@ async function keepAcceptedFile(filePath, directory, name) {
   return target;
 }
 
-function downloadTunnel(
+async function downloadTunnel(
   tunnelUrl,
   filePath,
   options,
   parentSignal,
   interruptAfterBytes
 ) {
-  return withDeadline(
+  return await withDeadline(
     parentSignal,
     options.downloadTimeoutMs,
     async (signal) => {

@@ -86,17 +86,19 @@ const OpenPasscode = ({
       <div className="flex flex-wrap gap-2">
         <ConfirmDialog
           action="New passcode"
-          call={() => newPasscode(session)}
+          call={async () => await newPasscode(session)}
           description="The passcode you shared stops working. People who joined stay signed in."
           label="New passcode"
-          onDone={() => router.invalidate()}
+          onDone={async () => await router.invalidate()}
           pendingAction="Making…"
           title="Make a new passcode?"
           trigger="New passcode"
         />
         <Button
           disabled={busy}
-          onClick={detach(() => change(() => closeJoining(session)))}
+          onClick={detach(
+            async () => await change(async () => await closeJoining(session))
+          )}
           size="sm"
           variant="outline"
         >
@@ -127,7 +129,9 @@ const Passcode = ({
           <Button
             className="self-start"
             disabled={busy}
-            onClick={detach(() => change(() => newPasscode(session)))}
+            onClick={detach(
+              async () => await change(async () => await newPasscode(session))
+            )}
           >
             Open joining
           </Button>
@@ -157,7 +161,9 @@ const PersonRow = ({
   const [code, setCode] = useState<IssuedSignInCode | null>(null);
   const isHost = person.id === session.person.id;
   const showCode = async () => {
-    const issued = await run(() => signInCodeFor(session, person.id));
+    const issued = await run(
+      async () => await signInCodeFor(session, person.id)
+    );
     if (issued !== null) {
       setCode(issued);
     }
@@ -179,10 +185,10 @@ const PersonRow = ({
         {isHost ? null : (
           <ConfirmDialog
             action="Remove"
-            call={() => removePerson(session, person.id)}
+            call={async () => await removePerson(session, person.id)}
             description="This deletes their keys, Library, Playlists, Listening Queue, and Listen History. You cannot undo it."
             label={`Remove ${person.username}`}
-            onDone={() => router.invalidate()}
+            onDone={async () => await router.invalidate()}
             pendingAction="Removing…"
             title={`Remove ${person.username}?`}
             trigger={`Remove ${person.username}`}
@@ -258,7 +264,9 @@ const Keys = ({
       refuse("Name the key, such as Raycast.");
       return;
     }
-    const created = await change(() => createKey(session, personId, label));
+    const created = await change(
+      async () => await createKey(session, personId, label)
+    );
     if (created !== null) {
       form.reset();
       setToken(created.token);
@@ -286,10 +294,10 @@ const Keys = ({
               {key.scope === "node" ? null : (
                 <ConfirmDialog
                   action="Revoke"
-                  call={() => revokeKey(session, key.id)}
+                  call={async () => await revokeKey(session, key.id)}
                   description={`Whatever uses this key is signed out as ${owner} the next time it contacts Orbis.`}
                   label={`Revoke ${key.label} for ${owner}`}
-                  onDone={() => router.invalidate()}
+                  onDone={async () => await router.invalidate()}
                   pendingAction="Revoking…"
                   title={`Revoke ${key.label}?`}
                   trigger="Revoke"
@@ -372,5 +380,5 @@ export const Route = createFileRoute("/_app/admin")({
     />
   ),
   errorComponent: RouteProblem,
-  loader: ({ context }) => loadAdmin(context.session),
+  loader: async ({ context }) => await loadAdmin(context.session),
 });

@@ -191,7 +191,9 @@ export const SHARE_IMAGE_VERSION = 1;
  * The 1200x630 preview an Orbis Link unfurls into: the Set's Artwork as a card over its own
  * blurred glow, the provider title, the creator, and the Orbis mark.
  */
-export const renderShareImage = (card: ShareCard): Promise<Uint8Array> => {
+export const renderShareImage = async (
+  card: ShareCard
+): Promise<Uint8Array> => {
   const { bold, medium } = loadFonts();
   const canvas = card.artwork
     ? glowCanvas(card.artwork)
@@ -235,5 +237,5 @@ export const renderShareImage = (card: ShareCard): Promise<Uint8Array> => {
       MUTED
     );
   }
-  return encodePng(canvas);
+  return await encodePng(canvas);
 };

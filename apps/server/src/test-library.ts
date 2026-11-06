@@ -153,11 +153,11 @@ export const queueEntry = async (
   return { queue: queueIn(response), response };
 };
 
-export const playNext = (app: App, setId: string) =>
-  queueEntry(app, setId, "next");
+export const playNext = async (app: App, setId: string) =>
+  await queueEntry(app, setId, "next");
 
-export const addToQueue = (app: App, setId: string) =>
-  queueEntry(app, setId, "end");
+export const addToQueue = async (app: App, setId: string) =>
+  await queueEntry(app, setId, "end");
 
 export const complete = async (app: App, setId: string) => {
   const response = await request(app, {

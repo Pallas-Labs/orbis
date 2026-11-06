@@ -182,7 +182,7 @@ const Approve = ({
         </Button>
         <Button
           disabled={busy}
-          onClick={detach(() => navigate({ to: "/" }))}
+          onClick={detach(async () => await navigate({ to: "/" }))}
           variant="outline"
         >
           Cancel
@@ -273,5 +273,5 @@ const PairPage = () => <Pair loaded={pairRoute.useLoaderData()} />;
 
 export const Route = createFileRoute("/_browser/pair")({
   component: PairPage,
-  loader: ({ context }) => loadPairing(context.apiUrl),
+  loader: async ({ context }) => await loadPairing(context.apiUrl),
 });

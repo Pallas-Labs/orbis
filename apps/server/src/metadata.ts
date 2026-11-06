@@ -200,7 +200,8 @@ const requestJson = Effect.fn("Metadata.requestJson")(
   ): Effect.fn.Return<S["Type"], MetadataError> {
     const response = yield* Effect.tryPromise({
       catch: () => unavailable(`${options.label} is unreachable.`),
-      try: (signal) => options.request(url, signal, options.headers),
+      try: async (signal) =>
+        await options.request(url, signal, options.headers),
     });
     if (response.status === 404 && options.notFound) {
       return yield* Effect.fail(options.notFound);
@@ -214,7 +215,10 @@ const requestJson = Effect.fn("Metadata.requestJson")(
     }
     const body: unknown = yield* Effect.tryPromise({
       catch: () => unexpected(`${options.label} did not answer with JSON.`),
-      try: () => response.json(),
+      try: async () => {
+        const json: unknown = await response.json();
+        return json;
+      },
     });
     const decoded = Schema.decodeUnknownOption(schema)(body);
     if (Option.isNone(decoded)) {
@@ -835,8 +839,8 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
   static layer(options: MetadataOptions = {}): Layer.Layer<Metadata> {
     const request: RequestFetch =
       options.fetch ??
-      ((url, signal, headers) =>
-        fetch(url, headers ? { headers, signal } : { signal }));
+      (async (url, signal, headers) =>
+        await fetch(url, headers ? { headers, signal } : { signal }));
     const providers: Partial<Record<SetSource, Provider>> = {
       soundcloud: soundCloudProvider(request),
     };

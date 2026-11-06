@@ -108,8 +108,8 @@ export class Ytdlp extends Context.Service<
           });
         }
         // A broken extractor is identifiable from the version alone.
-        yield* Effect.tryPromise((signal) =>
-          run([bin, "--version"], signal)
+        yield* Effect.tryPromise(
+          async (signal) => await run([bin, "--version"], signal)
         ).pipe(
           Effect.matchEffect({
             onFailure: () => Effect.logWarning("yt-dlp version unreadable"),
@@ -158,7 +158,7 @@ export class Ytdlp extends Context.Service<
                 ? Effect.tryPromise({
                     catch: () =>
                       downloadFailed("yt-dlp could not fetch this audio."),
-                    try: () => rename(output, destination),
+                    try: async () => await rename(output, destination),
                   })
                 : Effect.logWarning("yt-dlp run failed").pipe(
                     Effect.annotateLogs({
@@ -185,11 +185,12 @@ export class Ytdlp extends Context.Service<
             onProgress: (received: number, total: number | null) => void,
             signal: AbortSignal
           ) {
-            const removePartial = Effect.promise(() =>
-              Promise.allSettled([
-                rm(destination, { force: true }),
-                rm(`${destination}.ytdl`, { force: true }),
-              ])
+            const removePartial = Effect.promise(
+              async () =>
+                await Promise.allSettled([
+                  rm(destination, { force: true }),
+                  rm(`${destination}.ytdl`, { force: true }),
+                ])
             );
             // Cookies are a fallback for content that refuses anonymous access.
             const cookies = options.ytdlpCookies;

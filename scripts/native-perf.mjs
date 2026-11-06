@@ -79,17 +79,19 @@ try {
   };
 
   const seedStarted = performance.now();
-  const seeds = Array.from({ length: total }, (_, n) =>
-    fetch(`${base}/sets`, {
-      body: JSON.stringify({
-        tags: [`tag${n % 20}`],
-        title: `Set ${n}`,
-        url: `https://www.youtube.com/watch?v=${String(n).padStart(11, "a")}`,
-      }),
-      headers,
-      method: "POST",
-      signal: AbortSignal.timeout(60_000),
-    })
+  const seeds = Array.from(
+    { length: total },
+    async (_, n) =>
+      await fetch(`${base}/sets`, {
+        body: JSON.stringify({
+          tags: [`tag${n % 20}`],
+          title: `Set ${n}`,
+          url: `https://www.youtube.com/watch?v=${String(n).padStart(11, "a")}`,
+        }),
+        headers,
+        method: "POST",
+        signal: AbortSignal.timeout(60_000),
+      })
   );
   // oxlint-disable-next-line orbis/bounded-concurrency -- the probe seeds a disposable loopback service that this script starts and stops.
   await Promise.all(seeds);

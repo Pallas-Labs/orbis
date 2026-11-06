@@ -39,7 +39,7 @@ export const makeAudioLayer = (node?: GroupAudioNode) =>
       const library = yield* Library;
       const set = yield* library.cancelDownload(id);
       if (node) {
-        yield* Effect.promise(() => node.cancel(id));
+        yield* Effect.promise(async () => await node.cancel(id));
       }
       return set;
     }),
@@ -55,7 +55,7 @@ export const makeAudioLayer = (node?: GroupAudioNode) =>
       }
       const set = yield* library.queueDownload(id);
       if (node) {
-        yield* Effect.promise(() => node.wake());
+        yield* Effect.promise(async () => await node.wake());
       }
       return { accepted: true, set };
     }),

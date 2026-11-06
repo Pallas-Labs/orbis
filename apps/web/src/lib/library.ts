@@ -15,7 +15,10 @@ interface SetsQuery {
   tag?: string[];
 }
 
-export const listSets = (credentials: Credentials, filters: LibraryFilters) => {
+export const listSets = async (
+  credentials: Credentials,
+  filters: LibraryFilters
+) => {
   const query: SetsQuery = {};
   if (filters.q !== undefined) {
     query.q = filters.q;
@@ -26,12 +29,12 @@ export const listSets = (credentials: Credentials, filters: LibraryFilters) => {
   if (filters.tag !== undefined) {
     query.tag = [filters.tag];
   }
-  return callOrbis(credentials, (client) => client.sets.list({ query }));
+  return await callOrbis(credentials, (client) => client.sets.list({ query }));
 };
 
 /** Albums in the US Apple Music catalog for these words, DJ mixes first (ADR 0021). */
-export const searchAppleMusic = (credentials: Credentials, q: string) =>
-  callOrbis(credentials, (client) =>
+export const searchAppleMusic = async (credentials: Credentials, q: string) =>
+  await callOrbis(credentials, (client) =>
     client.appleMusic.search({ query: { q } })
   );
 
@@ -40,45 +43,49 @@ export type AppleMusicAlbum = Extract<
   { ok: true }
 >["value"]["albums"][number];
 
-export const listTags = (credentials: Credentials) =>
-  callOrbis(credentials, (client) => client.library.tags());
+export const listTags = async (credentials: Credentials) =>
+  await callOrbis(credentials, (client) => client.library.tags());
 
-export const saveSet = (credentials: Credentials, url: string) =>
-  callOrbis(credentials, (client) => client.sets.save({ payload: { url } }));
+export const saveSet = async (credentials: Credentials, url: string) =>
+  await callOrbis(credentials, (client) =>
+    client.sets.save({ payload: { url } })
+  );
 
-export const renameSet = (
+export const renameSet = async (
   credentials: Credentials,
   id: string,
   title: string
 ) =>
-  callOrbis(credentials, (client) =>
+  await callOrbis(credentials, (client) =>
     client.sets.updateTitle({ params: { id }, payload: { title } })
   );
 
-export const updateTags = (
+export const updateTags = async (
   credentials: Credentials,
   id: string,
   tags: readonly string[]
 ) =>
-  callOrbis(credentials, (client) =>
+  await callOrbis(credentials, (client) =>
     client.library.updateTags({ params: { id }, payload: { tags: [...tags] } })
   );
 
-export const removeSet = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) => client.sets.remove({ params: { id } }));
+export const removeSet = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
+    client.sets.remove({ params: { id } })
+  );
 
-export const requestDownload = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) =>
+export const requestDownload = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
     client.sets.requestDownload({ params: { id } })
   );
 
-export const cancelDownload = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) =>
+export const cancelDownload = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
     client.sets.cancelDownload({ params: { id } })
   );
 
-export const audioState = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) =>
+export const audioState = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
     client.sets.audioState({ params: { id } })
   );
 
@@ -92,10 +99,10 @@ export type AutoDownloadResult = Extract<
   { ok: true }
 >["value"]["autoDownloadResult"];
 
-export const setAutoDownload = (
+export const setAutoDownload = async (
   credentials: Credentials,
   autoDownload: boolean
 ) =>
-  callOrbis(credentials, (client) =>
+  await callOrbis(credentials, (client) =>
     client.people.updateMe({ payload: { autoDownload } })
   );

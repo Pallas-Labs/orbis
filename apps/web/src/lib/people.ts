@@ -2,38 +2,40 @@ import { callOrbis } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
 
 /** Turns the Person's Social switch on or off (ADR 0009). */
-export const setSocial = (credentials: Credentials, social: boolean) =>
-  callOrbis(credentials, (client) =>
+export const setSocial = async (credentials: Credentials, social: boolean) =>
+  await callOrbis(credentials, (client) =>
     client.people.updateMe({ payload: { social } })
   );
 
 /** The People the caller could see, with the caller's See and Appear for each. */
-export const listPeopleFilters = (credentials: Credentials) =>
-  callOrbis(credentials, (client) => client.people.socialFilters());
+export const listPeopleFilters = async (credentials: Credentials) =>
+  await callOrbis(credentials, (client) => client.people.socialFilters());
 
 /** The People who pass the social gate now. */
-export const listVisiblePeople = (credentials: Credentials) =>
-  callOrbis(credentials, (client) => client.people.list());
+export const listVisiblePeople = async (credentials: Credentials) =>
+  await callOrbis(credentials, (client) => client.people.list());
 
-export const setFilter = (
+export const setFilter = async (
   credentials: Credentials,
   id: string,
   filter: { readonly see: boolean } | { readonly appear: boolean }
 ) =>
-  callOrbis(credentials, (client) =>
+  await callOrbis(credentials, (client) =>
     client.people.filters({ params: { id }, payload: filter })
   );
 
-export const friendSets = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) => client.people.sets({ params: { id } }));
+export const friendSets = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
+    client.people.sets({ params: { id } })
+  );
 
-export const friendPlaylists = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) =>
+export const friendPlaylists = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
     client.people.friendPlaylists({ params: { id } })
   );
 
-export const friendListens = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) =>
+export const friendListens = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
     client.people.friendListens({ params: { id } })
   );
 

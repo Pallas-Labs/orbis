@@ -162,7 +162,7 @@ export const waitUntil = async (
  * reports the state it waits for reads the answer here, so the wait is stated
  * once instead of as a suppressed polling loop in every journey that needs one.
  */
-export const pollUntil = <Value>(
+export const pollUntil = async <Value>(
   check: () => Promise<Value | null | undefined>,
   options: { attempts?: number; interval?: number; message?: string } = {}
 ): Promise<Value> => {
@@ -182,7 +182,7 @@ export const pollUntil = <Value>(
     await Bun.sleep(interval);
     return await attempt(tryNumber + 1);
   };
-  return attempt(0);
+  return await attempt(0);
 };
 
 /**

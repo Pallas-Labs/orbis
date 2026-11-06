@@ -126,7 +126,7 @@ if (command === "export") {
   await Promise.all(
     files
       .slice(0, Math.max(0, files.length - 14))
-      .map((file) => rm(path.join(target, file)))
+      .map(async (file) => await rm(path.join(target, file)))
   );
 } else {
   throw new Error("Unknown transfer command.");

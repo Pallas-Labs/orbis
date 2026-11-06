@@ -179,7 +179,7 @@ const stylesheet = async (dist) => {
 
 // Waits until no font is loading, then for two drawn frames.
 const settle = async (page) => {
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => await document.fonts.ready);
   await page.evaluate(() => {
     const { promise, resolve } = Promise.withResolvers();
     requestAnimationFrame(() => {

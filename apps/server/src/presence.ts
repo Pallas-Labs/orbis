@@ -580,8 +580,8 @@ export class Presence extends Context.Service<
             return bunAlarm(at);
           }
           return Effect.matchEffect(
-            Effect.tryPromise(() =>
-              Promise.resolve(at === null ? alarm.cancel() : alarm.set(at))
+            Effect.tryPromise(async () =>
+              at === null ? await alarm.cancel() : await alarm.set(at)
             ),
             {
               onFailure: (error) =>

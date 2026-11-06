@@ -29,33 +29,36 @@ export type AdminPerson = AdminData["people"][number];
 export type AdminKey = AdminData["keys"][number];
 
 /** Opens joining with a fresh random passcode; the one before stops working. */
-export const newPasscode = (credentials: Credentials) =>
-  callOrbis(credentials, (client) => client.admin.newPasscode());
+export const newPasscode = async (credentials: Credentials) =>
+  await callOrbis(credentials, (client) => client.admin.newPasscode());
 
-export const closeJoining = (credentials: Credentials) =>
-  callOrbis(credentials, (client) => client.admin.closeJoining());
+export const closeJoining = async (credentials: Credentials) =>
+  await callOrbis(credentials, (client) => client.admin.closeJoining());
 
-export const signInCodeFor = (credentials: Credentials, personId: string) =>
-  callOrbis(credentials, (client) =>
+export const signInCodeFor = async (
+  credentials: Credentials,
+  personId: string
+) =>
+  await callOrbis(credentials, (client) =>
     client.admin.signInCodeFor({ params: { id: personId } })
   );
 
-export const removePerson = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) =>
+export const removePerson = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
     client.admin.removePerson({ params: { id } })
   );
 
 /** A daily key for a client that cannot sign in by code, such as Raycast. */
-export const createKey = (
+export const createKey = async (
   credentials: Credentials,
   personId: string,
   label: string
 ) =>
-  callOrbis(credentials, (client) =>
+  await callOrbis(credentials, (client) =>
     client.admin.addKey({ params: { id: personId }, payload: { label } })
   );
 
-export const revokeKey = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) =>
+export const revokeKey = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
     client.admin.revokeKey({ params: { id } })
   );

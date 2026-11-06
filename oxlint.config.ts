@@ -12,7 +12,6 @@ const RUNTIME_SOURCES = ["apps/*/src/**", "packages/*/src/**"];
 // turns each one on. The other type-aware rules run at error, or are off below with a reason.
 const ULTRACITE_TYPE_AWARE_DEBT = [
   "typescript/no-confusing-void-expression",
-  "typescript/promise-function-async",
   "typescript/strict-boolean-expressions",
   "typescript/strict-void-return",
 ];
@@ -124,6 +123,13 @@ export default defineConfig({
       excludeFiles: [...TEST_FILES, "apps/web/src/routeTree.gen.ts"],
       files: ["apps/web/src/**", "apps/raycast/src/**"],
       rules: { "t3code/no-em-dash-copy": "error" },
+    },
+    {
+      // typescript/promise-function-async -- a test double stubs a promise-returning interface
+      // with `() => Promise.resolve(value)`. With this rule on, unicorn/no-useless-promise-resolve-reject
+      // and eslint/require-await leave such a stub no form that passes.
+      files: [...TEST_CODE, "apps/raycast/src/__tests__/**"],
+      rules: { "typescript/promise-function-async": "off" },
     },
     {
       // Presence leases and alarms run on the real clock inside the service, so this suite

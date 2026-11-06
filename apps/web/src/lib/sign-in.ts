@@ -30,15 +30,19 @@ const browserLabel = (userAgent: string): string => {
   return system === null ? browser : `${browser} on ${system}`;
 };
 
-export const redeemSignInCode = (apiUrl: string, code: string) =>
-  callOrbisWithoutKey(apiUrl, (client) =>
+export const redeemSignInCode = async (apiUrl: string, code: string) =>
+  await callOrbisWithoutKey(apiUrl, (client) =>
     client.signIn.redeem({
       payload: { code, label: browserLabel(navigator.userAgent) },
     })
   );
 
-export const joinGroup = (apiUrl: string, username: string, passcode: string) =>
-  callOrbisWithoutKey(apiUrl, (client) =>
+export const joinGroup = async (
+  apiUrl: string,
+  username: string,
+  passcode: string
+) =>
+  await callOrbisWithoutKey(apiUrl, (client) =>
     client.signIn.join({
       payload: { label: browserLabel(navigator.userAgent), passcode, username },
     })

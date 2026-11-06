@@ -96,8 +96,9 @@ export class MediaStore extends Context.Service<
       try: async () => {
         // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the three audio formats.
         await Promise.all(
-          ["ogg", "mp3", "m4a"].map((suffix) =>
-            rm(path.join(directory, `${id}.${suffix}`), { force: true })
+          ["ogg", "mp3", "m4a"].map(
+            async (suffix) =>
+              await rm(path.join(directory, `${id}.${suffix}`), { force: true })
           )
         );
       },
@@ -223,7 +224,7 @@ export class MediaStore extends Context.Service<
                   ? "The download was canceled."
                   : "The audio stream broke off."
               ),
-            try: () => reader.read(),
+            try: async () => await reader.read(),
           });
           if (done) {
             return received;
@@ -237,7 +238,7 @@ export class MediaStore extends Context.Service<
           // A full buffer makes the sink return a promise that settles once it flushes.
           yield* Effect.tryPromise({
             catch: () => downloadFailed("Could not write the audio."),
-            try: () => Promise.resolve(writer.write(value)),
+            try: async () => await writer.write(value),
           });
           onProgress(next, Number.isFinite(total) ? total : null);
           return yield* drain(reader, next);
@@ -275,7 +276,7 @@ export class MediaStore extends Context.Service<
               downloadFailed("The downloaded audio could not be stored.")
             )
           );
-          yield* storeStep(() => rm(tmpPath, { force: true }));
+          yield* storeStep(async () => await rm(tmpPath, { force: true }));
           return {
             bytes: Bun.file(finalPath).size,
             durationSeconds,
@@ -284,7 +285,9 @@ export class MediaStore extends Context.Service<
         }
         if (container === "mp3" || container === "ogg") {
           const format = container;
-          yield* storeStep(() => rename(tmpPath, fileFor(setId, format)));
+          yield* storeStep(
+            async () => await rename(tmpPath, fileFor(setId, format))
+          );
           return {
             bytes: Bun.file(fileFor(setId, format)).size,
             durationSeconds,
@@ -293,7 +296,9 @@ export class MediaStore extends Context.Service<
         }
         // The stored format follows the source codec; m4a is kept as delivered.
         if (/mp4|m4a/u.test(container)) {
-          yield* storeStep(() => rename(tmpPath, fileFor(setId, "m4a")));
+          yield* storeStep(
+            async () => await rename(tmpPath, fileFor(setId, "m4a"))
+          );
           return {
             bytes: Bun.file(fileFor(setId, "m4a")).size,
             durationSeconds,
@@ -320,7 +325,7 @@ export class MediaStore extends Context.Service<
       }
       const filePath = fileFor(setId, format);
       const file = Bun.file(filePath);
-      if (!(yield* Effect.promise(() => file.exists()))) {
+      if (!(yield* Effect.promise(async () => await file.exists()))) {
         return yield* Effect.fail(
           new LibraryError({
             message: "Could not complete the library request.",
@@ -335,13 +340,17 @@ export class MediaStore extends Context.Service<
       } satisfies MediaFile;
     });
     const removeFiles = Effect.fn("MediaStore.removeFiles")((id: string) =>
-      Effect.promise(() =>
-        // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the five partial and audio suffixes.
-        Promise.all(
-          ["part", "part.ytdl", "ogg", "mp3", "m4a"].map((suffix) =>
-            rm(path.join(audioDir, `${id}.${suffix}`), { force: true })
+      Effect.promise(
+        async () =>
+          // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the five partial and audio suffixes.
+          await Promise.all(
+            ["part", "part.ytdl", "ogg", "mp3", "m4a"].map(
+              async (suffix) =>
+                await rm(path.join(audioDir, `${id}.${suffix}`), {
+                  force: true,
+                })
+            )
           )
-        )
       )
     );
     /**
@@ -360,7 +369,7 @@ export class MediaStore extends Context.Service<
     const inventory = Effect.fn("MediaStore.inventory")(function* inventory(
       onlySetId?: string
     ) {
-      const names = yield* Effect.promise(() => readdir(audioDir));
+      const names = yield* Effect.promise(async () => await readdir(audioDir));
       const present = new Set(names);
       for (const name of probed.keys()) {
         if (!present.has(name)) {
@@ -380,9 +389,9 @@ export class MediaStore extends Context.Service<
           continue;
         }
         const filePath = fileFor(setId, format);
-        const stats = yield* Effect.tryPromise(() => stat(filePath)).pipe(
-          Effect.option
-        );
+        const stats = yield* Effect.tryPromise(
+          async () => await stat(filePath)
+        ).pipe(Effect.option);
         if (stats._tag === "None") {
           continue;
         }
@@ -406,8 +415,8 @@ export class MediaStore extends Context.Service<
       }
       return files;
     });
-    const ensureDirectory = Effect.promise(() =>
-      mkdir(audioDir, { recursive: true })
+    const ensureDirectory = Effect.promise(
+      async () => await mkdir(audioDir, { recursive: true })
     ).pipe(Effect.withSpan("MediaStore.ensureDirectory"));
     return Layer.succeed(
       MediaStore,

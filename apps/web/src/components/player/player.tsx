@@ -83,6 +83,7 @@ export interface Player {
 }
 
 // Outside the signed-in shell there is no player; nothing plays.
+// oxlint-disable-next-line typescript/promise-function-async -- a settled stub; `async` without `await` breaks eslint/require-await
 const unavailable = (): Promise<ApiResult<unknown>> =>
   Promise.resolve({ failure: "failed", ok: false, status: undefined });
 
@@ -190,24 +191,24 @@ export const PlayerProvider = ({
     return src;
   };
 
-  const activate = (
+  const activate = async (
     played: Awaited<ReturnType<typeof playSet>>,
     intent: number,
     startAt?: number
   ): Promise<ApiResult<unknown>> => {
     if (intent !== playIntent.current) {
-      return Promise.resolve({ ok: true, value: undefined });
+      return { ok: true, value: undefined };
     }
     if (!played.ok) {
-      return Promise.resolve(played);
+      return played;
     }
     const { activeSetId, entries } = played.value.queue;
     const active = entries.find((entry) => entry.id === activeSetId);
     if (!active) {
       setPlaying(null);
-      return Promise.resolve(played);
+      return played;
     }
-    return start(active, (playing?.attempt ?? 0) + 1, startAt, intent);
+    return await start(active, (playing?.attempt ?? 0) + 1, startAt, intent);
   };
 
   const play = async (set: SavedSet) => {
@@ -243,8 +244,8 @@ export const PlayerProvider = ({
     return await activate(await playPlaylist(credentials, playlistId), intent);
   };
 
-  const queue = (set: SavedSet, placement: "next" | "end") =>
-    queueSet(credentials, set.id, placement);
+  const queue = async (set: SavedSet, placement: "next" | "end") =>
+    await queueSet(credentials, set.id, placement);
 
   const report = (event: SyntheticEvent<HTMLAudioElement>) => {
     if (playing !== null && Number.isFinite(event.currentTarget.currentTime)) {

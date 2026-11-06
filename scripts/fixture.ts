@@ -97,12 +97,12 @@ interface DataApiAnswer {
   readonly items: readonly unknown[];
   readonly nextPageToken?: string | undefined;
 }
-const answer = (body: DataApiAnswer) => Promise.resolve(Response.json(body));
+const answer = (body: DataApiAnswer) => Response.json(body);
 const laneYouTube = async (url: string) => {
   const parsed = new URL(url);
   const resource = parsed.pathname.split("/").at(-1);
   if (resource === "playlists") {
-    return await answer({
+    return answer({
       items:
         parsed.searchParams.get("id") === LANE_PLAYLIST.id
           ? [
@@ -122,7 +122,7 @@ const laneYouTube = async (url: string) => {
       await Bun.sleep(LANE_SECOND_PAGE_DELAY_MS);
     }
     const next = start + LANE_PAGE;
-    return await answer({
+    return answer({
       items: LANE_PLAYLIST.entries
         .slice(start, next)
         .map(([videoId]) => ({ contentDetails: { videoId } })),
@@ -132,7 +132,7 @@ const laneYouTube = async (url: string) => {
   }
   if (resource === "videos") {
     const ids = new Set(parsed.searchParams.get("id")?.split(","));
-    return await answer({
+    return answer({
       items: LANE_PLAYLIST.entries
         .filter(([id, title]) => ids.has(id) && title)
         .map(([id, title, channelTitle]) => ({
@@ -179,10 +179,10 @@ const app = createApp({
   logging: { silent: true },
   metadata: Metadata.layer({
     appleMusic: appleMusic.credentials,
-    fetch: (url) =>
+    fetch: async (url) =>
       appleMusic.isAppleMusic(url)
-        ? Promise.resolve(appleMusic.answer(url))
-        : laneYouTube(url),
+        ? appleMusic.answer(url)
+        : await laneYouTube(url),
     youTubeApiKey: "lane",
   }),
   playbackDiagnostics: {

@@ -334,7 +334,9 @@ export const SetRow = ({
         <TextDialog
           label="Title"
           onClose={detach(close)}
-          onSave={(text) => renameSet(credentials, set.id, text.trim())}
+          onSave={async (text) =>
+            await renameSet(credentials, set.id, text.trim())
+          }
           title={`Rename ${set.title}`}
           value={set.title}
         />
@@ -343,7 +345,9 @@ export const SetRow = ({
         <TextDialog
           label="Tags, separated by commas"
           onClose={detach(close)}
-          onSave={(text) => updateTags(credentials, set.id, parseTags(text))}
+          onSave={async (text) =>
+            await updateTags(credentials, set.id, parseTags(text))
+          }
           title={`Tags for ${set.title}`}
           value={set.tags.join(", ")}
         />

@@ -80,7 +80,8 @@ export class Versos extends Context.Service<Versos, VersosService>()(
       ): Effect.fn.Return<S["Type"], VersosError> {
         const response = yield* Effect.tryPromise({
           catch: () => new VersosError({ reason: "unavailable" }),
-          try: (signal) => requestFetch(endpoint, { ...init, signal }),
+          try: async (signal) =>
+            await requestFetch(endpoint, { ...init, signal }),
         });
         if (!response.ok) {
           return yield* Effect.fail(
@@ -91,7 +92,10 @@ export class Versos extends Context.Service<Versos, VersosService>()(
         }
         const body: unknown = yield* Effect.tryPromise({
           catch: () => new VersosError({ reason: "unexpected-response" }),
-          try: () => response.json(),
+          try: async () => {
+            const json: unknown = await response.json();
+            return json;
+          },
         });
         const parsed = Schema.decodeUnknownOption(schema)(body);
         if (Option.isNone(parsed)) {

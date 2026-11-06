@@ -86,8 +86,8 @@ export class Group extends DurableObject<Environment> {
       new WebSocketRequestResponsePair("ping", "pong")
     );
     this.alarms = makeAlarmScheduler({
-      deleteAlarm: () => ctx.storage.deleteAlarm(),
-      setAlarm: (at) => ctx.storage.setAlarm(at),
+      deleteAlarm: async () => await ctx.storage.deleteAlarm(),
+      setAlarm: async (at) => await ctx.storage.setAlarm(at),
     });
     this.app = createPortableApp({
       audio: makeAudioLayer(this.node),
@@ -184,7 +184,7 @@ export class Group extends DurableObject<Environment> {
     }
   }
 
-  override fetch(request: Request): Promise<Response> {
+  override async fetch(request: Request): Promise<Response> {
     if (new URL(request.url).pathname === "/recovery") {
       const logger = startRequestLog({
         method: request.method,
@@ -197,27 +197,27 @@ export class Group extends DurableObject<Environment> {
         { outcome: outcomeForStatus(response.status), status: response.status },
         this.logging
       );
-      return Promise.resolve(response);
+      return response;
     }
     if (new URL(request.url).pathname === "/node") {
-      return Promise.resolve(this.node.accept(request));
+      return this.node.accept(request);
     }
     if (
       request.method === "GET" &&
       new URL(request.url).pathname === "/health"
     ) {
-      return this.app.initialize();
+      return await this.app.initialize();
     }
     const path = new URL(request.url).pathname;
     if (path === "/import" || path === "/export") {
-      return transferRequest({
+      return await transferRequest({
         bootstrapDigest: this.env.IMPORT_NODE_KEY_DIGEST,
         request,
         storage: this.ctx.storage,
         trustPath: this.ctx.id.toString(),
       });
     }
-    return this.app.handler(
+    return await this.app.handler(
       request,
       "device",
       request.headers.get("CF-Connecting-IP") ?? "unknown"

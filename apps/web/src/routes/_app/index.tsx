@@ -131,8 +131,8 @@ const Filters = ({
 }) => {
   const navigate = useNavigate({ from: "/" });
   const typing = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const update = (next: LibraryFilters) =>
-    navigate({ replace: true, search: next });
+  const update = async (next: LibraryFilters) =>
+    await navigate({ replace: true, search: next });
   const search = (event: ChangeEvent<HTMLInputElement>) => {
     const q = event.target.value.trim();
     if (typing.current !== null) {
