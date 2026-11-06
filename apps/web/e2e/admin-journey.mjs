@@ -3,7 +3,6 @@
 // and alice, each with one daily key. Fresh browsers join and sign in with what the
 // page shows.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -15,19 +14,22 @@ import {
   answerTo,
   boxedCode,
   boxGroups,
-  VALID_GROUP_PASSCODE,
+  freePort,
   keyRecord,
   paste,
-  VALID_SIGN_IN_CODE,
   signInWithKey,
+  startApi,
+  startPreview,
   textOf,
+  VALID_GROUP_PASSCODE,
+  VALID_SIGN_IN_CODE,
   waitFor,
 } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-admin");
-const devicePort = 4441;
-const webPort = 3341;
+const devicePort = await freePort();
+const webPort = await freePort();
 const apiUrl = `http://127.0.0.1:${devicePort}`;
 const webUrl = `http://127.0.0.1:${webPort}`;
 const hostKey = randomBytes(24).toString("base64url");
@@ -74,39 +76,17 @@ await writeFile(
     version: 2,
   })
 );
-const api = spawn("bun", ["apps/web/e2e/api-server.ts"], {
-  cwd: root,
-  env: {
-    ...process.env,
-    ORBIS_DATA_DIR: dataDirectory,
-    ORBIS_FIXTURE_ORIGIN: webUrl,
-    ORBIS_FIXTURE_PORT: String(devicePort),
-  },
-  stdio: "ignore",
+const api = startApi({
+  dataDirectory,
+  origin: webUrl,
+  port: devicePort,
 });
-const web = spawn(
-  "bun",
-  [
-    "x",
-    "vite",
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(webPort),
-    "--strictPort",
-  ],
-  {
-    cwd: path.join(root, "apps/web"),
-    env: { ...process.env, ORBIS_API_URL: apiUrl },
-    stdio: "ignore",
-  }
-);
+const web = startPreview({ apiUrl, port: webPort });
 
 const steps = [];
 const step = (name, detail = {}) => steps.push({ name, ...detail });
 try {
-  await Promise.all([waitFor(`${apiUrl}/health`), waitFor(webUrl)]);
+  await Promise.all([waitFor(`${apiUrl}/health`, api), waitFor(webUrl, web)]);
   await mkdir(artifacts, { recursive: true });
   const browser = await chromium.launch({ headless: true });
   try {

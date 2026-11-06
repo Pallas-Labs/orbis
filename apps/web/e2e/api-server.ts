@@ -45,9 +45,11 @@ const app = createApp({
       ),
   }),
 });
-startFixtureServer({
+const server = startFixtureServer({
   allowedOrigin: process.env.ORBIS_FIXTURE_ORIGIN,
   app,
   port: Number(process.env.ORBIS_FIXTURE_PORT),
   token: "seeded-browser-fixture",
 });
+// The journey waits for this line: it shows the port is this process's, not another's.
+console.log(`Orbis API listening on ${server.url.host}`);

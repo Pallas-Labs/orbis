@@ -2,7 +2,6 @@
 // Orbis API (e2e/api-server.ts): stream grants, Playback Position, the live queue,
 // reconnecting after the API restarts, and moving on when a Set ends.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -10,12 +9,20 @@ import path from "node:path";
 
 import { chromium } from "playwright";
 
-import { runInOrder, signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
+import {
+  freePort,
+  runInOrder,
+  signInWithKey,
+  startApi,
+  startPreview,
+  waitFor,
+  waitUntil,
+} from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-player");
-const devicePort = 4511;
-const webPort = 3411;
+const devicePort = await freePort();
+const webPort = await freePort();
 const apiUrl = `http://127.0.0.1:${devicePort}`;
 const webUrl = `http://127.0.0.1:${webPort}`;
 const key = randomBytes(24).toString("base64url");
@@ -69,41 +76,17 @@ await writeFile(
     version: 2,
   })
 );
-const startApi = () =>
-  spawn("bun", ["apps/web/e2e/api-server.ts"], {
-    cwd: root,
-    env: {
-      ...process.env,
-      ORBIS_DATA_DIR: dataDirectory,
-      ORBIS_FIXTURE_ORIGIN: webUrl,
-      ORBIS_FIXTURE_PORT: String(devicePort),
-    },
-    stdio: "ignore",
-  });
-let server = startApi();
-const web = spawn(
-  "bun",
-  [
-    "x",
-    "vite",
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(webPort),
-    "--strictPort",
-  ],
-  {
-    cwd: path.join(root, "apps/web"),
-    env: { ...process.env, ORBIS_API_URL: apiUrl },
-    stdio: "ignore",
-  }
-);
+const apiOptions = { dataDirectory, origin: webUrl, port: devicePort };
+let server = startApi(apiOptions);
+const web = startPreview({ apiUrl, port: webPort });
 
 const steps = [];
 const step = (name, detail = {}) => steps.push({ name, ...detail });
 try {
-  await Promise.all([waitFor(`${apiUrl}/health`), waitFor(webUrl)]);
+  await Promise.all([
+    waitFor(`${apiUrl}/health`, server),
+    waitFor(webUrl, web),
+  ]);
   await mkdir(artifacts, { recursive: true });
 
   // Two Sets with kept audio, saved from "another device".
@@ -306,8 +289,8 @@ try {
     assert.equal(await page.getByText("Orbis could not be reached").count(), 0);
     await queue.getByText("Now: Second set").waitFor();
     await page.getByText("Reconnecting…").waitFor();
-    server = startApi();
-    await waitFor(`${apiUrl}/health`);
+    server = startApi(apiOptions);
+    await waitFor(`${apiUrl}/health`, server);
     await api("PUT", "/queue/active", { setId: sets["First set"] });
     await queue.getByText("Now: First set").waitFor({ timeout: 15_000 });
     await page.getByText("Reconnecting…").waitFor({ state: "hidden" });

@@ -2,7 +2,6 @@
 // the built web client in `vite preview` calls a throwaway server whose Group
 // holds the Host with one daily key.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -13,13 +12,16 @@ import { chromium } from "playwright";
 
 import {
   answerTo,
-  clearCode,
   boxedCode,
   boxGroups,
+  clearCode,
+  freePort,
   keyRecord,
   paste,
   runTimesInOrder,
   signInWithKey,
+  startApi,
+  startPreview,
   storedKey,
   textOf,
   waitFor,
@@ -27,8 +29,8 @@ import {
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-sign-in");
-const devicePort = 4421;
-const webPort = 3321;
+const devicePort = await freePort();
+const webPort = await freePort();
 const apiUrl = `http://127.0.0.1:${devicePort}`;
 const webUrl = `http://127.0.0.1:${webPort}`;
 const hostKey = randomBytes(24).toString("base64url");
@@ -61,41 +63,14 @@ await writeFile(
     version: 2,
   })
 );
-const startApi = () =>
-  spawn("bun", ["apps/web/e2e/api-server.ts"], {
-    cwd: root,
-    env: {
-      ...process.env,
-      ORBIS_DATA_DIR: dataDirectory,
-      ORBIS_FIXTURE_ORIGIN: webUrl,
-      ORBIS_FIXTURE_PORT: String(devicePort),
-    },
-    stdio: "ignore",
-  });
-let api = startApi();
-const web = spawn(
-  "bun",
-  [
-    "x",
-    "vite",
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(webPort),
-    "--strictPort",
-  ],
-  {
-    cwd: path.join(root, "apps/web"),
-    env: { ...process.env, ORBIS_API_URL: apiUrl },
-    stdio: "ignore",
-  }
-);
+const apiOptions = { dataDirectory, origin: webUrl, port: devicePort };
+let api = startApi(apiOptions);
+const web = startPreview({ apiUrl, port: webPort });
 
 const steps = [];
 const step = (name, detail = {}) => steps.push({ name, ...detail });
 try {
-  await Promise.all([waitFor(`${apiUrl}/health`), waitFor(webUrl)]);
+  await Promise.all([waitFor(`${apiUrl}/health`, api), waitFor(webUrl, web)]);
   await mkdir(artifacts, { recursive: true });
   const browser = await chromium.launch({ headless: true });
   try {
@@ -310,8 +285,8 @@ try {
     await shot("unreachable");
     step("an unreachable API keeps the key and says why");
 
-    api = startApi();
-    await waitFor(`${apiUrl}/health`);
+    api = startApi(apiOptions);
+    await waitFor(`${apiUrl}/health`, api);
     await page.getByRole("button", { name: "Try again" }).click();
     await page.getByRole("heading", { name: "Library" }).waitFor();
     step("Try again signs back in once the API is back");

@@ -4,7 +4,6 @@
 // passcode; a browser reads the passcode from the fragment, removes it, and
 // joins; after a new passcode, the old link says it no longer works.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -13,18 +12,21 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 import {
-  VALID_GROUP_PASSCODE,
   boxedCode,
+  freePort,
   keyRecord,
   signInWithKey,
+  startApi,
+  startPreview,
   storedKey,
   textOf,
+  VALID_GROUP_PASSCODE,
   waitFor,
 } from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-join");
-const ports = { device: 4571, web: 3471 };
+const ports = { device: await freePort(), web: await freePort() };
 const apiUrl = `http://127.0.0.1:${ports.device}`;
 const webUrl = `http://127.0.0.1:${ports.web}`;
 const hostKey = randomBytes(24).toString("base64url");
@@ -41,34 +43,12 @@ await writeFile(
     version: 2,
   })
 );
-const api = spawn("bun", ["apps/web/e2e/api-server.ts"], {
-  cwd: root,
-  env: {
-    ...process.env,
-    ORBIS_DATA_DIR: dataDirectory,
-    ORBIS_FIXTURE_ORIGIN: webUrl,
-    ORBIS_FIXTURE_PORT: String(ports.device),
-  },
-  stdio: "ignore",
+const api = startApi({
+  dataDirectory,
+  origin: webUrl,
+  port: ports.device,
 });
-const web = spawn(
-  "bun",
-  [
-    "x",
-    "vite",
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(ports.web),
-    "--strictPort",
-  ],
-  {
-    cwd: path.join(root, "apps/web"),
-    env: { ...process.env, ORBIS_API_URL: apiUrl },
-    stdio: "ignore",
-  }
-);
+const web = startPreview({ apiUrl, port: ports.web });
 
 // The Group makes the passcode; the journey reads it like a Host would.
 const newPasscode = async () => {
@@ -104,7 +84,7 @@ const openLink = async (page, passcode) => {
 };
 
 try {
-  await Promise.all([waitFor(`${apiUrl}/health`), waitFor(webUrl)]);
+  await Promise.all([waitFor(`${apiUrl}/health`, api), waitFor(webUrl, web)]);
   await mkdir(artifacts, { recursive: true });
   const passcode = await newPasscode();
 

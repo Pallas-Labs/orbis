@@ -9,7 +9,6 @@
 //    timeout: the bound ends when the response arrives, not when the stream does.
 // 3. Signing out still aborts that stream through the caller's own signal.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { once } from "node:events";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -20,8 +19,11 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 import {
+  freePort,
   keyRecord,
   signInWithKey,
+  startApi,
+  startPreview,
   textOf,
   waitFor,
   waitUntil,
@@ -29,11 +31,9 @@ import {
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-timeout");
-const silentPort = 4581;
-const devicePort = 4591;
-const silentWebPort = 3481;
-const webPort = 3491;
-const silentApiUrl = `http://127.0.0.1:${silentPort}`;
+const devicePort = await freePort();
+const silentWebPort = await freePort();
+const webPort = await freePort();
 const apiUrl = `http://127.0.0.1:${devicePort}`;
 const silentWebUrl = `http://127.0.0.1:${silentWebPort}`;
 const webUrl = `http://127.0.0.1:${webPort}`;
@@ -62,8 +62,9 @@ const silentApi = createServer((request, response) => {
     entry.closed = true;
   });
 });
-silentApi.listen(silentPort, "127.0.0.1");
+silentApi.listen(0, "127.0.0.1");
 await once(silentApi, "listening");
+const silentApiUrl = `http://127.0.0.1:${silentApi.address().port}`;
 
 const dataDirectory = await mkdtemp(path.join(tmpdir(), "orbis-timeout-"));
 await writeFile(
@@ -74,45 +75,17 @@ await writeFile(
     version: 2,
   })
 );
-const api = spawn("bun", ["apps/web/e2e/api-server.ts"], {
-  cwd: root,
-  env: {
-    ...process.env,
-    ORBIS_DATA_DIR: dataDirectory,
-    ORBIS_FIXTURE_ORIGIN: webUrl,
-    ORBIS_FIXTURE_PORT: String(devicePort),
-  },
-  stdio: "ignore",
-});
-const preview = (port, url) =>
-  spawn(
-    "bun",
-    [
-      "x",
-      "vite",
-      "preview",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      String(port),
-      "--strictPort",
-    ],
-    {
-      cwd: path.join(root, "apps/web"),
-      env: { ...process.env, ORBIS_API_URL: url },
-      stdio: "ignore",
-    }
-  );
-const silentWeb = preview(silentWebPort, silentApiUrl);
-const web = preview(webPort, apiUrl);
+const api = startApi({ dataDirectory, origin: webUrl, port: devicePort });
+const silentWeb = startPreview({ apiUrl: silentApiUrl, port: silentWebPort });
+const web = startPreview({ apiUrl, port: webPort });
 
 const steps = [];
 const step = (name, detail = {}) => steps.push({ name, ...detail });
 try {
   await Promise.all([
-    waitFor(`${apiUrl}/health`),
-    waitFor(silentWebUrl),
-    waitFor(webUrl),
+    waitFor(`${apiUrl}/health`, api),
+    waitFor(silentWebUrl, silentWeb),
+    waitFor(webUrl, web),
   ]);
   await rm(artifacts, { force: true, recursive: true });
   await mkdir(artifacts, { recursive: true });
