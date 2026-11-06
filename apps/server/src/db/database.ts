@@ -91,7 +91,7 @@ const ensureLegacySchema = Effect.fn("Database.ensureLegacySchema")(
 
 const migrateDatabase = Effect.fn("Database.migrateDatabase")(
   function* migrateDatabaseEffect(
-    db: DatabaseClient,
+    db: SQLiteDrizzle.EffectSQLiteBunDatabase,
     migrationsFolder: string,
     legacyDatabase: boolean
   ) {

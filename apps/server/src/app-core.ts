@@ -52,8 +52,8 @@ import {
   HttpServer,
   HttpServerRequest,
   HttpServerResponse,
-} from "effect/unstable/http";
-import { HttpApiBuilder } from "effect/unstable/httpapi";
+} from "effect/http";
+import { HttpApiBuilder } from "effect/http-api";
 
 import {
   addKey,

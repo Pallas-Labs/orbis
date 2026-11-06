@@ -12,8 +12,8 @@ import {
   Redacted,
   Schema,
 } from "effect";
-import { LanguageModel } from "effect/unstable/ai";
-import { FetchHttpClient } from "effect/unstable/http";
+import { LanguageModel } from "effect/ai";
+import { FetchHttpClient } from "effect/http";
 
 import { TitleReviserError } from "./title-reviser-error.js";
 

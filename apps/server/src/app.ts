@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import type { Layer } from "effect";
-import { HttpServerResponse } from "effect/unstable/http";
+import { HttpServerResponse } from "effect/http";
 
 import { createPortableApp } from "./app-core.js";
 import { releaseAudio } from "./audio-release.js";

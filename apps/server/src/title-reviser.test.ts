@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { ConfigProvider, Effect, Layer, Stream } from "effect";
-import { AiError, LanguageModel } from "effect/unstable/ai";
+import { AiError, LanguageModel } from "effect/ai";
 
 import type { EnrichedMetadata } from "./metadata.js";
 import { Metadata } from "./metadata.js";

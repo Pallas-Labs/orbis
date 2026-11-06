@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { Effect, Layer, ManagedRuntime, Redacted } from "effect";
-import { HttpServerResponse } from "effect/unstable/http";
+import { HttpServerResponse } from "effect/http";
 
 import { makeAlarmScheduler } from "../../server/src/alarm-scheduler.js";
 import { createPortableApp } from "../../server/src/app-core.js";

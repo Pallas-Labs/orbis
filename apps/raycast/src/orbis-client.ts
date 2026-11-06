@@ -10,12 +10,8 @@ import {
   Toast,
 } from "@raycast/api";
 import { Effect, Option, Schema } from "effect";
-import {
-  FetchHttpClient,
-  HttpClient,
-  HttpClientRequest,
-} from "effect/unstable/http";
-import { HttpApiClient } from "effect/unstable/httpapi";
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
+import { HttpApiClient } from "effect/http-api";
 
 /** The part of fetch this client uses, so a test can stand in for it. */
 export type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
