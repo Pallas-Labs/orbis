@@ -72,7 +72,9 @@ export class Group extends DurableObject<Environment> {
     const database = databaseLayer(ctx.storage);
     const release = (id: string) =>
       releaseAudio(id, undefined, (releasedId) =>
-        Effect.sync(() => this.node.release(releasedId))
+        Effect.sync(() => {
+          this.node.release(releasedId);
+        })
       );
     const runtime = ManagedRuntime.make(
       Library.forPersonLayer("host", { releaseAudio: release }).pipe(
@@ -86,8 +88,12 @@ export class Group extends DurableObject<Environment> {
       new WebSocketRequestResponsePair("ping", "pong")
     );
     this.alarms = makeAlarmScheduler({
-      deleteAlarm: async () => await ctx.storage.deleteAlarm(),
-      setAlarm: async (at) => await ctx.storage.setAlarm(at),
+      deleteAlarm: async () => {
+        await ctx.storage.deleteAlarm();
+      },
+      setAlarm: async (at) => {
+        await ctx.storage.setAlarm(at);
+      },
     });
     this.app = createPortableApp({
       audio: makeAudioLayer(this.node),

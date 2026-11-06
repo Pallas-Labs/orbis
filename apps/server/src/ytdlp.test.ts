@@ -108,7 +108,7 @@ test("a failed run deletes the partial file", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-ytdlp-"));
   const destination = path.join(root, "a.part");
   try {
-    // oxlint-disable-next-line typescript/await-thenable -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
+    // oxlint-disable-next-line typescript/await-thenable, typescript/no-confusing-void-expression -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
     await expect(download(failingRun, destination)).rejects.toBeDefined();
     expect(await Bun.file(destination).exists()).toBe(false);
   } finally {
@@ -161,7 +161,7 @@ test("a SoundCloud failure gets no YouTube client retry", async () => {
     return Promise.resolve({ code: 1, stdout: "" });
   };
   try {
-    // oxlint-disable-next-line typescript/await-thenable -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
+    // oxlint-disable-next-line typescript/await-thenable, typescript/no-confusing-void-expression -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
     await expect(
       download(run, destination, soundCloudUrl)
     ).rejects.toBeDefined();

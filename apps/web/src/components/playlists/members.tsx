@@ -44,12 +44,20 @@ const AddSetsDialog = ({
   readonly playlistName: string;
 }) => {
   const [chosen, setChosen] = useState<readonly string[]>([]);
-  const toggle = (id: string, checked: boolean) =>
+  const toggle = (id: string, checked: boolean) => {
     setChosen(
       checked ? [...chosen, id] : chosen.filter((picked) => picked !== id)
     );
+  };
   return (
-    <Dialog onOpenChange={(open) => (open ? null : onClose())} open>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+      open
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Sets to {playlistName}</DialogTitle>
@@ -67,7 +75,9 @@ const AddSetsDialog = ({
                 <label className="flex items-center gap-3 text-sm">
                   <Checkbox
                     checked={chosen.includes(set.id)}
-                    onCheckedChange={(checked) => toggle(set.id, checked)}
+                    onCheckedChange={(checked) => {
+                      toggle(set.id, checked);
+                    }}
                   />
                   <span className="truncate">{set.title}</span>
                 </label>
@@ -78,7 +88,9 @@ const AddSetsDialog = ({
         <DialogFooter>
           <Button
             disabled={pending || chosen.length === 0}
-            onClick={detach(async () => await onAdd(chosen))}
+            onClick={detach(async () => {
+              await onAdd(chosen);
+            })}
           >
             {chosen.length > 1 ? `Add ${chosen.length} Sets` : "Add"}
           </Button>
@@ -133,7 +145,12 @@ export const Members = ({
         <h2 className="text-lg font-medium" id="members-heading">
           Sets
         </h2>
-        <Button onClick={() => setAdding(true)} variant="outline">
+        <Button
+          onClick={() => {
+            setAdding(true);
+          }}
+          variant="outline"
+        >
           Add Sets…
         </Button>
       </div>
@@ -159,7 +176,9 @@ export const Members = ({
               <Button
                 aria-label={`Move ${set.title} up`}
                 disabled={pending || index === 0}
-                onClick={() => move(index, -1)}
+                onClick={() => {
+                  move(index, -1);
+                }}
                 size="icon"
                 variant="ghost"
               >
@@ -168,7 +187,9 @@ export const Members = ({
               <Button
                 aria-label={`Move ${set.title} down`}
                 disabled={pending || index === playlist.sets.length - 1}
-                onClick={() => move(index, 1)}
+                onClick={() => {
+                  move(index, 1);
+                }}
                 size="icon"
                 variant="ghost"
               >
@@ -177,9 +198,9 @@ export const Members = ({
               <Button
                 aria-label={`Remove ${set.title} from ${playlist.name}`}
                 disabled={pending}
-                onClick={detach(
-                  async () => await change(ids.filter((id) => id !== set.id))
-                )}
+                onClick={detach(async () => {
+                  await change(ids.filter((id) => id !== set.id));
+                })}
                 size="sm"
                 variant="outline"
               >
@@ -193,8 +214,12 @@ export const Members = ({
         <AddSetsDialog
           candidates={library.filter((set) => !members.has(set.id))}
           emptyLibrary={library.length === 0}
-          onAdd={async (setIds) => await change([...ids, ...setIds])}
-          onClose={() => setAdding(false)}
+          onAdd={async (setIds) => {
+            await change([...ids, ...setIds]);
+          }}
+          onClose={() => {
+            setAdding(false);
+          }}
           pending={pending}
           playlistName={playlist.name}
         />

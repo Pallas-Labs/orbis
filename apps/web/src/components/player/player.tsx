@@ -330,12 +330,16 @@ export const PlayerProvider = ({
               autoPlay
               ref={audioRef}
               onEnded={detach(finish)}
-              onError={() => setProblem("The audio could not load.")}
+              onError={() => {
+                setProblem("The audio could not load.");
+              }}
               onLoadedMetadata={(event) => {
                 event.currentTarget.currentTime = playing.startAt;
               }}
               onPause={pause}
-              onPlaying={() => act("play")}
+              onPlaying={() => {
+                act("play");
+              }}
               onSeeked={report}
               onTimeUpdate={reportNowAndThen}
               src={playing.src}

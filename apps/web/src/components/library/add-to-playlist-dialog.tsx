@@ -60,7 +60,14 @@ export const AddToPlaylistDialog = ({
     setProblem(FAILURE_MESSAGES[result.failure]);
   };
   return (
-    <Dialog onOpenChange={(open) => (open ? null : onClose())} open>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+      open
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add {set.title} to Playlists</DialogTitle>
@@ -81,7 +88,9 @@ export const AddToPlaylistDialog = ({
                 <label className="flex items-center gap-3 text-sm">
                   <Checkbox
                     checked={chosen.has(playlist.id)}
-                    onCheckedChange={(checked) => toggle(playlist.id, checked)}
+                    onCheckedChange={(checked) => {
+                      toggle(playlist.id, checked);
+                    }}
                   />
                   {playlist.name}
                 </label>

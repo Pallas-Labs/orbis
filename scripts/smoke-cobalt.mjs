@@ -519,7 +519,9 @@ async function withDeadline(parentSignal, timeoutMs, operation) {
   }, timeoutMs);
   timer.unref?.();
 
-  const abortFromParent = () => controller.abort();
+  const abortFromParent = () => {
+    controller.abort();
+  };
   if (parentSignal.aborted) {
     abortFromParent();
   } else {
@@ -983,7 +985,9 @@ function runCommand(command, args, signal, toolName) {
         : new SmokeError(`${toolName}_failed`)
     );
   });
-  child.once("close", (code) => finish(resolve, { code, stdout }));
+  child.once("close", (code) => {
+    finish(resolve, { code, stdout });
+  });
   return promise;
 }
 
@@ -1421,7 +1425,9 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const controller = new AbortController();
-  const abort = () => controller.abort();
+  const abort = () => {
+    controller.abort();
+  };
   process.once("SIGINT", abort);
   process.once("SIGTERM", abort);
   try {

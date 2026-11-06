@@ -89,8 +89,13 @@ const lane = async (name, [first, ...rest], log) => {
     return;
   }
   const [step, command, options = {}] = first;
-  const say = (line) =>
-    log ? log.push(Buffer.from(`${line}\n`)) : console.log(line);
+  const say = (line) => {
+    if (log) {
+      log.push(Buffer.from(`${line}\n`));
+    } else {
+      console.log(line);
+    }
+  };
   const started = performance.now();
   say(`\n[${name}] ${step}`);
   const code = await exec(command, { ...options, log });

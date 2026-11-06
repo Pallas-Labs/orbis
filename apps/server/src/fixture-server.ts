@@ -63,7 +63,7 @@ export const startFixtureServer = (
       stopping ??= (async () => {
         await Promise.all([server.stop(), options.app.dispose()]);
       })();
-      return await stopping;
+      await stopping;
     },
     url: server.url,
   };

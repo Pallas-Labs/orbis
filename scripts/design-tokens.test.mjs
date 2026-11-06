@@ -20,7 +20,9 @@ import {
 const withTokens = (change) => change(structuredClone(loadTokens()));
 
 test("the committed token source matches its schema", () => {
-  assert.doesNotThrow(() => validate(loadTokens()));
+  assert.doesNotThrow(() => {
+    validate(loadTokens());
+  });
 });
 
 test("a colour without a dark value is refused", () => {
@@ -28,7 +30,9 @@ test("a colour without a dark value is refused", () => {
     delete copy.color.field.dark;
     return copy;
   });
-  assert.throws(() => validate(tokens), /does not match its schema/u);
+  assert.throws(() => {
+    validate(tokens);
+  }, /does not match its schema/u);
 });
 
 test("an unknown token is refused rather than silently ignored", () => {
@@ -39,7 +43,9 @@ test("an unknown token is refused rather than silently ignored", () => {
     };
     return copy;
   });
-  assert.throws(() => validate(tokens), /does not match its schema/u);
+  assert.throws(() => {
+    validate(tokens);
+  }, /does not match its schema/u);
 });
 
 test("APCA reproduces the measurements the palette was chosen with", () => {
@@ -65,7 +71,9 @@ test("APCA reproduces the measurements the palette was chosen with", () => {
 
 test("every text token clears the body-text floor in every appearance", () => {
   const tokens = loadTokens();
-  assert.doesNotThrow(() => assertContrast(tokens));
+  assert.doesNotThrow(() => {
+    assertContrast(tokens);
+  });
   const checks = contrastChecks(tokens);
   // ink, muted, and one shade per category, against both surfaces, in four appearances.
   assert.equal(checks.length, 12 * 2 * 4);
@@ -83,7 +91,9 @@ test("a text token that drops under Lc 75 fails the check", () => {
     copy.color.categoryText.pink.dark = "oklch(0.658 0.232 16)";
     return copy;
   });
-  assert.throws(() => assertContrast(tokens), /below Lc 75/u);
+  assert.throws(() => {
+    assertContrast(tokens);
+  }, /below Lc 75/u);
 });
 
 test("a colour that leaves Display P3 fails rather than being clamped", () => {
@@ -92,7 +102,9 @@ test("a colour that leaves Display P3 fails rather than being clamped", () => {
     return copy;
   });
   assert.ok(!inDisplayP3(tokens.color.categoryText.pink.dark));
-  assert.throws(() => assertDisplayable(tokens), /leave Display P3/u);
+  assert.throws(() => {
+    assertDisplayable(tokens);
+  }, /leave Display P3/u);
 });
 
 test("every colour and radius reaches both generated files", () => {

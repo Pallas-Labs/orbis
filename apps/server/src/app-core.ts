@@ -2802,9 +2802,9 @@ export const createPortableApp = (options: {
       }
       if (options.recordKeyUse !== false) {
         await Effect.runPromise(
-          trustOperation(() => markKeyUsed(trustPath, decision.keyId)).pipe(
-            Effect.ignore
-          )
+          trustOperation(() => {
+            markKeyUsed(trustPath, decision.keyId);
+          }).pipe(Effect.ignore)
         );
       }
       const response = await app.handler(

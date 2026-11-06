@@ -158,7 +158,9 @@ export class Ytdlp extends Context.Service<
                 ? Effect.tryPromise({
                     catch: () =>
                       downloadFailed("yt-dlp could not fetch this audio."),
-                    try: async () => await rename(output, destination),
+                    try: async () => {
+                      await rename(output, destination);
+                    },
                   })
                 : Effect.logWarning("yt-dlp run failed").pipe(
                     Effect.annotateLogs({

@@ -89,7 +89,9 @@ const OpenPasscode = ({
           call={async () => await newPasscode(session)}
           description="The passcode you shared stops working. People who joined stay signed in."
           label="New passcode"
-          onDone={async () => await router.invalidate()}
+          onDone={async () => {
+            await router.invalidate();
+          }}
           pendingAction="Making…"
           title="Make a new passcode?"
           trigger="New passcode"
@@ -188,7 +190,9 @@ const PersonRow = ({
             call={async () => await removePerson(session, person.id)}
             description="This deletes their keys, Library, Playlists, Listening Queue, and Listen History. You cannot undo it."
             label={`Remove ${person.username}`}
-            onDone={async () => await router.invalidate()}
+            onDone={async () => {
+              await router.invalidate();
+            }}
             pendingAction="Removing…"
             title={`Remove ${person.username}?`}
             trigger={`Remove ${person.username}`}
@@ -297,7 +301,9 @@ const Keys = ({
                   call={async () => await revokeKey(session, key.id)}
                   description={`Whatever uses this key is signed out as ${owner} the next time it contacts Orbis.`}
                   label={`Revoke ${key.label} for ${owner}`}
-                  onDone={async () => await router.invalidate()}
+                  onDone={async () => {
+                    await router.invalidate();
+                  }}
                   pendingAction="Revoking…"
                   title={`Revoke ${key.label}?`}
                   trigger="Revoke"
@@ -334,7 +340,12 @@ const Keys = ({
         </Button>
       </form>
       {token === null ? null : (
-        <CreatedKey onDone={() => setToken(null)} token={token} />
+        <CreatedKey
+          onDone={() => {
+            setToken(null);
+          }}
+          token={token}
+        />
       )}
       <Problem message={problem} />
     </Section>

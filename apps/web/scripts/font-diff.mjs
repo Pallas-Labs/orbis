@@ -372,10 +372,9 @@ const open = async (browser, entry) => {
     viewport: { height: 900, width: 1280 },
   });
   if (entry.who) {
-    await context.addInitScript(
-      (key) => localStorage.setItem("orbis.apiKey", key),
-      keys[entry.who]
-    );
+    await context.addInitScript((key) => {
+      localStorage.setItem("orbis.apiKey", key);
+    }, keys[entry.who]);
   }
   const page = await context.newPage();
   return { context, page };

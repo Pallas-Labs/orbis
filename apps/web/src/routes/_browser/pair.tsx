@@ -154,7 +154,9 @@ const Approve = ({
     const result = await approveSignInRequest(
       credentials,
       request.code
-    ).finally(() => setBusy(false));
+    ).finally(() => {
+      setBusy(false);
+    });
     if (result.ok) {
       onDone({ kind: "approved", request: result.value });
       return;
@@ -182,7 +184,9 @@ const Approve = ({
         </Button>
         <Button
           disabled={busy}
-          onClick={detach(async () => await navigate({ to: "/" }))}
+          onClick={detach(async () => {
+            await navigate({ to: "/" });
+          })}
           variant="outline"
         >
           Cancel
@@ -203,7 +207,11 @@ const Failed = ({
   const [busy, setBusy] = useState(false);
   const retry = async () => {
     setBusy(true);
-    onDone(await lookUp(lookup).finally(() => setBusy(false)));
+    onDone(
+      await lookUp(lookup).finally(() => {
+        setBusy(false);
+      })
+    );
   };
   return (
     <PairCard title="Sign in a device">

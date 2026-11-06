@@ -428,9 +428,9 @@ test("a Versos timeout marks the Set failed without blocking the save", async ()
     Versos.layer({
       fetch: (_url, init) => {
         const pending = Promise.withResolvers<Response>();
-        init?.signal?.addEventListener("abort", () =>
-          pending.reject(new Error("aborted"))
-        );
+        init?.signal?.addEventListener("abort", () => {
+          pending.reject(new Error("aborted"));
+        });
         return pending.promise;
       },
       key: Redacted.make("private-key"),

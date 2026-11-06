@@ -429,8 +429,9 @@ export const scanRepo = (root = repoRoot) =>
       )
     );
 
-const writeBaseline = (baseline) =>
+const writeBaseline = (baseline) => {
   writeFileSync(baselinePath, `${JSON.stringify(baseline, null, 2)}\n`);
+};
 
 const main = () => {
   const findings = scanRepo();

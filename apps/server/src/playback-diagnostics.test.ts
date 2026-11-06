@@ -385,7 +385,7 @@ test("strict nested privacy schema rejects unknown fields and inconsistent seque
       }
       const response = await s.send(JSON.stringify(body));
       expect(response.status).toBe(400);
-      return await assertInvalid(index + 1);
+      await assertInvalid(index + 1);
     };
     await assertInvalid(0);
     const nonfinite = JSON.stringify(base).replace(
@@ -618,7 +618,7 @@ test("two active exports have no queue and deadline releases both slots", async 
         return;
       }
       await Bun.sleep(10);
-      return await waitForExports(attemptsLeft - 1);
+      await waitForExports(attemptsLeft - 1);
     };
     await waitForExports();
     expect(s.requests).toHaveLength(2);

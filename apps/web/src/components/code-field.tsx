@@ -70,7 +70,9 @@ export const CodeField = ({
       return;
     }
     // The form reads the hidden input, so it must hold the code before submit.
-    flushSync(() => setCode(next));
+    flushSync(() => {
+      setCode(next);
+    });
     if (next.length === format.length) {
       onComplete();
     }

@@ -8,10 +8,10 @@ const TEST_FILES = ["**/*.{test,spec}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}"];
 const TEST_CODE = [...TEST_FILES, "**/e2e/**", "**/evals/**"];
 // Code that runs inside a server process, a Worker isolate or a browser tab.
 const RUNTIME_SOURCES = ["apps/*/src/**", "packages/*/src/**"];
-// Ultracite's type-aware rules that report too many findings to fix in PAL-1681. PAL-1693
-// turns each one on. The other type-aware rules run at error, or are off below with a reason.
+// Ultracite's type-aware rules that report too many findings to fix in PAL-1681 or PAL-1693.
+// PAL-1700 turns each one on. The other type-aware rules run at error, or are off below with a
+// reason.
 const ULTRACITE_TYPE_AWARE_DEBT = [
-  "typescript/no-confusing-void-expression",
   "typescript/strict-boolean-expressions",
   "typescript/strict-void-return",
 ];

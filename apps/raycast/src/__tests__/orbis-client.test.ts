@@ -17,9 +17,9 @@ test("aborts the request at the timeout and names it", async () => {
   const result = await saveSourceUrl("https://youtu.be/abcdefghijk", {
     fetch: (_input, init) => {
       const outcome = Promise.withResolvers<Response>();
-      init.signal?.addEventListener("abort", () =>
-        outcome.reject(init.signal?.reason)
-      );
+      init.signal?.addEventListener("abort", () => {
+        outcome.reject(init.signal?.reason);
+      });
       return outcome.promise;
     },
     preferences,

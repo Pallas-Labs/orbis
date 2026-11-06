@@ -207,7 +207,11 @@ export class GroupAudioNode {
     socket.send(JSON.stringify(command));
   }
 
-  wake = async () => await this.serial(async () => await this.schedule());
+  wake = async () => {
+    await this.serial(async () => {
+      await this.schedule();
+    });
+  };
 
   /**
    * Warns when Downloads wait while no node can take them, the state that kept
@@ -283,7 +287,7 @@ export class GroupAudioNode {
     );
   }
 
-  cancel = async (id: string) =>
+  cancel = async (id: string) => {
     await this.serial(async () => {
       const socket = this.socket();
       if (!socket) {
@@ -304,6 +308,7 @@ export class GroupAudioNode {
       }
       await this.schedule();
     });
+  };
 
   release(id: string) {
     const socket = this.socket();
@@ -485,7 +490,7 @@ export class GroupAudioNode {
   }
 
   async message(socket: WebSocket, data: string | ArrayBuffer) {
-    return await this.serial(async () => {
+    await this.serial(async () => {
       if (socket !== this.socket()) {
         return;
       }

@@ -151,7 +151,7 @@ test("Presence reaches only viewers who pass the gate and lapses when reports st
     const seen = await viewerA.presence((names) => names.includes("b"));
     expect(seen).toMatchObject([{ personId: "b", set: { id: set.id } }]);
     // C fails the gate, so C never receives B's Presence.
-    // oxlint-disable-next-line typescript/await-thenable -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
+    // oxlint-disable-next-line typescript/await-thenable, typescript/no-confusing-void-expression -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
     await expect(
       viewerC.presence((names) => names.includes("b"), 2500)
     ).rejects.toThrow("No matching presence event arrived");

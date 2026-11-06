@@ -84,13 +84,12 @@ export const CollaborationCard = ({
           <Switch
             checked={collaboration.collaborative}
             disabled={pending}
-            onCheckedChange={detach(
-              async (checked) =>
-                await settle(
-                  setCollaborative(credentials, playlistId, checked),
-                  FAILURE_MESSAGES.failed
-                )
-            )}
+            onCheckedChange={detach(async (checked) => {
+              await settle(
+                setCollaborative(credentials, playlistId, checked),
+                FAILURE_MESSAGES.failed
+              );
+            })}
           />
           Collaborative
         </Label>
@@ -109,17 +108,16 @@ export const CollaborationCard = ({
                     <Button
                       aria-label={`Remove editor ${nameOf(id)}`}
                       disabled={pending}
-                      onClick={detach(
-                        async () =>
-                          await settle(
-                            setEditors(
-                              credentials,
-                              playlistId,
-                              editorIds.filter((editor) => editor !== id)
-                            ),
-                            FAILURE_MESSAGES.failed
-                          )
-                      )}
+                      onClick={detach(async () => {
+                        await settle(
+                          setEditors(
+                            credentials,
+                            playlistId,
+                            editorIds.filter((editor) => editor !== id)
+                          ),
+                          FAILURE_MESSAGES.failed
+                        );
+                      })}
                       size="sm"
                       variant="outline"
                     >

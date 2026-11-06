@@ -96,10 +96,9 @@ export class MediaStore extends Context.Service<
       try: async () => {
         // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the three audio formats.
         await Promise.all(
-          ["ogg", "mp3", "m4a"].map(
-            async (suffix) =>
-              await rm(path.join(directory, `${id}.${suffix}`), { force: true })
-          )
+          ["ogg", "mp3", "m4a"].map(async (suffix) => {
+            await rm(path.join(directory, `${id}.${suffix}`), { force: true });
+          })
         );
       },
     });
@@ -276,7 +275,9 @@ export class MediaStore extends Context.Service<
               downloadFailed("The downloaded audio could not be stored.")
             )
           );
-          yield* storeStep(async () => await rm(tmpPath, { force: true }));
+          yield* storeStep(async () => {
+            await rm(tmpPath, { force: true });
+          });
           return {
             bytes: Bun.file(finalPath).size,
             durationSeconds,
@@ -285,9 +286,9 @@ export class MediaStore extends Context.Service<
         }
         if (container === "mp3" || container === "ogg") {
           const format = container;
-          yield* storeStep(
-            async () => await rename(tmpPath, fileFor(setId, format))
-          );
+          yield* storeStep(async () => {
+            await rename(tmpPath, fileFor(setId, format));
+          });
           return {
             bytes: Bun.file(fileFor(setId, format)).size,
             durationSeconds,
@@ -296,9 +297,9 @@ export class MediaStore extends Context.Service<
         }
         // The stored format follows the source codec; m4a is kept as delivered.
         if (/mp4|m4a/u.test(container)) {
-          yield* storeStep(
-            async () => await rename(tmpPath, fileFor(setId, "m4a"))
-          );
+          yield* storeStep(async () => {
+            await rename(tmpPath, fileFor(setId, "m4a"));
+          });
           return {
             bytes: Bun.file(fileFor(setId, "m4a")).size,
             durationSeconds,
@@ -344,12 +345,11 @@ export class MediaStore extends Context.Service<
         async () =>
           // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the five partial and audio suffixes.
           await Promise.all(
-            ["part", "part.ytdl", "ogg", "mp3", "m4a"].map(
-              async (suffix) =>
-                await rm(path.join(audioDir, `${id}.${suffix}`), {
-                  force: true,
-                })
-            )
+            ["part", "part.ytdl", "ogg", "mp3", "m4a"].map(async (suffix) => {
+              await rm(path.join(audioDir, `${id}.${suffix}`), {
+                force: true,
+              });
+            })
           )
       )
     );

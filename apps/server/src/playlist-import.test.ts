@@ -154,7 +154,9 @@ const gate = () => {
   const hold = async (signal: AbortSignal, answer: () => Promise<Response>) => {
     asked.resolve(true);
     const stopped = Promise.withResolvers<boolean>();
-    signal.addEventListener("abort", () => stopped.resolve(true));
+    signal.addEventListener("abort", () => {
+      stopped.resolve(true);
+    });
     await Promise.race([released.promise, stopped.promise]);
     signal.throwIfAborted();
     return await answer();
@@ -162,7 +164,9 @@ const gate = () => {
   return {
     asked: asked.promise,
     hold,
-    release: () => released.resolve(true),
+    release: () => {
+      released.resolve(true);
+    },
   };
 };
 

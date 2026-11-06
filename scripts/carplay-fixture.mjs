@@ -209,7 +209,9 @@ await runInOrder(sets.entries(), async ([index, [title, creator, colors]]) => {
 
 const [downloading, ...playable] = saved;
 // The seed server copies one file at a time.
-await runInOrder(playable, async (set) => await seed(`ready-audio/${set.id}`));
+await runInOrder(playable, async (set) => {
+  await seed(`ready-audio/${set.id}`);
+});
 await seed(`tracklist/${playable[0].id}`);
 
 // Each Listen starts after the last.

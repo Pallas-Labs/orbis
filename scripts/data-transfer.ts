@@ -124,9 +124,9 @@ if (command === "export") {
   const files = scanned.toSorted();
   // oxlint-disable-next-line orbis/bounded-concurrency -- removes the local backups past the newest 14, a handful of files.
   await Promise.all(
-    files
-      .slice(0, Math.max(0, files.length - 14))
-      .map(async (file) => await rm(path.join(target, file)))
+    files.slice(0, Math.max(0, files.length - 14)).map(async (file) => {
+      await rm(path.join(target, file));
+    })
   );
 } else {
   throw new Error("Unknown transfer command.");
