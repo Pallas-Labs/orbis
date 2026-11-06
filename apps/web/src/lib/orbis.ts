@@ -1,12 +1,8 @@
 import { OrbisApi } from "@orbis/contracts/http-api";
 import { Effect, Option, Schema } from "effect";
 import type { Effect as EffectType, Success } from "effect/Effect";
-import {
-  FetchHttpClient,
-  HttpClient,
-  HttpClientRequest,
-} from "effect/unstable/http";
-import { HttpApiClient } from "effect/unstable/httpapi";
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
+import { HttpApiClient } from "effect/http-api";
 
 /**
  * Why a call failed. `rejected` means the API knows no such key (401), and

@@ -11,7 +11,7 @@ export const databaseLayer = (storage: DurableObjectStorage) =>
   Layer.effect(
     Database,
     Effect.gen(function* initializeDatabase() {
-      const db = yield* Drizzle.makeWithDefaults({ storage });
+      const db = yield* Drizzle.makeWithDefaults({});
       yield* migrate(db, { migrations });
       return db;
     })

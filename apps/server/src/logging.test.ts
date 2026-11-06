@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { Effect, Layer } from "effect";
-import { HttpRouter, HttpServerResponse } from "effect/unstable/http";
+import { HttpRouter, HttpServerResponse } from "effect/http";
 import type { WideEvent } from "evlog";
 
 import type { LoggingOptions } from "./logging.js";

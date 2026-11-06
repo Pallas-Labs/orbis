@@ -9,7 +9,7 @@ import {
   Schema,
 } from "effect";
 import type { LogLevel } from "effect";
-import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { HttpServerRequest, HttpServerResponse } from "effect/http";
 import { createLogger, createRequestLogger, initLogger } from "evlog";
 import type { DrainContext, RequestLogger, WideEvent } from "evlog";
 import { createOTLPDrain } from "evlog/otlp";

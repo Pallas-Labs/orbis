@@ -1,15 +1,10 @@
+import type { QueueEventSchema } from "@orbis/contracts/http-api";
 import { Effect, Stream } from "effect";
 
 import { callOrbis } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
 
-type EventsClient = Parameters<Parameters<typeof callOrbis>[1]>[0];
-type LiveEvent =
-  Effect.Success<
-    ReturnType<EventsClient["events"]["subscribe"]>
-  > extends Stream.Stream<infer A, infer _E, infer _R>
-    ? A
-    : never;
+type LiveEvent = typeof QueueEventSchema.Type;
 
 export type ListeningQueue = Extract<LiveEvent, { kind: "queue" }>["queue"];
 export type Presence = Extract<LiveEvent, { kind: "presence" }>["presence"];
