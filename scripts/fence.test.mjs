@@ -91,6 +91,20 @@ describe("bounded reads", () => {
     );
   });
 
+  test("finds a read that a wrapper runs, but not one an operator composes", () => {
+    assert.deepEqual(
+      scan(
+        [
+          "const a = yield* execute(db.select().from(sets));",
+          "const b = yield* Effect.tryPromise(() => db.select().from(sets).all());",
+          "const c = yield* execute(db.select().from(sets).where(notInArray(sets.id, db.select({ id: old.id }).from(old))));",
+          "const d = yield* execute(db.select().from(sets).where(exists(db.select().from(old).where(eq(old.id, sets.id)))).limit(5));",
+        ].join("\n")
+      ),
+      ["1 drizzle-select", "2 drizzle-select", "3 drizzle-select"]
+    );
+  });
+
   test("finds grouped aggregates and raw SQL with no LIMIT", () => {
     assert.deepEqual(
       scan(
@@ -129,6 +143,16 @@ describe("agent guard", () => {
       "git push --no-verify origin HEAD",
       "LEFTHOOK=0 git commit -m wip",
       "git -c core.hooksPath=/dev/null commit -m wip",
+      'git commit "--no-verify" -m wip',
+      "git push '--no-verify'",
+      "git push --no-veri\\fy",
+      "git push --no-'verify'",
+      "git push $'--no-verify'",
+      "git commit -m wip --no-verif",
+      "git commit '-n' -m wip",
+      'git commit -m "wip" -n',
+      "git commit --message='a b' --no-verify",
+      'bash -c "git commit --no-verify -m wip"',
     ]) {
       assert.notEqual(refusal(command), null, command);
     }
@@ -137,7 +161,13 @@ describe("agent guard", () => {
   test("passes ordinary commands and quoted text that names a flag", () => {
     for (const command of [
       "git commit -m 'never use --no-verify'",
+      'git commit -am "skip -n and --no-verify"',
+      "git commit --message='never --no-verify'",
+      "git commit -F msg.txt",
+      "git commit -m \"$(cat <<'EOF'\nnever use --no-verify\nEOF\n)\"",
+      'gh pr comment 1 --body "git push --no-verify passes"',
       "git push --force-with-lease origin HEAD:topic",
+      "git --no-pager log -n 5",
       "ls -n",
       "bun run check",
     ]) {

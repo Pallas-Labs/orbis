@@ -7,7 +7,8 @@
 //
 // - drizzle-select: a Drizzle `.select(...)` chain with no `.limit(...)` and no `.get()`, unless it
 //   selects aggregates only (`count()`, `max(...)`) with no `.groupBy(...)`, or it is a subquery
-//   (`.as(...)`, or an argument of another call).
+//   (`.as(...)`, or an argument of `inArray`, `notInArray`, `exists` or `notExists`). A wrapper
+//   that runs the read, such as `execute(db.select(...))`, does not exempt it.
 // - raw-select: a string or template literal that starts with SELECT or WITH, reads FROM a table,
 //   and has no LIMIT, unless its columns are aggregates only.
 //
@@ -194,6 +195,36 @@ const normalize = (text) =>
     .replaceAll(/\s+/gu, " ")
     .trim();
 
+// Drizzle operators that take a select as a subquery, so the outer query bounds its rows.
+const subqueryOperators = new Set([
+  "exists",
+  "inArray",
+  "notExists",
+  "notInArray",
+]);
+
+/** The name of the call whose arguments hold offset `start`, or null when no call holds it. */
+const callHolding = (code, start) => {
+  let depth = 0;
+  for (let i = start - 1; i >= 0; i -= 1) {
+    const c = code[i];
+    if (CLOSERS.has(c)) {
+      depth += 1;
+    } else if (OPENERS.has(c)) {
+      if (depth === 0) {
+        return c === "("
+          ? (/(?<name>\w+)\s*(?:<[^>()]*>)?\s*$/u.exec(code.slice(0, i))?.groups
+              ?.name ?? null)
+          : null;
+      }
+      depth -= 1;
+    } else if (depth === 0 && c === ";") {
+      return null;
+    }
+  }
+  return null;
+};
+
 const drizzleFindings = (source, code, lines) =>
   [...code.matchAll(/\.\s*select(?:Distinct)?\s*\(/gu)].flatMap((match) => {
     const start = chainStart(code, match.index);
@@ -210,9 +241,9 @@ const drizzleFindings = (source, code, lines) =>
     ) {
       return [];
     }
-    // An argument of another call is a subquery, such as `inArray(column, db.select(...))`.
-    const before = code.slice(0, start).trimEnd();
-    if (before.endsWith("(") || before.endsWith(",")) {
+    // A select that a SQL operator composes is a subquery, such as `inArray(column, db.select(...))`.
+    // A wrapper that runs the read, such as `execute(db.select(...))`, does not bound it.
+    if (subqueryOperators.has(callHolding(code, start))) {
       return [];
     }
     const line = lineOf(code, start);

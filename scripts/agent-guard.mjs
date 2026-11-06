@@ -23,19 +23,124 @@ const bashCommand = (input) => {
   return String(hook.tool_input?.command ?? "");
 };
 
-// Heredoc bodies and quoted strings are data, such as a commit message that names a flag.
+// Shell characters that end a word and stand as a word of their own.
+const operators = new Set([";", "&", "|", "(", ")", "<", ">"]);
+// In double quotes, a backslash escapes only these.
+const escapedInDoubleQuotes = new Set(["$", "`", '"', "\\", "\n"]);
+
+/** The text of the quoted string that opens at `i` and the offset after it. */
+const readQuoted = (command, i) => {
+  // '...' keeps every character; $'...' also reads backslash escapes; "..." reads a few.
+  const double = command[i] === '"';
+  const ansi = command[i] === "$";
+  const close = double ? '"' : "'";
+  let j = i + (ansi ? 2 : 1);
+  let text = "";
+  while (j < command.length && command[j] !== close) {
+    if (
+      command[j] === "\\" &&
+      (ansi || (double && escapedInDoubleQuotes.has(command[j + 1])))
+    ) {
+      j += 1;
+    }
+    text += command[j] ?? "";
+    j += 1;
+  }
+  return { next: j + 1, text };
+};
+
+/**
+ * The shell words of `command` after quote removal, as the shell hands them to git: `"--no-verify"`,
+ * `--no-'verify'` and `--no-veri\fy` are all `--no-verify`. Operators are words of their own.
+ */
+const shellWords = (command) => {
+  const words = [];
+  let word = null;
+  const add = (text) => {
+    word = (word ?? "") + text;
+  };
+  const end = () => {
+    if (word !== null) {
+      words.push(word);
+      word = null;
+    }
+  };
+  let i = 0;
+  while (i < command.length) {
+    const c = command[i];
+    if (c === "\\") {
+      add(command[i + 1] === "\n" ? "" : (command[i + 1] ?? ""));
+      i += 2;
+    } else if (
+      c === "'" ||
+      c === '"' ||
+      (c === "$" && command[i + 1] === "'")
+    ) {
+      const { next, text } = readQuoted(command, i);
+      add(text);
+      i = next;
+    } else if (/\s/u.test(c) || operators.has(c)) {
+      end();
+      if (operators.has(c)) {
+        words.push(c);
+      }
+      i += 1;
+    } else {
+      add(c);
+      i += 1;
+    }
+  }
+  end();
+  return words;
+};
+
+// Options whose value is text, such as a commit message that names a flag.
+const messageOptions = new Set(["--body", "--file", "--message", "--title"]);
+
+/** The words with each message value blanked, so only options and commands remain. */
+const withoutData = (words) => {
+  const out = [];
+  for (let i = 0; i < words.length; i += 1) {
+    const word = words[i];
+    const long = /^(?<name>--[\w-]+)=/u.exec(word)?.groups?.name;
+    // A short-option cluster: the first m or F takes the rest of the word, or the next word.
+    const short = /^-(?<flags>[a-zA-Z]*?)(?<option>[mF])(?<value>.*)$/u.exec(
+      word
+    )?.groups;
+    if (long !== undefined && messageOptions.has(long)) {
+      out.push(`${long}=''`);
+    } else if (messageOptions.has(word)) {
+      out.push(word, "''");
+      i += 1;
+    } else if (short !== undefined && !word.startsWith("--")) {
+      out.push(`-${short.flags}${short.option}`);
+      if (short.value === "") {
+        out.push("''");
+        i += 1;
+      }
+    } else {
+      out.push(word);
+    }
+  }
+  return out.join(" ");
+};
+
+// Heredoc bodies are data too.
 const stripData = (command) =>
-  command
-    .replaceAll(
-      /<<-?\s*(?<quote>['"]?)(?<tag>\w+)\k<quote>[^\n]*\n[\s\S]*?\n\k<tag>(?=\n|$)/gu,
-      "<<heredoc"
+  withoutData(
+    shellWords(
+      command.replaceAll(
+        /<<-?\s*(?<quote>['"]?)(?<tag>\w+)\k<quote>[^\n]*\n[\s\S]*?\n\k<tag>(?=\n|$)/gu,
+        "<<heredoc"
+      )
     )
-    .replaceAll(/'[^']*'|"(?:[^"\\]|\\.)*"/gu, "''");
+  );
 
 const gitCommand = /(?:^|[\s;&|()])(?:\S*\/)?git\s/u;
 
 const rules = [
-  [/(?:^|\s)--no-verify\b/u, "`--no-verify` skips the git hooks"],
+  // git reads a unique prefix of a long option as the option (gitcli(7)); `--no-ver` is ambiguous.
+  [/(?:^|\s)--no-veri(?:fy?)?(?![\w-])/u, "`--no-verify` skips the git hooks"],
   [
     /\bgit\s+(?:-\S+\s+(?:\S+\s+)?)*commit\b[^;&|]*\s-[a-zA-Z]*n[a-zA-Z]*(?=\s|$)/u,
     "`git commit -n` skips the git hooks",
