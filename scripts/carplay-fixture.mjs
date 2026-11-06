@@ -146,22 +146,43 @@ const artworkServer = Bun.serve({
   port: artworkPort,
 });
 
-const api = async (method, route, body) => {
-  const response = await fetch(`${address}/${route}`, {
-    // oxlint-disable-next-line unicorn/no-invalid-fetch-options -- Every caller writes with POST or PUT.
-    body: JSON.stringify(body),
-    headers: {
-      authorization: `Bearer ${token}`,
-      "content-type": "application/json",
-    },
-    method,
-    signal: AbortSignal.timeout(30_000),
-  });
+const writeHeaders = {
+  authorization: `Bearer ${token}`,
+  "content-type": "application/json",
+};
+
+const answered = async (response, method, route) => {
   if (!response.ok) {
     throw new Error(`${method} ${route} answered ${response.status}`);
   }
   return response.status === 204 ? null : await response.json();
 };
+
+// Each write states its method beside its body, so no request carries a body
+// with a method that cannot take one.
+const post = async (route, body) =>
+  await answered(
+    await fetch(`${address}/${route}`, {
+      body: JSON.stringify(body),
+      headers: writeHeaders,
+      method: "POST",
+      signal: AbortSignal.timeout(30_000),
+    }),
+    "POST",
+    route
+  );
+
+const put = async (route, body) =>
+  await answered(
+    await fetch(`${address}/${route}`, {
+      body: JSON.stringify(body),
+      headers: writeHeaders,
+      method: "PUT",
+      signal: AbortSignal.timeout(30_000),
+    }),
+    "PUT",
+    route
+  );
 
 const seed = async (route) => {
   const response = await fetch(`${seedAddress}/${route}`, {
@@ -194,7 +215,7 @@ await runInOrder(sets.entries(), async ([index, [title, creator, colors]]) => {
   if (made.status !== 0) {
     throw new Error(`ffmpeg could not draw ${image}`);
   }
-  const set = await api("POST", "sets", {
+  const set = await post("sets", {
     tags: ["techno"],
     title,
     url: `https://www.youtube.com/watch?v=carplay${String(index).padStart(4, "0")}`,
@@ -216,16 +237,16 @@ await seed(`tracklist/${playable[0].id}`);
 
 // Each Listen starts after the last.
 await runInOrder(playable.slice(0, 3), async (set) => {
-  await api("PUT", "queue/active", { setId: set.id });
-  await api("PUT", `sets/${set.id}/position`, { seconds: 10 });
+  await put("queue/active", { setId: set.id });
+  await put(`sets/${set.id}/position`, { seconds: 10 });
 });
 
-const late = await api("POST", "playlists", { name: "Late night" });
-await api("PUT", `playlists/${late.id}/sets`, {
+const late = await post("playlists", { name: "Late night" });
+await put(`playlists/${late.id}/sets`, {
   setIds: [playable[0].id, playable[2].id, downloading.id, playable[4].id],
 });
-const warmUp = await api("POST", "playlists", { name: "Warm up" });
-await api("PUT", `playlists/${warmUp.id}/sets`, {
+const warmUp = await post("playlists", { name: "Warm up" });
+await put(`playlists/${warmUp.id}/sets`, {
   setIds: [playable[1].id, playable[3].id],
 });
 

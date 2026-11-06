@@ -161,8 +161,9 @@ export const configureLogging = (options: LoggingOptions = {}): void => {
     service: "orbis",
   };
   const redact = { paths: REDACTED_PATHS };
-  // oxlint-disable-next-line typescript/no-unnecessary-boolean-literal-compare -- isTTY is typed boolean but is undefined when stdout is not a terminal, and evlog reads undefined as pretty.
-  const pretty = options.pretty ?? process.stdout.isTTY === true;
+  // isTTY is typed boolean but is undefined when stdout is not a terminal, and
+  // a non-terminal must say so: evlog reads a missing `pretty` as pretty.
+  const pretty = options.pretty ?? process.stdout.isTTY ?? false;
   // Bun runs tests with NODE_ENV=test, so an unconfigured suite stays quiet.
   const silent = options.silent ?? process.env.NODE_ENV === "test";
   if (options.otlp !== undefined) {

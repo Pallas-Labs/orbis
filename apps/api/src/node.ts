@@ -346,86 +346,87 @@ export class GroupAudioNode {
               : "Audio node details failed.",
           reason: "provider-unavailable",
         }),
-      try: async (signal) =>
-        // oxlint-disable-next-line promise/avoid-new -- The reply arrives through a later WebSocket event.
-        await new Promise<Details>((resolve, reject) => {
-          const socket = this.socket();
-          const [set] = this.ctx.storage.sql
-            .exec<{ id: string }>("SELECT id FROM sets WHERE url = ?", url)
-            .toArray();
-          if (!socket || !GroupAudioNode.attachment(socket).ready || !set) {
-            reject(new Error("Audio node is unavailable."));
-            return;
-          }
-          if (GroupAudioNode.attachment(socket).detailRequests.length >= 8) {
-            reject(new Error("Audio node details are busy."));
-            return;
-          }
-          const requestId = crypto.randomUUID();
-          const command = {
-            kind: "read-details",
-            requestId,
-            setId: set.id,
-            url,
-          } as const;
-          let timer: ReturnType<typeof setTimeout> | undefined;
-          const cleanup = () => {
-            clearTimeout(timer);
-            timer = undefined;
-            this.details.delete(requestId);
-            // A reconnect moves the request to the newer socket.
-            for (const carrier of this.ctx.getWebSockets("node")) {
-              const current =
-                carrier.readyState === WebSocket.OPEN
-                  ? GroupAudioNode.attachment(carrier)
-                  : undefined;
-              if (
-                current?.detailRequests.some(
-                  (request) => request.requestId === requestId
-                ) === true
-              ) {
-                carrier.serializeAttachment({
-                  ...current,
-                  detailRequests: current.detailRequests.filter(
-                    (request) => request.requestId !== requestId
-                  ),
-                } satisfies Attachment);
-              }
+      try: async (signal) => {
+        // The reply arrives through a later WebSocket event.
+        const { promise, reject, resolve } = Promise.withResolvers<Details>();
+        const socket = this.socket();
+        const [set] = this.ctx.storage.sql
+          .exec<{ id: string }>("SELECT id FROM sets WHERE url = ?", url)
+          .toArray();
+        if (!socket || !GroupAudioNode.attachment(socket).ready || !set) {
+          reject(new Error("Audio node is unavailable."));
+          return await promise;
+        }
+        if (GroupAudioNode.attachment(socket).detailRequests.length >= 8) {
+          reject(new Error("Audio node details are busy."));
+          return await promise;
+        }
+        const requestId = crypto.randomUUID();
+        const command = {
+          kind: "read-details",
+          requestId,
+          setId: set.id,
+          url,
+        } as const;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const cleanup = () => {
+          clearTimeout(timer);
+          timer = undefined;
+          this.details.delete(requestId);
+          // A reconnect moves the request to the newer socket.
+          for (const carrier of this.ctx.getWebSockets("node")) {
+            const current =
+              carrier.readyState === WebSocket.OPEN
+                ? GroupAudioNode.attachment(carrier)
+                : undefined;
+            if (
+              current?.detailRequests.some(
+                (request) => request.requestId === requestId
+              ) === true
+            ) {
+              carrier.serializeAttachment({
+                ...current,
+                detailRequests: current.detailRequests.filter(
+                  (request) => request.requestId !== requestId
+                ),
+              } satisfies Attachment);
             }
-          };
-          timer = setTimeout(() => {
+          }
+        };
+        timer = setTimeout(() => {
+          cleanup();
+          reject(new Error("Audio node details timed out."));
+        }, 15_000);
+        signal.addEventListener(
+          "abort",
+          () => {
             cleanup();
-            reject(new Error("Audio node details timed out."));
-          }, 15_000);
-          signal.addEventListener(
-            "abort",
-            () => {
-              cleanup();
-              reject(new Error("Details read canceled."));
-            },
-            { once: true }
-          );
-          const attached = GroupAudioNode.attachment(socket);
-          socket.serializeAttachment({
-            ...GroupAudioNode.attachment(socket),
-            detailRequests: [
-              ...attached.detailRequests,
-              { requestId, setId: set.id },
-            ],
-          } satisfies Attachment);
-          this.details.set(requestId, {
-            command,
-            reject: (error) => {
-              cleanup();
-              reject(error);
-            },
-            resolve: (value) => {
-              cleanup();
-              resolve(value);
-            },
-          });
-          GroupAudioNode.send(socket, command);
-        }),
+            reject(new Error("Details read canceled."));
+          },
+          { once: true }
+        );
+        const attached = GroupAudioNode.attachment(socket);
+        socket.serializeAttachment({
+          ...GroupAudioNode.attachment(socket),
+          detailRequests: [
+            ...attached.detailRequests,
+            { requestId, setId: set.id },
+          ],
+        } satisfies Attachment);
+        this.details.set(requestId, {
+          command,
+          reject: (error) => {
+            cleanup();
+            reject(error);
+          },
+          resolve: (value) => {
+            cleanup();
+            resolve(value);
+          },
+        });
+        GroupAudioNode.send(socket, command);
+        return await promise;
+      },
     }).pipe(this.detailSlots.withPermits(1));
 
   private async acceptDetails(

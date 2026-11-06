@@ -53,6 +53,15 @@ const contentTypeFor = (format: string): string | undefined => {
 
 const downloadFailed = (reason: string) =>
   new LibraryError({ message: reason, statusCode: 500 });
+
+/** Removes one suffix of a Set's audio, which a release or a replacement clears. */
+const removeAudioFile = async (
+  directory: string,
+  id: string,
+  suffix: string
+): Promise<void> => {
+  await rm(path.join(directory, `${id}.${suffix}`), { force: true });
+};
 const storeStep = <A>(step: () => Promise<A>) =>
   Effect.tryPromise({
     catch: () => downloadFailed("The downloaded audio could not be stored."),
@@ -94,12 +103,13 @@ export class MediaStore extends Context.Service<
           statusCode: 500,
         }),
       try: async () => {
-        // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the three audio formats.
-        await Promise.all(
-          ["ogg", "mp3", "m4a"].map(async (suffix) => {
-            await rm(path.join(directory, `${id}.${suffix}`), { force: true });
-          })
-        );
+        // A release clears the three formats a stored Set can have, and no
+        // more, so the list at the call names every file it removes.
+        await Promise.all([
+          removeAudioFile(directory, id, "ogg"),
+          removeAudioFile(directory, id, "mp3"),
+          removeAudioFile(directory, id, "m4a"),
+        ]);
       },
     });
   }
@@ -346,14 +356,15 @@ export class MediaStore extends Context.Service<
     const removeFiles = Effect.fn("MediaStore.removeFiles")((id: string) =>
       Effect.promise(
         async () =>
-          // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the five partial and audio suffixes.
-          await Promise.all(
-            ["part", "part.ytdl", "ogg", "mp3", "m4a"].map(async (suffix) => {
-              await rm(path.join(audioDir, `${id}.${suffix}`), {
-                force: true,
-              });
-            })
-          )
+          // A stored Set has at most a partial pair and the three audio
+          // formats, so the list at the call names every file it removes.
+          await Promise.all([
+            removeAudioFile(audioDir, id, "part"),
+            removeAudioFile(audioDir, id, "part.ytdl"),
+            removeAudioFile(audioDir, id, "ogg"),
+            removeAudioFile(audioDir, id, "mp3"),
+            removeAudioFile(audioDir, id, "m4a"),
+          ])
       )
     );
     /**
