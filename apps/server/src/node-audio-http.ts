@@ -93,6 +93,7 @@ const serveAudio = async (
     return Response.json({ message: "Invalid stream grant." }, { status: 401 });
   }
   record({ person: verdict.personId });
+  // oxlint-disable-next-line orbis/bounded-concurrency -- opens one file for each audio format Orbis stores, at most three.
   const files = await Promise.all(
     formats.map(async (format) => {
       const file = Bun.file(

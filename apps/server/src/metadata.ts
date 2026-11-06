@@ -679,7 +679,8 @@ const appleMusicProvider = (
       const searches = yield* Effect.forEach(
         appleMusicSearchReads(words),
         (url) => requestJson(url, AppleMusicSearchResponse, options),
-        { concurrency: "unbounded" }
+        // appleMusicSearchReads returns at most two searches.
+        { concurrency: 2 }
       );
       const ids = mergedAlbumIds(searches);
       if (ids.length === 0) {

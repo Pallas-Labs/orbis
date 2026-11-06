@@ -70,6 +70,7 @@ const AppShell = ({ session }: { readonly session: Session }) => {
 
 // The session the shell shows. A reload while Orbis cannot be reached keeps it,
 // so the shell and its live stream stay up and show that they are reconnecting.
+// oxlint-disable-next-line orbis/no-module-level-mutable-state -- this route sets `ssr: false`, so the binding lives in one browser tab, never on the Worker.
 let shown: Session | undefined;
 
 export const Route = createFileRoute("/_app")({

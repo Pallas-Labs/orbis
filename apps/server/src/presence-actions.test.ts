@@ -159,6 +159,19 @@ const harness = (databasePath: string, transcript: Transcript) => {
         transcript.push({ at: clock.now, transition });
       }),
   });
+  const expectStatus = (
+    action: PresenceAction,
+    response: { body: unknown; status: number },
+    status: number
+  ) => {
+    if (response.status !== status) {
+      const body =
+        response.status === 409 ? decodeConflict(response.body) : response.body;
+      throw new Error(
+        `${action.kind} ${action.actionId} at ${clock.now}: expected HTTP ${status}, received ${response.status} ${JSON.stringify(body)}`
+      );
+    }
+  };
   const start = async () => {
     let wakeAt: number | null = null;
     const app = createApp({
@@ -243,21 +256,6 @@ const harness = (databasePath: string, transcript: Transcript) => {
     const actStatus = async (key: Key | "admin", action: Payload) => {
       const response = await act(key, action);
       return response.status;
-    };
-    const expectStatus = (
-      action: PresenceAction,
-      response: { body: unknown; status: number },
-      status: number
-    ) => {
-      if (response.status !== status) {
-        const body =
-          response.status === 409
-            ? decodeConflict(response.body)
-            : response.body;
-        throw new Error(
-          `${action.kind} ${action.actionId} at ${clock.now}: expected HTTP ${status}, received ${response.status} ${JSON.stringify(body)}`
-        );
-      }
     };
     const accepted = async (key: Key, action: PresenceAction) => {
       const response = await act(key, action);

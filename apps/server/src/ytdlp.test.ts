@@ -96,18 +96,19 @@ test("the argument list is fixed and the URL follows --", () => {
   );
 });
 
+const failingRun: YtdlpRunner = async (argv) => {
+  if (argv.includes("--version")) {
+    return { code: 0, stdout: "2026.09.01\n" };
+  }
+  await Bun.write(outputOf(argv), "half a file");
+  return { code: 1, stdout: "" };
+};
+
 test("a failed run deletes the partial file", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-ytdlp-"));
   const destination = path.join(root, "a.part");
-  const run: YtdlpRunner = async (argv) => {
-    if (argv.includes("--version")) {
-      return { code: 0, stdout: "2026.09.01\n" };
-    }
-    await Bun.write(outputOf(argv), "half a file");
-    return { code: 1, stdout: "" };
-  };
   try {
-    await expect(download(run, destination)).rejects.toBeDefined();
+    await expect(download(failingRun, destination)).rejects.toBeDefined();
     expect(await Bun.file(destination).exists()).toBe(false);
   } finally {
     await rm(root, { force: true, recursive: true });
@@ -302,19 +303,20 @@ testFfmpeg(
   }
 );
 
+// Real yt-dlp writes `-o x.part` to `x`: it treats `.part` as its own suffix.
+const strippingRun: YtdlpRunner = async (argv) => {
+  if (argv.includes("--version")) {
+    return { code: 0, stdout: "2026.08.19\n" };
+  }
+  await Bun.write(outputOf(argv).replace(/\.part$/u, ""), "audio bytes");
+  return { code: 0, stdout: "" };
+};
+
 test("the download lands at the destination although yt-dlp strips a .part name", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-ytdlp-"));
   const destination = path.join(root, "a.part");
-  // Real yt-dlp writes `-o x.part` to `x`: it treats `.part` as its own suffix.
-  const run: YtdlpRunner = async (argv) => {
-    if (argv.includes("--version")) {
-      return { code: 0, stdout: "2026.08.19\n" };
-    }
-    await Bun.write(outputOf(argv).replace(/\.part$/u, ""), "audio bytes");
-    return { code: 0, stdout: "" };
-  };
   try {
-    await download(run, destination);
+    await download(strippingRun, destination);
     expect(await Bun.file(destination).text()).toBe("audio bytes");
   } finally {
     await rm(root, { force: true, recursive: true });

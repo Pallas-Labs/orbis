@@ -18,7 +18,14 @@
     "resolveJsonModule": true,
     "incremental": true,
     "noEmit": true,
-    "types": ["bun"]
+    "types": ["bun"],
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "ignoreEffectWarningsInTscExitCode": false,
+        "allowedUnstableApis": ["effect/http", "effect/http-api"]
+      }
+    ]
   },
   "include": ["src", "raycast-env.d.ts"]
 }

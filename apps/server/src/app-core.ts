@@ -424,7 +424,6 @@ const withOrigin = (response: Response): Response => {
   }
   return response;
 };
-
 export const createPortableApp = (options: {
   audio: Layer.Layer<Audio, never, Library>;
   audioResponse: (
@@ -494,6 +493,47 @@ export const createPortableApp = (options: {
   );
   let presenceService: typeof Presence.Service | null = null;
   let importerService: typeof PlaylistImporter.Service | null = null;
+  const seesPerson = (personId: string) => (viewerId: string) =>
+    Effect.sync(() => {
+      if (viewerId === personId) {
+        return true;
+      }
+      try {
+        resolveVisiblePerson(
+          readTrustRegistry(trustPath).store.people,
+          viewerId,
+          personId
+        );
+        return true;
+      } catch {
+        return false;
+      }
+    });
+  const personSummary = (id: string) => {
+    const { people } = readTrustRegistry(trustPath).store;
+    const person = people.find((candidate) => candidate.id === id);
+    return { id, username: person?.username ?? id };
+  };
+  const trustCall = <A>(action: (storePath: string) => A) =>
+    trustOperation(() => {
+      if (!trustPath) {
+        throw new AdminError(500, "The trust store is unavailable.");
+      }
+      return action(trustPath);
+    }).pipe(Effect.mapError(({ cause }) => fromAdminError(cause)));
+  const issueCodeFor = (personId: string) =>
+    Effect.map(
+      trustCall((storePath) =>
+        issueSignInCode(storePath, personId, signInCodeNow())
+      ),
+      (issued) => HttpServerResponse.jsonUnsafe(issued, { status: 201 })
+    );
+  // An unknown code or secret counts as a failed sign-in attempt, and the
+  // attempt that takes a client over the limit already answers 429.
+  const failedApproval = (client: string, message: string) =>
+    attempts.signInAttempt(client)
+      ? tooManyAttemptsFailure()
+      : new LibraryError({ message, statusCode: 404 });
   const routes = Layer.effectDiscard(
     Effect.gen(function* registerRoutes() {
       const library = yield* Library;
@@ -526,22 +566,6 @@ export const createPortableApp = (options: {
         reaches: (viewerId: string) => Effect.Effect<boolean>
       ) => PubSub.publish(changes, { kind: "changed", reaches, topic });
       const recheckAccess = () => PubSub.publish(changes, { kind: "access" });
-      const seesPerson = (personId: string) => (viewerId: string) =>
-        Effect.sync(() => {
-          if (viewerId === personId) {
-            return true;
-          }
-          try {
-            resolveVisiblePerson(
-              readTrustRegistry(trustPath).store.people,
-              viewerId,
-              personId
-            );
-            return true;
-          } catch {
-            return false;
-          }
-        });
       const readsSet = (setId: string) => (viewerId: string) =>
         resolveVisibleSet({
           id: setId,
@@ -746,6 +770,8 @@ export const createPortableApp = (options: {
               })
             );
           }
+          // The read's own failure waits until the Set exists: enrichSavedSet replays it there.
+          // oxlint-disable-next-line effecttsgo/return-effect-in-gen -- the caller wants the read as an Effect, run after the save.
           return Effect.fromResult(read);
         }
       );
@@ -1211,11 +1237,6 @@ export const createPortableApp = (options: {
           return editor.creatorId;
         }
       );
-      const personSummary = (id: string) => {
-        const { people } = readTrustRegistry(trustPath).store;
-        const person = people.find((candidate) => candidate.id === id);
-        return { id, username: person?.username ?? id };
-      };
       const playlistGroup = HttpApiBuilder.group(
         OrbisApi,
         "playlists",
@@ -1721,10 +1742,14 @@ export const createPortableApp = (options: {
         const now = presenceNow();
         const found = [];
         for (const person of people) {
-          let target;
-          try {
-            target = resolveVisiblePerson(people, viewerId, person.id);
-          } catch {
+          const target = Option.getOrUndefined(
+            Option.liftThrowable(resolveVisiblePerson)(
+              people,
+              viewerId,
+              person.id
+            )
+          );
+          if (target === undefined) {
             continue;
           }
           const setId = yield* presence
@@ -1936,22 +1961,8 @@ export const createPortableApp = (options: {
           });
         }
       });
-      const trustCall = <A>(action: (storePath: string) => A) =>
-        trustOperation(() => {
-          if (!trustPath) {
-            throw new AdminError(500, "The trust store is unavailable.");
-          }
-          return action(trustPath);
-        }).pipe(Effect.mapError(({ cause }) => fromAdminError(cause)));
       const adminCall = <A>(action: (storePath: string) => A) =>
         Effect.andThen(requireHost, trustCall(action));
-      const issueCodeFor = (personId: string) =>
-        Effect.map(
-          trustCall((storePath) =>
-            issueSignInCode(storePath, personId, signInCodeNow())
-          ),
-          (issued) => HttpServerResponse.jsonUnsafe(issued, { status: 201 })
-        );
       // Devices act for the Person behind a key. A stream grant has no key, so
       // it is refused.
       const deviceCall = Effect.fn("App.deviceCall")(
@@ -1971,12 +1982,6 @@ export const createPortableApp = (options: {
           );
         }
       );
-      // An unknown code or secret counts as a failed sign-in attempt, and the
-      // attempt that takes a client over the limit already answers 429.
-      const failedApproval = (client: string, message: string) =>
-        attempts.signInAttempt(client)
-          ? tooManyAttemptsFailure()
-          : new LibraryError({ message, statusCode: 404 });
       // Only a signed-in device approves, and a client or Group over the
       // failed-attempt limit is refused before the lookup, so it cannot learn
       // that a guess was right.

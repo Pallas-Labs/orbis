@@ -10,6 +10,7 @@ import appCss from "../styles.css?url";
 
 // Only the Worker holds the API address, so the page asks it once per load.
 const getApiUrl = createServerFn({ method: "GET" }).handler(() => apiUrl());
+// oxlint-disable-next-line orbis/no-module-level-mutable-state -- holds the completed API address, the same for every page; it never holds the pending request.
 let knownApiUrl: string | undefined;
 const loadApiUrl = async (): Promise<string> => {
   knownApiUrl ??= await getApiUrl();

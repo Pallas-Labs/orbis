@@ -37,16 +37,14 @@ const frames = (response: Response) => {
     }
     return decodeEventJson(raw);
   };
+  const attempt = async (): Promise<ReturnType<typeof decodeEventJson>> => {
+    const event = await nextFrame();
+    return event.kind === "presence" ? attempt() : event;
+  };
   return {
     close: () => stream.close(),
     /** The next frame that is not a Presence frame, which this suite leaves to its own test. */
-    next: (): Promise<ReturnType<typeof decodeEventJson>> => {
-      const attempt = async (): Promise<ReturnType<typeof decodeEventJson>> => {
-        const event = await nextFrame();
-        return event.kind === "presence" ? attempt() : event;
-      };
-      return attempt();
-    },
+    next: (): Promise<ReturnType<typeof decodeEventJson>> => attempt(),
   };
 };
 

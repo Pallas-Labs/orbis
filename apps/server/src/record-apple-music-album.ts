@@ -74,6 +74,7 @@ const main = async () => {
   const record = async (url: string, name: string): Promise<string | null> => {
     const response = await fetch(url, {
       headers: { authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(30_000),
     });
     if (response.status !== 200 && response.status !== 404) {
       console.error(`Apple Music answered ${response.status} for ${url}.`);
@@ -98,6 +99,7 @@ const main = async () => {
       name.endsWith("-albums.json")
     )) {
       const name = albumsName.replace(/-albums\.json$/u, "");
+      // oxlint-disable-next-line orbis/bounded-concurrency -- reads the two recorded files of one album.
       const found = await Promise.all(
         [`${name}.json`, `${name}-dj-mix.json`].map(async (file) =>
           decodeSearch(

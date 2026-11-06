@@ -31,13 +31,19 @@ export const useDownloadProgress = (
       return;
     }
     const ids = watched.split(",");
+    let stopped = false;
+    let polling = false;
     const poll = async () => {
+      // oxlint-disable-next-line orbis/bounded-concurrency -- one small read for each Download in flight on this page, and the next poll waits for this one.
       const states = await Promise.all(
         ids.map(async (id) => ({
           id,
           result: await audioState({ apiUrl, key }, id),
         }))
       );
+      if (stopped) {
+        return;
+      }
       const next = new Map<string, number>();
       let settled = false;
       for (const { id, result } of states) {
@@ -56,8 +62,23 @@ export const useDownloadProgress = (
         await router.invalidate();
       }
     };
-    const timer = setInterval(poll, POLL_MS);
-    return () => clearInterval(timer);
+    // A tick while a poll still waits for its answers does nothing, so polls never stack.
+    const tick = async () => {
+      if (polling) {
+        return;
+      }
+      polling = true;
+      try {
+        await poll();
+      } finally {
+        polling = false;
+      }
+    };
+    const timer = setInterval(tick, POLL_MS);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
   }, [apiUrl, key, router, watched]);
   return progress;
 };

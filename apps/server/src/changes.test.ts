@@ -127,21 +127,19 @@ const open = async (key: Key, route = "/events?changes=1") => {
   });
   expect(response.status).toBe(200);
   const stream = eventStream(response);
+  const attempt = async (): Promise<string> => {
+    const raw = await stream.next();
+    if (raw === null) {
+      throw new Error("The event stream closed");
+    }
+    const event = decodeNew(raw);
+    return event.kind === "changed" ? event.topic : attempt();
+  };
   return {
     close: () => stream.close(),
     data: () => stream.next(),
     /** The next `changed` topic, skipping Queue, Presence, and heartbeat frames. */
-    nextTopic: (): Promise<string> => {
-      const attempt = async (): Promise<string> => {
-        const raw = await stream.next();
-        if (raw === null) {
-          throw new Error("The event stream closed");
-        }
-        const event = decodeNew(raw);
-        return event.kind === "changed" ? event.topic : attempt();
-      };
-      return attempt();
-    },
+    nextTopic: (): Promise<string> => attempt(),
   };
 };
 

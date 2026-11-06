@@ -19,7 +19,9 @@ deploy/cobalt/*.report.json
 
 # Agent skill installs (machine-local)
 .agents/
-.claude/
+.claude/*
+# The fence's agent hook (PAL-1543) is shared; every other Claude file stays local.
+!.claude/settings.json
 
 # SwiftPM
 .build/

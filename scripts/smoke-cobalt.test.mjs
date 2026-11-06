@@ -135,8 +135,7 @@ process.exitCode = ${ffmpegExitCode};
 };
 
 const runSmoke = (args, environment) =>
-  // A child process does not expose a promise-based close event.
-  // eslint-disable-next-line promise/avoid-new
+  // eslint-disable-next-line promise/avoid-new -- A child process does not expose a promise-based close event.
   new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [smokeScript, ...args], {
       cwd: root,

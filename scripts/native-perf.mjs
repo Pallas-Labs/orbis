@@ -39,7 +39,7 @@ const server = spawn("bun", ["scripts/fixture.ts"], {
 /// Any HTTP status means the service is listening.
 const waitForService = async (deadline = Date.now() + 30_000) => {
   try {
-    await fetch(`${base}/health`);
+    await fetch(`${base}/health`, { signal: AbortSignal.timeout(5000) });
   } catch {
     if (Date.now() > deadline) {
       throw new Error(`the service never answered at ${base}`);
@@ -56,7 +56,10 @@ const sampleOnce = async (headers, index, samples, record) => {
     return;
   }
   const started = performance.now();
-  const response = await fetch(`${base}/sets`, { headers });
+  const response = await fetch(`${base}/sets`, {
+    headers,
+    signal: AbortSignal.timeout(30_000),
+  });
   const body = await response.json();
   samples.push(performance.now() - started);
   if (index === 0) {
@@ -85,8 +88,10 @@ try {
       }),
       headers,
       method: "POST",
+      signal: AbortSignal.timeout(60_000),
     })
   );
+  // oxlint-disable-next-line orbis/bounded-concurrency -- the probe seeds a disposable loopback service that this script starts and stops.
   await Promise.all(seeds);
   const seededSeconds = (performance.now() - seedStarted) / 1000;
 

@@ -20,6 +20,7 @@ export interface TrustStorage {
   ) => T;
 }
 
+// oxlint-disable-next-line orbis/no-module-level-mutable-state -- the process's one storage adapter, set once at startup by trust-storage-bun.ts or the Group's registerTrustStorage.
 let storage: TrustStorage | undefined;
 
 export const configureTrustStorage = (adapter: TrustStorage): void => {

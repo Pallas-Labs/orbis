@@ -1,0 +1,124 @@
+{
+  "apps/api/src/data-transfer.ts": {
+    "raw-select": [
+      "SELECT api_keys.id FROM api_keys JOIN people ON people.id = api_keys.person_id WHERE api_keys.digest = ? AND api_keys.scope = 'node' AND people.removed = 0"
+    ]
+  },
+  "apps/api/src/node.ts": {
+    "raw-select": [
+      "SELECT id FROM sets WHERE url = ?",
+      "SELECT download_state AS state FROM sets WHERE id = ?",
+      "SELECT download_state AS state FROM sets WHERE id = ${message.setId}",
+      "SELECT id FROM sets WHERE download_state = 'ready'",
+      "SELECT download_state AS state, EXISTS(SELECT 1 FROM library_entries WHERE set_id = sets.id UNION ALL SELECT 1 FROM playlist_sets WHERE set_id = sets.id UNION ALL SELECT 1 FROM queue_entries WHERE set_id = sets.id) AS referenced FROM sets WHERE id = ?"
+    ]
+  },
+  "apps/api/src/trust-storage.ts": {
+    "raw-select": [
+      "SELECT id, username, removed, social, auto_download AS autoDownload, filters FROM people ORDER BY rowid",
+      "SELECT id, digest AS tokenHash, label, scope, person_id AS personId, added_at AS addedAt, last_used_at AS lastUsedAt FROM api_keys ORDER BY rowid",
+      "SELECT passcode FROM group_settings WHERE id = 1",
+      "SELECT code, person_id AS personId, expires_at AS expiresAt FROM sign_in_codes ORDER BY rowid"
+    ]
+  },
+  "apps/server/src/app-core.ts": {
+    "drizzle-select": [
+      "db.select({ detailsState: setRows.detailsState }).from(setRows).where(eq(setRows.id, params.id))",
+      "db.select({ editorId: playlistEditors.editorId }).from(playlistEditors).where(eq(playlistEditors.playlistId, id))",
+      "db.select({ createdAt: playlists.createdAt, creatorId: playlists.creatorId, id: playlists.id, name: playlists.name, setCount: sql<number>`( SELECT COUNT(*) FROM ${playlistSets} WHERE ${playlistSets.playlistId} = ${playlists.id} )`, }).from(playlistEditors).innerJoin( playlists, eq(playlists.id, playlistEditors.playlistId) ).where( and( eq(playlistEditors.editorId, caller.person.id), eq(playlists.creatorId, playlistEditors.creatorId), eq(playlists.collaborative, true) ) ).orderBy(asc(sql`${playlists.name} COLLATE NOCASE`))",
+      "db.select({ finishedAt: listens.finishedAt, id: listens.id, setId: listens.setId, startedAt: listens.startedAt, }).from(listens).where(eq(listens.personId, target.id)).orderBy(desc(listens.startedAt), desc(listens.id))"
+    ],
+    "raw-select": [
+      "SELECT set_id AS id FROM library_entries WHERE person_id = ${params.id} UNION SELECT set_id AS id FROM queue_entries WHERE person_id = ${params.id} UNION SELECT set_id AS id FROM playlist_sets INNER JOIN playlists ON playlists.id = playlist_sets.playlist_id WHERE creator_id = ${params.id}"
+    ]
+  },
+  "apps/server/src/artwork.ts": {
+    "drizzle-select": [
+      "db.select({ id: sets.id, source: sets.source, url: sets.url }).from(sets).where( and(eq(sets.metadataState, \"enriched\"), isNull(sets.artworkLargeUrl)) )"
+    ]
+  },
+  "apps/server/src/backfill-details.ts": {
+    "drizzle-select": [
+      "db.select({ id: sets.id, source: sets.source, url: sets.url }).from(sets) // yt-dlp cannot read Apple Music; its album read fills those Sets (ADR 0021)..where( and(ne(sets.detailsState, \"filled\"), ne(sets.source, \"apple-music\")) )"
+    ]
+  },
+  "apps/server/src/backfill-tracklists.ts": {
+    "drizzle-select": [
+      "db.select({ id: sets.id }).from(sets).where( and( eq(sets.detailsState, \"filled\"), inArray(sets.tracklistState, [\"pending\", \"failed\"]), // An Apple Music Tracklist is the album's songs, never a Versos answer.ne(sets.source, \"apple-music\") ) )"
+    ]
+  },
+  "apps/server/src/db/database.ts": {
+    "raw-select": [
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ${name}"
+    ]
+  },
+  "apps/server/src/library.ts": {
+    "drizzle-select": [
+      "db.select({ entrySavedAt: libraryEntries.savedAt, entryTags: libraryEntries.tags, entryTitleOverride: libraryEntries.titleOverride, finishCount: listenStats.finishCount, lastListenedAt: listenStats.lastListenedAt, listenCount: listenStats.listenCount, playlistIds: sql<string>`( SELECT COALESCE( json_group_array(${playlistSets.playlistId} ORDER BY ${playlistSets.playlistId}), '[]' ) FROM ${playlistSets} INNER JOIN ${playlists} ON ${playlists.id} = ${playlistSets.playlistId} WHERE ${playlistSets.setId} = ${sets.id} AND ${playlists.creatorId} = ${personId} )`, positionSeconds: playbackPositions.seconds, set: sets, }).from(sets).leftJoin( libraryEntries, and( eq(libraryEntries.setId, sets.id), eq(libraryEntries.personId, personId) ) ).leftJoin( playbackPositions, and( eq(playbackPositions.setId, sets.id), eq(playbackPositions.personId, personId) ) ).leftJoin(listenStats, eq(listenStats.setId, sets.id))",
+      "db.select({ url: sets.url }).from(libraryEntries).innerJoin(sets, eq(sets.id, libraryEntries.setId)).where( and( eq(libraryEntries.personId, personId), inArray(sets.url, [...urls]) ) )",
+      "tx.select().from(sets).where(eq(sets.id, id))",
+      "tx.select({ personId: downloadJobs.personId, state: sets.downloadState, }).from(downloadJobs).innerJoin(sets, eq(sets.id, downloadJobs.setId)).where(eq(downloadJobs.setId, id))",
+      "db.select({ id: sets.id }).from(sets).where(eq(sets.downloadState, \"queued\"))",
+      "tx.select({ setId: playlistSets.setId }).from(playlistSets).where(eq(playlistSets.playlistId, id))",
+      "tx.select({ playlistId: playlistSets.playlistId }).from(playlistSets).innerJoin( playlists, eq(playlistSets.playlistId, playlists.id) ).where( and( eq(playlistSets.setId, setId), eq(playlists.creatorId, personId) ) )"
+    ],
+    "raw-select": [
+      "SELECT DISTINCT value AS tag FROM ${libraryEntries}, json_each(${libraryEntries.tags}) WHERE ${libraryEntries.personId} = ${personId} ORDER BY tag"
+    ]
+  },
+  "apps/server/src/playlist-importer.ts": {
+    "drizzle-select": [
+      "tx.select().from(playlistImports).where( and( eq(playlistImports.personId, personId), eq(playlistImports.sourcePlaylistId, sourcePlaylistId) ) ).orderBy(sql`${playlistImports.updatedAt} DESC`)",
+      "tx.select({ name: playlists.name }).from(playlists).where(eq(playlists.creatorId, input.personId))",
+      "tx.select({ position: playlistSets.position, setId: playlistSets.setId, }).from(playlistSets).where(eq(playlistSets.playlistId, job.playlistId))"
+    ]
+  },
+  "apps/server/src/presence.ts": {
+    "drizzle-select": [
+      "tx.select({ id: apiKeys.id }).from(apiKeys)",
+      "tx.select({ keyId: presenceSessions.keyId, personId: presenceSessions.personId, }).from(presenceSessions).where( and( notInArray(presenceSessions.keyId, liveKeys(tx)), personId === undefined ? undefined : eq(presenceSessions.personId, personId) ) )",
+      "tx.select({ personId: presenceSessions.personId }).from(presenceSessions).where(lapsedLease)",
+      "tx.select({ personId: presenceLegacyReports.personId }).from(presenceLegacyReports).where(lapsedReport)",
+      "tx.select({ keyId: presenceSessions.keyId }).from(presenceSessions).where(eq(presenceSessions.personId, personId))"
+    ]
+  },
+  "apps/server/src/queue.ts": {
+    "drizzle-select": [
+      "db.select({ isActive: queueEntries.isActive, setId: queueEntries.setId, }).from(queueEntries).where(eq(queueEntries.personId, personId)).orderBy(asc(queueEntries.position))"
+    ]
+  },
+  "apps/server/src/sql-transfer.ts": {
+    "raw-select": [
+      "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT GLOB '_cf_*' AND name NOT GLOB '__cf_*' AND (name NOT LIKE 'sqlite_%' OR name = 'sqlite_sequence') ORDER BY name",
+      "SELECT ${fields.map((field) => (field === \"rowid\" ? 'rowid AS \"__orbis_rowid\"' : identifier(field))).join(\", \")} FROM ${identifier(name)} ORDER BY ${withoutRowid ? columns.map(identifier).join(\", \") : \"rowid\"}",
+      "SELECT sql FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL ORDER BY name"
+    ]
+  },
+  "apps/server/src/tracklists.ts": {
+    "drizzle-select": [
+      "db.select({ state: sets.tracklistState }).from(sets).where(eq(sets.id, id))",
+      "db.select({ appleMusicId: setCues.appleMusicId, artist: setCues.artist, artworkUrl: setCues.artworkUrl, position: setCues.position, startSeconds: setCues.startSeconds, title: setCues.title, }).from(setCues).where(eq(setCues.setId, id)).orderBy(asc(setCues.position))"
+    ]
+  },
+  "apps/server/src/trust-storage-bun.ts": {
+    "raw-select": [
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      "SELECT sql FROM sqlite_master WHERE name = 'api_keys'",
+      "SELECT id FROM trust_migrations WHERE id = 1",
+      "SELECT id FROM trust_migrations WHERE id = 1",
+      "SELECT id, username, removed, social, auto_download AS autoDownload, filters FROM people ORDER BY rowid",
+      "SELECT id, digest AS tokenHash, label, scope, person_id AS personId, added_at AS addedAt, last_used_at AS lastUsedAt FROM api_keys ORDER BY rowid",
+      "SELECT passcode FROM group_settings WHERE id = 1",
+      "SELECT code, person_id AS personId, expires_at AS expiresAt FROM sign_in_codes ORDER BY rowid"
+    ]
+  },
+  "apps/server/src/visibility.ts": {
+    "drizzle-select": [
+      "db.select({ personId: libraryEntries.personId, setId: libraryEntries.setId, }).from(libraryEntries).where(inArray(libraryEntries.setId, ids))",
+      "db.select().from(sets).where(eq(sets.id, input.id))"
+    ],
+    "raw-select": [
+      "SELECT set_id AS setId FROM queue_entries WHERE person_id = ${input.personId} AND set_id IN (${pendingIds}) UNION SELECT playlist_sets.set_id AS setId FROM playlist_sets INNER JOIN playlists ON playlists.id = playlist_sets.playlist_id WHERE playlists.creator_id = ${input.personId} AND playlist_sets.set_id IN (${pendingIds})"
+    ]
+  }
+}

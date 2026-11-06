@@ -2,6 +2,10 @@
 
 Before locating a subsystem or choosing a verification lane, read the source and artifact map in `docs/development.md`.
 
+## The fence
+
+`bun install` installs lefthook hooks: each commit runs `bun run check`, and each push runs the bounded-read ratchet. Never use `--no-verify` or another way to skip a hook; `scripts/agent-guard.mjs` refuses them. When a hook fails, fix the failure or report it. Every lint or Effect diagnostic override names its rule and ends with ` -- <reason>`. [The fence](docs/development.md#the-fence) lists each check.
+
 ## Effect Best Practices
 
 **IMPORTANT:** Always consult effect-solutions before writing Effect code.

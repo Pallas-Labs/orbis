@@ -2,7 +2,7 @@ import { appendFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import type { SavedSet } from "@orbis/contracts";
-import { Effect, Exit, Layer } from "effect";
+import { Effect, Exit, Layer, Schema } from "effect";
 
 import { Cobalt } from "./cobalt.js";
 import { DownloadBackends } from "./download-backends.js";
@@ -18,6 +18,14 @@ import {
 } from "./logging.js";
 import { MediaStore } from "./media-store.js";
 import { Ytdlp } from "./ytdlp.js";
+
+// TaggedError is a curried schema factory, not an Error constructor.
+const { TaggedError: taggedFailure } = Schema;
+
+/** A source has no working download backend, which users would notice. */
+class CanaryFailed extends taggedFailure<CanaryFailed>()("CanaryFailed", {
+  message: Schema.String,
+}) {}
 
 /**
  * A nightly check that each download backend still fetches whole, readable audio,
@@ -181,13 +189,12 @@ const program = Effect.gen(function* runCanary() {
     );
   });
   if (sourcesWithoutBackend.length > 0) {
-    return yield* Effect.fail(
-      new Error(
+    return yield* new CanaryFailed({
+      message:
         results.length === 0
           ? "No download backend is configured."
-          : `No working backend for ${sourcesWithoutBackend.join(", ")}.`
-      )
-    );
+          : `No working backend for ${sourcesWithoutBackend.join(", ")}.`,
+    });
   }
   if (!record.ok) {
     yield* raiseWideEventLevel("warn");
@@ -201,10 +208,10 @@ const exit = await Effect.runPromiseExit(
       DownloadBackends.layer.pipe(
         Layer.provideMerge(MediaStore.layer(options)),
         Layer.provide(Cobalt.layer(options)),
-        Layer.provide(Ytdlp.layer(options))
+        Layer.provide(Ytdlp.layer(options)),
+        Layer.provideMerge(loggingLayer)
       )
-    ),
-    Effect.provide(loggingLayer)
+    )
   )
 );
 await rm(workDirectory, { force: true, recursive: true });

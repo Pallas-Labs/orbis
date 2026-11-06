@@ -116,6 +116,7 @@ const discardEvent = (context: DrainContext): void => {
 };
 
 /** Events queued for the collector, sent in batches of up to 50 or every 5 seconds. */
+// oxlint-disable-next-line orbis/no-module-level-mutable-state -- the process's one drain pipeline, set by configureLogging at startup so flushLogs can empty it before exit.
 let otlpBatches: PipelineDrainFn<DrainContext> | undefined;
 
 const otlpDrain = (otlp: OtlpOptions) => {
@@ -203,6 +204,7 @@ const LEVEL_RANK: Readonly<Record<EventLevel, number>> = {
 };
 
 /** A level work raised on its own event, which its outcome cannot lower. */
+// oxlint-disable-next-line orbis/no-shared-pending-cache -- a side table keyed by one request's logger; each entry ends with that request and holds a completed value.
 const raisedLevels = new WeakMap<RequestLogger, EventLevel>();
 
 const levelFor = (completion: RequestCompletion): EventLevel => {
@@ -328,6 +330,7 @@ export const logEvent = (
 export const annotateForwardedRequest = (keyLabel: string | null) =>
   annotateWideEvent({ ingress: "funnel-forward", keyLabel });
 
+// oxlint-disable-next-line orbis/no-shared-pending-cache -- a side table keyed by one request's logger; each entry ends with that request and holds a completed value.
 const lineCounts = new WeakMap<RequestLogger, number>();
 
 const levelOf = (logLevel: LogLevel.LogLevel): "info" | "warn" | "error" => {

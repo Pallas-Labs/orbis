@@ -22,7 +22,15 @@
     "plugins": [
       {
         "name": "@effect/language-service",
-        "ignoreEffectWarningsInTscExitCode": true
+        "ignoreEffectWarningsInTscExitCode": false,
+        "allowedUnstableApis": [
+          "@effect/ai-openrouter",
+          "@effect/sql-sqlite-bun",
+          "@effect/sql-sqlite-do",
+          "effect/ai",
+          "effect/http",
+          "effect/http-api"
+        ]
       }
     ]
   }

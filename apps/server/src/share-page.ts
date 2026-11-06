@@ -35,7 +35,6 @@ a.primary{background:var(--tint);color:#fff}
 a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 `;
 
-let styleHash: Promise<string> | null = null;
 const hashStyle = async () => {
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -46,11 +45,11 @@ const hashStyle = async () => {
 
 /** The page's Content-Security-Policy: no script, no plugins, and only its own style. */
 export const sharePagePolicy = async (): Promise<string> => {
-  styleHash ??= hashStyle();
+  const styleHash = await hashStyle();
   return [
     "default-src 'none'",
     "img-src https: http:",
-    `style-src 'sha256-${await styleHash}'`,
+    `style-src 'sha256-${styleHash}'`,
     "base-uri 'none'",
     "form-action 'none'",
     "frame-ancestors 'none'",

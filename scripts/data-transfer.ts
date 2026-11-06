@@ -39,7 +39,11 @@ const nodeRequest = async (
   if (body !== undefined) {
     options.body = body;
   }
-  const response = await fetch(url, options);
+  // A whole library moves in one request, so the bound is generous.
+  const response = await fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(10 * 60_000),
+  });
   if (!response.ok) {
     throw new Error(`Group ${method} failed with status ${response.status}.`);
   }
@@ -118,6 +122,7 @@ if (command === "export") {
   await writeFile(path.join(target, `${stamp}.sql`), sql, { mode: 0o600 });
   const scanned = await Array.fromAsync(new Bun.Glob("*.sql").scan(target));
   const files = scanned.toSorted();
+  // oxlint-disable-next-line orbis/bounded-concurrency -- removes the local backups past the newest 14, a handful of files.
   await Promise.all(
     files
       .slice(0, Math.max(0, files.length - 14))
