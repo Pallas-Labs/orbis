@@ -2,6 +2,7 @@ import { OrbisApi } from "@orbis/contracts/http-api";
 import { Effect, Option, Schema } from "effect";
 import type { Effect as EffectType, Success } from "effect/Effect";
 import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
+import type { HttpClientResponse } from "effect/http";
 import { HttpApiClient } from "effect/http-api";
 
 /**
@@ -42,15 +43,39 @@ const failureFor = (status: number | undefined): ApiFailure =>
     ? "unreachable"
     : (FAILURE_BY_STATUS.get(status) ?? "failed");
 
+/**
+ * How long a call waits for the API's response. The server's longest intended
+ * wait is the 25 s approval long-poll, so this stays above it. It ends when the
+ * response arrives, so a stream such as `/events` stays open after that. A call
+ * that runs out of time fails as `unreachable`.
+ */
+const RESPONSE_TIMEOUT = "45 seconds";
+
 // A null key sends no Authorization header, for a device that has no key yet.
-const makeClient = (apiUrl: string, key: string | null) =>
+// `onResponse` sees each response before the API client decodes it.
+const makeClient = (
+  apiUrl: string,
+  key: string | null,
+  onResponse: (
+    response: HttpClientResponse.HttpClientResponse
+  ) => Effect.Effect<void>
+) =>
   HttpApiClient.make(OrbisApi, {
     baseUrl: apiUrl,
-    transformClient: HttpClient.mapRequest((request) =>
-      key === null
-        ? request
-        : HttpClientRequest.setHeader(request, "authorization", `Bearer ${key}`)
-    ),
+    transformClient: (client) =>
+      client.pipe(
+        HttpClient.mapRequest((request) =>
+          key === null
+            ? request
+            : HttpClientRequest.setHeader(
+                request,
+                "authorization",
+                `Bearer ${key}`
+              )
+        ),
+        HttpClient.tap(onResponse),
+        HttpClient.timeout(RESPONSE_TIMEOUT)
+      ),
   });
 type OrbisClient = Success<ReturnType<typeof makeClient>>;
 
@@ -64,20 +89,6 @@ const decodeErrorBody = Schema.decodeUnknownOption(
   Schema.fromJsonString(Schema.Struct({ message: Schema.String }))
 );
 
-const messageIn = async (
-  response: Response | undefined
-): Promise<string | undefined> => {
-  if (response === undefined) {
-    return undefined;
-  }
-  try {
-    return Option.getOrUndefined(decodeErrorBody(await response.text()))
-      ?.message;
-  } catch {
-    return undefined;
-  }
-};
-
 const run = async <A, E>(
   apiUrl: string,
   key: string | null,
@@ -85,25 +96,27 @@ const run = async <A, E>(
   signal?: AbortSignal
 ): Promise<ApiResult<A>> => {
   let status: number | undefined;
-  let refused: Response | undefined;
-  const trackedFetch = Object.assign(
-    async (input: string | URL | Request, init?: RequestInit) => {
-      // oxlint-disable-next-line orbis/fetch-needs-timeout -- the Effect HttpClient passes its own abort signal in init; PAL-1680 gives the browser client a timeout.
-      const response = await fetch(input, init);
-      ({ status } = response);
-      refused = response.ok ? undefined : response.clone();
-      return response;
-    },
-    { preconnect: fetch.preconnect }
-  );
+  let message: string | undefined;
+  // The body is cached on the response, so the API client can still decode it.
+  const record = (response: HttpClientResponse.HttpClientResponse) => {
+    ({ status } = response);
+    return response.status < 400
+      ? Effect.void
+      : Effect.gen(function* readMessage() {
+          const text = yield* Effect.option(response.text);
+          message = text.pipe(
+            Option.flatMap(decodeErrorBody),
+            Option.getOrUndefined
+          )?.message;
+        });
+  };
   try {
     const value = await Effect.runPromise(
       Effect.gen(function* request() {
-        const client = yield* makeClient(apiUrl, key);
+        const client = yield* makeClient(apiUrl, key, record);
         return yield* operation(client);
       }).pipe(
         Effect.provide(FetchHttpClient.layer),
-        Effect.provideService(FetchHttpClient.Fetch, trackedFetch),
         // The API's CORS policy does not allow tracing headers.
         Effect.provideService(HttpClient.TracerPropagationEnabled, false)
       ),
@@ -111,12 +124,7 @@ const run = async <A, E>(
     );
     return { ok: true, value };
   } catch {
-    return {
-      failure: failureFor(status),
-      message: await messageIn(refused),
-      ok: false,
-      status,
-    };
+    return { failure: failureFor(status), message, ok: false, status };
   }
 };
 
