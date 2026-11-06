@@ -5,12 +5,21 @@ import { sql } from "drizzle-orm";
 import * as SQLiteDrizzle from "drizzle-orm/effect-sqlite-bun";
 import { migrate } from "drizzle-orm/effect-sqlite-bun/migrator";
 import { readMigrationFiles } from "drizzle-orm/migrator";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Schema } from "effect";
 
 import { Database } from "./service.js";
 import type { DatabaseClient } from "./service.js";
 
 export { Database } from "./service.js";
+
+// TaggedError is a curried schema factory, not an Error constructor.
+const { TaggedError: taggedFailure } = Schema;
+
+/** The database could not be brought to the current schema. */
+export class MigrationError extends taggedFailure<MigrationError>()(
+  "MigrationError",
+  { message: Schema.String }
+) {}
 
 const CURRENT_SCHEMA_VERSION = 2;
 
@@ -113,14 +122,16 @@ const migrateDatabase = Effect.fn("Database.migrateDatabase")(
       );
       const migrations = yield* Effect.try({
         catch: (cause) =>
-          new Error(`Could not read database migrations: ${String(cause)}`),
+          new MigrationError({
+            message: `Could not read database migrations: ${String(cause)}`,
+          }),
         try: () => readMigrationFiles({ migrationsFolder }),
       });
       const [baseline] = migrations;
       if (!baseline) {
-        return yield* Effect.fail(
-          new Error("The Drizzle baseline migration is missing.")
-        );
+        return yield* new MigrationError({
+          message: "The Drizzle baseline migration is missing.",
+        });
       }
       yield* db.run(
         sql`

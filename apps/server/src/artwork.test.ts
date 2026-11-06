@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 
 import { backfillArtwork } from "./artwork.js";
 import { layer as databaseLayer } from "./db/database.js";
@@ -94,22 +94,24 @@ const runBackfill = (databasePath: string, asked: string[]) =>
   Effect.runPromise(
     backfillArtwork.pipe(
       Effect.provide(
-        Metadata.layerOf({
-          enrich: (input) =>
-            Effect.sync(() => {
-              asked.push(input.url);
-              return {
-                artworkLargeUrl: "https://example.test/large.jpg",
-                artworkUrl: "https://example.test/listing.jpg",
-                creator: "Ada Lovelace",
-                durationSeconds: 253,
-                releasedAt: null,
-                title: "The provider's title",
-              };
-            }),
-        })
-      ),
-      Effect.provide(databaseLayer({ databasePath, migrationsFolder }))
+        Layer.mergeAll(
+          Metadata.layerOf({
+            enrich: (input) =>
+              Effect.sync(() => {
+                asked.push(input.url);
+                return {
+                  artworkLargeUrl: "https://example.test/large.jpg",
+                  artworkUrl: "https://example.test/listing.jpg",
+                  creator: "Ada Lovelace",
+                  durationSeconds: 253,
+                  releasedAt: null,
+                  title: "The provider's title",
+                };
+              }),
+          }),
+          databaseLayer({ databasePath, migrationsFolder })
+        )
+      )
     )
   );
 
@@ -145,17 +147,19 @@ test("keeps the images a Set has when the provider cannot answer", async () => {
     const result = await Effect.runPromise(
       backfillArtwork.pipe(
         Effect.provide(
-          Metadata.layerOf({
-            enrich: () =>
-              Effect.fail(
-                new MetadataError({
-                  message: "The provider is unreachable.",
-                  reason: "provider-unavailable",
-                })
-              ),
-          })
-        ),
-        Effect.provide(databaseLayer({ databasePath, migrationsFolder }))
+          Layer.mergeAll(
+            Metadata.layerOf({
+              enrich: () =>
+                Effect.fail(
+                  new MetadataError({
+                    message: "The provider is unreachable.",
+                    reason: "provider-unavailable",
+                  })
+                ),
+            }),
+            databaseLayer({ databasePath, migrationsFolder })
+          )
+        )
       )
     );
 

@@ -1,0 +1,16 @@
+# The fence (PAL-1543): `bun install` runs `prepare`, which installs these hooks. Each commit runs
+# `bun run check`: lint, formatting, the bounded-read ratchet, type checks, Effect diagnostics and
+# every test. Each push runs the bounded-read ratchet again. scripts/agent-guard.mjs refuses an
+# agent's `--no-verify`, and `bun run ci` runs every check on the commit it marks.
+pre-commit:
+  parallel: false
+  commands:
+    check:
+      # Git exports its own variables to a hook; tests that build temporary repositories must not
+      # see them.
+      run: env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE -u GIT_PREFIX -u GIT_EXEC_PATH bun run check
+
+pre-push:
+  commands:
+    bounded-reads:
+      run: node scripts/check-bounded-reads.mjs

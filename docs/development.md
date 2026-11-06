@@ -56,11 +56,22 @@ Authorization headers, cookies, request bodies, source links, stream grants, and
 
 ## Checks
 
-Run `bun run check` for cached lint, formatting, TypeScript, tests, Effect diagnostics, and React Doctor. Turbo runs independent tasks in parallel, bounded by the available CPU count, and builds shared contracts before consumers. `bun run check:force` bypasses task-cache reads. `bun run fix` applies Ultracite fixes; it is never cached.
+Run `bun run check` for cached lint, formatting, the bounded-read ratchet, the fence's own tests, TypeScript, tests, Effect diagnostics, and React Doctor. Turbo runs independent tasks in parallel, bounded by the available CPU count, and builds shared contracts before consumers. `bun run check:force` bypasses task-cache reads. `bun run fix` applies Ultracite fixes; it is never cached.
 
 React Doctor is the `doctor` task of `apps/web`: `bunx react-doctor@0.9.18 . --scope changed --base origin/main --blocking error`, the command, version and blocking level the `Code quality` workflow's React Doctor action ran for `apps/web`. It reports only the errors the checkout adds against `origin/main`, so `origin/main` must be fetched. The task is never cached, because its result depends on that ref.
 
 Typechecks use separate incremental files so they do not race with builds.
+
+### The fence
+
+The fence (PAL-1543) puts rat-stack's first five principles into the checks, so the easy path is the right one. Each part runs in `bun run check`, so `bun run ci` runs it too.
+
+- Hooks. `bun install` runs `prepare`, which patches TypeScript and Oxlint with `@effect/tsgo` and runs `lefthook install`. [`lefthook.yml`](../lefthook.yml) runs `bun run check` on each commit and the bounded-read ratchet on each push. [`scripts/agent-guard.mjs`](../scripts/agent-guard.mjs), a Claude Code `PreToolUse` hook in `.claude/settings.json`, refuses `--no-verify` (also quoted, escaped or abbreviated), `git commit -n`, `LEFTHOOK=0` and `core.hooksPath`. It reads the command as shell words, so only the values of message options such as `-m` and `--body`, and heredoc bodies, count as text. When a hook fails, fix the failure or report it; never skip the hook.
+- Bounded reads. [`scripts/check-bounded-reads.mjs`](../scripts/check-bounded-reads.mjs) (`bun run bounded-reads`) fails a database read in `apps/server/src` or `apps/api/src` with no row bound that [`scripts/bounded-reads.baseline.json`](../scripts/bounded-reads.baseline.json) does not list: a Drizzle `.select()` with no `.limit()` or `.get()`, or a raw `SELECT` with no `LIMIT`. Aggregate-only reads pass, and so do subqueries: a select that ends in `.as()` or is an argument of `inArray`, `notInArray`, `exists` or `notExists`. A wrapper that runs the read, such as `execute(...)`, does not exempt it. A listed read that is gone also fails until `--update-baseline` drops it, so the baseline only shrinks. Mark a read bounded another way with `// bounded-read: <why>` on its line or the line above.
+- Lint. [`lint-plugins/orbis/index.mjs`](../lint-plugins/orbis/index.mjs), copied from the factory's PAL-1542 plugin, adds `orbis/fetch-needs-timeout`, `orbis/bounded-concurrency`, `orbis/no-shared-pending-cache`, `orbis/no-module-level-mutable-state` (the last two ported from rat-stack) and `orbis/directive-needs-reason`. Every lint or Effect diagnostic override names its rule and ends with ` -- <reason>`. An `Effect.cached` or `Cache.make` override names PAL-1546, which decides between them and rat-stack's completed-value cache.
+- Type-aware lint. Oxlint runs with type information and the `@effect/tsgo` `correctness` and `antipattern` presets, at error with `--deny-warnings`. `oxlint.config.ts` lists two ledgers that only shrink: Ultracite's type-aware rules that report today (PAL-1681), and Effect preset findings in older server files (PAL-1679).
+- Effect diagnostics. `tsconfig.base.json` sets `ignoreEffectWarningsInTscExitCode: false`, so an Effect warning fails the typecheck, and lists the unstable Effect modules Orbis uses in `allowedUnstableApis`.
+- [`scripts/fence.test.mjs`](../scripts/fence.test.mjs) (`bun run fence`) runs real Oxlint on `lint-plugins/orbis/fixtures`, plants unbounded reads and hook bypasses, and type-checks a planted Effect warning.
 
 ### Local CI
 

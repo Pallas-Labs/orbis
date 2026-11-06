@@ -343,6 +343,28 @@ const personOf = Effect.fn("Presence.personOf")(function* findKeyPerson(
   return (session ?? key ?? report)?.personId ?? null;
 });
 
+const upsert = (tx: DatabaseClient, next: Session, now: number) => {
+  const row = {
+    ...fields(next),
+    leaseExpiresAt: next.state === "playing" ? next.leaseExpiresAt : null,
+    state: next.state,
+    updatedAt: now,
+  };
+  return tx
+    .insert(presenceSessions)
+    .values(row)
+    .onConflictDoUpdate({
+      set: {
+        actionNumber: row.actionNumber,
+        leaseExpiresAt: row.leaseExpiresAt,
+        ownerGeneration: row.ownerGeneration,
+        state: row.state,
+        updatedAt: row.updatedAt,
+      },
+      target: [presenceSessions.keyId, presenceSessions.sessionId],
+    });
+};
+
 /** Every write to the four presence tables goes through here. */
 export class Presence extends Context.Service<
   Presence,
@@ -591,29 +613,6 @@ export class Presence extends Context.Service<
             Effect.asVoid
           )
         );
-
-        const upsert = (tx: DatabaseClient, next: Session, now: number) => {
-          const row = {
-            ...fields(next),
-            leaseExpiresAt:
-              next.state === "playing" ? next.leaseExpiresAt : null,
-            state: next.state,
-            updatedAt: now,
-          };
-          return tx
-            .insert(presenceSessions)
-            .values(row)
-            .onConflictDoUpdate({
-              set: {
-                actionNumber: row.actionNumber,
-                leaseExpiresAt: row.leaseExpiresAt,
-                ownerGeneration: row.ownerGeneration,
-                state: row.state,
-                updatedAt: row.updatedAt,
-              },
-              target: [presenceSessions.keyId, presenceSessions.sessionId],
-            });
-        };
 
         const gatherFacts = Effect.fn("Presence.gatherFacts")(
           function* readFacts(

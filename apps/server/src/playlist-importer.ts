@@ -196,6 +196,11 @@ const freePlaylistName = (title: string, taken: ReadonlySet<string>) => {
 };
 
 const execute = asLibraryError("Could not complete the playlist import.");
+const write = (client: DatabaseClient, job: ImportJob, now: number) =>
+  client
+    .update(playlistImports)
+    .set({ ...job.counts, ...stateColumns(job.state), updatedAt: now })
+    .where(eq(playlistImports.id, job.id));
 
 const importStore = (db: DatabaseClient) => {
   const withPlaylist = Effect.fn("PlaylistImports.withPlaylist")(
@@ -216,12 +221,6 @@ const importStore = (db: DatabaseClient) => {
       return playlist ? { id: job.id, playlist, state: wireState(job) } : null;
     }
   );
-
-  const write = (client: DatabaseClient, job: ImportJob, now: number) =>
-    client
-      .update(playlistImports)
-      .set({ ...job.counts, ...stateColumns(job.state), updatedAt: now })
-      .where(eq(playlistImports.id, job.id));
 
   const reopen = Effect.fn("PlaylistImports.reopen")(
     (personId: string, sourcePlaylistId: string) =>
@@ -503,6 +502,16 @@ const importStore = (db: DatabaseClient) => {
 
   return { commitPage, create, fail, find, next, reopen, withPlaylist };
 };
+const failureMessage = (cause: Cause.Cause<unknown>) => {
+  const error = Cause.squash(cause);
+  if (error instanceof LibraryError) {
+    return error.message;
+  }
+  if (error instanceof MetadataError) {
+    return playlistImportRefusal(error).message;
+  }
+  return "The import stopped unexpectedly. Try it again.";
+};
 
 export class PlaylistImporter extends Context.Service<
   PlaylistImporter,
@@ -599,17 +608,6 @@ export class PlaylistImporter extends Context.Service<
           }
           return (yield* store.commitPage(job, page, saved)) ?? job;
         });
-
-        const failureMessage = (cause: Cause.Cause<unknown>) => {
-          const error = Cause.squash(cause);
-          if (error instanceof LibraryError) {
-            return error.message;
-          }
-          if (error instanceof MetadataError) {
-            return playlistImportRefusal(error).message;
-          }
-          return "The import stopped unexpectedly. Try it again.";
-        };
 
         const processNext = Effect.fn("PlaylistImporter.processNext")(
           function* processNext() {

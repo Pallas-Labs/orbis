@@ -97,6 +97,7 @@ const saved = await fetch(`${base}/sets`, {
     "content-type": "application/json",
   },
   method: "POST",
+  signal: AbortSignal.timeout(30_000),
 });
 if (saved.status !== 201) {
   throw new Error(`Saving the fixture Set failed: ${await saved.text()}`);
@@ -104,11 +105,15 @@ if (saved.status !== 201) {
 const { id } = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }))(
   await saved.json()
 );
-const page = await fetch(`${base}/share/sets/${id}/page`);
+const page = await fetch(`${base}/share/sets/${id}/page`, {
+  signal: AbortSignal.timeout(30_000),
+});
 await writeFile(path.join(out, "share-page.html"), await page.text());
 let png = new Uint8Array();
 await runTimesInOrder(10, async () => {
-  const image = await fetch(`${base}/share/sets/${id}/image.png`);
+  const image = await fetch(`${base}/share/sets/${id}/image.png`, {
+    signal: AbortSignal.timeout(30_000),
+  });
   png = await image.bytes();
 });
 await writeFile(path.join(out, "share-image.png"), png);

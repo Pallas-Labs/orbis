@@ -69,6 +69,7 @@ const api = async (pathname, key, init = {}) => {
       authorization: `Bearer ${key}`,
       "content-type": "application/json",
     },
+    signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) {
     throw new Error(`${pathname} answered ${response.status}`);
@@ -103,7 +104,7 @@ const stop = async (child, url) => {
   }
   await waitUntil(async () => {
     try {
-      await fetch(url);
+      await fetch(url, { signal: AbortSignal.timeout(5000) });
       return false;
     } catch {
       return true;
@@ -240,6 +241,7 @@ const fontUse = (page) =>
 const compare = (page, first, second) =>
   page.evaluate(
     async (pictures) => {
+      // oxlint-disable-next-line orbis/bounded-concurrency -- decodes the two screenshots it compares.
       const [left, right] = await Promise.all(
         pictures.map(async (data) => {
           const image = new Image();
@@ -497,6 +499,7 @@ const report = { bytes: {}, pages: {} };
 try {
   const list = pages(await seed());
   const sheets = Object.fromEntries(
+    // oxlint-disable-next-line orbis/bounded-concurrency -- reads one stylesheet for each of the two builds it compares.
     await Promise.all(
       builds.map(async ({ dist, name }) => [name, await stylesheet(dist)])
     )

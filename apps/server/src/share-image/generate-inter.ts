@@ -120,7 +120,9 @@ const pack = (font: Font): string => {
 const directory = mkdtempSync(path.join(tmpdir(), "orbis-inter-"));
 try {
   const archive = path.join(directory, "Inter.zip");
-  const response = await fetch(RELEASE);
+  const response = await fetch(RELEASE, {
+    signal: AbortSignal.timeout(120_000),
+  });
   if (!response.ok) {
     throw new Error(`Inter download failed with ${response.status}.`);
   }

@@ -29,6 +29,7 @@ const INK: Rgb = [238, 234, 247];
 const MUTED: Rgb = [214, 202, 238];
 const TINT: Rgb = [165, 77, 255];
 
+// oxlint-disable-next-line orbis/no-module-level-mutable-state -- holds two fonts parsed synchronously from bundled bytes: a completed value that is the same for every request.
 let fonts: { readonly bold: Font; readonly medium: Font } | null = null;
 const loadFonts = () => {
   fonts ??= {

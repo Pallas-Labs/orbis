@@ -252,6 +252,7 @@ export const importDatabase = (db: SqlDatabase, dump: DatabaseDump): void => {
   db.execute(`PRAGMA user_version=${dump.userVersion}`);
 };
 export const tableChecksums = (dump: DatabaseDump) =>
+  // oxlint-disable-next-line orbis/bounded-concurrency -- hashes each table of one dump, a fixed schema of about twenty tables.
   Promise.all(
     dump.tables.map(async (table) => ({
       checksum: [

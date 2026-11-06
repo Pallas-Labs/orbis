@@ -29,6 +29,13 @@
       "cache": false
     },
     "//#lint": {
+      "dependsOn": ["@orbis/contracts#build"],
+      "outputs": []
+    },
+    "//#bounded-reads": {
+      "outputs": []
+    },
+    "//#fence": {
       "outputs": []
     },
     "//#format:check": {

@@ -8,6 +8,7 @@ export const appleMusicRecordings = async <
   Recording extends { readonly url: string },
 >(): Promise<Map<string, Recording>> => {
   const names = await readdir(RECORDINGS);
+  // oxlint-disable-next-line orbis/bounded-concurrency -- reads the recorded fixture files in this repository, a few small files.
   const recordings: Recording[] = await Promise.all(
     names.map(async (name) =>
       JSON.parse(await readFile(new URL(name, RECORDINGS), "utf-8"))

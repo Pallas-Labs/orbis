@@ -88,6 +88,7 @@ const run = async <A, E>(
   let refused: Response | undefined;
   const trackedFetch = Object.assign(
     async (input: string | URL | Request, init?: RequestInit) => {
+      // oxlint-disable-next-line orbis/fetch-needs-timeout -- the Effect HttpClient passes its own abort signal in init; PAL-1680 gives the browser client a timeout.
       const response = await fetch(input, init);
       ({ status } = response);
       refused = response.ok ? undefined : response.clone();

@@ -5,6 +5,7 @@ import path from "node:path";
 import type { decodeTrust, TrustStore } from "./identity.js";
 import { configureTrustStorage } from "./trust-storage.js";
 
+// oxlint-disable-next-line orbis/no-module-level-mutable-state -- a process setting: createApp turns waiting off once for the disposable test and fixture service.
 let busyTimeout = 5000;
 export const useNonblockingTrustStorage = (): void => {
   busyTimeout = 0;
@@ -109,6 +110,7 @@ const upgradeTrustTables = (db: Database): void => {
   }
 };
 
+// oxlint-disable-next-line orbis/no-shared-pending-cache -- records each database file whose schema this process finished creating; it holds completed work only.
 const initialized = new Set<string>();
 
 export const initializeTrustDatabase = (input: {

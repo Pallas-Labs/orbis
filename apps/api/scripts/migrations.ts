@@ -4,6 +4,7 @@ import path from "node:path";
 const source = path.resolve(import.meta.dir, "../../server/drizzle");
 const target = path.resolve(import.meta.dir, "../src/migrations.json");
 const names = await readdir(source);
+// oxlint-disable-next-line orbis/bounded-concurrency -- reads the migration folders in this repository, a few dozen small files.
 const entries = await Promise.all(
   names
     .toSorted()

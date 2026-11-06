@@ -49,7 +49,7 @@ const runInOrder = async (items, run) => {
 const waitFor = async (url) => {
   const attempt = async (attemptsLeft) => {
     try {
-      await fetch(url);
+      await fetch(url, { signal: AbortSignal.timeout(5000) });
       return;
     } catch {
       // Not listening yet.
@@ -155,6 +155,7 @@ const api = async (method, route, body) => {
       "content-type": "application/json",
     },
     method,
+    signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) {
     throw new Error(`${method} ${route} answered ${response.status}`);
@@ -163,7 +164,10 @@ const api = async (method, route, body) => {
 };
 
 const seed = async (route) => {
-  const response = await fetch(`${seedAddress}/${route}`, { method: "POST" });
+  const response = await fetch(`${seedAddress}/${route}`, {
+    method: "POST",
+    signal: AbortSignal.timeout(30_000),
+  });
   if (response.status !== 204) {
     throw new Error(`seeding ${route} answered ${response.status}`);
   }

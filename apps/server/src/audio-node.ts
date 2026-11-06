@@ -390,6 +390,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
         );
       }
       await stopDownload();
+      // oxlint-disable-next-line orbis/bounded-concurrency -- waits for work already started; it starts nothing.
       await Promise.allSettled(pending.values());
       if (closed) {
         return;
@@ -419,6 +420,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       clearTimeout(retry);
       socket?.close();
       await stopDownload();
+      // oxlint-disable-next-line orbis/bounded-concurrency -- waits for work already started; it starts nothing.
       await Promise.allSettled(pending.values());
       await runtime.dispose();
     },

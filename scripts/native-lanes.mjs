@@ -87,7 +87,7 @@ const run = (command, options) => {
 /// bounded retry rather than a polling loop so each attempt is a separate await.
 const waitForService = async (address, deadline = Date.now() + 30_000) => {
   try {
-    await fetch(`${address}/health`);
+    await fetch(`${address}/health`, { signal: AbortSignal.timeout(5000) });
   } catch (error) {
     if (Date.now() > deadline) {
       throw new Error(`the lane service never answered at ${address}`, {
@@ -222,6 +222,7 @@ try {
       "content-type": "application/json",
     },
     method: "POST",
+    signal: AbortSignal.timeout(30_000),
   });
   if (!seeded.ok) {
     throw new Error(`seeding the lane library failed with ${seeded.status}`);

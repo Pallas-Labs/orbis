@@ -1,6 +1,7 @@
 import type { decodeTrust, TrustStore } from "../../server/src/identity.js";
 import { configureTrustStorage } from "../../server/src/trust-storage.js";
 
+// oxlint-disable-next-line orbis/no-shared-pending-cache -- maps a Group name to its Durable Object storage, registered once by the Group's constructor; it holds no pending work.
 const stores = new Map<string, DurableObjectStorage>();
 const storageFor = (target: string) => {
   const storage = stores.get(target);

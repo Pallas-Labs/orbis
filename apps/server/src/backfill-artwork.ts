@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 
 import { backfillArtwork } from "./artwork.js";
 import { layer as databaseLayer } from "./db/database.js";
@@ -35,12 +35,14 @@ process.exitCode = await Effect.runPromise(
         return 1;
       })
     ),
-    Effect.provide(Metadata.layer({ youTubeApiKey })),
     Effect.provide(
-      databaseLayer({
-        databasePath,
-        migrationsFolder: path.resolve(import.meta.dir, "../drizzle"),
-      })
+      Layer.mergeAll(
+        Metadata.layer({ youTubeApiKey }),
+        databaseLayer({
+          databasePath,
+          migrationsFolder: path.resolve(import.meta.dir, "../drizzle"),
+        })
+      )
     )
   )
 );

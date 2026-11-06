@@ -130,8 +130,7 @@ function parseSample(value) {
   return { expectedDurationSeconds, source, url };
 }
 
-// The CLI has one branch per supported option.
-// eslint-disable-next-line complexity
+// eslint-disable-next-line complexity -- The CLI has one branch per supported option.
 export function parseArgs(argv) {
   const options = {
     apiKeyEnv: undefined,
@@ -319,8 +318,7 @@ export function parseArgs(argv) {
     throw new SmokeError("at least one --sample is required");
   }
 
-  // Validation is kept below parsing so every option is normalized in one place.
-  // eslint-disable-next-line no-use-before-define
+  // eslint-disable-next-line no-use-before-define -- Validation is kept below parsing so every option is normalized in one place.
   return validateOptions(options);
 }
 
@@ -558,8 +556,7 @@ async function readBoundedText(response) {
   let bytes = 0;
   try {
     while (true) {
-      // The stream must be consumed in order to enforce the byte limit.
-      // eslint-disable-next-line no-await-in-loop
+      // eslint-disable-next-line no-await-in-loop -- The stream must be consumed in order to enforce the byte limit.
       const chunk = await reader.read();
       if (chunk.done) {
         chunks.push(decoder.decode());
@@ -567,9 +564,7 @@ async function readBoundedText(response) {
       }
       bytes += chunk.value.byteLength;
       if (bytes > MAX_JSON_BODY_BYTES) {
-        // Cancel before reporting the bound so an oversized response is not
-        // left running in the background.
-        // eslint-disable-next-line no-await-in-loop
+        // eslint-disable-next-line no-await-in-loop -- Cancel before reporting the bound so an oversized response is not left running in the background.
         await reader.cancel();
         throw new SmokeError("response_too_large");
       }
@@ -922,8 +917,7 @@ function downloadTunnel(
         file = await open(filePath, "wx");
         reader = response.body.getReader();
         while (true) {
-          // The stream must be consumed in order to enforce the byte limit.
-          // eslint-disable-next-line no-await-in-loop
+          // eslint-disable-next-line no-await-in-loop -- The stream must be consumed in order to enforce the byte limit.
           const chunk = await reader.read();
           if (chunk.done) {
             break;
@@ -932,8 +926,7 @@ function downloadTunnel(
           if (bytes + value.byteLength > options.maxBytes) {
             throw new SmokeError("max_size_exceeded");
           }
-          // The next chunk cannot be read until the current chunk is persisted.
-          // eslint-disable-next-line no-await-in-loop
+          // eslint-disable-next-line no-await-in-loop -- The next chunk cannot be read until the current chunk is persisted.
           await file.write(value);
           bytes += value.byteLength;
           if (interruptAfterBytes && bytes >= interruptAfterBytes) {
@@ -956,6 +949,7 @@ function downloadTunnel(
         if (file) {
           cleanup.push(file.close());
         }
+        // oxlint-disable-next-line orbis/bounded-concurrency -- waits for cleanup already started; it starts nothing.
         await Promise.allSettled(cleanup);
         if (!completed) {
           await rm(filePath, { force: true });
@@ -966,8 +960,7 @@ function downloadTunnel(
 }
 
 function runCommand(command, args, signal, toolName) {
-  // Spawn exposes events rather than a promise-based API.
-  // eslint-disable-next-line promise/avoid-new
+  // eslint-disable-next-line promise/avoid-new -- Spawn exposes events rather than a promise-based API.
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: ["ignore", "pipe", "ignore"],
@@ -989,8 +982,7 @@ function runCommand(command, args, signal, toolName) {
       if (killTimer) {
         clearTimeout(killTimer);
       }
-      // The callback is either resolve or reject for the child event.
-      // eslint-disable-next-line promise/prefer-await-to-callbacks
+      // eslint-disable-next-line promise/prefer-await-to-callbacks -- The callback is either resolve or reject for the child event.
       callback(value);
     };
     if (signal.aborted) {
@@ -1351,8 +1343,7 @@ export async function runSmoke(
         }
         const sample = options.samples[index];
         report.samples.push(
-          // Samples are intentionally processed in order to keep reports stable.
-          // eslint-disable-next-line no-await-in-loop
+          // eslint-disable-next-line no-await-in-loop -- Samples are intentionally processed in order to keep reports stable.
           await runSample(
             sample,
             index,

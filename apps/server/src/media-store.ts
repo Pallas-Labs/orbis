@@ -53,6 +53,11 @@ const contentTypeFor = (format: string): string | undefined => {
 
 const downloadFailed = (reason: string) =>
   new LibraryError({ message: reason, statusCode: 500 });
+const storeStep = <A>(step: () => Promise<A>) =>
+  Effect.tryPromise({
+    catch: () => downloadFailed("The downloaded audio could not be stored."),
+    try: step,
+  });
 
 export class MediaStore extends Context.Service<
   MediaStore,
@@ -89,6 +94,7 @@ export class MediaStore extends Context.Service<
           statusCode: 500,
         }),
       try: async () => {
+        // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the three audio formats.
         await Promise.all(
           ["ogg", "mp3", "m4a"].map((suffix) =>
             rm(path.join(directory, `${id}.${suffix}`), { force: true })
@@ -110,7 +116,8 @@ export class MediaStore extends Context.Service<
       args: readonly string[]
     ) {
       const ran = yield* Effect.tryPromise({
-        catch: (cause) => cause,
+        catch: (cause) =>
+          cause instanceof Error ? cause.message : String(cause),
         try: async (signal) => {
           const proc = Bun.spawn([command, ...args], {
             signal,
@@ -125,12 +132,9 @@ export class MediaStore extends Context.Service<
           return { code, output, stderr };
         },
       }).pipe(
-        Effect.tapError((cause) =>
+        Effect.tapError((reason) =>
           Effect.logWarning("media command did not start").pipe(
-            Effect.annotateLogs({
-              command: path.basename(command),
-              reason: cause instanceof Error ? cause.message : String(cause),
-            })
+            Effect.annotateLogs({ command: path.basename(command), reason })
           )
         ),
         Effect.mapError(() =>
@@ -239,12 +243,6 @@ export class MediaStore extends Context.Service<
         );
       }
     );
-    const storeStep = <A>(step: () => Promise<A>) =>
-      Effect.tryPromise({
-        catch: () =>
-          downloadFailed("The downloaded audio could not be stored."),
-        try: step,
-      });
     const storeDownloaded = Effect.fn("MediaStore.storeDownloaded")(
       function* storeDownloaded(setId: string, tmpPath: string) {
         if (Bun.file(tmpPath).size === 0) {
@@ -330,6 +328,7 @@ export class MediaStore extends Context.Service<
     });
     const removeFiles = Effect.fn("MediaStore.removeFiles")((id: string) =>
       Effect.promise(() =>
+        // oxlint-disable-next-line orbis/bounded-concurrency -- removes one file for each of the five partial and audio suffixes.
         Promise.all(
           ["part", "part.ytdl", "ogg", "mp3", "m4a"].map((suffix) =>
             rm(path.join(audioDir, `${id}.${suffix}`), { force: true })
