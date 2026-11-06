@@ -1,3 +1,4 @@
+import type { EffectDrizzleQueryError } from "drizzle-orm/effect-core/errors";
 import { Context, Effect, Layer } from "effect";
 
 import type { DatabaseClient } from "./db/service.js";
@@ -26,7 +27,7 @@ export class PresenceJournal extends Context.Service<
     readonly record: (
       tx: DatabaseClient,
       transition: PresenceTransition
-    ) => Effect.Effect<void, unknown>;
+    ) => Effect.Effect<void, EffectDrizzleQueryError>;
   }
 >()("@orbis/PresenceJournal") {
   static readonly unrecorded = Layer.succeed(

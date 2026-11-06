@@ -174,3 +174,6 @@ export const layer = ({
       })
     )
   );
+
+/** Why a Database layer could not start: opening, querying or migrating the database failed. */
+export type DatabaseStartupError = Layer.Error<ReturnType<typeof layer>>;

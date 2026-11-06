@@ -44,7 +44,7 @@ export const makeAudioLayer = (node?: GroupAudioNode) =>
       }
     ),
     isConfigured: true,
-    processNext: () => Effect.succeed(false),
+    processNext: Effect.succeed(false),
     requestDownload: Effect.fn("Audio.requestDownload")(
       function* queueDownload(id) {
         const library = yield* Library;

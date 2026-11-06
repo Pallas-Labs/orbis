@@ -89,27 +89,6 @@ export default defineConfig({
       rules: { "effecttsgo/strict-effect-provide": "off" },
     },
     {
-      // The Effect lint ledger: preset findings in code that predates the presets (PAL-1543).
-      // PAL-1679 clears it; a new file gets each rule at error.
-      files: [
-        "apps/server/src/app-core.ts",
-        "apps/server/src/app.ts",
-        "apps/server/src/audio-service.ts",
-        "apps/server/src/download-worker.ts",
-        "apps/server/src/library.ts",
-        "apps/server/src/media-store.ts",
-        "apps/server/src/playlist-importer.ts",
-        "apps/server/src/presence.ts",
-        "apps/server/src/queue.ts",
-      ],
-      plugins: correctness.plugins,
-      rules: {
-        "effecttsgo/any-unknown-in-error-context": "off",
-        "effecttsgo/lazy-effect": "off",
-        "effecttsgo/strict-effect-provide": "off",
-      },
-    },
-    {
       // Timeouts bound waiting, and concurrent work needs a bound (rat-stack principles 2 and 3).
       excludeFiles: TEST_CODE,
       files: ["apps/**", "packages/**", "scripts/**"],

@@ -252,7 +252,7 @@ export class GroupAudioNode {
       return;
     }
     const next = await this.runtime.runPromise(
-      Library.pipe(Effect.flatMap((library) => library.claimDownload()))
+      Library.pipe(Effect.flatMap((library) => library.claimDownload))
     );
     // An Apple Music Set is never queued (ADR 0021), so this only narrows the source.
     if (!next || next.source === "apple-music") {
@@ -652,7 +652,7 @@ export class GroupAudioNode {
     };
     await reconcileFile(files);
     await this.runtime.runPromise(
-      Library.pipe(Effect.flatMap((library) => library.resetStuckDownloads()))
+      Library.pipe(Effect.flatMap((library) => library.resetStuckDownloads))
     );
   }
 }

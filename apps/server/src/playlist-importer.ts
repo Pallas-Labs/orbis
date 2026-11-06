@@ -531,7 +531,7 @@ export class PlaylistImporter extends Context.Service<
       id: string
     ) => Effect.Effect<PlaylistImport, LibraryError>;
     /** Runs any import an evicted Group left, and keeps the alarm set while one runs. */
-    readonly resume: () => Effect.Effect<void>;
+    readonly resume: Effect.Effect<void>;
   }
 >()("@orbis/PlaylistImporter") {
   static layer(
@@ -705,13 +705,13 @@ export class PlaylistImporter extends Context.Service<
           }
         );
 
-        const resume = Effect.fn("PlaylistImporter.resume")(function* resume() {
+        const resume = Effect.gen(function* resume() {
           const job = yield* store
             .next()
             .pipe(Effect.orElseSucceed(() => null));
           yield* heartbeat(job !== null);
           yield* wake();
-        });
+        }).pipe(Effect.withSpan("PlaylistImporter.resume"));
 
         return PlaylistImporter.of({ read: store.find, resume, start });
       })

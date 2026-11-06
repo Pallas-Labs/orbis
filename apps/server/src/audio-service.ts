@@ -30,6 +30,6 @@ export class Audio extends Context.Service<
     readonly cancelDownload: (
       id: string
     ) => Effect.Effect<SavedSet, LibraryError, Library>;
-    readonly processNext: () => Effect.Effect<boolean, never>;
+    readonly processNext: Effect.Effect<boolean, never>;
   }
 >()("@orbis/Audio") {}

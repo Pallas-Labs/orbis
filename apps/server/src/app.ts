@@ -7,7 +7,7 @@ import { createPortableApp } from "./app-core.js";
 import { releaseAudio } from "./audio-release.js";
 import { Audio } from "./audio.js";
 import type { AudioFile, AudioOptions } from "./audio.js";
-import type { Database } from "./db/database.js";
+import type { Database, DatabaseStartupError } from "./db/database.js";
 import { layer as databaseLayer } from "./db/database.js";
 import { migrateTrustStore } from "./identity.js";
 import type { LoggingOptions } from "./logging.js";
@@ -91,7 +91,7 @@ export const createApp = (
   options: {
     audio?: AudioOptions;
     databasePath?: string;
-    database?: Layer.Layer<Database, unknown>;
+    database?: Layer.Layer<Database, DatabaseStartupError>;
     devicesPath?: string;
     logging?: LoggingOptions;
     playbackDiagnostics?: PlaybackDiagnosticsOptions;

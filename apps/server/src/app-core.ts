@@ -84,6 +84,7 @@ import { Audio } from "./audio-service.js";
 import type { AudioFile } from "./audio-service.js";
 import { ClientAddress } from "./client-address.js";
 import { insertBatches } from "./db/batches.js";
+import type { DatabaseStartupError } from "./db/database.js";
 import {
   listens,
   playlistEditors,
@@ -435,7 +436,7 @@ export const createPortableApp = (options: {
   ) => HttpServerResponse.HttpServerResponse;
   releaseAudio: (id: string) => Effect.Effect<void, LibraryError, Database>;
   streamSecret: Buffer;
-  database: Layer.Layer<Database, unknown>;
+  database: Layer.Layer<Database, DatabaseStartupError>;
   trustPath?: string | undefined;
   logging?: LoggingOptions;
   playbackDiagnostics?: PlaybackDiagnosticsOptions;
@@ -811,10 +812,17 @@ export const createPortableApp = (options: {
           );
         }
       );
-      const libraryFor = (personId: string) =>
-        Library.forPersonLayer(personId, libraryOptions).pipe(
-          Layer.provide(Layer.succeed(Database, db))
+      // A request that reads a Person's Library builds that Person's service for itself.
+      const libraryOf = (personId: string, settings?: typeof libraryOptions) =>
+        Library.forPerson(personId, settings).pipe(
+          Effect.provideService(Database, db)
         );
+      const withLibraryOf =
+        (personId: string, settings?: typeof libraryOptions) =>
+        <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+          Effect.flatMap(libraryOf(personId, settings), (personal) =>
+            Effect.provideService(effect, Library, personal)
+          );
       // Titles skip revision here: it is one model call per track.
       const importTrack = Effect.fn("PlaylistImport.saveTrack")(
         function* importTrack(personId: string, track: PlaylistTrack) {
@@ -849,7 +857,7 @@ export const createPortableApp = (options: {
         },
         (effect, personId) =>
           effect.pipe(
-            Effect.provide(libraryFor(personId)),
+            withLibraryOf(personId, libraryOptions),
             asLibraryError("Could not save a track of the playlist.")
           )
       );
@@ -1246,7 +1254,7 @@ export const createPortableApp = (options: {
               withFailureResponse(
                 Effect.gen(function* listPersonalPlaylists() {
                   const personal = yield* Library;
-                  return { playlists: yield* personal.playlists() };
+                  return { playlists: yield* personal.playlists };
                 })
               )
             )
@@ -1315,17 +1323,14 @@ export const createPortableApp = (options: {
                   if (!playlist) {
                     return yield* Effect.fail(missingPlaylist());
                   }
-                  const members = yield* Effect.provide(
-                    Effect.gen(function* listPlaylistMembers() {
+                  const members = yield* Effect.gen(
+                    function* listPlaylistMembers() {
                       const ownerLibrary = yield* Library;
                       return yield* ownerLibrary.list({
                         playlistId: params.id,
                       });
-                    }),
-                    Library.forPersonLayer(ownerId, libraryOptions).pipe(
-                      Layer.provide(Layer.succeed(Database, db))
-                    )
-                  );
+                    }
+                  ).pipe(withLibraryOf(ownerId, libraryOptions));
                   const role: "creator" | "editor" =
                     ownerId === caller.person.id ? "creator" : "editor";
                   return {
@@ -1439,20 +1444,15 @@ export const createPortableApp = (options: {
                         })
                       );
                     }
-                    const ownerLayer = Library.forPersonLayer(
-                      ownerId,
-                      libraryOptions
-                    ).pipe(Layer.provide(Layer.succeed(Database, db)));
-                    const sets = yield* Effect.provide(
-                      Effect.gen(function* updateSharedPlaylist() {
+                    const sets = yield* Effect.gen(
+                      function* updateSharedPlaylist() {
                         const ownerLibrary = yield* Library;
                         return yield* ownerLibrary.setPlaylistMembers(
                           params.id,
                           input.setIds
                         );
-                      }),
-                      ownerLayer
-                    );
+                      }
+                    ).pipe(withLibraryOf(ownerId, libraryOptions));
                     yield* announce("playlist", seesPerson(ownerId));
                     return { sets };
                   }
@@ -1566,7 +1566,7 @@ export const createPortableApp = (options: {
             withFailureResponse(
               Effect.gen(function* readPersonalQueue() {
                 const queue = yield* Queue;
-                return { queue: yield* queue.read() };
+                return { queue: yield* queue.read };
               })
             )
           )
@@ -1714,7 +1714,7 @@ export const createPortableApp = (options: {
               withFailureResponse(
                 Effect.gen(function* listPersonalTags() {
                   const personal = yield* Library;
-                  return { tags: yield* personal.tags() };
+                  return { tags: yield* personal.tags };
                 })
               )
             )
@@ -1731,10 +1731,6 @@ export const createPortableApp = (options: {
               )
             )
       );
-      const friendLibraryLayer = (personId: string) =>
-        Library.forPersonLayer(personId).pipe(
-          Layer.provide(Layer.succeed(Database, db))
-        );
       const presenceFor = Effect.fn("App.presenceFor")(function* readPresence(
         viewerId: string
       ) {
@@ -1758,13 +1754,13 @@ export const createPortableApp = (options: {
           if (setId === null) {
             continue;
           }
-          const [set] = yield* Effect.provide(
-            Effect.gen(function* hydratePresence() {
-              const personal = yield* Library;
-              return yield* personal.byIds([setId]);
-            }),
-            friendLibraryLayer(target.id)
-          ).pipe(Effect.orElseSucceed(() => []));
+          const [set] = yield* Effect.gen(function* hydratePresence() {
+            const personal = yield* Library;
+            return yield* personal.byIds([setId]);
+          }).pipe(
+            withLibraryOf(target.id),
+            Effect.orElseSucceed(() => [])
+          );
           if (set) {
             found.push({
               personId: target.id,
@@ -1874,13 +1870,10 @@ export const createPortableApp = (options: {
             withFailureResponse(
               Effect.gen(function* readFriendLibrary() {
                 const target = yield* visibleFriend(params.id);
-                const sets = yield* Effect.provide(
-                  Effect.gen(function* listFriendSets() {
-                    const personal = yield* Library;
-                    return yield* personal.list({});
-                  }),
-                  friendLibraryLayer(target.id)
-                );
+                const sets = yield* Effect.gen(function* listFriendSets() {
+                  const personal = yield* Library;
+                  return yield* personal.list({});
+                }).pipe(withLibraryOf(target.id));
                 return { sets };
               })
             )
@@ -1889,10 +1882,10 @@ export const createPortableApp = (options: {
             withFailureResponse(
               Effect.gen(function* readFriendPlaylists() {
                 const target = yield* visibleFriend(params.id);
-                const friendPlaylists = yield* Effect.provide(
-                  Effect.gen(function* listFriendPlaylists() {
+                const friendPlaylists = yield* Effect.gen(
+                  function* listFriendPlaylists() {
                     const personal = yield* Library;
-                    const owned = yield* personal.playlists();
+                    const owned = yield* personal.playlists;
                     // eslint-disable-next-line unicorn/no-array-method-this-argument -- Effect.forEach is not Array.forEach.
                     return yield* Effect.forEach(owned, (playlist) =>
                       Effect.map(
@@ -1903,9 +1896,8 @@ export const createPortableApp = (options: {
                         })
                       )
                     );
-                  }),
-                  friendLibraryLayer(target.id)
-                );
+                  }
+                ).pipe(withLibraryOf(target.id));
                 return { playlists: friendPlaylists };
               })
             )
@@ -1924,8 +1916,8 @@ export const createPortableApp = (options: {
                   .from(listens)
                   .where(eq(listens.personId, target.id))
                   .orderBy(desc(listens.startedAt), desc(listens.id));
-                const history = yield* Effect.provide(
-                  Effect.gen(function* hydrateFriendListens() {
+                const history = yield* Effect.gen(
+                  function* hydrateFriendListens() {
                     const personal = yield* Library;
                     // A friend replays the same Sets, so build each one once.
                     const sets = yield* personal.byIds([
@@ -1944,9 +1936,8 @@ export const createPortableApp = (options: {
                           ]
                         : [];
                     });
-                  }),
-                  friendLibraryLayer(target.id)
-                );
+                  }
+                ).pipe(withLibraryOf(target.id));
                 return { listens: history };
               })
             )
@@ -2135,7 +2126,7 @@ export const createPortableApp = (options: {
                         })
                     )
                   );
-                yield* presence.afterCommit();
+                yield* presence.afterCommit;
                 yield* recheckAccess();
                 yield* Effect.forEach((set: { readonly id: string }) =>
                   library.release(set.id)
@@ -2295,7 +2286,7 @@ export const createPortableApp = (options: {
               );
             };
             const snapshots = queue.changes.pipe(
-              Stream.mapEffect(() => queue.read()),
+              Stream.mapEffect(() => queue.read),
               Stream.map((snapshot) => ({
                 kind: "queue" as const,
                 queue: snapshot,
@@ -2609,28 +2600,26 @@ export const createPortableApp = (options: {
                   ),
                   Option.match({
                     onNone: () => Effect.die("Accepted access context missing"),
-                    onSome: (access) => {
-                      const personalLibrary = Library.forPersonLayer(
-                        access.person.id,
-                        libraryOptions
-                      ).pipe(Layer.provide(Layer.succeed(Database, db)));
-                      const personalQueue = Queue.forPersonLayer(
-                        access.person.id
-                      ).pipe(
-                        Layer.provide(
-                          Layer.mergeAll(
-                            Layer.succeed(Database, db),
-                            Layer.succeed(QueueSignals, signals),
-                            Layer.succeed(Presence, presence),
-                            personalLibrary,
-                            Stats.forPersonLayer(access.person.id).pipe(
-                              Layer.provide(Layer.succeed(Database, db))
+                    onSome: (access) =>
+                      Effect.gen(function* provideCallerServices() {
+                        const personalLibrary = yield* libraryOf(
+                          access.person.id,
+                          libraryOptions
+                        );
+                        const personalQueue = yield* Stats.forPerson(
+                          access.person.id
+                        ).pipe(
+                          Effect.flatMap((personalStats) =>
+                            Queue.forPerson(access.person.id).pipe(
+                              Effect.provideService(Stats, personalStats)
                             )
-                          )
-                        )
-                      );
-                      return Effect.provide(
-                        Effect.provideService(
+                          ),
+                          Effect.provideService(Database, db),
+                          Effect.provideService(QueueSignals, signals),
+                          Effect.provideService(Presence, presence),
+                          Effect.provideService(Library, personalLibrary)
+                        );
+                        return yield* Effect.provideService(
                           Effect.gen(function* callerRequest() {
                             const request =
                               yield* HttpServerRequest.HttpServerRequest;
@@ -2651,10 +2640,11 @@ export const createPortableApp = (options: {
                           }),
                           SetCaller,
                           access
-                        ),
-                        Layer.mergeAll(personalLibrary, personalQueue)
-                      );
-                    },
+                        ).pipe(
+                          Effect.provideService(Library, personalLibrary),
+                          Effect.provideService(Queue, personalQueue)
+                        );
+                      }),
                   })
                 ),
             })
@@ -2829,7 +2819,7 @@ export const createPortableApp = (options: {
     resumeImports: async (): Promise<void> => {
       await initialize();
       if (importerService) {
-        await Effect.runPromise(importerService.resume());
+        await Effect.runPromise(importerService.resume);
       }
     },
   };

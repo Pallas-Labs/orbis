@@ -52,7 +52,7 @@ const audioLayer = (
       const worker = yield* DownloadWorker;
       // Every backend serves every source, so any configured one is enough.
       const configured = backends.forSource("youtube").length > 0;
-      yield* media.ensureDirectory();
+      yield* media.ensureDirectory;
       const requestDownload = Effect.fn("Audio.requestDownload")(
         function* requestDownload(id: string) {
           const library = yield* Library;
@@ -70,7 +70,7 @@ const audioLayer = (
             return { accepted: false, set: current };
           }
           const queued = yield* library.queueDownload(id);
-          yield* worker.wake();
+          yield* worker.wake;
           yield* Effect.logInfo("audio download queued").pipe(
             Effect.annotateLogs({
               from: current.downloadState,
