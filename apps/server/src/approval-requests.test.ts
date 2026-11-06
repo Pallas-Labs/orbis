@@ -90,7 +90,12 @@ const setup = async () => {
     approvalWaitMs: WAIT_MS,
     databasePath: path.join(directory, "library.sqlite"),
     devicesPath,
-    logging: { onEvent: (event) => events.push(event), silent: true },
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
     signInCodeNow: () => clock.now,
   });
   const store = () => readTrustStrict(devicesPath);

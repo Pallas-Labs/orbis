@@ -579,11 +579,11 @@ test("actual chunked body over 64 KiB is refused before the caller finishes send
     const socket = connect(Number(server.url.port), "127.0.0.1");
     let response = "";
     try {
-      socket.setTimeout(3000, () =>
+      socket.setTimeout(3000, () => {
         socket.destroy(
           new Error("application waited for EOF instead of limiting chunks")
-        )
-      );
+        );
+      });
       await once(socket, "connect");
       const incoming = once(socket, "data");
       socket.write(

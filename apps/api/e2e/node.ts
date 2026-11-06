@@ -186,7 +186,9 @@ const connectSilent = async () => {
   await once(tcp, "connect");
   let received = "";
   // The Group may reset the connection it is closing; only `end` decides when it ends.
-  tcp.on("error", () => tcp.destroy());
+  tcp.on("error", () => {
+    tcp.destroy();
+  });
   tcp.on("data", (chunk: Buffer) => {
     received += chunk.toString("latin1");
   });
@@ -669,8 +671,12 @@ try {
         stdio: ["ignore", "pipe", "pipe"],
       }
     );
-    child.stdout.on("data", (data) => nodeLog.push(String(data)));
-    child.stderr.on("data", (data) => nodeLog.push(String(data)));
+    child.stdout.on("data", (data) => {
+      nodeLog.push(String(data));
+    });
+    child.stderr.on("data", (data) => {
+      nodeLog.push(String(data));
+    });
     return child;
   };
   let child = launch();

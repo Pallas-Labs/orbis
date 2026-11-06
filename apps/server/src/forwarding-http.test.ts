@@ -32,7 +32,12 @@ test("forwarded requests log the authenticated key label at the API without copy
   const forwardedEvents: WideEvent[] = [];
   const app = createApp({
     devicesPath,
-    logging: { onEvent: (event) => events.push(event), silent: true },
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
   });
   const upstream = Bun.serve({
     fetch: (request) => {
@@ -47,7 +52,9 @@ test("forwarded requests log the authenticated key label at the API without copy
     apiUrl: new URL("/api", upstream.url),
     audioDir: directory,
     logging: {
-      onEvent: (event) => forwardedEvents.push(event),
+      onEvent: (event) => {
+        forwardedEvents.push(event);
+      },
       silent: true,
     },
     streamSecret: Buffer.alloc(32),

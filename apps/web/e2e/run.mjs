@@ -33,8 +33,12 @@ const run = async (name) => {
     { stdio: ["ignore", "pipe", "pipe"] }
   );
   const output = [];
-  child.stdout.on("data", (chunk) => output.push(chunk));
-  child.stderr.on("data", (chunk) => output.push(chunk));
+  child.stdout.on("data", (chunk) => {
+    output.push(chunk);
+  });
+  child.stderr.on("data", (chunk) => {
+    output.push(chunk);
+  });
   const [code] = await once(child, "close");
   const seconds = ((performance.now() - started) / 1000).toFixed(1);
   process.stdout.write(Buffer.concat(output));

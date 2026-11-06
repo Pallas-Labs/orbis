@@ -11,10 +11,7 @@ const RUNTIME_SOURCES = ["apps/*/src/**", "packages/*/src/**"];
 // Ultracite's type-aware rules that report too many findings to fix in PAL-1681 or PAL-1693.
 // PAL-1700 turns each one on. The other type-aware rules run at error, or are off below with a
 // reason.
-const ULTRACITE_TYPE_AWARE_DEBT = [
-  "typescript/strict-boolean-expressions",
-  "typescript/strict-void-return",
-];
+const ULTRACITE_TYPE_AWARE_DEBT = ["typescript/strict-boolean-expressions"];
 
 export default defineConfig({
   extends: [core, antiSlop],

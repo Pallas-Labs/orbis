@@ -92,7 +92,9 @@ const start = (command, options) => {
     stdio: "ignore",
   });
   children.add(child);
-  child.once("exit", () => children.delete(child));
+  child.once("exit", () => {
+    children.delete(child);
+  });
   return child;
 };
 // Stops a server's process group, and waits until its port refuses, because

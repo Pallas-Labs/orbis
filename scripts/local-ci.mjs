@@ -70,8 +70,12 @@ const exec = async (command, { log, env } = {}) => {
     stdio: ["ignore", log ? "pipe" : "inherit", log ? "pipe" : "inherit"],
   });
   if (log) {
-    child.stdout.on("data", (chunk) => log.push(chunk));
-    child.stderr.on("data", (chunk) => log.push(chunk));
+    child.stdout.on("data", (chunk) => {
+      log.push(chunk);
+    });
+    child.stderr.on("data", (chunk) => {
+      log.push(chunk);
+    });
   }
   try {
     const [code] = await once(child, "close");

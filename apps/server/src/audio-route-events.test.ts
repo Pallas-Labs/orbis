@@ -19,7 +19,12 @@ test("the audio route records why it refused, without the grant", async () => {
     await seedSets(databasePath, [{ downloadState: "queued", id: "pending" }]);
     const app = createApp({
       databasePath,
-      logging: { onEvent: (event) => events.push(event), silent: true },
+      logging: {
+        onEvent: (event) => {
+          events.push(event);
+        },
+        silent: true,
+      },
     });
     const forged = issueStreamGrant(randomBytes(32), "pending", "host");
     try {
