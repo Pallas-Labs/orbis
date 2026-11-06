@@ -100,14 +100,15 @@ const main = async () => {
       name.endsWith("-albums.json")
     )) {
       const name = albumsName.replace(/-albums\.json$/u, "");
-      // oxlint-disable-next-line orbis/bounded-concurrency -- reads the two recorded files of one album.
-      const found = await Promise.all(
-        [`${name}.json`, `${name}-dj-mix.json`].map(async (file) =>
-          decodeSearch(
-            JSON.parse(await readFile(path.join(FIXTURES, file), "utf-8")).body
-          )
-        )
-      );
+      // Decodes one recorded answer the apple-music CLI wrote.
+      const readRecorded = async (file: string) =>
+        decodeSearch(
+          JSON.parse(await readFile(path.join(FIXTURES, file), "utf-8")).body
+        );
+      const found = await Promise.all([
+        readRecorded(`${name}.json`),
+        readRecorded(`${name}-dj-mix.json`),
+      ]);
       if (
         (await record(
           appleMusicAlbumsRead(mergedAlbumIds(found)),

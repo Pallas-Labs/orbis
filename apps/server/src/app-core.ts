@@ -775,9 +775,9 @@ export const createPortableApp = (options: {
               })
             );
           }
-          // The read's own failure waits until the Set exists: enrichSavedSet replays it there.
-          // oxlint-disable-next-line effecttsgo/return-effect-in-gen -- the caller wants the read as an Effect, run after the save.
-          return Effect.fromResult(read);
+          // The read's own failure waits until the Set exists, so the caller
+          // turns this Result into an Effect that enrichSavedSet replays.
+          return read;
         }
       );
       const autoDownloadSaved = Effect.fn("AutoDownload.onSave")(
@@ -1015,9 +1015,13 @@ export const createPortableApp = (options: {
                 yield* Effect.logInfo("set saved").pipe(
                   Effect.annotateLogs({ set: saved.id, source: saved.source })
                 );
-                if (albumRead) {
+                if (albumRead !== null) {
                   return yield* autoDownloadSaved(
-                    yield* enrichSavedSet(saved, personal, albumRead),
+                    yield* enrichSavedSet(
+                      saved,
+                      personal,
+                      Effect.fromResult(albumRead)
+                    ),
                     caller.person
                   );
                 }
