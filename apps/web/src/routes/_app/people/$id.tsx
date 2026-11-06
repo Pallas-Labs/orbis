@@ -116,7 +116,9 @@ const FriendSetRow = ({
           <Button
             aria-label={`Play ${set.title}`}
             disabled={pending}
-            onClick={detach(() => act(() => player.play(set)))}
+            onClick={detach(async () => {
+              await act(async () => await player.play(set));
+            })}
             size="sm"
             variant="outline"
           >
@@ -127,9 +129,9 @@ const FriendSetRow = ({
           <Button
             aria-label={`Download ${set.title}`}
             disabled={pending}
-            onClick={detach(() =>
-              act(() => requestDownload(credentials, set.id))
-            )}
+            onClick={detach(async () => {
+              await act(async () => await requestDownload(credentials, set.id));
+            })}
             size="sm"
             variant="outline"
           >
@@ -144,7 +146,9 @@ const FriendSetRow = ({
           <Button
             aria-label={`Save ${set.title}`}
             disabled={pending}
-            onClick={detach(() => act(() => saveSet(credentials, set.url)))}
+            onClick={detach(async () => {
+              await act(async () => await saveSet(credentials, set.url));
+            })}
             size="sm"
           >
             Save

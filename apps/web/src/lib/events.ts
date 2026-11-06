@@ -22,12 +22,12 @@ export interface LiveEventHandlers {
  * Reads `GET /events?changes=1` until the stream ends or `signal` aborts. It resolves when the
  * stream closes, so the caller decides whether to reconnect (ADR 0014).
  */
-export const readLiveEvents = (
+export const readLiveEvents = async (
   credentials: Credentials,
   handlers: LiveEventHandlers,
   signal: AbortSignal
 ): Promise<ApiResult<void>> =>
-  callOrbis(
+  await callOrbis(
     credentials,
     (client) =>
       Effect.gen(function* receiveEvents() {

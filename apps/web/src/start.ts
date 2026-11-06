@@ -7,7 +7,7 @@ import { apiUrl } from "@/lib/api-url";
  * The page runs only its own code, talks only to the Orbis API, and plays audio
  * only from Vanta (ADR 0015). A fresh nonce admits the router's inline scripts.
  */
-const securityHeaders = createMiddleware().server(({ next }) => {
+const securityHeaders = createMiddleware().server(async ({ next }) => {
   const nonce = crypto.randomUUID().replaceAll("-", "");
   const api = new URL(apiUrl()).origin;
   const audio = new URL(process.env.ORBIS_AUDIO_URL ?? api).origin;
@@ -31,7 +31,7 @@ const securityHeaders = createMiddleware().server(({ next }) => {
       "X-Content-Type-Options": "nosniff",
     })
   );
-  return next({ context: { nonce } });
+  return await next({ context: { nonce } });
 });
 
 export const startInstance = createStart(() => ({

@@ -56,7 +56,7 @@ export const SignInForm = ({
       refuse(missing);
       return;
     }
-    const signedIn = await run(() => call(form));
+    const signedIn = await run(async () => await call(form));
     if (signedIn !== null) {
       storeKey(signedIn.key);
       await navigate({ to: "/" });

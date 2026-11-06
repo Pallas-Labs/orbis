@@ -76,6 +76,6 @@ export class Group extends ProductionGroup {
       }
       return new Response("seeded");
     }
-    return super.fetch(request);
+    return await super.fetch(request);
   }
 }

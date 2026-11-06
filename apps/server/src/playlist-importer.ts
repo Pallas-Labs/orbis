@@ -559,9 +559,11 @@ export class PlaylistImporter extends Context.Service<
           if (!slot) {
             return Effect.void;
           }
-          return Effect.tryPromise(() =>
-            running ? slot.set(Date.now() + HEARTBEAT_MS) : slot.cancel()
-          ).pipe(
+          return Effect.tryPromise(async () => {
+            await (running
+              ? slot.set(Date.now() + HEARTBEAT_MS)
+              : slot.cancel());
+          }).pipe(
             // A missed write is retried by the next page, and a missed wake by the next request.
             Effect.ignore({
               log: "Warn",

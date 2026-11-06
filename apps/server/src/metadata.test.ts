@@ -509,7 +509,7 @@ const waitFor = async <T extends object | null | undefined>(
     return read();
   }
   await Bun.sleep(20);
-  return waitFor(ready, read, attempts - 1);
+  return await waitFor(ready, read, attempts - 1);
 };
 
 const DETAILS: SourceDetails = {

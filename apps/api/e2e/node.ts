@@ -138,7 +138,7 @@ const until = <T>(
       throw new Error(`Timed out: ${JSON.stringify(value)}`);
     }
     await Bun.sleep(20);
-    return attempt();
+    return await attempt();
   };
   return attempt();
 };

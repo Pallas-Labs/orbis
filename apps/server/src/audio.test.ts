@@ -146,7 +146,7 @@ const waitForState = async (
     );
   }
   await Bun.sleep(25);
-  return waitForState(app, id, wanted, attemptsLeft - 1);
+  return await waitForState(app, id, wanted, attemptsLeft - 1);
 };
 
 // Response needs an exact ArrayBuffer; a Uint8Array view over a pool would over-read.

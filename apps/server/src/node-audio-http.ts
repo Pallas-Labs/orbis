@@ -163,9 +163,9 @@ export const makeNodeAudioHandler =
     });
     logger.set({ ingress: "funnel-audio" });
     try {
-      const response = await serveAudio(request, options, (fields) =>
-        logger.set({ audio: fields })
-      );
+      const response = await serveAudio(request, options, (fields) => {
+        logger.set({ audio: fields });
+      });
       finishRequestLog(
         logger,
         { outcome: outcomeForStatus(response.status), status: response.status },

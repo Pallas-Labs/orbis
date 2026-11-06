@@ -18,7 +18,7 @@ export const waitFor = (url) => {
       }
     }
     await setTimeout(100);
-    return poll(attemptsLeft - 1);
+    await poll(attemptsLeft - 1);
   };
   return poll(150);
 };
@@ -36,7 +36,7 @@ export const waitUntil = (check, message, attempts = 100) => {
       throw new Error(message);
     }
     await setTimeout(200);
-    return poll(attemptsLeft - 1);
+    await poll(attemptsLeft - 1);
   };
   return poll(attempts);
 };
@@ -82,10 +82,9 @@ export const keyRecord = (id, label, personId, token, scope = "daily") => ({
 // browser, stored where the sign-in page stores the key the API returns.
 export const signInWithKey = async (page, webUrl, key) => {
   await page.goto(`${webUrl}/sign-in`);
-  await page.evaluate(
-    (value) => localStorage.setItem("orbis.apiKey", value),
-    key
-  );
+  await page.evaluate((value) => {
+    localStorage.setItem("orbis.apiKey", value);
+  }, key);
   await page.goto(webUrl);
 };
 

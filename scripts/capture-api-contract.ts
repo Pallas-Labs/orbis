@@ -10,7 +10,7 @@ const send = async (path: string, init?: RequestInit) => {
   if (!response.ok) {
     throw new Error(`${init?.method ?? "GET"} ${path}: ${response.status}`);
   }
-  return response.json();
+  return await response.json();
 };
 type CaptureRequest =
   | { title: string; url: string }

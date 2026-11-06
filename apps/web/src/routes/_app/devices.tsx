@@ -60,7 +60,7 @@ const DeviceRow = ({
       </div>
       <ConfirmDialog
         action="Revoke"
-        call={() => revokeDevice(session, device.id)}
+        call={async () => await revokeDevice(session, device.id)}
         description={
           device.current
             ? "This is the device you are using. Revoking it signs you out here. To sign in again, use a Sign-in Code from another device."
@@ -80,7 +80,7 @@ const SignInAnotherDevice = ({ session }: { readonly session: Session }) => {
   const [code, setCode] = useState<IssuedSignInCode | null>(null);
   const { busy, problem, run } = useApiCall();
   const request = async () => {
-    const issued = await run(() => requestSignInCode(session));
+    const issued = await run(async () => await requestSignInCode(session));
     if (issued !== null) {
       setCode(issued);
     }
@@ -150,5 +150,5 @@ export const Route = createFileRoute("/_app/devices")({
       session={Route.useRouteContext().session}
     />
   ),
-  loader: ({ context }) => listDevices(context.session),
+  loader: async ({ context }) => await listDevices(context.session),
 });

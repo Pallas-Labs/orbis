@@ -74,7 +74,7 @@ const fixture = async (startWorker: boolean) => {
       order.push(decodeSource(body).url);
       if (holdFirst) {
         holdFirst = false;
-        return held.promise;
+        return await held.promise;
       }
       return new Response("Controlled backend refusal", { status: 503 });
     },

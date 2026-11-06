@@ -47,7 +47,7 @@ const callAs = async (person, method, route, payload) => {
   }
   const response = await fetch(`${apiUrl}${route}`, init);
   assert.ok(response.ok, `${method} ${route} answered ${response.status}`);
-  return response.status === 204 ? null : response.json();
+  return response.status === 204 ? null : await response.json();
 };
 
 const shot = (page, name) =>
@@ -213,6 +213,7 @@ try {
       "playing audio did not renew its lease",
       125
     );
+    // oxlint-disable-next-line typescript/no-confusing-void-expression -- the type checker reads this find as void, but it returns the first renew action, which the next lines read.
     const renew = actions.find((action) => action.kind === "renew");
     assert.equal(renew.sessionId, actions[0].sessionId);
     assert.ok(renew.actionNumber > actions[0].actionNumber);

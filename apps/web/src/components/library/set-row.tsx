@@ -154,7 +154,14 @@ const TextDialog = ({
     setProblem(FAILURE_MESSAGES[result.failure]);
   };
   return (
-    <Dialog onOpenChange={(open) => (open ? null : onClose())} open>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+      open
+    >
       <DialogContent>
         <form className="flex flex-col gap-4" onSubmit={detach(save)}>
           <DialogHeader>
@@ -266,21 +273,23 @@ export const SetRow = ({
           {set.downloadState === "ready" ? (
             <>
               <DropdownMenuItem
-                onClick={detach(async () => settle(await player.play(set)))}
+                onClick={detach(async () => {
+                  await settle(await player.play(set));
+                })}
               >
                 Play
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={detach(async () =>
-                  settle(await player.queue(set, "next"))
-                )}
+                onClick={detach(async () => {
+                  await settle(await player.queue(set, "next"));
+                })}
               >
                 Play next
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={detach(async () =>
-                  settle(await player.queue(set, "end"))
-                )}
+                onClick={detach(async () => {
+                  await settle(await player.queue(set, "end"));
+                })}
               >
                 Add to queue
               </DropdownMenuItem>
@@ -289,37 +298,51 @@ export const SetRow = ({
           ) : null}
           {downloadable ? (
             <DropdownMenuItem
-              onClick={detach(async () =>
-                settle(
+              onClick={detach(async () => {
+                await settle(
                   await requestDownload(credentials, set.id),
                   "The Download queue is full. Try again later."
-                )
-              )}
+                );
+              })}
             >
               Download
             </DropdownMenuItem>
           ) : null}
           {inFlight ? (
             <DropdownMenuItem
-              onClick={detach(async () =>
-                settle(await cancelDownload(credentials, set.id))
-              )}
+              onClick={detach(async () => {
+                await settle(await cancelDownload(credentials, set.id));
+              })}
             >
               Cancel Download
             </DropdownMenuItem>
           ) : null}
-          <DropdownMenuItem onClick={() => setDialog("rename")}>
+          <DropdownMenuItem
+            onClick={() => {
+              setDialog("rename");
+            }}
+          >
             Rename…
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setDialog("tags")}>
+          <DropdownMenuItem
+            onClick={() => {
+              setDialog("tags");
+            }}
+          >
             Edit Tags…
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setDialog("playlists")}>
+          <DropdownMenuItem
+            onClick={() => {
+              setDialog("playlists");
+            }}
+          >
             Add to Playlist…
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => setDialog("remove")}
+            onClick={() => {
+              setDialog("remove");
+            }}
             variant="destructive"
           >
             Remove…
@@ -330,7 +353,9 @@ export const SetRow = ({
         <TextDialog
           label="Title"
           onClose={detach(close)}
-          onSave={(text) => renameSet(credentials, set.id, text.trim())}
+          onSave={async (text) =>
+            await renameSet(credentials, set.id, text.trim())
+          }
           title={`Rename ${set.title}`}
           value={set.title}
         />
@@ -339,7 +364,9 @@ export const SetRow = ({
         <TextDialog
           label="Tags, separated by commas"
           onClose={detach(close)}
-          onSave={(text) => updateTags(credentials, set.id, parseTags(text))}
+          onSave={async (text) =>
+            await updateTags(credentials, set.id, parseTags(text))
+          }
           title={`Tags for ${set.title}`}
           value={set.tags.join(", ")}
         />
@@ -353,7 +380,9 @@ export const SetRow = ({
         />
       ) : null}
       <AlertDialog
-        onOpenChange={(open) => setDialog(open ? "remove" : null)}
+        onOpenChange={(open) => {
+          setDialog(open ? "remove" : null);
+        }}
         open={dialog === "remove"}
       >
         <AlertDialogContent>

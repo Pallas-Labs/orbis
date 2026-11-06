@@ -74,7 +74,7 @@ const api = async (pathname, key, init = {}) => {
   if (!response.ok) {
     throw new Error(`${pathname} answered ${response.status}`);
   }
-  return response.json();
+  return await response.json();
 };
 
 // A failed run must not leave a server holding the ports. Each server runs in
@@ -179,7 +179,7 @@ const stylesheet = async (dist) => {
 
 // Waits until no font is loading, then for two drawn frames.
 const settle = async (page) => {
-  await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(async () => await document.fonts.ready);
   await page.evaluate(() => {
     const { promise, resolve } = Promise.withResolvers();
     requestAnimationFrame(() => {
@@ -372,10 +372,9 @@ const open = async (browser, entry) => {
     viewport: { height: 900, width: 1280 },
   });
   if (entry.who) {
-    await context.addInitScript(
-      (key) => localStorage.setItem("orbis.apiKey", key),
-      keys[entry.who]
-    );
+    await context.addInitScript((key) => {
+      localStorage.setItem("orbis.apiKey", key);
+    }, keys[entry.who]);
   }
   const page = await context.newPage();
   return { context, page };

@@ -160,7 +160,9 @@ const fixture = async (startWorker: boolean, hold = false) => {
     jobs: () => jobs,
     me,
     ready,
-    release: () => release.resolve(),
+    release: () => {
+      release.resolve();
+    },
     restart: async () => {
       await listeners.stop();
       listeners = open();

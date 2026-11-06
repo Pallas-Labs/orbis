@@ -53,7 +53,9 @@ try {
     );
     assert.throws(() => parseDump(`${dump}DELETE FROM people;`));
     assert.throws(() =>
-      restored.transaction(() => importDatabase(adapter(restored), manifest))()
+      restored.transaction(() => {
+        importDatabase(adapter(restored), manifest);
+      })()
     );
   } finally {
     restored.close();

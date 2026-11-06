@@ -91,14 +91,14 @@ const forwardApiRequest = async (
 export const makeNodeHttpHandler = (options: NodeHttpOptions) => {
   const audio = makeNodeAudioHandler(options);
   const { apiUrl, fetch: requestFetch = globalThis.fetch, logging } = options;
-  return (request: Request): Promise<Response> => {
+  return async (request: Request): Promise<Response> => {
     const { pathname } = new URL(request.url);
     if (
       isGrantedAudioRequest(request) ||
       (audioPath.test(pathname) && !pathname.startsWith("/api/"))
     ) {
-      return audio(request);
+      return await audio(request);
     }
-    return forwardApiRequest(request, apiUrl, requestFetch, logging);
+    return await forwardApiRequest(request, apiUrl, requestFetch, logging);
   };
 };

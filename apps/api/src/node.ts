@@ -99,11 +99,11 @@ export class GroupAudioNode {
     this.logging = logging;
   }
 
-  private serial<T>(operation: () => Promise<T>): Promise<T> {
+  private async serial<T>(operation: () => Promise<T>): Promise<T> {
     const previous = this.tail;
     const next = (async () => {
       await previous;
-      return operation();
+      return await operation();
     })();
     this.tail = (async () => {
       try {
@@ -112,7 +112,7 @@ export class GroupAudioNode {
         // The caller receives the error; later messages still run.
       }
     })();
-    return next;
+    return await next;
   }
 
   private static attachment(socket: WebSocket): Attachment {
@@ -207,7 +207,11 @@ export class GroupAudioNode {
     socket.send(JSON.stringify(command));
   }
 
-  wake = () => this.serial(() => this.schedule());
+  wake = async () => {
+    await this.serial(async () => {
+      await this.schedule();
+    });
+  };
 
   /**
    * Warns when Downloads wait while no node can take them, the state that kept
@@ -283,8 +287,8 @@ export class GroupAudioNode {
     );
   }
 
-  cancel = (id: string) =>
-    this.serial(async () => {
+  cancel = async (id: string) => {
+    await this.serial(async () => {
       const socket = this.socket();
       if (!socket) {
         return;
@@ -304,6 +308,7 @@ export class GroupAudioNode {
       }
       await this.schedule();
     });
+  };
 
   release(id: string) {
     const socket = this.socket();
@@ -336,9 +341,9 @@ export class GroupAudioNode {
               : "Audio node details failed.",
           reason: "provider-unavailable",
         }),
-      try: (signal) =>
+      try: async (signal) =>
         // oxlint-disable-next-line promise/avoid-new -- The reply arrives through a later WebSocket event.
-        new Promise<Details>((resolve, reject) => {
+        await new Promise<Details>((resolve, reject) => {
           const socket = this.socket();
           const [set] = this.ctx.storage.sql
             .exec<{ id: string }>("SELECT id FROM sets WHERE url = ?", url)
@@ -484,8 +489,8 @@ export class GroupAudioNode {
     );
   }
 
-  message(socket: WebSocket, data: string | ArrayBuffer) {
-    return this.serial(async () => {
+  async message(socket: WebSocket, data: string | ArrayBuffer) {
+    await this.serial(async () => {
       if (socket !== this.socket()) {
         return;
       }

@@ -16,8 +16,8 @@ import { request } from "../apps/server/src/test-http.js";
 const distinctSets = 20;
 const runs = 11;
 
-const get = (app: ReturnType<typeof createApp>, url: string) =>
-  request(app, {
+const get = async (app: ReturnType<typeof createApp>, url: string) =>
+  await request(app, {
     accessMode: "device",
     headers: { authorization: "Bearer a-token" },
     host: "vanta.example.ts.net",

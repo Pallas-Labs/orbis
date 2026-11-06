@@ -65,9 +65,9 @@ const SocialSwitch = ({ session }: { readonly session: Session }) => {
           aria-labelledby={labelId}
           checked={session.person.social}
           disabled={pending}
-          onCheckedChange={detach((checked) =>
-            change(() => setSocial(session, checked))
-          )}
+          onCheckedChange={detach(async (checked) => {
+            await change(async () => await setSocial(session, checked));
+          })}
         />
       </div>
       <Problem problem={problem} />
@@ -143,18 +143,22 @@ const PersonRow = ({
           disabled={pending}
           label="See"
           name={`See ${person.username}`}
-          onChange={detach((see) =>
-            change(() => setFilter(credentials, person.id, { see }))
-          )}
+          onChange={detach(async (see) => {
+            await change(
+              async () => await setFilter(credentials, person.id, { see })
+            );
+          })}
         />
         <FilterSwitch
           checked={person.appear}
           disabled={pending}
           label="Appear"
           name={`Appear to ${person.username}`}
-          onChange={detach((appear) =>
-            change(() => setFilter(credentials, person.id, { appear }))
-          )}
+          onChange={detach(async (appear) => {
+            await change(
+              async () => await setFilter(credentials, person.id, { appear })
+            );
+          })}
         />
       </div>
       <Problem problem={problem} />

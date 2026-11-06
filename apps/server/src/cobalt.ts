@@ -87,7 +87,7 @@ export class Cobalt extends Context.Service<
     const fetchFn =
       options.fetch ??
       // oxlint-disable-next-line orbis/fetch-needs-timeout -- each caller passes a signal: the Cobalt request's holds COBALT_TIMEOUT_MS, and the tunnel's is the download's own, because a whole download has no fixed length.
-      ((url, init) => fetch(url, init));
+      (async (url, init) => await fetch(url, init));
     const configured =
       (options.cobaltUrl?.length ?? 0) > 0 &&
       (options.cobaltApiKey?.length ?? 0) > 0;
@@ -101,7 +101,7 @@ export class Cobalt extends Context.Service<
         ) {
           const response = yield* Effect.tryPromise({
             catch: fetchError,
-            try: () => fetchFn(url, { signal }),
+            try: async () => await fetchFn(url, { signal }),
           });
           if (!response.ok || !response.body) {
             return yield* Effect.fail(
@@ -123,13 +123,13 @@ export class Cobalt extends Context.Service<
                   : {
                       kind: "transport",
                     },
-              try: (requestSignal) => {
+              try: async (requestSignal) => {
                 const combined = AbortSignal.any([
                   requestSignal,
                   timeout,
                   signal,
                 ]);
-                return fetchFn(`${options.cobaltUrl}`, {
+                return await fetchFn(`${options.cobaltUrl}`, {
                   body: JSON.stringify({
                     alwaysProxy: true,
                     audioFormat: "best",
@@ -147,9 +147,10 @@ export class Cobalt extends Context.Service<
                 });
               },
             }).pipe(Effect.catch(failRequest));
-            const cobaltResponse: unknown = yield* Effect.promise(() =>
-              response.json().catch(() => null)
-            );
+            const cobaltResponse: unknown = yield* Effect.promise(async () => {
+              const json: unknown = await response.json().catch(() => null);
+              return json;
+            });
             const code = isCobaltProviderCode(cobaltResponse)
               ? safeProviderCode(cobaltResponse.error.code)
               : "cobalt_error_unknown";

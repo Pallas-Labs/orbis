@@ -9,7 +9,7 @@ export class Group extends ProductionGroup {
       return ready;
     }
     if (new URL(request.url).pathname !== "/__seed") {
-      return super.fetch(request);
+      return await super.fetch(request);
     }
     const now = new Date().toISOString();
     this.ctx.storage.sql.exec(

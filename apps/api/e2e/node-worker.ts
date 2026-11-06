@@ -44,6 +44,6 @@ export class Group extends ProductionGroup {
         this.ctx.storage.sql.exec("SELECT * FROM download_jobs").toArray()
       );
     }
-    return super.fetch(request);
+    return await super.fetch(request);
   }
 }

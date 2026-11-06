@@ -519,7 +519,9 @@ async function withDeadline(parentSignal, timeoutMs, operation) {
   }, timeoutMs);
   timer.unref?.();
 
-  const abortFromParent = () => controller.abort();
+  const abortFromParent = () => {
+    controller.abort();
+  };
   if (parentSignal.aborted) {
     abortFromParent();
   } else {
@@ -571,8 +573,8 @@ async function cancelResponse(response) {
   }
 }
 
-function requestJson(url, init, parentSignal, timeoutMs) {
-  return withDeadline(parentSignal, timeoutMs, async (signal) => {
+async function requestJson(url, init, parentSignal, timeoutMs) {
+  return await withDeadline(parentSignal, timeoutMs, async (signal) => {
     const response = await fetch(url, { ...init, redirect: "manual", signal });
     if (response.status >= 300 && response.status < 400) {
       await cancelResponse(response);
@@ -872,14 +874,14 @@ async function keepAcceptedFile(filePath, directory, name) {
   return target;
 }
 
-function downloadTunnel(
+async function downloadTunnel(
   tunnelUrl,
   filePath,
   options,
   parentSignal,
   interruptAfterBytes
 ) {
-  return withDeadline(
+  return await withDeadline(
     parentSignal,
     options.downloadTimeoutMs,
     async (signal) => {
@@ -983,7 +985,9 @@ function runCommand(command, args, signal, toolName) {
         : new SmokeError(`${toolName}_failed`)
     );
   });
-  child.once("close", (code) => finish(resolve, { code, stdout }));
+  child.once("close", (code) => {
+    finish(resolve, { code, stdout });
+  });
   return promise;
 }
 
@@ -1421,7 +1425,9 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const controller = new AbortController();
-  const abort = () => controller.abort();
+  const abort = () => {
+    controller.abort();
+  };
   process.once("SIGINT", abort);
   process.once("SIGTERM", abort);
   try {

@@ -124,7 +124,9 @@ export const Tracklist = ({
                   aria-current={active ? "true" : undefined}
                   aria-label={`${cue.title}, ${cue.artist}, starts at ${timeLabel(startSeconds)}`}
                   className="hover:bg-accent aria-[current=true]:bg-accent aria-[current=true]:text-accent-foreground focus-visible:ring-ring flex min-h-11 w-full items-center gap-3 rounded-md px-2 py-1 text-start focus-visible:ring-2 focus-visible:outline-none"
-                  onClick={() => onSeek(startSeconds)}
+                  onClick={() => {
+                    onSeek(startSeconds);
+                  }}
                   type="button"
                 >
                   {details}

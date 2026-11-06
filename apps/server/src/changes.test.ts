@@ -117,7 +117,7 @@ const call = async (key: Key, route: string, method = "GET", body?: Body) => {
   }
   const response = await fetch(new URL(route, url), init);
   expect(response.status).toBeLessThan(300);
-  return response.json();
+  return await response.json();
 };
 
 /** Opens `/events` and yields raw `data:` payloads in arrival order. */
@@ -133,7 +133,7 @@ const open = async (key: Key, route = "/events?changes=1") => {
       throw new Error("The event stream closed");
     }
     const event = decodeNew(raw);
-    return event.kind === "changed" ? event.topic : attempt();
+    return event.kind === "changed" ? event.topic : await attempt();
   };
   return {
     close: () => stream.close(),
@@ -239,7 +239,7 @@ test("revoking a key closes its open stream", async () => {
   // Reads frames as they arrive; the stream's close resolves it with `true`.
   const awaitClose = async (): Promise<boolean> => {
     const raw = await a2.data();
-    return raw === null ? true : awaitClose();
+    return raw === null ? true : await awaitClose();
   };
   const closed = awaitClose();
   await call("a1", "/me/devices/a2", "DELETE");

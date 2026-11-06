@@ -80,7 +80,7 @@ export const createTestApp = (
         rmSync(temporary, { force: true, recursive: true });
       }
     },
-    handler: (request, _mode, clientAddress) => {
+    handler: async (request, _mode, clientAddress) => {
       const headers = new Headers(request.headers);
       if (
         headers.get("x-orbis-test-auth") === "fixture" &&
@@ -89,7 +89,7 @@ export const createTestApp = (
         headers.delete("x-orbis-test-auth");
         headers.set("authorization", `Bearer ${token}`);
       }
-      return app.handler(
+      return await app.handler(
         new Request(request, { headers }),
         "device",
         clientAddress

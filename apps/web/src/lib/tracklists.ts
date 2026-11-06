@@ -1,10 +1,12 @@
 import { callOrbis } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
 
-export const getTracklist = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) => client.sets.tracklist({ params: { id } }));
+export const getTracklist = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
+    client.sets.tracklist({ params: { id } })
+  );
 
-export const retryTracklist = (credentials: Credentials, id: string) =>
-  callOrbis(credentials, (client) =>
+export const retryTracklist = async (credentials: Credentials, id: string) =>
+  await callOrbis(credentials, (client) =>
     client.sets.retryTracklist({ params: { id } })
   );

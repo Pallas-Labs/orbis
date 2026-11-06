@@ -400,32 +400,41 @@ const handle = async (request, response) => {
   if (request.method === "POST" && route === "/cobalt") {
     const { url } = await new Response(Readable.toWeb(request)).json();
     const setId = slowSets.get(url);
-    return setId
-      ? respond(response, 200, {
-          status: "tunnel",
-          url: `http://127.0.0.1:${port}/slow-audio/${setId}`,
-        })
-      : respond(response, 404);
+    if (setId) {
+      respond(response, 200, {
+        status: "tunnel",
+        url: `http://127.0.0.1:${port}/slow-audio/${setId}`,
+      });
+    } else {
+      respond(response, 404);
+    }
+    return;
   }
   const match =
     /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist|running-tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
       route
     );
   if (!match?.groups) {
-    return respond(response, 404);
+    respond(response, 404);
+    return;
   }
   const { action, setId } = match.groups;
   const set = db.query("SELECT url FROM sets WHERE id = ?").get(setId);
   if (!set) {
-    return respond(response, 404);
+    respond(response, 404);
+    return;
   }
   if (request.method === "GET" && action === "slow-audio") {
-    return slowSets.get(set.url) === setId
-      ? slowAudio(setId, response)
-      : respond(response, 404);
+    if (slowSets.get(set.url) === setId) {
+      slowAudio(setId, response);
+    } else {
+      respond(response, 404);
+    }
+    return;
   }
   if (request.method !== "POST") {
-    return respond(response, 404);
+    respond(response, 404);
+    return;
   }
   switch (action) {
     case "unavailable-audio": {
@@ -439,7 +448,8 @@ const handle = async (request, response) => {
     case "finish-download": {
       const download = downloads.get(setId);
       if (!download) {
-        return respond(response, 409);
+        respond(response, 409);
+        return;
       }
       download.resolve();
       break;
@@ -454,11 +464,12 @@ const handle = async (request, response) => {
     }
     default: {
       if (!seedTracklist(action, setId)) {
-        return respond(response, 404);
+        respond(response, 404);
+        return;
       }
     }
   }
-  return respond(response, 204);
+  respond(response, 204);
 };
 createServer((request, response) => {
   void handle(request, response);

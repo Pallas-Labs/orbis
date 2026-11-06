@@ -191,7 +191,7 @@ export const ytDlpMetadata = (
     ];
     const output = yield* Effect.tryPromise({
       catch: () => failure("yt-dlp could not be run."),
-      try: (signal) => run(options.binPath, args, signal),
+      try: async (signal) => await run(options.binPath, args, signal),
     }).pipe(
       Effect.timeoutOrElse({
         duration: TIMEOUT,

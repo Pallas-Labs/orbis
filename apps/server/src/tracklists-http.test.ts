@@ -101,7 +101,7 @@ const eventually = async <T>(
     throw new Error("Expected background work to finish.");
   }
   await Bun.sleep(10);
-  return eventually(check, attempts - 1);
+  return await eventually(check, attempts - 1);
 };
 
 const waitForState = (
@@ -428,9 +428,9 @@ test("a Versos timeout marks the Set failed without blocking the save", async ()
     Versos.layer({
       fetch: (_url, init) => {
         const pending = Promise.withResolvers<Response>();
-        init?.signal?.addEventListener("abort", () =>
-          pending.reject(new Error("aborted"))
-        );
+        init?.signal?.addEventListener("abort", () => {
+          pending.reject(new Error("aborted"));
+        });
         return pending.promise;
       },
       key: Redacted.make("private-key"),

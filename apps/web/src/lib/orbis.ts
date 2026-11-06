@@ -132,20 +132,20 @@ const run = async <A, E>(
  * Runs one typed call with a Person's key. It resolves; a failure is a value. Feature
  * modules wrap it, for example `callOrbis(session, (api) => api.sets.list())`.
  */
-export const callOrbis = <A, E>(
+export const callOrbis = async <A, E>(
   { apiUrl, key }: Credentials,
   operation: (client: OrbisClient) => EffectType<A, E>,
   signal?: AbortSignal
-): Promise<ApiResult<A>> => run(apiUrl, key, operation, signal);
+): Promise<ApiResult<A>> => await run(apiUrl, key, operation, signal);
 
 /** Runs one typed call without a key, for a device that has none yet. */
-export const callOrbisWithoutKey = <A, E>(
+export const callOrbisWithoutKey = async <A, E>(
   apiUrl: string,
   operation: (client: OrbisClient) => EffectType<A, E>
-): Promise<ApiResult<A>> => run(apiUrl, null, operation);
+): Promise<ApiResult<A>> => await run(apiUrl, null, operation);
 
-export const fetchMe = (credentials: Credentials) =>
-  callOrbis(credentials, (client) => client.people.me());
+export const fetchMe = async (credentials: Credentials) =>
+  await callOrbis(credentials, (client) => client.people.me());
 
 export type Person = Extract<
   Awaited<ReturnType<typeof fetchMe>>,

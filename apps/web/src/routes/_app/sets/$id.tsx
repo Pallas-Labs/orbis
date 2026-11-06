@@ -47,7 +47,11 @@ const AudioAction = ({
   }
   if (set.downloadState === "ready") {
     return (
-      <Button onClick={detach(() => play(set.playbackPositionSeconds))}>
+      <Button
+        onClick={detach(async () => {
+          await play(set.playbackPositionSeconds);
+        })}
+      >
         Play
       </Button>
     );
@@ -84,13 +88,17 @@ const ShareMenu = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem
-          onClick={detach(() =>
-            onCopy("Orbis link", `${window.location.origin}/s/${set.id}`)
-          )}
+          onClick={detach(async () => {
+            await onCopy("Orbis link", `${window.location.origin}/s/${set.id}`);
+          })}
         >
           Copy Orbis link
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={detach(() => onCopy(sourceLink, set.url))}>
+        <DropdownMenuItem
+          onClick={detach(async () => {
+            await onCopy(sourceLink, set.url);
+          })}
+        >
           Copy {sourceLink}
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -125,7 +133,9 @@ const SetPage = ({
     const timer = setInterval(() => {
       void router.invalidate();
     }, 2000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+    };
   }, [router, tracklistState]);
 
   if (set === null) {
@@ -180,7 +190,9 @@ const SetPage = ({
       <div className="flex items-center gap-3">
         <p role="alert">{FAILURE_MESSAGES[tracklist.failure]}</p>
         <Button
-          onClick={detach(() => router.invalidate())}
+          onClick={detach(async () => {
+            await router.invalidate();
+          })}
           size="sm"
           variant="outline"
         >

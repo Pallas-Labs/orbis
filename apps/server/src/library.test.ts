@@ -55,7 +55,9 @@ const seedDatabase = async (
   }
   const database = new Database(databasePath);
   try {
-    database.transaction(() => seed(database))();
+    database.transaction(() => {
+      seed(database);
+    })();
   } finally {
     database.close();
   }

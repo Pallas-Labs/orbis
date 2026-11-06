@@ -286,7 +286,9 @@ try {
       { message: repasted.body.message }
     );
 
-    await page.evaluate(() => localStorage.setItem("orbis.apiKey", "revoked"));
+    await page.evaluate(() => {
+      localStorage.setItem("orbis.apiKey", "revoked");
+    });
     await page.goto(webUrl);
     await page
       .getByRole("alert")

@@ -264,11 +264,11 @@ export const signIn = async (
   return { kind: "signedIn", username: reply.value.person.username };
 };
 
-export const startToast = (title: string): Promise<Toast> =>
-  showToast({ style: Toast.Style.Animated, title });
+export const startToast = async (title: string): Promise<Toast> =>
+  await showToast({ style: Toast.Style.Animated, title });
 
-export const startProgressToast = (): Promise<Toast> =>
-  startToast("Saving set…");
+export const startProgressToast = async (): Promise<Toast> =>
+  await startToast("Saving set…");
 
 /**
  * Finishes a capture command on the toast it already showed: a distinct rejection before

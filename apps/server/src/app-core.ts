@@ -2415,13 +2415,14 @@ export const createPortableApp = (options: {
                       statusCode:
                         error instanceof PlaybackBodyLimitError ? 413 : 400,
                     }),
-                  try: (signal) => readBoundedBody(web.body, 65_536, signal),
+                  try: async (signal) =>
+                    await readBoundedBody(web.body, 65_536, signal),
                 });
                 const batch = yield* Effect.try(() =>
                   decodePlaybackDiagnosticsBatch(JSON.parse(body))
                 );
-                const response = yield* Effect.tryPromise((signal) =>
-                  relayPlayback(batch, signal)
+                const response = yield* Effect.tryPromise(
+                  async (signal) => await relayPlayback(batch, signal)
                 );
                 return HttpServerResponse.fromWeb(response);
               })
@@ -2551,7 +2552,7 @@ export const createPortableApp = (options: {
                       message: "Could not draw the preview image.",
                       statusCode: 500,
                     }),
-                  try: () => drawn,
+                  try: async () => await drawn,
                 });
                 yield* annotateWideEvent({
                   share: { artwork: preview.artwork, image },
@@ -2677,15 +2678,15 @@ export const createPortableApp = (options: {
    * client over the limit is refused before any lookup, so it cannot spend a
    * code.
    */
-  const openRoute = (
+  const openRoute = async (
     request: Request,
     client: string,
     counting: "counted" | "counts-failures"
   ): Promise<Response> => {
     if (counting === "counted" && attempts.signInAttempt(client)) {
-      return Promise.resolve(tooManyAttempts());
+      return tooManyAttempts();
     }
-    return app.handler(
+    return await app.handler(
       request,
       // SAFETY: the sign-in handlers read no caller-bound service.
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
@@ -2694,15 +2695,15 @@ export const createPortableApp = (options: {
       >
     );
   };
-  const shareRoute = (request: Request): Promise<Response> =>
-    app.handler(
+  const shareRoute = async (request: Request): Promise<Response> =>
+    await app.handler(
       request,
       // SAFETY: the share handlers read no caller-bound service.
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
       Context.empty() as Context.Context<Library | Queue | ClientAddress>
     );
-  const initialize = () =>
-    app.handler(
+  const initialize = async () =>
+    await app.handler(
       new Request("http://orbis.internal/health"),
       // SAFETY: the health route reads no caller-bound service.
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
@@ -2728,10 +2729,10 @@ export const createPortableApp = (options: {
           ? OPEN_ROUTES.get(routePath(request.url))
           : undefined;
       if (open) {
-        return openRoute(request, clientAddress, open);
+        return await openRoute(request, clientAddress, open);
       }
       if (isShareRoute(request)) {
-        return shareRoute(request);
+        return await shareRoute(request);
       }
       const registry = readTrustRegistry(trustPath);
       const logRefusal = (status: number, fields: LoggedRecord) => {
@@ -2801,9 +2802,9 @@ export const createPortableApp = (options: {
       }
       if (options.recordKeyUse !== false) {
         await Effect.runPromise(
-          trustOperation(() => markKeyUsed(trustPath, decision.keyId)).pipe(
-            Effect.ignore
-          )
+          trustOperation(() => {
+            markKeyUsed(trustPath, decision.keyId);
+          }).pipe(Effect.ignore)
         );
       }
       const response = await app.handler(

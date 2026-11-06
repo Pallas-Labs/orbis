@@ -59,11 +59,11 @@ export const startFixtureServer = (
   let stopping: Promise<void> | undefined;
   return {
     adminToken,
-    stop: () => {
+    stop: async () => {
       stopping ??= (async () => {
         await Promise.all([server.stop(), options.app.dispose()]);
       })();
-      return stopping;
+      await stopping;
     },
     url: server.url,
   };

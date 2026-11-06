@@ -42,19 +42,19 @@ export const makeAlarmScheduler = (storage: AlarmStorage) => {
   };
 
   /** Writes the earliest time if the storage holds another. Writes run one at a time. */
-  const sync = (): Promise<void> => {
+  const sync = async (): Promise<void> => {
     writes = write(writes);
-    return writes;
+    await writes;
   };
 
   const slot = (owner: string): AlarmSlot => ({
-    cancel: () => {
+    cancel: async () => {
       times.delete(owner);
-      return sync();
+      await sync();
     },
-    set: (at) => {
+    set: async (at) => {
       times.set(owner, at);
-      return sync();
+      await sync();
     },
   });
 

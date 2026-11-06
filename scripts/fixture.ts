@@ -97,7 +97,7 @@ interface DataApiAnswer {
   readonly items: readonly unknown[];
   readonly nextPageToken?: string | undefined;
 }
-const answer = (body: DataApiAnswer) => Promise.resolve(Response.json(body));
+const answer = (body: DataApiAnswer) => Response.json(body);
 const laneYouTube = async (url: string) => {
   const parsed = new URL(url);
   const resource = parsed.pathname.split("/").at(-1);
@@ -179,10 +179,10 @@ const app = createApp({
   logging: { silent: true },
   metadata: Metadata.layer({
     appleMusic: appleMusic.credentials,
-    fetch: (url) =>
+    fetch: async (url) =>
       appleMusic.isAppleMusic(url)
-        ? Promise.resolve(appleMusic.answer(url))
-        : laneYouTube(url),
+        ? appleMusic.answer(url)
+        : await laneYouTube(url),
     youTubeApiKey: "lane",
   }),
   playbackDiagnostics: {

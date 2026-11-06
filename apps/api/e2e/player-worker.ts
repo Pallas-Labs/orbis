@@ -45,6 +45,6 @@ export class Group extends SmokeGroup {
       }
       return new Response(null, { status: 204 });
     }
-    return super.fetch(request);
+    return await super.fetch(request);
   }
 }

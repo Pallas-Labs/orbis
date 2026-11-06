@@ -70,8 +70,8 @@ export const appleMusicTokens = (
     if (cached && cached.expiresAt - seconds > REFRESH_SECONDS) {
       return cached.token;
     }
-    const token = yield* Effect.tryPromise(() =>
-      signToken(credentials, seconds)
+    const token = yield* Effect.tryPromise(
+      async () => await signToken(credentials, seconds)
     );
     cached = { expiresAt: seconds + TOKEN_SECONDS, token };
     return token;

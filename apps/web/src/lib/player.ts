@@ -6,33 +6,38 @@ import type { ApiResult, Credentials } from "@/lib/orbis";
 /** Playback Position bounds the API accepts, in seconds (one week). */
 const MAX_POSITION = 604_800;
 
-export const playSet = (credentials: Credentials, setId: string) =>
-  callOrbis(credentials, (client) => client.queue.play({ payload: { setId } }));
+export const playSet = async (credentials: Credentials, setId: string) =>
+  await callOrbis(credentials, (client) =>
+    client.queue.play({ payload: { setId } })
+  );
 
-export const playPlaylist = (credentials: Credentials, playlistId: string) =>
-  callOrbis(credentials, (client) =>
+export const playPlaylist = async (
+  credentials: Credentials,
+  playlistId: string
+) =>
+  await callOrbis(credentials, (client) =>
     client.queue.replaceWithPlaylist({ payload: { playlistId } })
   );
 
-export const queueSet = (
+export const queueSet = async (
   credentials: Credentials,
   setId: string,
   placement: "next" | "end"
 ) =>
-  callOrbis(credentials, (client) =>
+  await callOrbis(credentials, (client) =>
     client.queue.insert({ payload: { placement, setId } })
   );
 
-export const completeSet = (credentials: Credentials, setId: string) =>
-  callOrbis(credentials, (client) =>
+export const completeSet = async (credentials: Credentials, setId: string) =>
+  await callOrbis(credentials, (client) =>
     client.queue.complete({ payload: { setId } })
   );
 
-export const sendPresence = (
+export const sendPresence = async (
   credentials: Credentials,
   action: PresenceAction
 ) =>
-  callOrbis(credentials, (client) => {
+  await callOrbis(credentials, (client) => {
     // The generated client types each payload member as its own request object,
     // so the action dispatches on its kind before the call.
     switch (action.kind) {
@@ -55,12 +60,12 @@ export const sendPresence = (
     }
   });
 
-export const reportPosition = (
+export const reportPosition = async (
   credentials: Credentials,
   setId: string,
   seconds: number
 ) =>
-  callOrbis(credentials, (client) =>
+  await callOrbis(credentials, (client) =>
     client.library.setPosition({
       params: { id: setId },
       payload: { seconds: Math.max(0, Math.min(MAX_POSITION, seconds)) },

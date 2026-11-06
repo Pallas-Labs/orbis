@@ -23,7 +23,9 @@ export interface DownloadProgress {
 }
 
 const removePartial = (tmpPath: string) =>
-  Effect.tryPromise(() => rm(tmpPath, { force: true })).pipe(Effect.ignore);
+  Effect.tryPromise(async () => {
+    await rm(tmpPath, { force: true });
+  }).pipe(Effect.ignore);
 
 // A backend failure is retryable on the next backend. A cancel is terminal.
 const fetchWithFallback = (

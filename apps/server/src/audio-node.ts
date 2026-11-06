@@ -374,7 +374,9 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
         current.close(1008, "Invalid node command");
       }
     });
-    current.addEventListener("error", () => current.close());
+    current.addEventListener("error", () => {
+      current.close();
+    });
     const onClose = async (event: CloseEvent) => {
       clearInterval(heartbeat);
       // A connect that never opened is reported by the reconnect that follows it.

@@ -447,7 +447,9 @@ const start = async (options: { configured?: boolean } = {}) => {
         }
         if (answer === "hang") {
           const silence = Promise.withResolvers<Response>();
-          signal.addEventListener("abort", () => silence.reject(signal.reason));
+          signal.addEventListener("abort", () => {
+            silence.reject(signal.reason);
+          });
           return silence.promise;
         }
         const recording = recordings.get(url);

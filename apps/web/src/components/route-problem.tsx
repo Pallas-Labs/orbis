@@ -9,7 +9,9 @@ import { FAILURE_MESSAGES } from "@/lib/orbis";
 export const RouteProblem = ({ error }: ErrorComponentProps) => {
   const router = useRouter();
   // Invalidating re-runs beforeLoad and the loaders; resetting alone would not.
-  const retry = () => router.invalidate();
+  const retry = async () => {
+    await router.invalidate();
+  };
   return (
     <main className="flex min-h-svh flex-col items-center justify-center gap-4 p-6">
       <p className="text-destructive max-w-sm text-center text-sm" role="alert">
