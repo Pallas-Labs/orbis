@@ -93,6 +93,7 @@ import {
   sets as setRows,
 } from "./db/schema.js";
 import { Database } from "./db/service.js";
+import { DownloadMoves, moveDownload } from "./download-state.js";
 import { asLibraryError, LibraryError } from "./errors.js";
 import type {
   AccessDecision,
@@ -2106,10 +2107,10 @@ export const createPortableApp = (options: {
                       yield* tx.run(
                         sql`DELETE FROM library_entries WHERE person_id = ${params.id}`
                       );
-                      yield* tx.run(
-                        sql`UPDATE sets SET download_state = 'none'
-                          WHERE download_state IN ('queued', 'downloading')
-                          AND id IN (SELECT set_id FROM download_jobs WHERE person_id = ${params.id})`
+                      yield* moveDownload(
+                        tx,
+                        DownloadMoves.drop,
+                        sql`${setRows.id} IN (SELECT set_id FROM download_jobs WHERE person_id = ${params.id})`
                       );
                       yield* tx.run(
                         sql`DELETE FROM download_jobs WHERE person_id = ${params.id}`

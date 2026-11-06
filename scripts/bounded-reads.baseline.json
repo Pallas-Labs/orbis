@@ -8,8 +8,6 @@
     "raw-select": [
       "SELECT id FROM sets WHERE url = ?",
       "SELECT download_state AS state FROM sets WHERE id = ?",
-      "SELECT download_state AS state FROM sets WHERE id = ${message.setId}",
-      "SELECT id FROM sets WHERE download_state = 'ready'",
       "SELECT download_state AS state, EXISTS(SELECT 1 FROM library_entries WHERE set_id = sets.id UNION ALL SELECT 1 FROM playlist_sets WHERE set_id = sets.id UNION ALL SELECT 1 FROM queue_entries WHERE set_id = sets.id) AS referenced FROM sets WHERE id = ?"
     ]
   },

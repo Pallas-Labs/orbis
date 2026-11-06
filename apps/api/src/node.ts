@@ -9,7 +9,12 @@ import { sql } from "drizzle-orm";
 import { Effect, Schema, Semaphore } from "effect";
 import type { ManagedRuntime } from "effect";
 
+import { sets } from "../../server/src/db/schema.js";
 import { Database } from "../../server/src/db/service.js";
+import {
+  DownloadMoves,
+  moveDownload,
+} from "../../server/src/download-state.js";
 import {
   decideNodeAccess,
   readTrustRegistry,
@@ -564,21 +569,10 @@ export class GroupAudioNode {
       }
       await this.runtime.runPromise(
         Effect.gen(function* completeCurrentRun() {
-          const db = yield* Database;
           const library = yield* Library;
-          yield* db.transaction((tx) =>
-            Effect.gen(function* completeIfRunning() {
-              const [set] = yield* tx.all<{ state: string }>(
-                sql`SELECT download_state AS state FROM sets WHERE id = ${message.setId}`
-              );
-              if (set?.state !== "downloading") {
-                return;
-              }
-              yield* message.kind === "finished"
-                ? library.finishDownload(message.setId, message)
-                : library.failDownload(message.setId);
-            })
-          );
+          yield* message.kind === "finished"
+            ? library.finishDownload(message.setId, message)
+            : library.failDownload(message.setId);
         })
       );
       // The node logs the failure as an error; here it is the Group's view of it.
@@ -609,21 +603,16 @@ export class GroupAudioNode {
     files: Extract<NodeMessage, { kind: "inventory" }>["files"]
   ) {
     const ids = new Set(files.map((file) => file.setId));
-    this.ctx.storage.transactionSync(() => {
-      const ready = this.ctx.storage.sql
-        .exec<{ id: string }>(
-          "SELECT id FROM sets WHERE download_state = 'ready'"
+    await this.runtime.runPromise(
+      Effect.flatMap(Database, (db) =>
+        // One JSON parameter: a Durable Object binds at most 100 per statement.
+        moveDownload(
+          db,
+          DownloadMoves.lose,
+          sql`${sets.id} NOT IN (SELECT value FROM json_each(${JSON.stringify([...ids])}))`
         )
-        .toArray();
-      for (const set of ready) {
-        if (!ids.has(set.id)) {
-          this.ctx.storage.sql.exec(
-            "UPDATE sets SET download_state = 'none', retained_audio_bytes = NULL, retained_audio_format = NULL WHERE id = ?",
-            set.id
-          );
-        }
-      }
-    });
+      )
+    );
     // Reconciliation finishes each database change before dispatching the next
     // command, so each file is settled before the next is looked at.
     const reconcileFile = async (rest: typeof files): Promise<void> => {
@@ -650,7 +639,7 @@ export class GroupAudioNode {
       } else if (state.state !== "ready") {
         await this.runtime.runPromise(
           Effect.flatMap(Library, (library) =>
-            library.finishDownload(file.setId, file)
+            library.adoptDownload(file.setId, file)
           )
         );
       }

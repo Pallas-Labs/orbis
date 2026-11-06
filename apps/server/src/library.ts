@@ -23,6 +23,7 @@ import {
   sets,
 } from "./db/schema.js";
 import { Database } from "./db/service.js";
+import { DownloadMoves, moveDownload } from "./download-state.js";
 import { asLibraryError, LibraryError } from "./errors.js";
 import type { PersonRecord } from "./identity.js";
 import {
@@ -188,10 +189,16 @@ export class Library extends Context.Service<
       id: string
     ) => Effect.Effect<SavedSet, LibraryError>;
     readonly claimDownload: Effect.Effect<SavedSet | null, LibraryError>;
+    /** Null when the Download was no longer running: the caller removes its file. */
     readonly finishDownload: (
       id: string,
       audio: { bytes: number; format: string; durationSeconds: number }
-    ) => Effect.Effect<SavedSet, LibraryError>;
+    ) => Effect.Effect<SavedSet | null, LibraryError>;
+    /** Marks ready a waiting or running Download whose file a node already holds. */
+    readonly adoptDownload: (
+      id: string,
+      audio: { bytes: number; format: string; durationSeconds: number }
+    ) => Effect.Effect<SavedSet | null, LibraryError>;
     readonly failDownload: (
       id: string
     ) => Effect.Effect<SavedSet, LibraryError>;
@@ -875,11 +882,11 @@ export class Library extends Context.Service<
                 queuedAt: new Date().toISOString(),
                 setId: id,
               });
-              const [queued] = yield* tx
-                .update(sets)
-                .set({ downloadState: "queued" })
-                .where(eq(sets.id, id))
-                .returning();
+              const [queued] = yield* moveDownload(
+                tx,
+                DownloadMoves.queue,
+                eq(sets.id, id)
+              );
               if (!queued) {
                 return yield* Effect.fail(setNotFound());
               }
@@ -920,53 +927,57 @@ export class Library extends Context.Service<
                 lastServed: sql`(SELECT COALESCE(MAX(last_served), 0) + 1 FROM download_requesters)`,
               })
               .where(eq(downloadRequesters.personId, next.personId));
-            const [claimed] = yield* tx
-              .update(sets)
-              .set({ downloadState: "downloading" })
-              .where(eq(sets.id, next.setId))
-              .returning();
+            const [claimed] = yield* moveDownload(
+              tx,
+              DownloadMoves.claim,
+              eq(sets.id, next.setId)
+            );
             return claimed ?? null;
           })
         );
         return row ? yield* hydrateSet(row) : null;
       })
     ).pipe(Effect.withSpan("Library.claimDownload"));
-    const finishDownload = Effect.fn("Library.finishDownload")(
-      (
-        id: string,
-        audio: { bytes: number; format: string; durationSeconds: number }
-      ) =>
-        execute(
-          Effect.gen(function* finishDownloadEffect() {
-            // Whole seconds: SQLite keeps the fraction under INTEGER affinity, and
-            // the app decodes an integer, so a fraction would unreadable the library.
-            const [row] = yield* db
-              .update(sets)
-              .set({
-                downloadState: "ready",
-                durationSeconds: Math.round(audio.durationSeconds),
-                retainedAudioBytes: audio.bytes,
-                retainedAudioFormat: audio.format,
-              })
-              .where(eq(sets.id, id))
-              .returning();
-            if (!row) {
-              return yield* Effect.fail(setNotFound());
-            }
-            return yield* hydrateSet(row);
-          })
-        )
+    // Null when the move lost to a cancel or a release: the caller removes the file.
+    const settleReady = (
+      name: string,
+      move: typeof DownloadMoves.finish | typeof DownloadMoves.adopt
+    ) =>
+      Effect.fn(name)(
+        (
+          id: string,
+          audio: { bytes: number; format: string; durationSeconds: number }
+        ) =>
+          execute(
+            Effect.gen(function* finishDownloadEffect() {
+              // Whole seconds: SQLite keeps the fraction under INTEGER affinity, and
+              // the app decodes an integer, so a fraction would unreadable the library.
+              const [row] = yield* moveDownload(
+                db,
+                move(audio),
+                eq(sets.id, id),
+                { durationSeconds: Math.round(audio.durationSeconds) }
+              );
+              return row ? yield* hydrateSet(row) : null;
+            })
+          )
+      );
+    const finishDownload = settleReady(
+      "Library.finishDownload",
+      DownloadMoves.finish
     );
-    // Only a download still running can fail. A cancel that won the race already
-    // moved the row to none, and a failure must not drag it back to failed.
+    const adoptDownload = settleReady(
+      "Library.adoptDownload",
+      DownloadMoves.adopt
+    );
     const failDownload = Effect.fn("Library.failDownload")((id: string) =>
       execute(
         Effect.gen(function* failDownloadEffect() {
-          const [failed] = yield* db
-            .update(sets)
-            .set({ downloadState: "failed" })
-            .where(and(eq(sets.id, id), eq(sets.downloadState, "downloading")))
-            .returning();
+          const [failed] = yield* moveDownload(
+            db,
+            DownloadMoves.fail,
+            eq(sets.id, id)
+          );
           if (failed) {
             return yield* hydrateSet(failed);
           }
@@ -1008,15 +1019,11 @@ export class Library extends Context.Service<
                   })
                 );
               }
-              const [row] = yield* tx
-                .update(sets)
-                .set({
-                  downloadState: "none",
-                  retainedAudioBytes: null,
-                  retainedAudioFormat: null,
-                })
-                .where(and(eq(sets.id, id), ne(sets.downloadState, "ready")))
-                .returning();
+              const [row] = yield* moveDownload(
+                tx,
+                DownloadMoves.cancel,
+                eq(sets.id, id)
+              );
               return row ?? null;
             })
           );
@@ -1037,10 +1044,7 @@ export class Library extends Context.Service<
     // when the process died goes back to queued and the worker picks it up again.
     const resetStuckDownloads = execute(
       Effect.gen(function* resetStuckDownloadsEffect() {
-        yield* db
-          .update(sets)
-          .set({ downloadState: "queued" })
-          .where(eq(sets.downloadState, "downloading"));
+        yield* moveDownload(db, DownloadMoves.requeue);
         yield* db.run(
           sql`INSERT OR IGNORE INTO download_requesters (person_id) VALUES ('host')`
         );
@@ -1469,6 +1473,7 @@ export class Library extends Context.Service<
     );
 
     return Library.of({
+      adoptDownload,
       byIds,
       cancelDownload,
       claimDownload,

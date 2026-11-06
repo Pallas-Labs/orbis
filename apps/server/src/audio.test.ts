@@ -440,6 +440,85 @@ test("a download requested again after a cancel is still worked on", async () =>
   }
 });
 
+// The bad path from the 2026-11-05 state-machine audit (PAL-1636): the worker
+// has stored the file when Cancel lands, and only then writes ready. A fake
+// ffprobe names the download webm, and a fake ffmpeg writes the stored file and
+// then waits, so Cancel lands between the store and the ready write.
+test("a cancel after the file is stored leaves the Set at none with no file", async () => {
+  const tools = await mkdtemp(path.join(tmpdir(), "orbis-tools-"));
+  const stored = path.join(tools, "stored");
+  const go = path.join(tools, "go");
+  const ffprobePath = path.join(tools, "ffprobe");
+  const ffmpegPath = path.join(tools, "ffmpeg");
+  await writeFile(
+    ffprobePath,
+    `#!/bin/sh\nprintf '{"format":{"format_name":"matroska,webm","duration":"2.0"}}'\n`,
+    { mode: 0o755 }
+  );
+  await writeFile(
+    ffmpegPath,
+    [
+      "#!/bin/sh",
+      'for last; do :; done\nprintf stored > "$last"',
+      `: > ${JSON.stringify(stored)}`,
+      `n=0; while [ ! -e ${JSON.stringify(go)} ] && [ $n -lt 500 ]; do sleep 0.02; n=$((n+1)); done`,
+      "",
+    ].join("\n"),
+    { mode: 0o755 }
+  );
+  const { app, cleanup, root } = await setUp(
+    {
+      cobalt: () =>
+        Response.json({ status: "tunnel", url: "http://cdn.test/a" }),
+      tunnel: tunnelOk(new Uint8Array(1024)),
+    },
+    { ffmpegPath, ffprobePath }
+  );
+  const fileStored = async (attemptsLeft = 400): Promise<void> => {
+    if (await Bun.file(stored).exists()) {
+      return;
+    }
+    if (attemptsLeft <= 0) {
+      throw new Error("the worker never stored the file");
+    }
+    await Bun.sleep(25);
+    await fileStored(attemptsLeft - 1);
+  };
+  try {
+    const id = await seedSet(app);
+    await request(app, { method: "POST", url: `/sets/${id}/audio/download` });
+    await fileStored();
+    const canceled = await request(app, {
+      method: "DELETE",
+      url: `/sets/${id}/audio/download`,
+    });
+    expect(canceled.json().downloadState).toBe("none");
+    await writeFile(go, "");
+    // The worker runs one download at a time, so a second Set that settles
+    // proves the worker is done with the first.
+    const other = await seedSet(
+      app,
+      "https://www.youtube.com/watch?v=bqzKEbpKQAA"
+    );
+    await request(app, {
+      method: "POST",
+      url: `/sets/${other}/audio/download`,
+    });
+    await waitForState(app, other, ["ready", "failed"]);
+    const settled = await request(app, {
+      method: "GET",
+      url: `/sets/${id}/audio/state`,
+    });
+    expect(settled.json().state).toBe("none");
+    expect(await Bun.file(path.join(root, "audio", `${id}.ogg`)).exists()).toBe(
+      false
+    );
+  } finally {
+    await cleanup();
+    await rm(tools, { force: true, recursive: true });
+  }
+});
+
 test("deleting a ready download is a conflict", async () => {
   if (!haveFfmpeg) {
     return;

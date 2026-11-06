@@ -3,6 +3,7 @@ import { Effect } from "effect";
 
 import { downloadJobs, setCues, sets } from "./db/schema.js";
 import { Database } from "./db/service.js";
+import { DownloadMoves, moveDownload } from "./download-state.js";
 import { asLibraryError } from "./errors.js";
 import type { LibraryError } from "./errors.js";
 
@@ -26,17 +27,11 @@ export const releaseAudio = Effect.fn("AudioRelease.release")(
         if (reference) {
           return;
         }
-        yield* tx
-          .update(sets)
-          .set({
-            downloadState: "none",
-            retainedAudioBytes: null,
-            retainedAudioFormat: null,
-            tracklistRunId: null,
-            tracklistRunStartedAt: null,
-            tracklistState: "pending",
-          })
-          .where(eq(sets.id, id));
+        yield* moveDownload(tx, DownloadMoves.release, eq(sets.id, id), {
+          tracklistRunId: null,
+          tracklistRunStartedAt: null,
+          tracklistState: "pending",
+        });
         yield* tx.delete(downloadJobs).where(eq(downloadJobs.setId, id));
         yield* tx.delete(setCues).where(eq(setCues.setId, id));
         return true;
