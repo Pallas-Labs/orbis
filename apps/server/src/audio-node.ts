@@ -53,7 +53,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
   );
   const media = await runtime.runPromise(MediaStore);
   const backends = await runtime.runPromise(DownloadBackends);
-  await runtime.runPromise(media.ensureDirectory());
+  await runtime.runPromise(media.ensureDirectory);
   const metadata = options.ytdlpBin
     ? ytDlpMetadata({ binPath: options.ytdlpBin })
     : undefined;

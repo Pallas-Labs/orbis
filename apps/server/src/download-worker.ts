@@ -69,8 +69,8 @@ const fetchWithFallback = (
 export class DownloadWorker extends Context.Service<
   DownloadWorker,
   {
-    readonly wake: () => Effect.Effect<void>;
-    readonly processNext: () => Effect.Effect<boolean, never>;
+    readonly wake: Effect.Effect<void>;
+    readonly processNext: Effect.Effect<boolean, never>;
     readonly progressFor: (id: string) => DownloadProgress | undefined;
     readonly abort: (id: string) => void;
   }
@@ -94,7 +94,7 @@ export class DownloadWorker extends Context.Service<
         const requeued =
           options.recoverInterruptedDownloads === false
             ? 0
-            : yield* library.resetStuckDownloads().pipe(Effect.orDie);
+            : yield* library.resetStuckDownloads.pipe(Effect.orDie);
         yield* Effect.logInfo("download worker started").pipe(
           Effect.annotateLogs({
             requeued,
@@ -144,75 +144,74 @@ export class DownloadWorker extends Context.Service<
             );
           }
         );
-        const processNext = Effect.fn("DownloadWorker.processNext")(() =>
-          Effect.gen(function* pollOnce() {
-            const claimed = yield* Effect.matchEffect(library.claimDownload(), {
-              onFailure: (error) =>
-                Effect.logWarning("audio worker claim failed").pipe(
-                  Effect.annotateLogs({
-                    reason: error.message,
-                  }),
-                  Effect.andThen(Effect.succeed(null))
-                ),
-              onSuccess: (current) => Effect.succeed(current),
-            });
-            if (!claimed) {
-              return false;
-            }
-            yield* Effect.logInfo("audio download claimed").pipe(
-              Effect.annotateLogs({ set: claimed.id, source: claimed.source })
-            );
-            const outcome = yield* Effect.exit(
-              downloadOne(claimed).pipe(
-                withWideEvent(
-                  {
-                    job: "audio-download",
-                    set: claimed.id,
-                    source: claimed.source,
-                  },
-                  options.logging
-                )
-              )
-            );
-            if (Exit.isFailure(outcome)) {
-              if (Cause.hasInterruptsOnly(outcome.cause)) {
-                return yield* Effect.interrupt;
-              }
-              const reason = Cause.squash(outcome.cause);
-              yield* library.failDownload(claimed.id);
-              yield* Effect.logWarning("audio download failed").pipe(
+        const processNext = Effect.gen(function* pollOnce() {
+          const claimed = yield* Effect.matchEffect(library.claimDownload, {
+            onFailure: (error) =>
+              Effect.logWarning("audio worker claim failed").pipe(
                 Effect.annotateLogs({
-                  reason: reason instanceof Error ? reason.message : "unknown",
+                  reason: error.message,
+                }),
+                Effect.andThen(Effect.succeed(null))
+              ),
+            onSuccess: (current) => Effect.succeed(current),
+          });
+          if (!claimed) {
+            return false;
+          }
+          yield* Effect.logInfo("audio download claimed").pipe(
+            Effect.annotateLogs({ set: claimed.id, source: claimed.source })
+          );
+          const outcome = yield* Effect.exit(
+            downloadOne(claimed).pipe(
+              withWideEvent(
+                {
+                  job: "audio-download",
                   set: claimed.id,
-                })
-              );
+                  source: claimed.source,
+                },
+                options.logging
+              )
+            )
+          );
+          if (Exit.isFailure(outcome)) {
+            if (Cause.hasInterruptsOnly(outcome.cause)) {
+              return yield* Effect.interrupt;
             }
-            aborts.delete(claimed.id);
-            progress.delete(claimed.id);
-            return true;
-          }).pipe(
-            Effect.matchEffect({
-              onFailure: (error) =>
-                Effect.logWarning("audio worker round failed").pipe(
-                  Effect.annotateLogs({
-                    reason: error.message,
-                  }),
-                  Effect.andThen(Effect.succeed(false))
-                ),
-              onSuccess: (worked) => Effect.succeed(worked),
-            })
-          )
+            const reason = Cause.squash(outcome.cause);
+            yield* library.failDownload(claimed.id);
+            yield* Effect.logWarning("audio download failed").pipe(
+              Effect.annotateLogs({
+                reason: reason instanceof Error ? reason.message : "unknown",
+                set: claimed.id,
+              })
+            );
+          }
+          aborts.delete(claimed.id);
+          progress.delete(claimed.id);
+          return true;
+        }).pipe(
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.logWarning("audio worker round failed").pipe(
+                Effect.annotateLogs({
+                  reason: error.message,
+                }),
+                Effect.andThen(Effect.succeed(false))
+              ),
+            onSuccess: (worked) => Effect.succeed(worked),
+          }),
+          Effect.withSpan("DownloadWorker.processNext")
         );
         const drain = Effect.fn("DownloadWorker.drain")(function* drain() {
-          while (yield* processNext()) {
+          while (yield* processNext) {
             // SQLite is authoritative; keep claiming until the queue is empty.
           }
         });
-        const wake = Effect.fn("DownloadWorker.wake")(() =>
-          Queue.offer(wakeQueue, true)
+        const wake = Queue.offer(wakeQueue, true).pipe(
+          Effect.withSpan("DownloadWorker.wake")
         );
         if (options.startWorker === true) {
-          yield* wake();
+          yield* wake;
           yield* Effect.forkScoped(
             Stream.fromQueue(wakeQueue).pipe(Stream.runForEach(() => drain()))
           );

@@ -393,9 +393,9 @@ export class Presence extends Context.Service<
       personId: string,
       now: number
     ) => Effect.Effect<string | null, LibraryError>;
-    readonly schedule: () => Effect.Effect<void, LibraryError>;
+    readonly schedule: Effect.Effect<void, LibraryError>;
     /** Runs once the caller's transaction around `queueActivated` or `removePerson` commits. */
-    readonly afterCommit: () => Effect.Effect<void>;
+    readonly afterCommit: Effect.Effect<void>;
     readonly changes: Stream.Stream<null>;
   }
 >()("@orbis/Presence") {
@@ -596,22 +596,19 @@ export class Presence extends Context.Service<
           );
         };
 
-        const schedule: () => Effect.Effect<void, LibraryError> = Effect.fn(
-          "Presence.schedule"
-        )(() => execute(Effect.flatMap(nearestDeadline(), setAlarm)));
+        const schedule: Effect.Effect<void, LibraryError> = Effect.suspend(() =>
+          execute(Effect.flatMap(nearestDeadline(), setAlarm))
+        ).pipe(Effect.withSpan("Presence.schedule"));
         const hub = yield* PubSub.sliding<null>(1);
-        const afterCommit: () => Effect.Effect<void> = Effect.fn(
-          "Presence.afterCommit"
-        )(() =>
-          schedule().pipe(
-            Effect.catchTag("LibraryError", (failure) =>
-              Effect.logWarning("presence alarm not rescheduled").pipe(
-                Effect.annotateLogs({ cause: failure.message })
-              )
-            ),
-            Effect.andThen(PubSub.publish(hub, null)),
-            Effect.asVoid
-          )
+        const afterCommit: Effect.Effect<void> = schedule.pipe(
+          Effect.catchTag("LibraryError", (failure) =>
+            Effect.logWarning("presence alarm not rescheduled").pipe(
+              Effect.annotateLogs({ cause: failure.message })
+            )
+          ),
+          Effect.andThen(PubSub.publish(hub, null)),
+          Effect.asVoid,
+          Effect.withSpan("Presence.afterCommit")
         );
 
         const gatherFacts = Effect.fn("Presence.gatherFacts")(
@@ -742,7 +739,7 @@ export class Presence extends Context.Service<
               )
             ).pipe(
               Effect.tap((result) =>
-                result.outcome === "accepted" ? afterCommit() : Effect.void
+                result.outcome === "accepted" ? afterCommit : Effect.void
               )
             )
         );
@@ -792,7 +789,7 @@ export class Presence extends Context.Service<
               )
             ).pipe(
               Effect.flatMap((reported) =>
-                reported ? afterCommit() : Effect.void
+                reported ? afterCommit : Effect.void
               )
             )
         );
@@ -862,7 +859,7 @@ export class Presence extends Context.Service<
                 }
               })
             )
-          ).pipe(Effect.andThen(afterCommit()))
+          ).pipe(Effect.andThen(afterCommit))
         );
 
         const removePerson = Effect.fn("Presence.removePerson")(
@@ -937,7 +934,7 @@ export class Presence extends Context.Service<
                   }
                 })
               )
-            ).pipe(Effect.andThen(afterCommit()))
+            ).pipe(Effect.andThen(afterCommit))
           );
 
         wake = Effect.suspend(() => expire(clock())).pipe(
@@ -945,7 +942,7 @@ export class Presence extends Context.Service<
             Effect.logWarning("presence expiry failed").pipe(
               Effect.annotateLogs({ cause: failure.message }),
               Effect.andThen(Effect.sleep(Duration.seconds(1))),
-              Effect.andThen(schedule()),
+              Effect.andThen(schedule),
               Effect.ignore
             )
           )
@@ -956,7 +953,7 @@ export class Presence extends Context.Service<
             execute(visible(db, personId, { now }))
         );
 
-        yield* schedule();
+        yield* schedule;
 
         return Presence.of({
           act,

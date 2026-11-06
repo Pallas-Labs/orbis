@@ -67,7 +67,7 @@ export class MediaStore extends Context.Service<
     ) => Effect.Effect<readonly (StoredAudio & { readonly setId: string })[]>;
     readonly fileFor: (id: string, format: string) => string;
     readonly partialPath: (id: string) => string;
-    readonly ensureDirectory: () => Effect.Effect<void>;
+    readonly ensureDirectory: Effect.Effect<void>;
     readonly removeFiles: (id: string) => Effect.Effect<void>;
     readonly streamResponse: (
       response: Response,
@@ -398,9 +398,9 @@ export class MediaStore extends Context.Service<
       }
       return files;
     });
-    const ensureDirectory = Effect.fn("MediaStore.ensureDirectory")(() =>
-      Effect.promise(() => mkdir(audioDir, { recursive: true }))
-    );
+    const ensureDirectory = Effect.promise(() =>
+      mkdir(audioDir, { recursive: true })
+    ).pipe(Effect.withSpan("MediaStore.ensureDirectory"));
     return Layer.succeed(
       MediaStore,
       MediaStore.of({
