@@ -550,29 +550,19 @@ async function readBoundedText(response) {
     return response.text();
   }
 
-  const reader = response.body.getReader();
   const decoder = new TextDecoder();
   const chunks = [];
   let bytes = 0;
-  try {
-    while (true) {
-      // eslint-disable-next-line no-await-in-loop -- The stream must be consumed in order to enforce the byte limit.
-      const chunk = await reader.read();
-      if (chunk.done) {
-        chunks.push(decoder.decode());
-        return chunks.join("");
-      }
-      bytes += chunk.value.byteLength;
-      if (bytes > MAX_JSON_BODY_BYTES) {
-        // eslint-disable-next-line no-await-in-loop -- Cancel before reporting the bound so an oversized response is not left running in the background.
-        await reader.cancel();
-        throw new SmokeError("response_too_large");
-      }
-      chunks.push(decoder.decode(chunk.value, { stream: true }));
+  // Leaving this loop cancels the stream, so an oversized body stops arriving at once.
+  for await (const chunk of response.body) {
+    bytes += chunk.byteLength;
+    if (bytes > MAX_JSON_BODY_BYTES) {
+      throw new SmokeError("response_too_large");
     }
-  } finally {
-    reader.releaseLock();
+    chunks.push(decoder.decode(chunk, { stream: true }));
   }
+  chunks.push(decoder.decode());
+  return chunks.join("");
 }
 
 async function cancelResponse(response) {
@@ -910,23 +900,15 @@ function downloadTunnel(
       }
 
       let file;
-      let reader;
       let bytes = 0;
       let completed = false;
       try {
         file = await open(filePath, "wx");
-        reader = response.body.getReader();
-        while (true) {
-          // eslint-disable-next-line no-await-in-loop -- The stream must be consumed in order to enforce the byte limit.
-          const chunk = await reader.read();
-          if (chunk.done) {
-            break;
-          }
-          const { value } = chunk;
+        // Leaving this loop cancels the stream, so a refused or interrupted transfer stops arriving.
+        for await (const value of response.body) {
           if (bytes + value.byteLength > options.maxBytes) {
             throw new SmokeError("max_size_exceeded");
           }
-          // eslint-disable-next-line no-await-in-loop -- The next chunk cannot be read until the current chunk is persisted.
           await file.write(value);
           bytes += value.byteLength;
           if (interruptAfterBytes && bytes >= interruptAfterBytes) {
@@ -943,9 +925,6 @@ function downloadTunnel(
         };
       } finally {
         const cleanup = [];
-        if (reader) {
-          cleanup.push(reader.cancel());
-        }
         if (file) {
           cleanup.push(file.close());
         }
@@ -960,52 +939,50 @@ function downloadTunnel(
 }
 
 function runCommand(command, args, signal, toolName) {
-  // eslint-disable-next-line promise/avoid-new -- Spawn exposes events rather than a promise-based API.
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    let stdout = "";
-    let settled = false;
-    let killTimer;
-    const abort = () => {
-      child.kill("SIGTERM");
-      killTimer = setTimeout(() => child.kill("SIGKILL"), CHILD_KILL_GRACE_MS);
-      killTimer.unref?.();
-    };
-    const finish = (callback, value) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      signal.removeEventListener("abort", abort);
-      if (killTimer) {
-        clearTimeout(killTimer);
-      }
-      // eslint-disable-next-line promise/prefer-await-to-callbacks -- The callback is either resolve or reject for the child event.
-      callback(value);
-    };
-    if (signal.aborted) {
-      abort();
-    } else {
-      signal.addEventListener("abort", abort, { once: true });
-    }
-    child.stdout.setEncoding("utf-8");
-    child.stdout.on("data", (chunk) => {
-      if (stdout.length < MAX_JSON_BODY_BYTES) {
-        stdout += chunk;
-      }
-    });
-    child.once("error", (error) => {
-      finish(
-        reject,
-        error.code === "ENOENT"
-          ? new SmokeError(`${toolName}_unavailable`, { status: "blocked" })
-          : new SmokeError(`${toolName}_failed`)
-      );
-    });
-    child.once("close", (code) => finish(resolve, { code, stdout }));
+  const { promise, resolve, reject } = Promise.withResolvers();
+  const child = spawn(command, args, {
+    stdio: ["ignore", "pipe", "ignore"],
   });
+  let stdout = "";
+  let settled = false;
+  let killTimer;
+  const abort = () => {
+    child.kill("SIGTERM");
+    killTimer = setTimeout(() => child.kill("SIGKILL"), CHILD_KILL_GRACE_MS);
+    killTimer.unref?.();
+  };
+  const finish = (settle, value) => {
+    if (settled) {
+      return;
+    }
+    settled = true;
+    signal.removeEventListener("abort", abort);
+    if (killTimer) {
+      clearTimeout(killTimer);
+    }
+    settle(value);
+  };
+  if (signal.aborted) {
+    abort();
+  } else {
+    signal.addEventListener("abort", abort, { once: true });
+  }
+  child.stdout.setEncoding("utf-8");
+  child.stdout.on("data", (chunk) => {
+    if (stdout.length < MAX_JSON_BODY_BYTES) {
+      stdout += chunk;
+    }
+  });
+  child.once("error", (error) => {
+    finish(
+      reject,
+      error.code === "ENOENT"
+        ? new SmokeError(`${toolName}_unavailable`, { status: "blocked" })
+        : new SmokeError(`${toolName}_failed`)
+    );
+  });
+  child.once("close", (code) => finish(resolve, { code, stdout }));
+  return promise;
 }
 
 async function probeAudio(filePath, options, parentSignal) {

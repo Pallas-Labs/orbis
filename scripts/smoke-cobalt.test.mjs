@@ -134,25 +134,25 @@ process.exitCode = ${ffmpegExitCode};
   return command;
 };
 
-const runSmoke = (args, environment) =>
-  // eslint-disable-next-line promise/avoid-new -- A child process does not expose a promise-based close event.
-  new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [smokeScript, ...args], {
-      cwd: root,
-      env: { ...process.env, ...environment },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.setEncoding("utf-8");
-    child.stderr.setEncoding("utf-8");
-    child.stdout.on("data", (chunk) => (stdout += chunk));
-    child.stderr.on("data", (chunk) => (stderr += chunk));
-    child.once("error", reject);
-    child.once("close", (code, signal) =>
-      resolve({ code, signal, stderr, stdout })
-    );
+const runSmoke = (args, environment) => {
+  const { promise, resolve, reject } = Promise.withResolvers();
+  const child = spawn(process.execPath, [smokeScript, ...args], {
+    cwd: root,
+    env: { ...process.env, ...environment },
+    stdio: ["ignore", "pipe", "pipe"],
   });
+  let stdout = "";
+  let stderr = "";
+  child.stdout.setEncoding("utf-8");
+  child.stderr.setEncoding("utf-8");
+  child.stdout.on("data", (chunk) => (stdout += chunk));
+  child.stderr.on("data", (chunk) => (stderr += chunk));
+  child.once("error", reject);
+  child.once("close", (code, signal) =>
+    resolve({ code, signal, stderr, stdout })
+  );
+  return promise;
+};
 
 const smokeArgs = (endpoint, report, ffprobe, extra = []) => [
   "--endpoint",

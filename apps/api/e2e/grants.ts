@@ -6,6 +6,7 @@ import { Miniflare } from "miniflare";
 
 import { makeNodeHttpHandler } from "../../server/src/node-http.js";
 import { issueStreamGrant } from "../../server/src/stream-grant-core.js";
+import { runInOrder } from "../../server/src/test-http.js";
 import { workerModules } from "./worker-modules.js";
 
 const artifact = path.resolve(
@@ -134,15 +135,17 @@ try {
     redirect: "manual",
   });
   assert.equal(legacyInvalidGrant.status, 401);
-  for (const invalid of [
-    grant.slice(0, -1) + (grant.endsWith("0") ? "1" : "0"),
-    issueStreamGrant(secret, "wrong-set", "host"),
-    `1000000000000.host.${"a".repeat(64)}`,
-  ]) {
-    // eslint-disable-next-line no-await-in-loop -- Each request checks that a valid key cannot repair an invalid grant.
-    const rejected = await audio(invalid, "Bearer smoke-token");
-    assert.equal(rejected.status, 401);
-  }
+  await runInOrder(
+    [
+      grant.slice(0, -1) + (grant.endsWith("0") ? "1" : "0"),
+      issueStreamGrant(secret, "wrong-set", "host"),
+      `1000000000000.host.${"a".repeat(64)}`,
+    ],
+    async (invalid) => {
+      const rejected = await audio(invalid, "Bearer smoke-token");
+      assert.equal(rejected.status, 401);
+    }
+  );
   await writeFile(
     path.join(artifact, "result.json"),
     JSON.stringify(
