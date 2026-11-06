@@ -130,6 +130,14 @@ export class DownloadWorker extends Context.Service<
                 );
                 const stored = yield* media.storeDownloaded(set.id, tmpPath);
                 const finished = yield* library.finishDownload(set.id, stored);
+                if (!finished) {
+                  // A cancel or a release landed while the file was stored.
+                  yield* media.removeFiles(set.id);
+                  yield* Effect.logInfo("audio download discarded").pipe(
+                    Effect.annotateLogs({ backend, set: set.id })
+                  );
+                  return null;
+                }
                 yield* library.release(set.id);
                 yield* Effect.logInfo("audio download finished").pipe(
                   Effect.annotateLogs({
