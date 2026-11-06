@@ -153,6 +153,10 @@ describe("agent guard", () => {
       'git commit -m "wip" -n',
       "git commit --message='a b' --no-verify",
       'bash -c "git commit --no-verify -m wip"',
+      "X=$'--no-verify'; git commit $X -m wip",
+      'X=--no-verify; git commit "$X" -m wip',
+      "export X=--no-verify; git push $X",
+      "X=-n; git commit $X -m wip",
     ]) {
       assert.notEqual(refusal(command), null, command);
     }
@@ -170,6 +174,10 @@ describe("agent guard", () => {
       "git --no-pager log -n 5",
       "ls -n",
       "bun run check",
+      'git push origin "$BRANCH"',
+      'B=topic; git push origin "$B"',
+      "git commit -m 'X=--no-verify'",
+      "X=--no-verify",
     ]) {
       assert.equal(refusal(command), null, command);
     }

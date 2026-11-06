@@ -138,12 +138,31 @@ const stripData = (command) =>
 
 const gitCommand = /(?:^|[\s;&|()])(?:\S*\/)?git\s/u;
 
+// `git`, its global options, then `commit`.
+const gitCommit = String.raw`\bgit\s+(?:-\S+\s+(?:\S+\s+)?)*commit\b`;
+
 const rules = [
   // git reads a unique prefix of a long option as the option (gitcli(7)); `--no-ver` is ambiguous.
   [/(?:^|\s)--no-veri(?:fy?)?(?![\w-])/u, "`--no-verify` skips the git hooks"],
   [
-    /\bgit\s+(?:-\S+\s+(?:\S+\s+)?)*commit\b[^;&|]*\s-[a-zA-Z]*n[a-zA-Z]*(?=\s|$)/u,
+    new RegExp(
+      String.raw`${gitCommit}[^;&|]*\s-[a-zA-Z]*n[a-zA-Z]*(?=\s|$)`,
+      "u"
+    ),
     "`git commit -n` skips the git hooks",
+  ],
+  // A variable that holds a skip flag, as in `X=--no-verify; git push $X`. The guard does not
+  // expand variables, so it refuses the assignment; a flag built in `$(...)` stays out of reach.
+  [
+    /(?:^|\s)[A-Za-z_]\w*=--no-veri(?:fy?)?(?![\w-])/u,
+    "a variable set to `--no-verify` skips the git hooks",
+  ],
+  [
+    new RegExp(
+      String.raw`^(?=.*${gitCommit})(?:.*\s)?[A-Za-z_]\w*=-[a-zA-Z]*n[a-zA-Z]*(?=\s|$)`,
+      "su"
+    ),
+    "a variable set to `-n` skips the git hooks of `git commit`",
   ],
   [
     /\bLEFTHOOK(?:_EXCLUDE)?=/u,
