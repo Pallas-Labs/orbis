@@ -20,6 +20,7 @@ const journeys = [
   "pair",
   "share",
   "join",
+  "timeout",
 ];
 const concurrency = 4;
 
