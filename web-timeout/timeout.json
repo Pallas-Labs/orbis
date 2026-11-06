@@ -1,0 +1,33 @@
+{
+  "apiUrl": "http://127.0.0.1:4591",
+  "silentApiUrl": "http://127.0.0.1:4581",
+  "steps": [
+    {
+      "name": "held the sign-in request",
+      "method": "POST",
+      "url": "/sign-in/code"
+    },
+    {
+      "name": "still waiting at 44 s",
+      "requestClosed": false
+    },
+    {
+      "name": "unreachable at 46 s",
+      "alert": "Orbis could not be reached. If your browser asks to access devices on your local network, allow it and try again.",
+      "requestClosed": true
+    },
+    {
+      "name": "events stream open after 3 min",
+      "eventsRequests": 1,
+      "failed": [
+        "http://127.0.0.1:4591/events?changes=1 net::ERR_ABORTED"
+      ]
+    },
+    {
+      "name": "sign out aborts the events stream",
+      "failed": [
+        "http://127.0.0.1:4591/events?changes=1 net::ERR_ABORTED"
+      ]
+    }
+  ]
+}
