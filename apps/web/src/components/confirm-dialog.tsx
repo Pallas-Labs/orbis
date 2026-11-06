@@ -13,6 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { detach } from "@/lib/detach";
 import type { ApiResult } from "@/lib/orbis";
 import { useApiCall } from "@/lib/use-api-call";
 
@@ -70,7 +71,7 @@ export const ConfirmDialog = ({
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             disabled={busy}
-            onClick={confirm}
+            onClick={detach(confirm)}
             variant="destructive"
           >
             {busy ? pendingAction : action}

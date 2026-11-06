@@ -2,8 +2,13 @@ import { Database } from "bun:sqlite";
 import { existsSync, readFileSync, renameSync } from "node:fs";
 import path from "node:path";
 
+import { Schema } from "effect";
+
 import type { decodeTrust, TrustStore } from "./identity.js";
 import { configureTrustStorage } from "./trust-storage.js";
+
+// decodeTrust checks each filter; this only reads the stored JSON text.
+const parseFilters = Schema.decodeSync(Schema.fromJsonString(Schema.Unknown));
 
 // oxlint-disable-next-line orbis/no-module-level-mutable-state -- a process setting: createApp turns waiting off once for the disposable test and fixture service.
 let busyTimeout = 5000;
@@ -198,7 +203,7 @@ const readStore = (db: Database, decode: typeof decodeTrust): TrustStore => {
     .map((record) => ({
       ...record,
       autoDownload: Boolean(record.autoDownload),
-      filters: JSON.parse(record.filters),
+      filters: parseFilters(record.filters),
       removed: Boolean(record.removed),
       social: Boolean(record.social),
     }));

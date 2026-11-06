@@ -389,7 +389,7 @@ const seedTracklist = (action, setId) => {
   return true;
 };
 
-createServer(async (request, response) => {
+const handle = async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
   if (await routeDiagnostics(route, request, response)) {
     return;
@@ -459,4 +459,7 @@ createServer(async (request, response) => {
     }
   }
   return respond(response, 204);
+};
+createServer((request, response) => {
+  void handle(request, response);
 }).listen(Number(port), "127.0.0.1");

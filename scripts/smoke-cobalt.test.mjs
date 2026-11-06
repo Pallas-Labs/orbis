@@ -23,7 +23,7 @@ const audio = Buffer.alloc(2 * 1024 * 1024);
 
 const startFakeCobalt = async () => {
   const requests = [];
-  const server = createServer(async (request, response) => {
+  const handle = async (request, response) => {
     requests.push({
       authorization: request.headers.authorization,
       method: request.method,
@@ -36,7 +36,7 @@ const startFakeCobalt = async () => {
         JSON.stringify({
           cobalt: {
             services: ["youtube", "soundcloud"],
-            url: `http://127.0.0.1:${server.address().port}/`,
+            url: `http://127.0.0.1:${request.socket.localPort}/`,
             version: "11",
           },
         })
@@ -80,7 +80,7 @@ const startFakeCobalt = async () => {
         JSON.stringify({
           filename: "../../not-used.mp3",
           status: "tunnel",
-          url: `http://127.0.0.1:${server.address().port}/tunnel?id=${requests.length}`,
+          url: `http://127.0.0.1:${request.socket.localPort}/tunnel?id=${requests.length}`,
         })
       );
       return;
@@ -94,6 +94,9 @@ const startFakeCobalt = async () => {
 
     response.statusCode = 404;
     response.end();
+  };
+  const server = createServer((request, response) => {
+    void handle(request, response);
   });
 
   server.listen(0, "127.0.0.1");

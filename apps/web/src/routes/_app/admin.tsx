@@ -1,7 +1,7 @@
 import { GROUP_PASSCODE } from "@orbis/contracts";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { SubmitEvent, ReactNode } from "react";
 
 import { ShownCode } from "@/components/code-field";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -31,6 +31,7 @@ import {
 } from "@/lib/admin";
 import type { AdminData, AdminKey, AdminPerson } from "@/lib/admin";
 import { lastUsedText } from "@/lib/dates";
+import { detach } from "@/lib/detach";
 import { formField } from "@/lib/form";
 import type { IssuedSignInCode } from "@/lib/sign-in";
 import { useApiCall } from "@/lib/use-api-call";
@@ -95,7 +96,7 @@ const OpenPasscode = ({
         />
         <Button
           disabled={busy}
-          onClick={() => change(() => closeJoining(session))}
+          onClick={detach(() => change(() => closeJoining(session)))}
           size="sm"
           variant="outline"
         >
@@ -126,7 +127,7 @@ const Passcode = ({
           <Button
             className="self-start"
             disabled={busy}
-            onClick={() => change(() => newPasscode(session))}
+            onClick={detach(() => change(() => newPasscode(session)))}
           >
             Open joining
           </Button>
@@ -169,7 +170,7 @@ const PersonRow = ({
         <Button
           aria-label={`Show Sign-in Code for ${person.username}`}
           disabled={busy}
-          onClick={showCode}
+          onClick={detach(showCode)}
           size="sm"
           variant="outline"
         >
@@ -221,7 +222,7 @@ const CreatedKey = ({
         </p>
       ) : null}
       <div className="flex gap-2">
-        <Button onClick={copyKey} size="sm">
+        <Button onClick={detach(copyKey)} size="sm">
           {copy === "copied" ? "Copied" : "Copy key"}
         </Button>
         <Button onClick={onDone} size="sm" variant="outline">
@@ -247,7 +248,7 @@ const Keys = ({
   const usernames = new Map(
     people.map((person) => [person.id, person.username])
   );
-  const create = async (event: FormEvent<HTMLFormElement>) => {
+  const create = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
@@ -298,7 +299,7 @@ const Keys = ({
           );
         })}
       </ul>
-      <form className="flex flex-col gap-2" onSubmit={create}>
+      <form className="flex flex-col gap-2" onSubmit={detach(create)}>
         <div className="flex flex-wrap gap-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor="key-person">Person</Label>

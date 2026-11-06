@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { detach } from "@/lib/detach";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
@@ -95,7 +96,7 @@ export const AddToPlaylistDialog = ({
         )}
         {playlists.length === 0 ? null : (
           <DialogFooter>
-            <Button disabled={pending} onClick={save}>
+            <Button disabled={pending} onClick={detach(save)}>
               Save
             </Button>
           </DialogFooter>

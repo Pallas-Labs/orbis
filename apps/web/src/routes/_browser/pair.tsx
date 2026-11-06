@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ageText } from "@/lib/dates";
+import { detach } from "@/lib/detach";
 import { approveSignInRequest, findSignInRequest } from "@/lib/devices";
 import type { ApprovalRequest } from "@/lib/devices";
 import { takeFragment } from "@/lib/fragment";
@@ -176,12 +177,12 @@ const Approve = ({
       </p>
       <Problem message={problem} />
       <div className="flex flex-col gap-2">
-        <Button disabled={busy} onClick={approve}>
+        <Button disabled={busy} onClick={detach(approve)}>
           {busy ? "Signing in…" : `Sign In as ${person.username}`}
         </Button>
         <Button
           disabled={busy}
-          onClick={() => navigate({ to: "/" })}
+          onClick={detach(() => navigate({ to: "/" }))}
           variant="outline"
         >
           Cancel
@@ -207,7 +208,7 @@ const Failed = ({
   return (
     <PairCard title="Sign in a device">
       <Problem message={message} />
-      <Button disabled={busy} onClick={retry} variant="outline">
+      <Button disabled={busy} onClick={detach(retry)} variant="outline">
         {busy ? "Trying again…" : "Try again"}
       </Button>
     </PairCard>

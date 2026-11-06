@@ -86,7 +86,7 @@ test("visible Sets share audio and storage releases only the last reference over
     hostname: "127.0.0.1",
     port: 0,
   });
-  const listeners = await startFixtureServer({
+  const listeners = startFixtureServer({
     app: createApp({
       audio: {
         audioDir,
@@ -281,7 +281,7 @@ test("visible Sets share audio and storage releases only the last reference over
   } finally {
     db.close();
     await listeners.stop();
-    backend.stop(true);
+    await backend.stop(true);
     await rm(root, { force: true, recursive: true });
   }
 });

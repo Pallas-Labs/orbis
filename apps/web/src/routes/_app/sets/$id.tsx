@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { detach } from "@/lib/detach";
 import { listSets, requestDownload } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
@@ -46,7 +47,9 @@ const AudioAction = ({
   }
   if (set.downloadState === "ready") {
     return (
-      <Button onClick={() => play(set.playbackPositionSeconds)}>Play</Button>
+      <Button onClick={detach(() => play(set.playbackPositionSeconds))}>
+        Play
+      </Button>
     );
   }
   if (set.downloadState === "queued" || set.downloadState === "downloading") {
@@ -59,7 +62,7 @@ const AudioAction = ({
     );
   }
   return (
-    <Button onClick={download} variant="outline">
+    <Button onClick={detach(download)} variant="outline">
       Keep audio to play
     </Button>
   );
@@ -81,13 +84,13 @@ const ShareMenu = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem
-          onClick={() =>
+          onClick={detach(() =>
             onCopy("Orbis link", `${window.location.origin}/s/${set.id}`)
-          }
+          )}
         >
           Copy Orbis link
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onCopy(sourceLink, set.url)}>
+        <DropdownMenuItem onClick={detach(() => onCopy(sourceLink, set.url))}>
           Copy {sourceLink}
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -120,7 +123,7 @@ const SetPage = ({
       return;
     }
     const timer = setInterval(() => {
-      router.invalidate();
+      void router.invalidate();
     }, 2000);
     return () => clearInterval(timer);
   }, [router, tracklistState]);
@@ -176,7 +179,11 @@ const SetPage = ({
     tracklistContent = (
       <div className="flex items-center gap-3">
         <p role="alert">{FAILURE_MESSAGES[tracklist.failure]}</p>
-        <Button onClick={() => router.invalidate()} size="sm" variant="outline">
+        <Button
+          onClick={detach(() => router.invalidate())}
+          size="sm"
+          variant="outline"
+        >
           Try again
         </Button>
       </div>
@@ -189,13 +196,13 @@ const SetPage = ({
           player.playing?.set.id === set.id ? player.elapsed : null
         }
         onRefresh={() => {
-          refresh();
+          void refresh();
         }}
         onSeek={
           set.source === "apple-music"
             ? undefined
             : (seconds) => {
-                play(seconds);
+                void play(seconds);
               }
         }
         refreshing={refreshing}

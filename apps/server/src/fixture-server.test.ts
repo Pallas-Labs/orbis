@@ -31,7 +31,7 @@ test("the disposable HTTP fixture requires its key and accepts one exact Origin"
     devicesPath: path.join(directory, "devices.json"),
     logging: { silent: true },
   });
-  const fixture = await startFixtureServer({
+  const fixture = startFixtureServer({
     allowedOrigin: "http://127.0.0.1:3371",
     app,
     port: 0,

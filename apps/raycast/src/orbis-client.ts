@@ -134,7 +134,10 @@ const callOrbis = async <A, E>(
   const fetchWithStatus = Object.assign(
     async (input: string | URL | Request, init?: RequestInit) => {
       try {
-        const response = await send(String(input), init ?? {});
+        const response = await send(
+          input instanceof Request ? input.url : input.toString(),
+          init ?? {}
+        );
         const { status: responseStatus } = response;
         status = responseStatus;
         return response;

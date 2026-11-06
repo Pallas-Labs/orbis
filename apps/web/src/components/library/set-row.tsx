@@ -1,7 +1,7 @@
 import { DotsThreeIcon } from "@phosphor-icons/react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { AddToPlaylistDialog } from "@/components/library/add-to-playlist-dialog";
 import { usePlayer } from "@/components/player/player";
@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { detach } from "@/lib/detach";
+import { formText } from "@/lib/form";
 import {
   cancelDownload,
   removeSet,
@@ -105,9 +107,11 @@ export const DownloadBadge = ({
     case "failed": {
       return <Badge variant="destructive">Download failed</Badge>;
     }
-    default: {
+    case "canceled":
+    case "none": {
       return null;
     }
+    // no default
   }
 };
 
@@ -136,11 +140,11 @@ const TextDialog = ({
 }) => {
   const [problem, setProblem] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const save = async (event: FormEvent<HTMLFormElement>) => {
+  const save = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPending(true);
     const result = await onSave(
-      String(new FormData(event.currentTarget).get("value") ?? "")
+      formText(new FormData(event.currentTarget), "value")
     );
     setPending(false);
     if (result.ok) {
@@ -152,7 +156,7 @@ const TextDialog = ({
   return (
     <Dialog onOpenChange={(open) => (open ? null : onClose())} open>
       <DialogContent>
-        <form className="flex flex-col gap-4" onSubmit={save}>
+        <form className="flex flex-col gap-4" onSubmit={detach(save)}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
@@ -262,17 +266,21 @@ export const SetRow = ({
           {set.downloadState === "ready" ? (
             <>
               <DropdownMenuItem
-                onClick={async () => settle(await player.play(set))}
+                onClick={detach(async () => settle(await player.play(set)))}
               >
                 Play
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={async () => settle(await player.queue(set, "next"))}
+                onClick={detach(async () =>
+                  settle(await player.queue(set, "next"))
+                )}
               >
                 Play next
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={async () => settle(await player.queue(set, "end"))}
+                onClick={detach(async () =>
+                  settle(await player.queue(set, "end"))
+                )}
               >
                 Add to queue
               </DropdownMenuItem>
@@ -281,21 +289,21 @@ export const SetRow = ({
           ) : null}
           {downloadable ? (
             <DropdownMenuItem
-              onClick={async () =>
+              onClick={detach(async () =>
                 settle(
                   await requestDownload(credentials, set.id),
                   "The Download queue is full. Try again later."
                 )
-              }
+              )}
             >
               Download
             </DropdownMenuItem>
           ) : null}
           {inFlight ? (
             <DropdownMenuItem
-              onClick={async () =>
+              onClick={detach(async () =>
                 settle(await cancelDownload(credentials, set.id))
-              }
+              )}
             >
               Cancel Download
             </DropdownMenuItem>
@@ -321,7 +329,7 @@ export const SetRow = ({
       {dialog === "rename" ? (
         <TextDialog
           label="Title"
-          onClose={close}
+          onClose={detach(close)}
           onSave={(text) => renameSet(credentials, set.id, text.trim())}
           title={`Rename ${set.title}`}
           value={set.title}
@@ -330,7 +338,7 @@ export const SetRow = ({
       {dialog === "tags" ? (
         <TextDialog
           label="Tags, separated by commas"
-          onClose={close}
+          onClose={detach(close)}
           onSave={(text) => updateTags(credentials, set.id, parseTags(text))}
           title={`Tags for ${set.title}`}
           value={set.tags.join(", ")}
@@ -339,7 +347,7 @@ export const SetRow = ({
       {dialog === "playlists" ? (
         <AddToPlaylistDialog
           credentials={credentials}
-          onClose={close}
+          onClose={detach(close)}
           playlists={playlists}
           set={set}
         />
@@ -358,10 +366,10 @@ export const SetRow = ({
           <AlertDialogFooter>
             <AlertDialogCancel>Keep</AlertDialogCancel>
             <Button
-              onClick={async () => {
+              onClick={detach(async () => {
                 setDialog(null);
                 await settle(await removeSet(credentials, set.id));
-              }}
+              })}
               variant="destructive"
             >
               Remove

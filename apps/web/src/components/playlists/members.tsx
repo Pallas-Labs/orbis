@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { detach } from "@/lib/detach";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
@@ -77,7 +78,7 @@ const AddSetsDialog = ({
         <DialogFooter>
           <Button
             disabled={pending || chosen.length === 0}
-            onClick={() => onAdd(chosen)}
+            onClick={detach(() => onAdd(chosen))}
           >
             {chosen.length > 1 ? `Add ${chosen.length} Sets` : "Add"}
           </Button>
@@ -176,7 +177,9 @@ export const Members = ({
               <Button
                 aria-label={`Remove ${set.title} from ${playlist.name}`}
                 disabled={pending}
-                onClick={() => change(ids.filter((id) => id !== set.id))}
+                onClick={detach(() =>
+                  change(ids.filter((id) => id !== set.id))
+                )}
                 size="sm"
                 variant="outline"
               >

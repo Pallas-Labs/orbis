@@ -1,3 +1,5 @@
+import { Predicate } from "effect";
+
 export interface RecordedRequest {
   readonly body: string;
   readonly headers: Record<string, string>;
@@ -15,6 +17,14 @@ export type FetchHandler = (
   init: RequestInit
 ) => Promise<Response> | Response;
 
+/** The request body as text: the client sends bytes, and a test may send a string. */
+const bodyText = (body: RequestInit["body"]): string => {
+  if (body instanceof Uint8Array) {
+    return new TextDecoder().decode(body);
+  }
+  return Predicate.isString(body) ? body : "";
+};
+
 /**
  * Replaces the global fetch and records each request, so a test can assert both that no
  * request was sent and exactly what Orbis would have received.
@@ -25,9 +35,9 @@ export const mockFetch = (handler: FetchHandler) => {
     init: RequestInit = {}
   ): Promise<Response> => {
     const request: RecordedRequest = {
-      body: String(init.body ?? ""),
+      body: bodyText(init.body),
       headers: Object.fromEntries(new Headers(init.headers).entries()),
-      url: String(input),
+      url: input instanceof Request ? input.url : input.toString(),
     };
     requests.push(request);
     return Promise.resolve(handler(request, init));

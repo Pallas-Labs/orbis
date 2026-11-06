@@ -56,7 +56,10 @@ test("the Sets contract decodes live HTTP responses", async () => {
     app.handler(
       new Request(`http://localhost${path}`, {
         ...init,
-        headers: { ...init?.headers, "x-orbis-test-auth": "fixture" },
+        headers: {
+          ...Object.fromEntries(new Headers(init?.headers)),
+          "x-orbis-test-auth": "fixture",
+        },
       }),
       "device"
     );
@@ -117,7 +120,10 @@ test("the Playlist contract decodes live HTTP responses", async () => {
     app.handler(
       new Request(`http://localhost${path}`, {
         ...init,
-        headers: { ...init?.headers, "x-orbis-test-auth": "fixture" },
+        headers: {
+          ...Object.fromEntries(new Headers(init?.headers)),
+          "x-orbis-test-auth": "fixture",
+        },
       }),
       "device"
     );
@@ -187,7 +193,10 @@ test("the queue, position, and Tag contract decodes live HTTP responses", async 
       app.handler(
         new Request(`http://localhost${path}`, {
           ...init,
-          headers: { ...init?.headers, "x-orbis-test-auth": "fixture" },
+          headers: {
+            ...Object.fromEntries(new Headers(init?.headers)),
+            "x-orbis-test-auth": "fixture",
+          },
         }),
         "device"
       );

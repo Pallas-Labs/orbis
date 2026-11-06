@@ -26,7 +26,7 @@ const post = (body = JSON.stringify(batch()), headers: HeadersInit = {}) =>
     headers: {
       "content-type": "application/json",
       "x-orbis-test-auth": "fixture",
-      ...headers,
+      ...Object.fromEntries(new Headers(headers)),
     },
     method: "POST",
   });

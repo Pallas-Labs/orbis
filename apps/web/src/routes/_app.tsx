@@ -10,6 +10,7 @@ import { LiveEventsProvider } from "@/components/live-events";
 import { PlayerProvider } from "@/components/player/player";
 import { RouteProblem } from "@/components/route-problem";
 import { Button } from "@/components/ui/button";
+import { detach } from "@/lib/detach";
 import { NAV_ITEMS } from "@/lib/nav";
 import { FAILURE_MESSAGES, fetchMe } from "@/lib/orbis";
 import type { Credentials, Person } from "@/lib/orbis";
@@ -54,7 +55,7 @@ const AppShell = ({ session }: { readonly session: Session }) => {
           <span className="text-muted-foreground">
             Signed in as {session.person.username}
           </span>
-          <Button onClick={signOut} size="sm" variant="outline">
+          <Button onClick={detach(signOut)} size="sm" variant="outline">
             Sign out
           </Button>
         </div>

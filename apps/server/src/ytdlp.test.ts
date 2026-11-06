@@ -108,6 +108,7 @@ test("a failed run deletes the partial file", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "orbis-ytdlp-"));
   const destination = path.join(root, "a.part");
   try {
+    // oxlint-disable-next-line typescript/await-thenable -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
     await expect(download(failingRun, destination)).rejects.toBeDefined();
     expect(await Bun.file(destination).exists()).toBe(false);
   } finally {
@@ -160,6 +161,7 @@ test("a SoundCloud failure gets no YouTube client retry", async () => {
     return Promise.resolve({ code: 1, stdout: "" });
   };
   try {
+    // oxlint-disable-next-line typescript/await-thenable -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
     await expect(
       download(run, destination, soundCloudUrl)
     ).rejects.toBeDefined();
@@ -210,7 +212,7 @@ const orderFor = async (url: string) => {
       cobaltUrl: "http://cobalt.test/",
       fetch: (target) => {
         calls.push(
-          String(target).startsWith("http://cobalt.test/") ? "cobalt" : "tunnel"
+          target.startsWith("http://cobalt.test/") ? "cobalt" : "tunnel"
         );
         return Promise.resolve(new Response("{}", { status: 500 }));
       },
@@ -275,7 +277,7 @@ testFfmpeg(
         cobaltUrl: "http://cobalt.test/",
         fetch: (target) =>
           Promise.resolve(
-            String(target).startsWith("http://cobalt.test/")
+            target.startsWith("http://cobalt.test/")
               ? Response.json({ status: "tunnel", url: "http://cdn.test/a" })
               : new Response(new Uint8Array(bytes).buffer)
           ),

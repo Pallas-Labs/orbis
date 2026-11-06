@@ -96,7 +96,7 @@ evalite("Title revision", {
       } else {
         score += 0.25;
       }
-      if (text.toLowerCase() === String(expected).trim().toLowerCase()) {
+      if (text.toLowerCase() === expected.trim().toLowerCase()) {
         score += 0.5;
       } else {
         notes.push(`expected "${expected}"`);

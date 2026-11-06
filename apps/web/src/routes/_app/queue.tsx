@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLiveEvents } from "@/components/live-events";
 import { usePlayer } from "@/components/player/player";
 import { Button } from "@/components/ui/button";
+import { detach } from "@/lib/detach";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 
 const Queue = () => {
@@ -40,12 +41,12 @@ const Queue = () => {
                     <span className="flex-1 truncate">{set.title}</span>
                     <Button
                       aria-label={`Play ${set.title}`}
-                      onClick={async () => {
+                      onClick={detach(async () => {
                         const played = await player.play(set);
                         setProblem(
                           played.ok ? null : FAILURE_MESSAGES[played.failure]
                         );
-                      }}
+                      })}
                       size="sm"
                       variant="outline"
                     >

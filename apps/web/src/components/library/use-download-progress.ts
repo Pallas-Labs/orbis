@@ -74,7 +74,9 @@ export const useDownloadProgress = (
         polling = false;
       }
     };
-    const timer = setInterval(tick, POLL_MS);
+    const timer = setInterval(() => {
+      void tick();
+    }, POLL_MS);
     return () => {
       stopped = true;
       clearInterval(timer);

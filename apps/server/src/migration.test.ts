@@ -25,7 +25,7 @@ const LEGACY_SCHEMA = `PRAGMA journal_mode = WAL;
 const writeLegacyDatabase = (databasePath: string) => {
   const database = new Database(databasePath, { create: true });
   try {
-    database.exec(LEGACY_SCHEMA);
+    database.run(LEGACY_SCHEMA);
     database
       .query(
         "INSERT INTO sets (id, url, title, source, tags, created_at) VALUES (?, ?, ?, ?, ?, ?)"
@@ -86,7 +86,7 @@ const writeVersionOneDatabase = (
 ) => {
   const database = new Database(databasePath, { create: true });
   try {
-    database.exec(VERSION_ONE_SCHEMA);
+    database.run(VERSION_ONE_SCHEMA);
     const insertSet = database.query(
       "INSERT INTO sets (id, url, title, source, tags, created_at, creator, title_edited_by_user, listen_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
@@ -124,7 +124,7 @@ const writeVersionOneDatabase = (
     insertMembership.run("first-playlist", "kept-set", 1);
     insertMembership.run("second-playlist", "kept-set", 0);
     if (options.withReverseIndex) {
-      database.exec(
+      database.run(
         `CREATE INDEX ${REVERSE_INDEX} ON playlist_sets(set_id, playlist_id)`
       );
     }
@@ -137,7 +137,7 @@ const writeVersionOneDatabase = (
 const writeVersionZeroDatabase = (databasePath: string) => {
   const database = new Database(databasePath, { create: true });
   try {
-    database.exec(LEGACY_SCHEMA);
+    database.run(LEGACY_SCHEMA);
     const insertSet = database.query(
       "INSERT INTO sets (id, url, title, source, tags, created_at) VALUES (?, ?, ?, ?, ?, ?)"
     );

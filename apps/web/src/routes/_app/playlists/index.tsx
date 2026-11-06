@@ -1,6 +1,6 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { RouteProblem } from "@/components/route-problem";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { detach } from "@/lib/detach";
+import { formField } from "@/lib/form";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
 import {
@@ -32,11 +34,9 @@ const CreatePlaylistForm = ({
   const navigate = useNavigate();
   const [problem, setProblem] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const create = async (event: FormEvent<HTMLFormElement>) => {
+  const create = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const name = String(
-      new FormData(event.currentTarget).get("name") ?? ""
-    ).trim();
+    const name = formField(new FormData(event.currentTarget), "name");
     if (name === "") {
       setProblem("Enter a Playlist name.");
       return;
@@ -58,7 +58,7 @@ const CreatePlaylistForm = ({
     });
   };
   return (
-    <form className="flex flex-col gap-2" onSubmit={create}>
+    <form className="flex flex-col gap-2" onSubmit={detach(create)}>
       <Label htmlFor="playlist-name">Playlist name</Label>
       <div className="flex gap-2">
         <Input

@@ -2685,24 +2685,27 @@ export const createPortableApp = (options: {
     if (counting === "counted" && attempts.signInAttempt(client)) {
       return Promise.resolve(tooManyAttempts());
     }
-    // SAFETY: the sign-in handlers read no caller-bound service.
     return app.handler(
       request,
+      // SAFETY: the sign-in handlers read no caller-bound service.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
       Context.make(ClientAddress, client) as Context.Context<
         Library | Queue | ClientAddress
       >
     );
   };
-  // SAFETY: the share handlers read no caller-bound service.
   const shareRoute = (request: Request): Promise<Response> =>
     app.handler(
       request,
+      // SAFETY: the share handlers read no caller-bound service.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
       Context.empty() as Context.Context<Library | Queue | ClientAddress>
     );
   const initialize = () =>
-    // SAFETY: The health route reads no caller-bound service.
     app.handler(
       new Request("http://orbis.internal/health"),
+      // SAFETY: the health route reads no caller-bound service.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
       Context.empty() as Context.Context<Library | Queue | ClientAddress>
     );
   return {
@@ -2803,9 +2806,10 @@ export const createPortableApp = (options: {
           )
         );
       }
-      // SAFETY: SetAccess provides the caller-bound Library and Queue before handlers read them.
       const response = await app.handler(
         request,
+        // SAFETY: SetAccess provides the caller-bound Library and Queue before handlers read them.
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
         Context.make(SetCaller, decision).pipe(
           Context.add(AcceptedAccess, decision),
           Context.add(ClientAddress, clientAddress)

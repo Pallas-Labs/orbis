@@ -175,8 +175,11 @@ try {
     const menu = page.getByRole("menu");
     await menu.waitFor();
     const actions = await menu.getByRole("menuitem").allTextContents();
-    assert.ok(!actions.includes("Play"), `row offers ${actions}`);
-    assert.ok(!actions.includes("Download"), `row offers ${actions}`);
+    assert.ok(!actions.includes("Play"), `row offers ${actions.join(", ")}`);
+    assert.ok(
+      !actions.includes("Download"),
+      `row offers ${actions.join(", ")}`
+    );
     await shot(page, "library-row-actions.png");
     await page.keyboard.press("Escape");
     step("the Library row shows Apple Music, Artwork, and length", {

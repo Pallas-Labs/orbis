@@ -16,6 +16,7 @@ import {
   AudioPlayerVolumeRange,
 } from "@/components/ai-elements/audio-player";
 import { Button } from "@/components/ui/button";
+import { detach } from "@/lib/detach";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
@@ -327,7 +328,7 @@ export const PlayerProvider = ({
             <AudioPlayerElement
               autoPlay
               ref={audioRef}
-              onEnded={finish}
+              onEnded={detach(finish)}
               onError={() => setProblem("The audio could not load.")}
               onLoadedMetadata={(event) => {
                 event.currentTarget.currentTime = playing.startAt;
@@ -354,7 +355,7 @@ export const PlayerProvider = ({
               <p className="text-destructive text-sm" role="alert">
                 {problem}
               </p>
-              <Button onClick={retry} size="sm" variant="outline">
+              <Button onClick={detach(retry)} size="sm" variant="outline">
                 Retry audio
               </Button>
             </div>

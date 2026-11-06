@@ -202,9 +202,17 @@ export const wrap = (
   }
   const kept = lines.slice(0, maxLines);
   let last = `${kept.at(-1) ?? ""} ${lines[maxLines] ?? ""}`;
-  while (last && !fits(`${last.trimEnd()}${ELLIPSIS}`)) {
-    last = [...last].slice(0, -1).join("");
+  const graphemes = Array.from(
+    new Intl.Segmenter().segment(last),
+    ({ segment }) => segment
+  );
+  while (
+    graphemes.length > 0 &&
+    !fits(`${graphemes.join("").trimEnd()}${ELLIPSIS}`)
+  ) {
+    graphemes.pop();
   }
+  last = graphemes.join("");
   kept[maxLines - 1] = `${last.trimEnd()}${ELLIPSIS}`;
   return { lines: kept, truncated: true };
 };

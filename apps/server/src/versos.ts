@@ -66,7 +66,7 @@ export class Versos extends Context.Service<Versos, VersosService>()(
 
   static layer(options: {
     readonly url: string;
-    readonly key: Redacted.Redacted<string>;
+    readonly key: Redacted.Redacted;
     readonly fetch?: RequestFetch;
     readonly requestTimeoutMs?: number;
   }): Layer.Layer<Versos> {

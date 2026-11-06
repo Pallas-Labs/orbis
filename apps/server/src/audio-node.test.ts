@@ -73,7 +73,7 @@ test("real node reconnects and handles duplicate download, details and release c
   );
   const { jobs, logging, named } = collect();
   const messages: NodeMessage[] = [];
-  let socket: Bun.ServerWebSocket<undefined> | undefined;
+  let socket: Bun.ServerWebSocket | undefined;
   const server = Bun.serve({
     fetch(request, listener) {
       expect(request.headers.get("authorization")).toBe("Bearer node-secret");
@@ -301,7 +301,7 @@ test("node probes a stored file again only when it changes", async () => {
     return names;
   };
   const inventories: Extract<NodeMessage, { kind: "inventory" }>[] = [];
-  let socket: Bun.ServerWebSocket<undefined> | undefined;
+  let socket: Bun.ServerWebSocket | undefined;
   const server = Bun.serve({
     fetch(request, listener) {
       if (listener.upgrade(request)) {

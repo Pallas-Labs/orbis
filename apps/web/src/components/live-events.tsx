@@ -115,7 +115,9 @@ export const LiveEventsProvider = ({
       changed.clear();
       dropped = true;
       setReconnecting(true);
-      timer = setTimeout(connect, RECONNECT_MS);
+      timer = setTimeout(() => {
+        void connect();
+      }, RECONNECT_MS);
     };
     void connect();
     return () => {

@@ -63,7 +63,8 @@ export class Group extends DurableObject<Environment> {
     if (!/^[a-fA-F0-9]{64}$/u.test(env.STREAM_GRANT_SECRET)) {
       throw new Error("STREAM_GRANT_SECRET must encode 32 bytes as hex.");
     }
-    const streamSecret = Buffer.from(env.STREAM_GRANT_SECRET, "hex");
+    // oxlint-disable-next-line typescript/no-unsafe-assignment, typescript/no-unsafe-call, typescript/no-unsafe-member-access -- this Worker's type setup reads the Buffer value as any (tsc too); the annotation gives the secret its type.
+    const streamSecret: Buffer = Buffer.from(env.STREAM_GRANT_SECRET, "hex");
     const audioNode = URL.parse(env.AUDIO_NODE_URL);
     if (audioNode?.protocol !== "https:" && audioNode?.protocol !== "http:") {
       throw new Error("AUDIO_NODE_URL must be an absolute http(s) URL.");
@@ -138,7 +139,7 @@ export class Group extends DurableObject<Environment> {
             })
           : Versos.unconfigured(),
     });
-    ctx.blockConcurrencyWhile(async () => {
+    void ctx.blockConcurrencyWhile(async () => {
       const response = await this.app.initialize();
       if (!response.ok) {
         throw new Error("Group database initialization failed.");

@@ -164,7 +164,7 @@ export class TitleReviser extends Context.Service<
             ).pipe(
               Effect.annotateLogs({ error: String(error) }),
               Effect.as({
-                apiKey: Option.none<Redacted.Redacted<string>>(),
+                apiKey: Option.none<Redacted.Redacted>(),
                 model: Option.none<string>(),
               })
             )

@@ -32,7 +32,7 @@ const remote = (method: string, url: string, payload?: RemotePayload) => ({
 const writeLegacyLibrary = (databasePath: string) => {
   const database = new Database(databasePath, { create: true });
   try {
-    database.exec(`
+    database.run(`
       PRAGMA foreign_keys = ON;
       CREATE TABLE sets (
         id TEXT PRIMARY KEY, url TEXT NOT NULL UNIQUE, title TEXT NOT NULL,
@@ -71,7 +71,7 @@ const writeLegacyLibrary = (databasePath: string) => {
         '["host-tag"]',
         "2026-01-01T00:00:00.000Z"
       );
-    database.exec(`
+    database.run(`
       INSERT INTO playlists (id, name, created_at)
       VALUES ('host-playlist', 'Host playlist', '2026-01-01T00:00:00.000Z');
       INSERT INTO playlist_sets (playlist_id, set_id, position)

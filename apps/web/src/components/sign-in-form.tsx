@@ -1,13 +1,14 @@
 import { GROUP_PASSCODE } from "@orbis/contracts";
 import { useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { SubmitEvent, ReactNode } from "react";
 
 import { CodeField } from "@/components/code-field";
 import { Problem } from "@/components/problem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { detach } from "@/lib/detach";
 import { formField } from "@/lib/form";
 import type { ApiResult } from "@/lib/orbis";
 import { storeKey } from "@/lib/stored-key";
@@ -47,7 +48,7 @@ export const SignInForm = ({
       form.requestSubmit();
     }
   };
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const missing = check(form);
@@ -65,7 +66,7 @@ export const SignInForm = ({
     <form
       aria-label={title}
       className="flex flex-col gap-4"
-      onSubmit={submit}
+      onSubmit={detach(submit)}
       ref={formRef}
     >
       <div className="flex flex-col gap-1">

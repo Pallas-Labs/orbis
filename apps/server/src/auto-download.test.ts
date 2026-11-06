@@ -101,7 +101,7 @@ const fixture = async (startWorker: boolean, hold = false) => {
       port: 0,
       token: "seeded-test-fixture",
     });
-  let listeners = await open();
+  let listeners = open();
   const send = (
     key: string,
     route: string,
@@ -163,7 +163,7 @@ const fixture = async (startWorker: boolean, hold = false) => {
     release: () => release.resolve(),
     restart: async () => {
       await listeners.stop();
-      listeners = await open();
+      listeners = open();
     },
     save,
     send,

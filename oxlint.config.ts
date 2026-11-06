@@ -8,36 +8,14 @@ const TEST_FILES = ["**/*.{test,spec}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}"];
 const TEST_CODE = [...TEST_FILES, "**/e2e/**", "**/evals/**"];
 // Code that runs inside a server process, a Worker isolate or a browser tab.
 const RUNTIME_SOURCES = ["apps/*/src/**", "packages/*/src/**"];
-// Ultracite's type-aware rules that never ran before type-aware lint (PAL-1543) and report today.
-// PAL-1681 turns each one on or gives it a reason; the others, which pass, stay on.
+// Ultracite's type-aware rules that report too many findings to fix in PAL-1681. PAL-1693
+// turns each one on. The other type-aware rules run at error, or are off below with a reason.
 const ULTRACITE_TYPE_AWARE_DEBT = [
-  "typescript/await-thenable",
-  "typescript/consistent-return",
-  "typescript/no-base-to-string",
   "typescript/no-confusing-void-expression",
-  "typescript/no-deprecated",
-  "typescript/no-floating-promises",
-  "typescript/no-misused-promises",
-  "typescript/no-misused-spread",
-  "typescript/no-unnecessary-boolean-literal-compare",
-  "typescript/no-unnecessary-type-arguments",
-  "typescript/no-unnecessary-type-conversion",
-  "typescript/no-unnecessary-type-parameters",
-  "typescript/no-unsafe-argument",
-  "typescript/no-unsafe-assignment",
-  "typescript/no-unsafe-call",
-  "typescript/no-unsafe-member-access",
-  "typescript/no-unsafe-return",
-  "typescript/no-unsafe-type-assertion",
-  "typescript/only-throw-error",
-  "typescript/prefer-nullish-coalescing",
   "typescript/promise-function-async",
-  "typescript/require-array-sort-compare",
-  "typescript/restrict-template-expressions",
   "typescript/return-await",
   "typescript/strict-boolean-expressions",
   "typescript/strict-void-return",
-  "typescript/switch-exhaustiveness-check",
 ];
 
 export default defineConfig({
@@ -113,6 +91,26 @@ export default defineConfig({
       },
     },
     {
+      // Tests, their helpers, fixture recorders and scripts read JSON, child-process output
+      // and untyped .mjs modules as `any` and check the values they need with assertions;
+      // typing each read would double the test code without catching more.
+      files: [
+        ...TEST_CODE,
+        "**/*.mjs",
+        "**/scripts/**",
+        "apps/server/src/test-*.ts",
+        "apps/server/src/apple-music-recordings.ts",
+        "apps/server/src/record-apple-music-album.ts",
+      ],
+      rules: {
+        "typescript/no-unsafe-argument": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off",
+      },
+    },
+    {
       files: TEST_FILES,
       rules: {
         "t3code/no-test-in-loop": "error",
@@ -143,5 +141,43 @@ export default defineConfig({
     "t3code/no-inline-schema-compile": "error",
     "t3code/prefer-effect-fn": "error",
     "t3code/require-suppression-reason": "error",
+    // Off everywhere: an Effect generator ends a guard with `return yield* fail`, which
+    // effecttsgo/missing-return-yield-star requires, and a React effect returns a cleanup on
+    // some paths only. This rule reads both as a function that returns on some paths only.
+    "typescript/consistent-return": "off",
+    // node:test runs and awaits each test and suite it is handed.
+    "typescript/no-floating-promises": [
+      "error",
+      {
+        allowForKnownSafeCalls: [
+          {
+            from: "package",
+            name: ["describe", "it", "suite", "test"],
+            package: "node:test",
+          },
+        ],
+      },
+    ],
+    // Off everywhere: anti-slop/no-unknown-parameters rejects `unknown` parameters, so an
+    // error mapper that takes any failure names it with a type parameter used once.
+    "typescript/no-unnecessary-type-parameters": "off",
+    // TanStack Router's beforeLoad throws its redirect Response to change route.
+    "typescript/only-throw-error": [
+      "error",
+      {
+        allow: [
+          {
+            from: "package",
+            name: "Redirect",
+            package: "@tanstack/router-core",
+          },
+        ],
+      },
+    ],
+    // `text?.trim() || fallback` sends an empty string to the fallback on purpose.
+    "typescript/prefer-nullish-coalescing": [
+      "error",
+      { ignorePrimitives: { string: true } },
+    ],
   },
 });

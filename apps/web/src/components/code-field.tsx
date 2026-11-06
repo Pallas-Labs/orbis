@@ -10,6 +10,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { detach } from "@/lib/detach";
 import { useCopy } from "@/lib/use-copy";
 
 /** Each group's slot indexes, such as `[[0, 1, 2, 3], [4, 5, 6, 7]]` for `[4, 4]`. */
@@ -113,6 +114,7 @@ export const ShownCode = ({
   readonly label: string;
 }) => {
   const { copy, copyText } = useCopy(code);
+  // oxlint-disable-next-line typescript/no-misused-spread -- sign-in codes are ASCII, so each code point is one character.
   const characters = [...code];
   const spoken = slotGroups(format)
     .map((indexes) => indexes.map((index) => characters[index]).join(" "))
@@ -141,7 +143,7 @@ export const ShownCode = ({
           </div>
         </OTPInputContext.Provider>
       </div>
-      <Button onClick={copyText} size="sm" variant="outline">
+      <Button onClick={detach(copyText)} size="sm" variant="outline">
         {copy === "copied" ? "Copied" : copyLabel}
       </Button>
       {copy === "failed" ? (

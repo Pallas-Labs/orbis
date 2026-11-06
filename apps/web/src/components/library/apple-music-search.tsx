@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { SubmitEvent } from "react";
 
 import { duration } from "@/components/library/set-row";
 import { Problem } from "@/components/problem";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { detach } from "@/lib/detach";
+import { formText } from "@/lib/form";
 import { saveSet, searchAppleMusic } from "@/lib/library";
 import type { AppleMusicAlbum } from "@/lib/library";
 import { FAILURE_MESSAGES, problemFor } from "@/lib/orbis";
@@ -87,9 +89,9 @@ export const AppleMusicSearch = ({
   const [saving, setSaving] = useState<ReadonlySet<string>>(new Set());
   const [problem, setProblem] = useState<string | null>(null);
 
-  const search = async (event: FormEvent<HTMLFormElement>) => {
+  const search = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const words = String(new FormData(event.currentTarget).get("q") ?? "");
+    const words = formText(new FormData(event.currentTarget), "q");
     if (words.trim() === "") {
       setProblem("Type what to find on Apple Music.");
       setAlbums(null);
@@ -148,7 +150,11 @@ export const AppleMusicSearch = ({
       aria-labelledby="apple-music-heading"
       className="flex flex-col gap-2"
     >
-      <form className="flex flex-col gap-2" onSubmit={search} role="search">
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={detach(search)}
+        role="search"
+      >
         <Label htmlFor="apple-music-search" id="apple-music-heading">
           Find on Apple Music
         </Label>
@@ -196,7 +202,7 @@ export const AppleMusicSearch = ({
               album={album}
               key={album.url}
               onSave={() => {
-                save(album);
+                void save(album);
               }}
               saving={saving.has(album.url)}
             />
