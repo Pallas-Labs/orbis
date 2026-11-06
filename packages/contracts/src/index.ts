@@ -31,6 +31,17 @@ export type SetSource = SavedSet["source"];
 export type MetadataState = SavedSet["metadataState"];
 export type DownloadState = SavedSet["downloadState"];
 
+/**
+ * Whether the service is still working on a Download: it is `queued` or `downloading`. Every
+ * other state has settled. The Apple app's `SavedSet.isInFlight` holds the same rule.
+ */
+export const isDownloadInFlight = (state: DownloadState): boolean =>
+  state === "queued" || state === "downloading";
+
+/** Whether a Download has settled: the service is no longer working on it. */
+export const isDownloadSettled = (state: DownloadState): boolean =>
+  !isDownloadInFlight(state);
+
 export type SaveSetInput = Omit<typeof SaveSetPayload.Type, "tags"> & {
   tags: string[];
 };

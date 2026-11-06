@@ -38,6 +38,11 @@ final class AudioDownloadTests: XCTestCase {
     }
   }
 
+  /// Set when a task the test started has returned.
+  @MainActor final class Flag {
+    var value = false
+  }
+
   /// Every request a model made, with the time on its clock when the request went out.
   final class TimedRequestLog: @unchecked Sendable {
     private let lock = NSLock()
@@ -401,6 +406,62 @@ final class AudioDownloadTests: XCTestCase {
     XCTAssertEqual(
       log.times(endingWith: "/sets/1/audio/state").count, atClose,
       "a closed page asks nothing more about its Set")
+  }
+
+  /// Another device cancels a download this page follows. The service then answers `none`, or
+  /// the legacy `canceled`, while the cached library still holds the Set as `downloading`. That
+  /// read ends the download here: the library reloads, the progress clears, and the page stops
+  /// following on that read, with no wait for the library watch. Every wait in this model lasts an
+  /// hour, so only a read that ends the download itself lets the page return.
+  func testACancelFromAnotherDeviceEndsTheOpenPageOnTheNextRead() async throws {
+    for live in ["none", "canceled"] {
+      let clock = FastClock(scale: 1)
+      let log = TimedRequestLog(clock: clock)
+      let model = AppModel(
+        client: OrbisClient(
+          address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+          token: "token",
+          session: StubProtocol.session(responder: { request in
+            log.record(request)
+            switch (request.httpMethod, request.url?.path()) {
+            case ("GET", "/sets/1/audio/state"):
+              return (
+                200,
+                "{\"state\":\"\(live)\",\"bytesReceived\":0,\"bytesTotal\":null,\"format\":null}"
+              )
+            case ("GET", "/sets"):
+              return (200, Self.libraryJSON(state: live))
+            default:
+              return (404, "{\"message\":\"Set not found.\"}")
+            }
+          })
+        ), settings: MemoryClientSettings())
+      model.sleep = { _ in try await Task.sleep(for: .seconds(3600)) }
+      model.library = .loaded([
+        try JSONDecoder().decode(
+          SavedSet.self, from: Data(Self.setJSON(id: "1", state: "downloading").utf8))
+      ])
+
+      let ended = Flag()
+      let page = Task {
+        await model.followDownload("1")
+        ended.value = true
+      }
+      let deadline = ContinuousClock.now + .seconds(2)
+      while !ended.value, ContinuousClock.now < deadline {
+        try await Task.sleep(for: .milliseconds(5))
+      }
+      XCTAssertTrue(ended.value, "\(live): the page stops following on the read")
+      XCTAssertEqual(model.savedSet("1")?.downloadState, live, "\(live): the library reloads")
+      XCTAssertNil(model.audioStates["1"], "\(live): the progress clears")
+      XCTAssertEqual(
+        log.times(endingWith: "/sets/1/audio/state").count, 1,
+        "\(live): one read ends the download")
+      XCTAssertEqual(log.times(endingWith: "GET /sets").count, 1, "\(live): one library read")
+      page.cancel()
+      await page.value
+      model.signOut()
+    }
   }
 
   /// A pending Tracklist is read while a screen shows it, less often while the answer stays the

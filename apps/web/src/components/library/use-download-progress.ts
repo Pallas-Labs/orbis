@@ -1,3 +1,4 @@
+import { isDownloadInFlight, isDownloadSettled } from "@orbis/contracts";
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
@@ -6,9 +7,6 @@ import type { SavedSet } from "@/lib/library";
 import type { Credentials } from "@/lib/orbis";
 
 const POLL_MS = 1500;
-
-const inFlight = (set: SavedSet) =>
-  set.downloadState === "queued" || set.downloadState === "downloading";
 
 /**
  * Polls the Downloads still in flight and returns each one's fraction received.
@@ -23,7 +21,7 @@ export const useDownloadProgress = (
     new Map()
   );
   const watched = sets
-    .filter(inFlight)
+    .filter((set) => isDownloadInFlight(set.downloadState))
     .map((set) => set.id)
     .join(",");
   useEffect(() => {
@@ -51,7 +49,7 @@ export const useDownloadProgress = (
           continue;
         }
         const { bytesReceived, bytesTotal, state } = result.value;
-        if (state !== "queued" && state !== "downloading") {
+        if (isDownloadSettled(state)) {
           settled = true;
         } else if (bytesTotal !== null && bytesTotal > 0) {
           next.set(id, bytesReceived / bytesTotal);

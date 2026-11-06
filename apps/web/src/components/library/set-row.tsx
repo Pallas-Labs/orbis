@@ -1,3 +1,4 @@
+import { isDownloadInFlight } from "@orbis/contracts";
 import { DotsThreeIcon } from "@phosphor-icons/react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
@@ -219,8 +220,7 @@ export const SetRow = ({
     await router.invalidate();
   };
   const downloadable = canDownload(set);
-  const inFlight =
-    set.downloadState === "queued" || set.downloadState === "downloading";
+  const inFlight = isDownloadInFlight(set.downloadState);
   return (
     <li className="flex items-start gap-4 border-b py-4">
       {set.artworkUrl === null ? (
