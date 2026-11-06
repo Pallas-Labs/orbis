@@ -134,7 +134,7 @@ export const inspectDatabase = (db: SqlDatabase): DatabaseDump => {
 export const renderDump = (dump: DatabaseDump): string => {
   const statements = ["PRAGMA foreign_keys=OFF;", "BEGIN TRANSACTION;"];
   for (const table of dump.tables) {
-    if (table.sql) {
+    if (table.sql !== null && table.sql !== "") {
       statements.push(`${table.sql};`);
     }
   }
@@ -167,7 +167,7 @@ const validateDdl = (ddl: string, kind: "TABLE" | "INDEX"): void => {
   let quote = "";
   for (let index = 0; index < ddl.length; index += 1) {
     const character = ddl[index];
-    if (quote) {
+    if (quote !== "") {
       if (character === quote) {
         if (ddl[index + 1] === quote) {
           index += 1;
@@ -185,13 +185,13 @@ const validateDdl = (ddl: string, kind: "TABLE" | "INDEX"): void => {
       throw new Error("Multiple schema statements are not allowed.");
     }
   }
-  if (quote) {
+  if (quote !== "") {
     throw new Error("Unclosed schema quote.");
   }
 };
 export const parseDump = (sql: string): DatabaseDump => {
   const [line] = sql.split("\n", 1);
-  if (!line?.startsWith("-- orbis-sql-v1 ")) {
+  if (line?.startsWith("-- orbis-sql-v1 ") !== true) {
     throw new Error("Unsupported SQL export format.");
   }
   const dump = decodeDump(JSON.parse(line.slice(16)));
@@ -202,7 +202,7 @@ export const parseDump = (sql: string): DatabaseDump => {
     validateDdl(index, "INDEX");
   }
   for (const table of dump.tables) {
-    if (table.sql) {
+    if (table.sql !== null && table.sql !== "") {
       validateDdl(table.sql, "TABLE");
     }
     if (table.rows.some((row) => row.length !== table.columns.length)) {

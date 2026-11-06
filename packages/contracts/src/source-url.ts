@@ -24,7 +24,8 @@ const invalid = () => new UnsupportedSourceUrlError();
 
 const videoIdFrom = (url: URL): string | null => {
   if (url.hostname === "youtu.be") {
-    return url.pathname.slice(1) || null;
+    const id = url.pathname.slice(1);
+    return id === "" ? null : id;
   }
   if (url.pathname === "/watch") {
     return url.searchParams.get("v");
@@ -63,7 +64,7 @@ export const youTubeVideoId = (value: string): string | null => {
     return null;
   }
   const id = videoIdFrom(url);
-  return id && /^[\w-]{11}$/u.test(id) ? id : null;
+  return id !== null && /^[\w-]{11}$/u.test(id) ? id : null;
 };
 
 const YOUTUBE_HOSTS = new Set([
@@ -92,7 +93,7 @@ export const youTubePlaylistId = (value: string): string | null => {
   ) {
     return null;
   }
-  return id && /^[\w-]{2,64}$/u.test(id) ? id : null;
+  return id !== null && /^[\w-]{2,64}$/u.test(id) ? id : null;
 };
 
 /**
@@ -111,16 +112,16 @@ export const normalizeSourceUrl = (
   }
   if (
     !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.port
+    url.username !== "" ||
+    url.password !== "" ||
+    url.port !== ""
   ) {
     throw invalid();
   }
   const host = url.hostname;
   if (YOUTUBE_HOSTS.has(host)) {
     const id = youTubeVideoId(value);
-    if (!id) {
+    if (id === null) {
       throw invalid();
     }
     return { source: "youtube", url: youTubeWatchUrl(id) };
@@ -132,8 +133,8 @@ export const normalizeSourceUrl = (
       url.pathname
     )?.groups;
     if (
-      !match?.artist ||
-      !match.track ||
+      match?.artist === undefined ||
+      match.track === undefined ||
       ["sets", "tracks", "albums", "likes", "reposts"].includes(match.track)
     ) {
       throw invalid();
@@ -145,7 +146,7 @@ export const normalizeSourceUrl = (
   }
   if (host === "music.apple.com") {
     const id = appleMusicAlbumId(url);
-    if (!id) {
+    if (id === null) {
       throw invalid();
     }
     return {

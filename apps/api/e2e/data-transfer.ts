@@ -23,7 +23,7 @@ const artifact = path.resolve(
 await mkdir(artifact, { mode: 0o700, recursive: true });
 const sourcePath = process.env.ORBIS_TRANSFER_SOURCE;
 assert.ok(
-  sourcePath,
+  sourcePath !== undefined && sourcePath !== "",
   "Set ORBIS_TRANSFER_SOURCE to a private migrated SQLite copy."
 );
 const source = new Database(sourcePath, { readonly: true });

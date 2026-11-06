@@ -192,7 +192,8 @@ const playlistRemoved = "The Playlist was deleted during the import.";
  * unique without regard to case, so `taken` holds them lowercased.
  */
 const freePlaylistName = (title: string, taken: ReadonlySet<string>) => {
-  const base = title.slice(0, 90).trim() || "YouTube playlist";
+  const trimmed = title.slice(0, 90).trim();
+  const base = trimmed === "" ? "YouTube playlist" : trimmed;
   let name = base;
   for (let n = 2; taken.has(name.toLowerCase()); n += 1) {
     name = `${base} (${n})`;
@@ -483,14 +484,16 @@ const importStore = (db: DatabaseClient) => {
             const { total } = job.state;
             const processed = job.state.processed + page.entries;
             const full = memberCount >= MAX_SETS_PER_PLAYLIST;
-            if (page.nextPageToken && full) {
+            const more =
+              page.nextPageToken !== undefined && page.nextPageToken !== "";
+            if (more && full) {
               counts.overLimit += Math.max(0, (total ?? processed) - processed);
             }
             const committed: ImportJob = {
               ...job,
               counts,
               state:
-                page.nextPageToken && !full
+                more && !full
                   ? State.Running({
                       pageToken: page.nextPageToken,
                       processed,
@@ -692,7 +695,10 @@ export class PlaylistImporter extends Context.Service<
               input.sourcePlaylistId,
               null
             );
-            if (first.tracks.length === 0 && !first.nextPageToken) {
+            if (
+              first.tracks.length === 0 &&
+              (first.nextPageToken === undefined || first.nextPageToken === "")
+            ) {
               return yield* Effect.fail(
                 new LibraryError({
                   message: "This playlist has no tracks Orbis can play.",

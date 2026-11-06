@@ -216,17 +216,18 @@ export const renderShareImage = async (
     ...wrap(bold, smallest, card.title, textWidth, 3),
   };
   const lineHeight = Math.round(fitted.size * 1.12);
-  const creator = card.creator
-    ? (wrap(medium, creatorSize, card.creator, textWidth, 1).lines[0] ?? "")
-    : "";
-  const creatorBlock = creator ? 20 + creatorSize * 1.2 : 0;
+  const creator =
+    card.creator !== null && card.creator !== ""
+      ? (wrap(medium, creatorSize, card.creator, textWidth, 1).lines[0] ?? "")
+      : "";
+  const creatorBlock = creator === "" ? 0 : 20 + creatorSize * 1.2;
   const blockHeight = fitted.lines.length * lineHeight + creatorBlock;
   let baseline = CONTENT_MIDDLE - blockHeight / 2 + fitted.size * 0.86;
   for (const line of fitted.lines) {
     paintText(canvas, bold, fitted.size, line, textLeft, baseline, INK);
     baseline += lineHeight;
   }
-  if (creator) {
+  if (creator !== "") {
     paintText(
       canvas,
       medium,

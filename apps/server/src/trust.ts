@@ -13,12 +13,13 @@ try {
   if (command === "recover") {
     // The key comes from the environment so it stays out of shell history and `ps`.
     const nodeKey = process.env.ORBIS_NODE_KEY?.trim();
-    if (!nodeKey) {
+    const apiUrl = option("url")?.trim();
+    if (nodeKey === undefined || nodeKey === "") {
       throw new Error("Set ORBIS_NODE_KEY to Vanta's node key.");
     }
     await recoverHost({
       nodeKey,
-      url: option("url")?.trim() || DEFAULT_API_URL,
+      url: apiUrl === undefined || apiUrl === "" ? DEFAULT_API_URL : apiUrl,
     });
   } else {
     console.log(usage);

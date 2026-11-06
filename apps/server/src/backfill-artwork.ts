@@ -17,7 +17,7 @@ const dataDirectory = path.resolve(process.env.ORBIS_DATA_DIR ?? "data");
 const databasePath = path.join(dataDirectory, "library.sqlite");
 const youTubeApiKey = process.env.ORBIS_YOUTUBE_API_KEY;
 
-if (!youTubeApiKey) {
+if (youTubeApiKey === undefined || youTubeApiKey === "") {
   console.warn(
     "ORBIS_YOUTUBE_API_KEY is not set, so YouTube Sets keep the image they have."
   );

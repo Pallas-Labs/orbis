@@ -8,10 +8,6 @@ const TEST_FILES = ["**/*.{test,spec}.{ts,tsx,js,jsx,mts,cts,mjs,cjs}"];
 const TEST_CODE = [...TEST_FILES, "**/e2e/**", "**/evals/**"];
 // Code that runs inside a server process, a Worker isolate or a browser tab.
 const RUNTIME_SOURCES = ["apps/*/src/**", "packages/*/src/**"];
-// Ultracite's type-aware rules that report too many findings to fix in PAL-1681 or PAL-1693.
-// PAL-1700 turns each one on. The other type-aware rules run at error, or are off below with a
-// reason.
-const ULTRACITE_TYPE_AWARE_DEBT = ["typescript/strict-boolean-expressions"];
 
 export default defineConfig({
   extends: [core, antiSlop],
@@ -106,6 +102,12 @@ export default defineConfig({
       },
     },
     {
+      // typescript/strict-boolean-expressions -- no tsconfig covers an .mjs file, so tsgolint
+      // reads most of its values as any and reports conditions that are already boolean.
+      files: ["**/*.mjs"],
+      rules: { "typescript/strict-boolean-expressions": "off" },
+    },
+    {
       files: TEST_FILES,
       rules: {
         "t3code/no-test-in-loop": "error",
@@ -136,9 +138,6 @@ export default defineConfig({
     },
   ],
   rules: {
-    ...Object.fromEntries(
-      ULTRACITE_TYPE_AWARE_DEBT.map((rule) => [rule, "off"])
-    ),
     "orbis/directive-needs-reason": "error",
     "t3code/no-inline-schema-compile": "error",
     "t3code/prefer-effect-fn": "error",
@@ -180,6 +179,12 @@ export default defineConfig({
     "typescript/prefer-nullish-coalescing": [
       "error",
       { ignorePrimitives: { string: true } },
+    ],
+    // A condition on a string names the empty string. An object is always truthy, so
+    // `if (object)` stays a plain null check.
+    "typescript/strict-boolean-expressions": [
+      "error",
+      { allowNullableObject: true, allowString: false },
     ],
   },
 });

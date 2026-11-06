@@ -162,7 +162,7 @@ export interface TrustRegistry {
 export const readTrustRegistry = (
   storePath: string | undefined
 ): TrustRegistry => {
-  if (!storePath) {
+  if (storePath === undefined || storePath === "") {
     return { store: emptyTrustStore() };
   }
   try {
@@ -200,11 +200,12 @@ const authenticate = (input: {
   }
   if (input.authorization !== null) {
     const token = BEARER.exec(input.authorization)?.groups?.token;
-    const key = token
-      ? input.store.keys.find((candidate) =>
-          matchesTokenHash(candidate.tokenHash, token)
-        )
-      : undefined;
+    const key =
+      token === undefined
+        ? undefined
+        : input.store.keys.find((candidate) =>
+            matchesTokenHash(candidate.tokenHash, token)
+          );
     const person = input.store.people.find(
       (candidate) => candidate.id === key?.personId && !candidate.removed
     );
@@ -235,7 +236,12 @@ export const markKeyUsed = (
   storePath: string | undefined,
   keyId: string | null
 ): void => {
-  if (!storePath || !keyId) {
+  if (
+    storePath === undefined ||
+    storePath === "" ||
+    keyId === null ||
+    keyId === ""
+  ) {
     return;
   }
   try {
@@ -247,7 +253,8 @@ export const markKeyUsed = (
         const now = Date.now();
         if (
           !key ||
-          (key.lastUsedAt &&
+          (key.lastUsedAt !== null &&
+            key.lastUsedAt !== "" &&
             now - Date.parse(key.lastUsedAt) < USAGE_INTERVAL_MS)
         ) {
           return { value: undefined };
@@ -290,14 +297,14 @@ export const updatePerson = (
 ): UpdatePersonResult => {
   const name = input.username?.trim();
   if (
-    (name !== undefined && (!name || name.length > 40)) ||
+    (name !== undefined && (name === "" || name.length > 40)) ||
     (name === undefined &&
       input.autoDownload === undefined &&
       input.social === undefined)
   ) {
     return { kind: "invalid" };
   }
-  if (!storePath) {
+  if (storePath === undefined || storePath === "") {
     return { kind: "unavailable" };
   }
   try {
@@ -364,7 +371,7 @@ export const updatePersonFilters = (
   if (input.see === undefined && input.appear === undefined) {
     return { kind: "invalid" };
   }
-  if (!storePath) {
+  if (storePath === undefined || storePath === "") {
     return { kind: "unavailable" };
   }
   try {

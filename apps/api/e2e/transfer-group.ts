@@ -23,10 +23,16 @@ import { workerModules } from "./worker-modules.js";
 const sourcePath = process.env.ORBIS_TRANSFER_SOURCE;
 const token = process.env.ORBIS_NODE_KEY;
 const hostToken = process.env.ORBIS_TRANSFER_HOST_KEY;
-assert.ok(sourcePath, "Set ORBIS_TRANSFER_SOURCE to a private migrated copy.");
-assert.ok(token, "Set ORBIS_NODE_KEY to a key minted in the private copy.");
 assert.ok(
-  hostToken,
+  sourcePath !== undefined && sourcePath !== "",
+  "Set ORBIS_TRANSFER_SOURCE to a private migrated copy."
+);
+assert.ok(
+  token !== undefined && token !== "",
+  "Set ORBIS_NODE_KEY to a key minted in the private copy."
+);
+assert.ok(
+  hostToken !== undefined && hostToken !== "",
   "Set ORBIS_TRANSFER_HOST_KEY to a Host key minted in the private copy."
 );
 const artifact = path.resolve(`.cache/transfer-group/${crypto.randomUUID()}`);
@@ -56,9 +62,9 @@ const bundle = await Bun.build({
   external: ["cloudflare:workers", "node:*"],
   target: "browser",
 });
-assert.ok(bundle.success, String(bundle.logs));
+assert.equal(bundle.success, true, String(bundle.logs));
 const [output] = bundle.outputs;
-assert.ok(output);
+assert.ok(output !== undefined);
 const options = {
   bindings: {
     AUDIO_NODE_URL: "https://audio.example",

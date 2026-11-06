@@ -820,7 +820,11 @@ test("backfill skips a live HTTP run and an expired run cannot replace newer Cue
           "SELECT tracklist_run_id FROM sets WHERE id = ?"
         )
         .get(id);
-      if (!row?.tracklist_run_id) {
+      if (
+        row === null ||
+        row.tracklist_run_id === null ||
+        row.tracklist_run_id === ""
+      ) {
         throw new Error("The live run did not claim the Set.");
       }
       staleToken = row.tracklist_run_id;

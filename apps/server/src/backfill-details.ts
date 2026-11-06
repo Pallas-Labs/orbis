@@ -75,7 +75,7 @@ const DEFAULT_DELAY_MILLIS = 1000;
  */
 const main = async () => {
   const binPath = process.env.ORBIS_YTDLP_BIN;
-  if (!binPath || !path.isAbsolute(binPath)) {
+  if (binPath === undefined || !path.isAbsolute(binPath)) {
     console.error(
       "ORBIS_YTDLP_BIN must be set to the absolute path of the yt-dlp binary."
     );

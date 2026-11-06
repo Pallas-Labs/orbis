@@ -122,7 +122,10 @@ const send = async (
   const response = await request(app, {
     accessMode: "device",
     clientAddress: options.client,
-    headers: options.key ? { authorization: `Bearer ${options.key}` } : {},
+    headers:
+      options.key === undefined
+        ? {}
+        : { authorization: `Bearer ${options.key}` },
     host: "vanta.example.ts.net",
     method: "POST",
     payload: options.payload,

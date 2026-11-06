@@ -448,7 +448,7 @@ export class Library extends Context.Service<
                   savedAt: new Date().toISOString(),
                   setId: row.id,
                   tags: JSON.stringify(tags),
-                  titleOverride: title || null,
+                  titleOverride: title === "" ? null : title,
                 })
                 .onConflictDoNothing()
                 .returning();
@@ -472,17 +472,18 @@ export class Library extends Context.Service<
       execute(
         Effect.gen(function* listSetsEffect() {
           const { playlistId } = filters;
-          const conditions = playlistId
-            ? []
-            : [
-                sql`(${libraryEntries.personId} IS NOT NULL OR (${personId} = 'host' AND ${sets.hostRemoved} = 0 AND NOT EXISTS (
+          const conditions =
+            playlistId !== undefined && playlistId !== ""
+              ? []
+              : [
+                  sql`(${libraryEntries.personId} IS NOT NULL OR (${personId} = 'host' AND ${sets.hostRemoved} = 0 AND NOT EXISTS (
                 SELECT 1 FROM ${libraryEntries} AS held
                 WHERE held.set_id = ${sets.id}
               )))`,
-              ];
+                ];
           const entryTitle = sql`coalesce(${libraryEntries.titleOverride}, ${sets.title})`;
           const entryTags = sql`coalesce(${libraryEntries.tags}, ${sets.tags})`;
-          if (filters.q?.trim()) {
+          if (filters.q !== undefined && filters.q.trim() !== "") {
             const query = filters.q.trim();
             conditions.push(
               sql`(
@@ -492,10 +493,10 @@ export class Library extends Context.Service<
                 )`
             );
           }
-          if (filters.creatorId) {
+          if (filters.creatorId !== undefined && filters.creatorId !== "") {
             conditions.push(eq(sets.creatorId, filters.creatorId));
           }
-          if (filters.source) {
+          if (filters.source !== undefined) {
             conditions.push(eq(sets.source, filters.source));
           }
           for (const tag of filters.tags ?? []) {
@@ -507,7 +508,7 @@ export class Library extends Context.Service<
             );
           }
 
-          if (playlistId) {
+          if (playlistId !== undefined && playlistId !== "") {
             const playlist = yield* db
               .select({ id: playlists.id })
               .from(playlists)
@@ -569,7 +570,7 @@ export class Library extends Context.Service<
           Effect.gen(function* updateTitleEffect() {
             yield* ensureEntry(id);
             const trimmedTitle = title.trim();
-            if (!trimmedTitle) {
+            if (trimmedTitle === "") {
               return yield* Effect.fail(
                 new LibraryError({
                   message: "Enter a title for this set.",
@@ -1090,7 +1091,7 @@ export class Library extends Context.Service<
       execute(
         Effect.gen(function* createPlaylistEffect() {
           const trimmedName = name.trim();
-          if (!trimmedName) {
+          if (trimmedName === "") {
             return yield* Effect.fail(
               new LibraryError({
                 message: "Enter a playlist name.",
@@ -1132,7 +1133,7 @@ export class Library extends Context.Service<
         execute(
           Effect.gen(function* renamePlaylistEffect() {
             const trimmedName = name.trim();
-            if (!trimmedName) {
+            if (trimmedName === "") {
               return yield* Effect.fail(
                 new LibraryError({
                   message: "Enter a playlist name.",

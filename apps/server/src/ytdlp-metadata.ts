@@ -109,17 +109,22 @@ export const decodeHtmlEntities = (value: string): string =>
         hex: string | undefined,
         name: string | undefined
       ) => {
-        if (name) {
+        if (name !== undefined && name !== "") {
           return NAMED_ENTITIES.get(name) ?? whole;
         }
-        const code = dec ? Number(dec) : Number.parseInt(hex ?? "", 16);
+        const code =
+          dec === undefined || dec === ""
+            ? Number.parseInt(hex ?? "", 16)
+            : Number(dec);
         return isCodePoint(code) ? String.fromCodePoint(code) : whole;
       }
     )
     .replaceAll("\u00A0", " ");
 
-const text = (value: string | null | undefined): string | null =>
-  value?.trim() || null;
+const text = (value: string | null | undefined): string | null => {
+  const trimmed = value?.trim() ?? "";
+  return trimmed === "" ? null : trimmed;
+};
 
 const words = (values: readonly string[] | null | undefined) => [
   ...new Set((values ?? []).map((value) => value.trim()).filter(Boolean)),
@@ -138,7 +143,7 @@ const releasedAt = (dumped: Dumped): string | null => {
 export const sourceDetailsFrom = (dumped: Dumped): SourceDetails => ({
   chapters: (dumped.chapters ?? []).flatMap((chapter) => {
     const title = chapter.title.trim();
-    return title ? [{ startSeconds: chapter.start_time, title }] : [];
+    return title === "" ? [] : [{ startSeconds: chapter.start_time, title }];
   }),
   creator: text(dumped.channel) ?? text(dumped.uploader),
   creatorId: text(dumped.channel_id) ?? text(dumped.uploader_id),
@@ -215,7 +220,7 @@ export const ytDlpMetadata = (
       );
     }
     const details = sourceDetailsFrom(decoded.value);
-    if (!details.title) {
+    if (details.title === "") {
       return yield* Effect.fail(
         failure(
           "yt-dlp returned a link without a title.",

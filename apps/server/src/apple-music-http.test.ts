@@ -1044,9 +1044,11 @@ test("a series search names its series as the Top Result, and each group counts 
     await runInOrder(EXPECTED_DJ_MIXES, async ([words]) => {
       const found = await answer(server, { q: words });
       const mixes = found.albums.filter((album) => album.djMix);
-      expect(found.albums.every((album) => album.djMix || !album.series)).toBe(
-        true
-      );
+      expect(
+        found.albums.every(
+          (album) => album.djMix || album.series === null || album.series === ""
+        )
+      ).toBe(true);
       const kinds = [
         [found.groups.djs, (album: FoundAlbum) => album.creator],
         [found.groups.labels, (album: FoundAlbum) => album.recordLabel],

@@ -87,18 +87,19 @@ export const Tracklist = ({
         {cues.map((cue) => {
           const active = cue.position === currentPosition;
           const { artworkUrl, startSeconds } = cue;
-          const artwork = artworkUrl ? (
-            <img
-              alt=""
-              className="size-11 shrink-0 rounded-sm object-cover"
-              src={artworkUrl}
-            />
-          ) : (
-            <span
-              aria-hidden
-              className="bg-muted size-11 shrink-0 rounded-sm"
-            />
-          );
+          const artwork =
+            artworkUrl !== null && artworkUrl !== "" ? (
+              <img
+                alt=""
+                className="size-11 shrink-0 rounded-sm object-cover"
+                src={artworkUrl}
+              />
+            ) : (
+              <span
+                aria-hidden
+                className="bg-muted size-11 shrink-0 rounded-sm"
+              />
+            );
           const details = (
             <>
               <span className="text-muted-foreground w-12 shrink-0 text-end text-sm tabular-nums">

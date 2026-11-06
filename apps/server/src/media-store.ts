@@ -204,7 +204,10 @@ export class MediaStore extends Context.Service<
           );
         }
         const totalHeader = response.headers.get("content-length");
-        const total = totalHeader ? Number(totalHeader) : null;
+        const total =
+          totalHeader === null || totalHeader === ""
+            ? null
+            : Number(totalHeader);
         const writer = Bun.file(destination).writer();
         // Recurses once per chunk; a traced span per chunk multiplied time and heap about fivefold.
         const drain = Effect.fnUntraced(function* drainChunk(
@@ -316,7 +319,7 @@ export class MediaStore extends Context.Service<
       format: string
     ) {
       const contentType = contentTypeFor(format);
-      if (!contentType) {
+      if (contentType === undefined) {
         return yield* Effect.fail(
           new LibraryError({
             message: "This set has no audio yet.",
@@ -385,7 +388,13 @@ export class MediaStore extends Context.Service<
           continue;
         }
         const { id: setId, format } = match.groups;
-        if (!setId || !format || (onlySetId && onlySetId !== setId)) {
+        if (
+          setId === undefined ||
+          setId === "" ||
+          format === undefined ||
+          format === "" ||
+          (onlySetId !== undefined && onlySetId !== "" && onlySetId !== setId)
+        ) {
           continue;
         }
         const filePath = fileFor(setId, format);

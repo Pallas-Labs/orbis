@@ -16,7 +16,12 @@ const recoveryUrl = (base: string): URL => {
   ) {
     throw new Error("Recovery requires HTTPS.");
   }
-  if (url.username || url.password || url.search || url.hash) {
+  if (
+    url.username !== "" ||
+    url.password !== "" ||
+    url.search !== "" ||
+    url.hash !== ""
+  ) {
     throw new Error("Use an API URL without credentials, query, or fragment.");
   }
   return url;

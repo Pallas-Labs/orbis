@@ -223,7 +223,7 @@ export class GroupAudioNode {
         "SELECT COUNT(*) AS queued, MIN(download_jobs.queued_at) AS oldest FROM download_jobs JOIN sets ON sets.id = download_jobs.set_id WHERE sets.download_state = 'queued'"
       )
       .toArray();
-    if (!waiting?.queued) {
+    if (waiting === undefined || waiting.queued === 0) {
       return;
     }
     logEvent(
@@ -377,7 +377,7 @@ export class GroupAudioNode {
               if (
                 current?.detailRequests.some(
                   (request) => request.requestId === requestId
-                )
+                ) === true
               ) {
                 carrier.serializeAttachment({
                   ...current,
@@ -638,7 +638,8 @@ export class GroupAudioNode {
         )
         .toArray();
       if (
-        !state?.referenced ||
+        state === undefined ||
+        state.referenced === 0 ||
         !["ready", "downloading", "queued"].includes(state.state)
       ) {
         GroupAudioNode.send(socket, {

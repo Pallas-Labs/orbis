@@ -49,7 +49,7 @@ export const transferRequest = async (input: {
   if (request.headers.has("origin")) {
     return new Response("Node key required", { status: 403 });
   }
-  if (!token) {
+  if (token === undefined) {
     return new Response("Node key required", { status: 401 });
   }
   const digest = hashToken(token);

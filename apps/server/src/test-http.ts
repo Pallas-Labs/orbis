@@ -26,9 +26,10 @@ export const request = async (
     init.body = JSON.stringify(options.payload);
   }
   Object.assign(headers, options.headers);
-  const base = options.host
-    ? `http://${options.host}`
-    : "http://127.0.0.1:4310";
+  const base =
+    options.host !== undefined && options.host !== ""
+      ? `http://${options.host}`
+      : "http://127.0.0.1:4310";
   const response = await app.handler(
     new Request(`${base}${options.url}`, init),
     options.accessMode ?? "device",

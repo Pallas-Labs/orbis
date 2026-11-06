@@ -6,7 +6,7 @@ import { makeNodeHttpHandler } from "./node-http.js";
 
 const required = (name: string) => {
   const value = process.env[name];
-  if (!value) {
+  if (value === undefined || value === "") {
     throw new Error(`${name} is required.`);
   }
   return value;

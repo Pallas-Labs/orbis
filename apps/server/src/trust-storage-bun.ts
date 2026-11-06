@@ -134,7 +134,7 @@ export const initializeTrustDatabase = (input: {
   withDatabase(input.target, (db) => {
     if (
       hasTable(db, "trust_migrations") &&
-      db.query("SELECT id FROM trust_migrations WHERE id = 1").get()
+      db.query("SELECT id FROM trust_migrations WHERE id = 1").get() !== null
     ) {
       upgradeTrustTables(db);
       return;
@@ -155,7 +155,9 @@ export const initializeTrustDatabase = (input: {
       "CREATE TABLE IF NOT EXISTS trust_migrations (id INTEGER PRIMARY KEY CHECK (id = 1))"
     );
     db.transaction(() => {
-      if (db.query("SELECT id FROM trust_migrations WHERE id = 1").get()) {
+      if (
+        db.query("SELECT id FROM trust_migrations WHERE id = 1").get() !== null
+      ) {
         return;
       }
       const store = existsSync(legacyPath)

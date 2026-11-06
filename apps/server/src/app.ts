@@ -32,7 +32,7 @@ const audioRange = (
   header: string | null | undefined,
   size: number
 ): AudioRange | null => {
-  if (!header) {
+  if (header === null || header === undefined || header === "") {
     return null;
   }
   const match = /^bytes=(?<first>[0-9]*)-(?<last>[0-9]*)$/u.exec(header.trim());
@@ -121,7 +121,7 @@ export const createApp = (
       ? undefined
       : path.join(path.dirname(databasePath), "devices.json"));
   const trustPath = databasePath === ":memory:" ? devicesPath : databasePath;
-  if (devicesPath) {
+  if (devicesPath !== undefined && devicesPath !== "") {
     migrateTrustStore(
       devicesPath,
       databasePath === ":memory:" ? devicesPath : databasePath

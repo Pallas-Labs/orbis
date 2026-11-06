@@ -131,7 +131,11 @@ const groupName: Record<
   (album: AppleMusicSearchAlbum) => string | null
 > = {
   dj: (album) =>
-    album.creator && nameKey(album.creator) !== NOT_A_DJ ? album.creator : null,
+    album.creator !== null &&
+    album.creator !== "" &&
+    nameKey(album.creator) !== NOT_A_DJ
+      ? album.creator
+      : null,
   label: (album) => album.recordLabel,
   series: (album) => album.series,
 };
@@ -144,7 +148,7 @@ const groupsOf = (kind: GroupKind, mixes: readonly AppleMusicSearchAlbum[]) => {
   >();
   for (const album of mixes) {
     const name = groupName[kind](album);
-    if (name) {
+    if (name !== null && name !== "") {
       const key = nameKey(name);
       const group = groups.get(key) ?? {
         albumCount: 0,
@@ -211,7 +215,7 @@ export const appleMusicSearchAnswer = (
   };
   const asked = (["creator", "label", "series"] as const).flatMap((key) => {
     const name = nameKey(narrowing[key] ?? "");
-    return name ? [{ kind: NARROWED_BY[key], name }] : [];
+    return name === "" ? [] : [{ kind: NARROWED_BY[key], name }];
   });
   const inGroups = (album: AppleMusicSearchAlbum) =>
     asked.every(({ kind, name }) => {

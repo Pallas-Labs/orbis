@@ -30,7 +30,7 @@ const bundle = await Bun.build({
 });
 assert.equal(bundle.success, true, String(bundle.logs));
 const [output] = bundle.outputs;
-assert.ok(output);
+assert.ok(output !== undefined);
 const script = await output.text();
 const production = await readFile(
   path.join(import.meta.dir, "../dist/index.js"),
@@ -93,7 +93,7 @@ const checkShareRoutes = async (
       /<meta property="og:url" content="(?<origin>https?:\/\/[^/"]+)\/s\//u.exec(
         page
       )?.groups?.origin;
-    assert.ok(origin);
+    assert.ok(origin !== undefined);
     assert.ok(
       page.includes(`<meta property="og:url" content="${origin}/s/${id}">`)
     );
@@ -101,7 +101,7 @@ const checkShareRoutes = async (
       const image =
         /<meta property="og:image" content="(?<image>[^"]+)">/u.exec(html)
           ?.groups?.image;
-      assert.ok(image);
+      assert.ok(image !== undefined);
       assert.match(
         image,
         new RegExp(
@@ -232,7 +232,7 @@ try {
   const health = await runtime.dispatchFetch("http://orbis/api/health");
   assert.equal(health.status, 200, await health.clone().text());
   assert.deepEqual(await health.json(), { status: "ok" });
-  assert.ok(health.headers.get("x-smoke-group"));
+  assert.notEqual(health.headers.get("x-smoke-group") ?? "", "");
   const second = await runtime.dispatchFetch("http://other/api/health");
   assert.equal(
     health.headers.get("x-smoke-group"),
@@ -271,7 +271,7 @@ try {
   });
   assert.equal(savedResponse.status, 201, await savedResponse.clone().text());
   const saved = await savedResponse.json();
-  assert.ok(saved.id);
+  assert.ok(saved.id !== undefined && saved.id !== "");
   const share = await checkShareRoutes(runtime, saved.id, (route) =>
     call(route)
   );
@@ -433,7 +433,7 @@ try {
       "CF-Connecting-IP": client,
       "content-type": "application/json",
     });
-    if (token) {
+    if (token !== undefined) {
       headers.set("authorization", `Bearer ${token}`);
     }
     return runtime.dispatchFetch(`http://orbis/api${route}`, {

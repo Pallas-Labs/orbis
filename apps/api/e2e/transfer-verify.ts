@@ -17,7 +17,7 @@ import {
 
 const [sourceDirectory] = process.argv.slice(2);
 assert.ok(
-  sourceDirectory,
+  sourceDirectory !== undefined && sourceDirectory !== "",
   "Usage: bun apps/api/e2e/transfer-verify.ts <source data directory>"
 );
 const artifact = path.resolve(
@@ -37,7 +37,7 @@ try {
 }
 await chmod(databasePath, 0o600);
 const legacy = path.join(sourceDirectory, "devices.json");
-if (await Bun.file(legacy).exists()) {
+if ((await Bun.file(legacy).exists()) === true) {
   await copyFile(legacy, path.join(privateDirectory, "devices.json"));
 }
 await Effect.runPromise(
@@ -50,7 +50,10 @@ await Effect.runPromise(
     )
   )
 );
-if (await Bun.file(path.join(privateDirectory, "devices.json")).exists()) {
+if (
+  (await Bun.file(path.join(privateDirectory, "devices.json")).exists()) ===
+  true
+) {
   migrateTrustStore(path.join(privateDirectory, "devices.json"), databasePath);
 }
 const mint = (scope: "node" | "daily") => {
@@ -99,7 +102,7 @@ const run = async (source: string) => {
   const errors = await new Response(child.stderr).text();
   assert.equal(await child.exited, 0, errors);
   const result = output.trim().split("\n").at(-1);
-  assert.ok(result);
+  assert.ok(result !== undefined && result !== "");
   return result;
 };
 const liveResult = await run(databasePath);
@@ -122,8 +125,8 @@ try {
       .all()
   );
   const [first, second] = entries;
-  assert.ok(first);
-  assert.ok(second);
+  assert.ok(first !== undefined);
+  assert.ok(second !== undefined);
   rich.run(
     "INSERT INTO playlists(id,name,created_at,creator_id,collaborative) VALUES(?,?,?,?,?)",
     [

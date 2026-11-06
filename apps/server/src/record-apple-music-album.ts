@@ -52,7 +52,8 @@ const slug = (words: string) =>
  * fields a search now reads while the recorded searches, and the tests' expected results, stay.
  */
 const main = async () => {
-  const [first, ...rest] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const [first, ...rest] = args;
   const searching = first === "--search";
   const albumsOnly = first === "--albums";
   const keyId = process.env.APPLE_MUSIC_KEY_ID ?? "R94UBZ4H8M";
@@ -120,7 +121,7 @@ const main = async () => {
   }
 
   if (!searching) {
-    const albumIds = first ? [first, ...rest] : DEFAULT_ALBUM_IDS;
+    const albumIds = args.length === 0 ? DEFAULT_ALBUM_IDS : args;
     let failed = false;
     for (const albumId of albumIds) {
       if ((await record(appleMusicAlbumRead(albumId), albumId)) === null) {

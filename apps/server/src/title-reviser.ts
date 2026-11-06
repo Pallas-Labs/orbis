@@ -104,7 +104,7 @@ export class TitleReviser extends Context.Service<
               )
             );
           const title = response.value.title.trim();
-          if (!title) {
+          if (title === "") {
             return yield* Effect.fail(
               unexpected("The title model returned an empty title.")
             );
@@ -119,7 +119,12 @@ export class TitleReviser extends Context.Service<
   static layer(options: TitleReviserOptions = {}): Layer.Layer<TitleReviser> {
     const apiKey = options.apiKey?.trim();
     const model = options.model?.trim();
-    if (!apiKey || !model) {
+    if (
+      apiKey === undefined ||
+      apiKey === "" ||
+      model === undefined ||
+      model === ""
+    ) {
       return TitleReviser.unconfigured();
     }
     return TitleReviser.layerWithModel(

@@ -605,7 +605,7 @@ test("only the Person who asked for a Download, or the Host, can cancel it", asy
   const shared = { tags: [], title: "Shared set", url: youTubeUrl };
   const as = (key: string | undefined, method: string, url: string) =>
     request(app, {
-      headers: key ? { authorization: `Bearer ${key}` } : {},
+      headers: key === undefined ? {} : { authorization: `Bearer ${key}` },
       method,
       payload: method === "POST" && url === "/sets" ? shared : undefined,
       url,

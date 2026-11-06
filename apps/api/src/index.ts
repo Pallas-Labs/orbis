@@ -25,7 +25,7 @@ const SHARE_IMAGE = /^\/api\/+share\/+sets\/+(?<id>[^/]+)\/+image\.png\/?$/iu;
  */
 const shareImageKey = (request: Request, url: URL): string | null => {
   const version = url.searchParams.get("v");
-  if (request.method !== "GET" || !version) {
+  if (request.method !== "GET" || version === null || version === "") {
     return null;
   }
   let path: string;
@@ -35,9 +35,9 @@ const shareImageKey = (request: Request, url: URL): string | null => {
     return null;
   }
   const id = SHARE_IMAGE.exec(path)?.groups?.id;
-  return id
-    ? `https://${url.host}/api/share/sets/${encodeURIComponent(id)}/image.png?v=${encodeURIComponent(version)}`
-    : null;
+  return id === undefined
+    ? null
+    : `https://${url.host}/api/share/sets/${encodeURIComponent(id)}/image.png?v=${encodeURIComponent(version)}`;
 };
 
 declare global {
@@ -58,7 +58,7 @@ export default {
       return new Response("Not found", { status: 404 });
     }
     const key = shareImageKey(request, url);
-    if (key) {
+    if (key !== null) {
       const cached = await caches.default.match(key);
       if (cached) {
         return cached;
@@ -69,7 +69,7 @@ export default {
       new Request(url, request)
     );
     if (
-      key &&
+      key !== null &&
       response.status === 200 &&
       response.headers.get("content-type") === "image/png"
     ) {

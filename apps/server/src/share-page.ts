@@ -68,7 +68,10 @@ export const renderSharePage = (
   const description = escapeHtml(set.creator ?? "A set on Orbis");
   const image = escapeHtml(links.image);
   const orbisLink = escapeHtml(links.orbisLink);
-  const artwork = set.artworkUrl ? escapeHtml(set.artworkUrl) : null;
+  const artwork =
+    set.artworkUrl === null || set.artworkUrl === ""
+      ? null
+      : escapeHtml(set.artworkUrl);
   const frame = set.source === "youtube" ? "wide" : "square";
   return `<!doctype html>
 <html lang="en">
@@ -96,12 +99,12 @@ export const renderSharePage = (
 <style>${STYLE}</style>
 </head>
 <body>
-${artwork ? `<img class="glow" src="${artwork}" alt="" aria-hidden="true">` : ""}
+${artwork === null ? "" : `<img class="glow" src="${artwork}" alt="" aria-hidden="true">`}
 <main>
 <p class="mark">Orbis</p>
-${artwork ? `<img class="art ${frame}" src="${artwork}" alt="">` : ""}
+${artwork === null ? "" : `<img class="art ${frame}" src="${artwork}" alt="">`}
 <h1>${title}</h1>
-${set.creator ? `<p class="creator">${escapeHtml(set.creator)}</p>` : ""}
+${set.creator === null || set.creator === "" ? "" : `<p class="creator">${escapeHtml(set.creator)}</p>`}
 <div class="actions">
 <a class="primary" href="orbis://s/${encodeURIComponent(set.id)}">Open in Orbis</a>
 <a href="${escapeHtml(set.url)}" rel="noopener">${SOURCE_ACTION[set.source]}</a>

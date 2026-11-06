@@ -89,7 +89,7 @@ export const claimTracklist = Effect.fn("Tracklists.claim")(
         .where(
           and(
             eq(sets.id, id),
-            retry
+            retry === true
               ? undefined
               : inArray(sets.tracklistState, ["pending", "failed"]),
             or(
@@ -194,7 +194,7 @@ export const runClaimedTracklist = Effect.fn("Tracklists.runClaimed")(
     Effect.gen(function* runClaimedTracklistEffect() {
       const versos = yield* Versos;
       const description = reread ? yield* reread : claim.description;
-      if (!description?.trim()) {
+      if (description === null || description.trim() === "") {
         return (yield* finishTracklist(claim, { state: "none" }))
           ? "none"
           : "pending";

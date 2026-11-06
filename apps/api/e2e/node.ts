@@ -40,7 +40,7 @@ const bundle = await Bun.build({
 });
 assert.equal(bundle.success, true, String(bundle.logs));
 const [output] = bundle.outputs;
-assert.ok(output);
+assert.ok(output !== undefined);
 const probe = Bun.serve({ fetch: () => new Response(), port: 0 });
 const nodePort = probe.port;
 await probe.stop(true);
@@ -501,7 +501,7 @@ try {
     () => fair.commands.filter((command) => command.kind === "start")[1],
     (value) => value !== undefined
   );
-  assert.ok(following);
+  assert.ok(following !== undefined);
   assert.equal(following.setId, queued[0]?.id);
   await runInOrder(queued, async (pending) => {
     await request(`/sets/${pending.id}/audio/download`, "DELETE");
@@ -681,7 +681,7 @@ try {
   };
   let child = launch();
   const stop = async () => {
-    if (!child.pid || child.exitCode !== null) {
+    if (child.pid === undefined || child.exitCode !== null) {
       return;
     }
     const exited = once(child, "exit");

@@ -129,6 +129,12 @@ interface ProviderOptions {
 
 const PROVIDER_TIMEOUT = "5 seconds";
 
+/** Trims a provider's text and reads an empty result as missing. */
+const trimmedOrNull = (value: string | undefined): string | null => {
+  const trimmed = value?.trim() ?? "";
+  return trimmed === "" ? null : trimmed;
+};
+
 const notConfigured = (message: string) =>
   new MetadataError({ message, reason: "not-configured" });
 const rejected = (message: string) =>
@@ -145,7 +151,7 @@ const ISO_DURATION =
 const HAS_DIGIT = /\d/u;
 
 const unitSeconds = (value: string | undefined, scale: number) =>
-  value ? Number(value) * scale : 0;
+  value === undefined || value === "" ? 0 : Number(value) * scale;
 
 const parseDurationSeconds = (duration: string): number | null => {
   const groups = ISO_DURATION.exec(duration)?.groups;
@@ -315,7 +321,7 @@ const pageArtworkFrom = (thumbnails: YouTubeThumbnails): string | null =>
 const youTubeMetadata = (video: YouTubeVideo): EnrichedMetadata => ({
   artworkLargeUrl: pageArtworkFrom(video.snippet.thumbnails),
   artworkUrl: listingArtworkFrom(video.snippet.thumbnails),
-  creator: video.snippet.channelTitle.trim() || null,
+  creator: trimmedOrNull(video.snippet.channelTitle),
   durationSeconds: parseDurationSeconds(video.contentDetails.duration),
   releasedAt: video.snippet.publishedAt,
   title: video.snippet.title.trim(),
@@ -325,7 +331,7 @@ const youTubeMetadata = (video: YouTubeVideo): EnrichedMetadata => ({
 const soundCloudMetadata = (track: SoundCloudOEmbed): EnrichedMetadata => ({
   artworkLargeUrl: track.thumbnail_url ?? null,
   artworkUrl: track.thumbnail_url ?? null,
-  creator: track.author_name?.trim() || null,
+  creator: trimmedOrNull(track.author_name),
   durationSeconds: null,
   releasedAt: null,
   title: track.title.trim(),
@@ -337,7 +343,7 @@ const youTubeProvider = (
 ): Provider => ({
   enrich: Effect.fn("Metadata.enrich")(function* enrichYouTube(url) {
     const videoId = youTubeVideoId(url);
-    if (!videoId) {
+    if (videoId === null) {
       return yield* Effect.fail(
         unsupported("This URL does not name a YouTube video.")
       );
@@ -355,7 +361,7 @@ const youTubeProvider = (
       return yield* Effect.fail(rejected("YouTube does not have this video."));
     }
     const metadata = youTubeMetadata(video);
-    if (!metadata.title) {
+    if (metadata.title === "") {
       return yield* Effect.fail(
         unexpected("YouTube returned a video without a title.")
       );
@@ -437,7 +443,7 @@ const readYouTubePlaylistPage = Effect.fn("Metadata.readYouTubePlaylistPage")(
     const videos = new Map(
       batch.items
         .map((video) => [video.id, youTubeMetadata(video)] as const)
-        .filter(([, metadata]) => metadata.title)
+        .filter(([, metadata]) => metadata.title !== "")
     );
     const tracks = ids.flatMap((id) => {
       const metadata = videos.get(id);
@@ -460,7 +466,7 @@ const soundCloudProvider = (request: RequestFetch): Provider => ({
       { label: "SoundCloud", request }
     );
     const metadata = soundCloudMetadata(response);
-    if (!metadata.title) {
+    if (metadata.title === "") {
       return yield* Effect.fail(
         unexpected("SoundCloud returned a track without a title.")
       );
@@ -552,7 +558,7 @@ const appleMusicMetadata = (album: AppleMusicAlbum): EnrichedMetadata => {
   return {
     artworkLargeUrl: appleMusicArtwork(album.attributes.artwork, 1200),
     artworkUrl: appleMusicArtwork(album.attributes.artwork, 300),
-    creator: album.attributes.artistName?.trim() || null,
+    creator: trimmedOrNull(album.attributes.artistName),
     durationSeconds: lengths.every((length) => length !== null)
       ? Math.round(lengths.reduce((total, length) => total + length, 0))
       : null,
@@ -637,7 +643,7 @@ const appleMusicSearchAlbum = (
     djMix,
     durationSeconds: metadata.durationSeconds,
     id: album.id,
-    recordLabel: album.attributes.recordLabel?.trim() || null,
+    recordLabel: trimmedOrNull(album.attributes.recordLabel),
     releasedAt: metadata.releasedAt,
     series: djMix ? mixSeries(metadata.title) : null,
     songCount: songs.length,
@@ -719,7 +725,7 @@ const appleMusicProvider = (
   return {
     enrich: Effect.fn("Metadata.enrich")(function* enrichAppleMusic(url) {
       const albumId = appleMusicAlbumId(url);
-      if (!albumId) {
+      if (albumId === null) {
         return yield* Effect.fail(
           unsupported("This URL does not name an Apple Music album.")
         );
@@ -739,7 +745,7 @@ const appleMusicProvider = (
         return yield* Effect.fail(notInUsCatalog());
       }
       const metadata = appleMusicMetadata(album);
-      if (!metadata.title || metadata.songs?.length === 0) {
+      if (metadata.title === "" || metadata.songs?.length === 0) {
         return yield* Effect.fail(
           unexpected("Apple Music returned an album without a title or songs.")
         );
@@ -850,7 +856,7 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
     if (appleMusic) {
       providers["apple-music"] = appleMusic;
     }
-    if (options.youTubeApiKey) {
+    if (options.youTubeApiKey !== undefined && options.youTubeApiKey !== "") {
       providers.youtube = youTubeProvider(options.youTubeApiKey, request);
     }
     const { ytDlp, youTubeApiKey } = options;
@@ -872,13 +878,13 @@ export class Metadata extends Context.Service<Metadata, MetadataService>()(
             : provider;
         }),
         playlist: Effect.fn("Metadata.playlist")((playlistId: string) =>
-          youTubeApiKey
+          youTubeApiKey !== undefined && youTubeApiKey !== ""
             ? readYouTubePlaylist(playlistId, youTubeApiKey, request)
             : noProviders.playlist(playlistId)
         ),
         playlistPage: Effect.fn("Metadata.playlistPage")(
           (playlistId: string, pageToken: string | null) =>
-            youTubeApiKey
+            youTubeApiKey !== undefined && youTubeApiKey !== ""
               ? readYouTubePlaylistPage(
                   playlistId,
                   pageToken,
