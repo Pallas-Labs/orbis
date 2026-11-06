@@ -47,7 +47,7 @@ const callAs = async (person, method, route, payload) => {
   }
   const response = await fetch(`${apiUrl}${route}`, init);
   assert.ok(response.ok, `${method} ${route} answered ${response.status}`);
-  return response.status === 204 ? null : response.json();
+  return response.status === 204 ? null : await response.json();
 };
 
 const shot = (page, name) =>

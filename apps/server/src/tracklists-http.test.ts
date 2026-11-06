@@ -101,7 +101,7 @@ const eventually = async <T>(
     throw new Error("Expected background work to finish.");
   }
   await Bun.sleep(10);
-  return eventually(check, attempts - 1);
+  return await eventually(check, attempts - 1);
 };
 
 const waitForState = (

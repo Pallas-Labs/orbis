@@ -84,7 +84,7 @@ export const loadArtwork = (
         // The next address, or no Artwork.
       }
     }
-    return attempt(index + 1);
+    return await attempt(index + 1);
   };
   return attempt(0);
 };

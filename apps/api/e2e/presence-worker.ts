@@ -38,6 +38,6 @@ export class Group extends ProductionGroup {
           .toArray(),
       });
     }
-    return super.fetch(request);
+    return await super.fetch(request);
   }
 }

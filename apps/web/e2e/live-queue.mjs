@@ -35,7 +35,7 @@ const api = async (method, route, body, token = key) => {
   }
   const response = await fetch(`${apiUrl}${route}`, init);
   assert.ok(response.ok, `${method} ${route} answered ${response.status}`);
-  return response.status === 204 ? null : response.json();
+  return response.status === 204 ? null : await response.json();
 };
 
 const dataDirectory = await mkdtemp(path.join(tmpdir(), "orbis-player-"));

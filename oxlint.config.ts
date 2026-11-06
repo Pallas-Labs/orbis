@@ -13,7 +13,6 @@ const RUNTIME_SOURCES = ["apps/*/src/**", "packages/*/src/**"];
 const ULTRACITE_TYPE_AWARE_DEBT = [
   "typescript/no-confusing-void-expression",
   "typescript/promise-function-async",
-  "typescript/return-await",
   "typescript/strict-boolean-expressions",
   "typescript/strict-void-return",
 ];

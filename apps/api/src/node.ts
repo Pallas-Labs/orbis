@@ -103,7 +103,7 @@ export class GroupAudioNode {
     const previous = this.tail;
     const next = (async () => {
       await previous;
-      return operation();
+      return await operation();
     })();
     this.tail = (async () => {
       try {

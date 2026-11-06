@@ -18,7 +18,7 @@ export const waitFor = (url) => {
       }
     }
     await setTimeout(100);
-    return poll(attemptsLeft - 1);
+    return await poll(attemptsLeft - 1);
   };
   return poll(150);
 };
@@ -36,7 +36,7 @@ export const waitUntil = (check, message, attempts = 100) => {
       throw new Error(message);
     }
     await setTimeout(200);
-    return poll(attemptsLeft - 1);
+    return await poll(attemptsLeft - 1);
   };
   return poll(attempts);
 };

@@ -25,7 +25,7 @@ const waitForJob = async (
     return;
   }
   await Bun.sleep(25);
-  return waitForJob(events, attemptsLeft - 1);
+  return await waitForJob(events, attemptsLeft - 1);
 };
 
 // The failure from 2026-09-29: yt-dlp exits with an error and Cobalt's tunnel answers

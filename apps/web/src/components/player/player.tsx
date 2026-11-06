@@ -213,7 +213,7 @@ export const PlayerProvider = ({
   const play = async (set: SavedSet) => {
     playIntent.current += 1;
     const intent = playIntent.current;
-    return activate(await playSet(credentials, set.id), intent);
+    return await activate(await playSet(credentials, set.id), intent);
   };
 
   const playFrom = async (set: SavedSet, seconds: number) => {
@@ -234,13 +234,13 @@ export const PlayerProvider = ({
         return { failure: "failed", ok: false } as const;
       }
     }
-    return activate(await playSet(credentials, set.id), intent, seconds);
+    return await activate(await playSet(credentials, set.id), intent, seconds);
   };
 
   const playFromPlaylist = async (playlistId: string) => {
     playIntent.current += 1;
     const intent = playIntent.current;
-    return activate(await playPlaylist(credentials, playlistId), intent);
+    return await activate(await playPlaylist(credentials, playlistId), intent);
   };
 
   const queue = (set: SavedSet, placement: "next" | "end") =>

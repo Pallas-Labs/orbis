@@ -74,7 +74,7 @@ const api = async (pathname, key, init = {}) => {
   if (!response.ok) {
     throw new Error(`${pathname} answered ${response.status}`);
   }
-  return response.json();
+  return await response.json();
 };
 
 // A failed run must not leave a server holding the ports. Each server runs in

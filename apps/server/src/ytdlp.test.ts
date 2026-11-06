@@ -33,7 +33,7 @@ const waitForState = async (
     return current;
   }
   await Bun.sleep(25);
-  return waitForState(app, id, attemptsLeft - 1);
+  return await waitForState(app, id, attemptsLeft - 1);
 };
 
 const outputOf = (argv: readonly string[]) => {

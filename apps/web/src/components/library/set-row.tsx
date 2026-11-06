@@ -266,20 +266,22 @@ export const SetRow = ({
           {set.downloadState === "ready" ? (
             <>
               <DropdownMenuItem
-                onClick={detach(async () => settle(await player.play(set)))}
+                onClick={detach(
+                  async () => await settle(await player.play(set))
+                )}
               >
                 Play
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={detach(async () =>
-                  settle(await player.queue(set, "next"))
+                onClick={detach(
+                  async () => await settle(await player.queue(set, "next"))
                 )}
               >
                 Play next
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={detach(async () =>
-                  settle(await player.queue(set, "end"))
+                onClick={detach(
+                  async () => await settle(await player.queue(set, "end"))
                 )}
               >
                 Add to queue
@@ -289,11 +291,12 @@ export const SetRow = ({
           ) : null}
           {downloadable ? (
             <DropdownMenuItem
-              onClick={detach(async () =>
-                settle(
-                  await requestDownload(credentials, set.id),
-                  "The Download queue is full. Try again later."
-                )
+              onClick={detach(
+                async () =>
+                  await settle(
+                    await requestDownload(credentials, set.id),
+                    "The Download queue is full. Try again later."
+                  )
               )}
             >
               Download
@@ -301,8 +304,9 @@ export const SetRow = ({
           ) : null}
           {inFlight ? (
             <DropdownMenuItem
-              onClick={detach(async () =>
-                settle(await cancelDownload(credentials, set.id))
+              onClick={detach(
+                async () =>
+                  await settle(await cancelDownload(credentials, set.id))
               )}
             >
               Cancel Download

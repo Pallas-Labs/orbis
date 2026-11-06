@@ -180,7 +180,7 @@ export const pollUntil = <Value>(
       throw new Error(message);
     }
     await Bun.sleep(interval);
-    return attempt(tryNumber + 1);
+    return await attempt(tryNumber + 1);
   };
   return attempt(0);
 };
@@ -208,7 +208,7 @@ export const eventStream = (response: Response) => {
       return null;
     }
     pending += decoder.decode(chunk.value, { stream: true });
-    return fill();
+    return await fill();
   };
   return {
     close: async (): Promise<void> => {

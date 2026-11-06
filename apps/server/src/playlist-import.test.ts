@@ -157,7 +157,7 @@ const gate = () => {
     signal.addEventListener("abort", () => stopped.resolve(true));
     await Promise.race([released.promise, stopped.promise]);
     signal.throwIfAborted();
-    return answer();
+    return await answer();
   };
   return {
     asked: asked.promise,
@@ -324,7 +324,7 @@ const openEvents = async (app: Lane, token?: string) => {
             return event.playlistImport;
           }
         }
-        return attempt();
+        return await attempt();
       };
       return attempt();
     },
@@ -412,7 +412,7 @@ test("the import answers 202 before any track is saved, then fills an ordered Pl
       const frame = await other.nextEvent();
       return frame.kind === "changed" || frame.kind === "playlistImport"
         ? frame
-        : nextOwnFrame();
+        : await nextOwnFrame();
     };
     const otherFrame = await nextOwnFrame();
     expect(otherFrame).toEqual({ kind: "changed", topic: "playlist" });

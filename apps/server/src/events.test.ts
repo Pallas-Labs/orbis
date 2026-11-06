@@ -39,7 +39,7 @@ const frames = (response: Response) => {
   };
   const attempt = async (): Promise<ReturnType<typeof decodeEventJson>> => {
     const event = await nextFrame();
-    return event.kind === "presence" ? attempt() : event;
+    return event.kind === "presence" ? await attempt() : event;
   };
   return {
     close: () => stream.close(),

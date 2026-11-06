@@ -46,6 +46,6 @@ export class Group extends ProductionGroup {
           .one().count,
       });
     }
-    return super.fetch(request);
+    return await super.fetch(request);
   }
 }

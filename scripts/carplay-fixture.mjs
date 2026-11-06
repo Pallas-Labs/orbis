@@ -160,7 +160,7 @@ const api = async (method, route, body) => {
   if (!response.ok) {
     throw new Error(`${method} ${route} answered ${response.status}`);
   }
-  return response.status === 204 ? null : response.json();
+  return response.status === 204 ? null : await response.json();
 };
 
 const seed = async (route) => {

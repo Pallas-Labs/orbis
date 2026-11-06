@@ -52,7 +52,7 @@ const stream = (response: Response) => {
             return event.presence;
           }
         }
-        return attempt();
+        return await attempt();
       };
       return attempt();
     },

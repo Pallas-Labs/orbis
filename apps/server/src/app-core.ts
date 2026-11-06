@@ -2728,10 +2728,10 @@ export const createPortableApp = (options: {
           ? OPEN_ROUTES.get(routePath(request.url))
           : undefined;
       if (open) {
-        return openRoute(request, clientAddress, open);
+        return await openRoute(request, clientAddress, open);
       }
       if (isShareRoute(request)) {
-        return shareRoute(request);
+        return await shareRoute(request);
       }
       const registry = readTrustRegistry(trustPath);
       const logRefusal = (status: number, fields: LoggedRecord) => {

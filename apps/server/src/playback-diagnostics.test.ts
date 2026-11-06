@@ -44,7 +44,7 @@ const setup = (
         return new Response(null, { status: 404 });
       }
       requests.push({ body: await request.json(), headers: request.headers });
-      return respond(request);
+      return await respond(request);
     },
     hostname: "127.0.0.1",
     port: 0,
@@ -385,7 +385,7 @@ test("strict nested privacy schema rejects unknown fields and inconsistent seque
       }
       const response = await s.send(JSON.stringify(body));
       expect(response.status).toBe(400);
-      return assertInvalid(index + 1);
+      return await assertInvalid(index + 1);
     };
     await assertInvalid(0);
     const nonfinite = JSON.stringify(base).replace(
@@ -463,7 +463,7 @@ test("playback.loss is written only for the ranges the client declares, with the
     const send = async (body: Partial<typeof fixture>) => {
       const response = await s.send(JSON.stringify({ ...batch(), ...body }));
       expect(response.status).toBe(200);
-      return response.json();
+      return await response.json();
     };
     // A batch that follows an unacknowledged one: sequences 1 to 7 are behind it, but the
     // client declared none of them lost, so they may already be stored.
@@ -618,7 +618,7 @@ test("two active exports have no queue and deadline releases both slots", async 
         return;
       }
       await Bun.sleep(10);
-      return waitForExports(attemptsLeft - 1);
+      return await waitForExports(attemptsLeft - 1);
     };
     await waitForExports();
     expect(s.requests).toHaveLength(2);

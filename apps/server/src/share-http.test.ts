@@ -134,7 +134,7 @@ const startApp = async (artworkHost: string) => {
       "198.51.100.7"
     );
     expect(response.status).toBeLessThan(300);
-    return response.json();
+    return await response.json();
   };
   const open = (
     url: string,
