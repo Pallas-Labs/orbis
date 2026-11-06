@@ -1,3 +1,4 @@
+import { isDownloadInFlight } from "@orbis/contracts";
 import { ExportIcon } from "@phosphor-icons/react";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -56,7 +57,7 @@ const AudioAction = ({
       </Button>
     );
   }
-  if (set.downloadState === "queued" || set.downloadState === "downloading") {
+  if (isDownloadInFlight(set.downloadState)) {
     return (
       <p className="text-muted-foreground text-sm">
         {progress === undefined

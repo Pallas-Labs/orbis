@@ -954,14 +954,14 @@ final class AppModel {
   }
 
   /// Reads the service's download progress into the running map, and says whether the service
-  /// answered. A terminal state reloads the library so the Set's own state is what the service
-  /// holds.
+  /// answered. A settled state reloads the library so the Set's own state is what the service
+  /// holds. That includes `none` and `canceled`, which a cancel from another device leaves.
   @discardableResult
   func refreshAudioState(_ id: String) async -> Bool {
     guard let client else { return false }
     guard let state = try? await client.audioState(id) else { return false }
     audioStates[id] = state
-    if state.state == "ready" || state.state == "failed" {
+    if !SavedSet.isInFlight(state.state) {
       // Quietly: a reload through `.loading` emptied the library for a moment, and the open Set
       // page flashed its "gone" state before the player arrived.
       await refreshLibraryQuietly()
@@ -991,6 +991,8 @@ final class AppModel {
     var last: AudioState?
     while isDownloading(id), !Task.isCancelled {
       let answered = await refreshAudioState(id)
+      // A read that ended the download ends the page's follow now, not after the next wait.
+      guard isDownloading(id) else { return }
       wait = Self.nextWait(after: wait, changed: answered && audioStates[id] != last)
       last = audioStates[id]
       do {

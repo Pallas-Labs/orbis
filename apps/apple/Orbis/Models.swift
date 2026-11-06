@@ -39,8 +39,13 @@ extension SavedSet {
   /// plays through MusicKit (ADR 0021). The service's `isPlayableSet` holds the same rule.
   var isPlayable: Bool { downloadState == "ready" || source == .appleMusic }
 
+  /// Whether the service is still working on a download in `state`: it is `queued` or
+  /// `downloading`. Every other state has settled. The service's `isDownloadInFlight` holds the
+  /// same rule.
+  static func isInFlight(_ state: String) -> Bool { state == "queued" || state == "downloading" }
+
   /// True while the service is still working on this Set's audio.
-  var isDownloading: Bool { downloadState == "queued" || downloadState == "downloading" }
+  var isDownloading: Bool { Self.isInFlight(downloadState) }
 
   /// The catalog id of an Apple Music Set's album, the last part of its Source Link
   /// (`https://music.apple.com/album/<id>`).
