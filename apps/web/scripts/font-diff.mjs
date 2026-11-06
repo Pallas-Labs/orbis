@@ -180,15 +180,13 @@ const stylesheet = async (dist) => {
 // Waits until no font is loading, then for two drawn frames.
 const settle = async (page) => {
   await page.evaluate(() => document.fonts.ready);
-  await page.evaluate(
-    () =>
-      // eslint-disable-next-line promise/avoid-new -- requestAnimationFrame takes a callback
-      new Promise((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(resolve);
-        });
-      })
-  );
+  await page.evaluate(() => {
+    const { promise, resolve } = Promise.withResolvers();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    });
+    return promise;
+  });
 };
 
 // The live events stream keeps the network busy, so wait for the page's
