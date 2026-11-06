@@ -3,7 +3,6 @@
 // browser while bob watches People in another; alice's second browser changes her
 // Library and the first shows it without a reload (ADR 0019, #212).
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -11,12 +10,19 @@ import path from "node:path";
 
 import { chromium } from "playwright";
 
-import { signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
+import {
+  freePort,
+  signInWithKey,
+  startApi,
+  startPreview,
+  waitFor,
+  waitUntil,
+} from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-presence");
-const devicePort = 4521;
-const webPort = 3421;
+const devicePort = await freePort();
+const webPort = await freePort();
 const apiUrl = `http://127.0.0.1:${devicePort}`;
 const webUrl = `http://127.0.0.1:${webPort}`;
 const tokens = {
@@ -66,39 +72,17 @@ await writeFile(
     version: 2,
   })
 );
-const api = spawn("bun", ["apps/web/e2e/api-server.ts"], {
-  cwd: root,
-  env: {
-    ...process.env,
-    ORBIS_DATA_DIR: dataDirectory,
-    ORBIS_FIXTURE_ORIGIN: webUrl,
-    ORBIS_FIXTURE_PORT: String(devicePort),
-  },
-  stdio: "ignore",
+const api = startApi({
+  dataDirectory,
+  origin: webUrl,
+  port: devicePort,
 });
-const web = spawn(
-  "bun",
-  [
-    "x",
-    "vite",
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(webPort),
-    "--strictPort",
-  ],
-  {
-    cwd: path.join(root, "apps/web"),
-    env: { ...process.env, ORBIS_API_URL: apiUrl },
-    stdio: "ignore",
-  }
-);
+const web = startPreview({ apiUrl, port: webPort });
 
 const steps = [];
 const step = (name, detail = {}) => steps.push({ name, ...detail });
 try {
-  await Promise.all([waitFor(`${apiUrl}/health`), waitFor(webUrl)]);
+  await Promise.all([waitFor(`${apiUrl}/health`, api), waitFor(webUrl, web)]);
   await mkdir(artifacts, { recursive: true });
 
   await callAs("alice", "PATCH", "/me", { social: true });

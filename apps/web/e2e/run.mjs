@@ -1,5 +1,6 @@
-// Runs the browser journeys side by side against the built client. Each journey has its own ports,
-// data directory, and artifacts directory, so none waits for another. All twelve at once overload
+// Runs the browser journeys side by side against the built client. Each journey asks the OS for
+// free ports (`freePort` in `helpers.mjs`) and has its own data directory and artifacts directory,
+// so none waits for another, here or in another checkout on the same host. All twelve at once overload
 // the host and time out, so at most four run together, longest first. Each one's output
 // prints when it ends, so the logs never interleave.
 import { spawn } from "node:child_process";

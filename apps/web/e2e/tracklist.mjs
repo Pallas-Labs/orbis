@@ -1,6 +1,6 @@
 // A real browser, API, and SQLite database verify the Set page and Cue seek.
 import assert from "node:assert/strict";
-import { spawn, execFileSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -8,14 +8,21 @@ import path from "node:path";
 
 import { chromium } from "playwright";
 
-import { signInWithKey, waitFor, waitUntil } from "./helpers.mjs";
+import {
+  freePort,
+  signInWithKey,
+  startApi,
+  startPreview,
+  waitFor,
+  waitUntil,
+} from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-tracklist");
 const dataDirectory = await mkdtemp(
   path.join(tmpdir(), "orbis-tracklist-web-")
 );
-const ports = { api: 4530, device: 4531, web: 3431 };
+const ports = { device: await freePort(), web: await freePort() };
 const apiUrl = `http://127.0.0.1:${ports.device}`;
 const webUrl = `http://127.0.0.1:${ports.web}`;
 const key = randomBytes(24).toString("base64url");
@@ -55,37 +62,15 @@ await writeFile(
   })
 );
 
-const api = spawn("bun", ["apps/web/e2e/api-server.ts"], {
-  cwd: root,
-  env: {
-    ...process.env,
-    ORBIS_DATA_DIR: dataDirectory,
-    ORBIS_FIXTURE_ORIGIN: webUrl,
-    ORBIS_FIXTURE_PORT: String(ports.device),
-  },
-  stdio: "ignore",
+const api = startApi({
+  dataDirectory,
+  origin: webUrl,
+  port: ports.device,
 });
-const web = spawn(
-  "bun",
-  [
-    "x",
-    "vite",
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(ports.web),
-    "--strictPort",
-  ],
-  {
-    cwd: path.join(root, "apps/web"),
-    env: { ...process.env, ORBIS_API_URL: apiUrl },
-    stdio: "ignore",
-  }
-);
+const web = startPreview({ apiUrl, port: ports.web });
 
 try {
-  await Promise.all([waitFor(`${apiUrl}/health`), waitFor(webUrl)]);
+  await Promise.all([waitFor(`${apiUrl}/health`, api), waitFor(webUrl, web)]);
   await mkdir(artifacts, { recursive: true });
   const saved = await call("POST", "/sets", {
     title: "Tracklist journey Set",

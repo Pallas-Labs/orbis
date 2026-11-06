@@ -1,26 +1,156 @@
+import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { once } from "node:events";
+import { createServer } from "node:net";
+import path from "node:path";
 import { setTimeout } from "node:timers/promises";
 
+const root = path.resolve(import.meta.dirname, "../../..");
+
 /**
- * Polls `url` until it answers, 150 attempts 100 ms apart. Recursive rather than
- * a loop, so each attempt is a separate await the journeys share instead of
- * copying.
+ * A port no process on this host listens on now, drawn from the OS. Two
+ * checkouts can run the journeys at the same time, so no journey owns a fixed
+ * port. A process can still take the port before the journey's server binds
+ * it; the server then exits, and `waitFor` names the port and the cause. The OS
+ * can hand out a port again once it is closed, so a journey never gets the same
+ * port twice.
  */
-export const waitFor = (url) => {
+const drawn = new Set();
+export const freePort = async () => {
+  const server = createServer();
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const { port } = server.address();
+  server.close();
+  await once(server, "close");
+  if (drawn.has(port)) {
+    return freePort();
+  }
+  drawn.add(port);
+  return port;
+};
+
+/**
+ * Spawns a server the journey owns on `port`. `listening` resolves when the
+ * process prints its own address on stdout, which it does only once it has
+ * bound `port`. `exit` resolves, once the process has ended, to an error that
+ * names the server, its exit code, the port, and the cause from its stderr.
+ * A journey stops its own servers on purpose, so only `waitFor` treats the exit
+ * as a failure.
+ */
+const startServer = (name, port, args, options) => {
+  const child = spawn("bun", args, {
+    ...options,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const address = `127.0.0.1:${port}`;
+  let stdout = "";
+  let stderr = "";
+  const { promise: listening, resolve: heard } = Promise.withResolvers();
+  child.stdout.setEncoding("utf-8");
+  child.stdout.on("data", (chunk) => {
+    stdout = `${stdout}${chunk}`.slice(-4000);
+    if (stdout.includes(address)) {
+      heard();
+    }
+  });
+  child.stderr.setEncoding("utf-8");
+  child.stderr.on("data", (chunk) => {
+    stderr = `${stderr}${chunk}`.slice(-4000);
+  });
+  const exit = (async () => {
+    const [code, signal] = await once(child, "close");
+    // Bun and vite both print the cause on a line that starts `error:`, then a stack.
+    const lines = stderr.trim().split("\n");
+    const cause =
+      lines.findLast((line) => /^\s*error:/iu.test(line))?.trim() ??
+      lines.slice(-5).join("\n");
+    return new Error(
+      `${name} exited ${code ?? signal} on port ${port}: ${cause || "(no stderr)"}`
+    );
+  })();
+  return {
+    exit,
+    hasExited: () => child.exitCode !== null || child.signalCode !== null,
+    kill: (signal) => child.kill(signal),
+    listening,
+    name,
+    port,
+  };
+};
+
+/** The journeys' Orbis API (`api-server.ts`) on `port`, allowing the web client at `origin`. */
+export const startApi = ({ dataDirectory, origin, port }) =>
+  startServer("api server", port, ["apps/web/e2e/api-server.ts"], {
+    cwd: root,
+    env: {
+      ...process.env,
+      ORBIS_DATA_DIR: dataDirectory,
+      ORBIS_FIXTURE_ORIGIN: origin,
+      ORBIS_FIXTURE_PORT: String(port),
+    },
+  });
+
+/** The built web client in `vite preview` on `port`, calling the API at `apiUrl`. */
+export const startPreview = ({ apiUrl, port }) =>
+  startServer(
+    "vite preview",
+    port,
+    [
+      "x",
+      "vite",
+      "preview",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      String(port),
+      "--strictPort",
+    ],
+    {
+      cwd: path.join(root, "apps/web"),
+      env: { ...process.env, ORBIS_API_URL: apiUrl },
+    }
+  );
+
+/**
+ * Waits until `server` says it listens on its port, then polls `url` until it
+ * answers, 150 attempts 100 ms apart. An answer counts only while `server` still
+ * runs, so another process on the same port never stands in for it: when
+ * `server` exits first, `waitFor` throws `server`'s exit error. Recursive rather
+ * than a loop, so each attempt is a separate await the journeys share instead
+ * of copying.
+ */
+export const waitFor = async (url, server) => {
+  const startup = async () => {
+    await setTimeout(15_000, undefined, { ref: false });
+    return new Error(
+      `${server.name} did not listen on port ${server.port} in 15 s`
+    );
+  };
+  const failure = await Promise.race([
+    server.listening,
+    server.exit,
+    startup(),
+  ]);
+  if (failure instanceof Error) {
+    throw failure;
+  }
   const poll = async (attemptsLeft) => {
+    if (server.hasExited()) {
+      throw await server.exit;
+    }
     try {
       await fetch(url);
-      return;
     } catch {
-      // Not listening yet.
+      // Not answering yet.
       if (attemptsLeft <= 1) {
         throw new Error(`${url} did not start`);
       }
+      await setTimeout(100);
+      await poll(attemptsLeft - 1);
     }
-    await setTimeout(100);
-    await poll(attemptsLeft - 1);
   };
-  return poll(150);
+  await poll(150);
 };
 
 /**

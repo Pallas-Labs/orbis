@@ -3,7 +3,6 @@
 // Request is started over HTTP, and the Host's browser approves it, cancels one,
 // meets an unknown code, and a signed-out browser is asked to sign in.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
 import { randomBytes, randomInt } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -11,11 +10,19 @@ import path from "node:path";
 
 import { chromium } from "playwright";
 
-import { keyRecord, signInWithKey, textOf, waitFor } from "./helpers.mjs";
+import {
+  freePort,
+  keyRecord,
+  signInWithKey,
+  startApi,
+  startPreview,
+  textOf,
+  waitFor,
+} from "./helpers.mjs";
 
 const root = path.resolve(import.meta.dirname, "../../..");
 const artifacts = path.join(root, ".cache/web-pair");
-const ports = { device: 4561, web: 3461 };
+const ports = { device: await freePort(), web: await freePort() };
 const apiUrl = `http://127.0.0.1:${ports.device}`;
 const webUrl = `http://127.0.0.1:${ports.web}`;
 const hostKey = randomBytes(24).toString("base64url");
@@ -32,34 +39,12 @@ await writeFile(
     version: 2,
   })
 );
-const api = spawn("bun", ["apps/web/e2e/api-server.ts"], {
-  cwd: root,
-  env: {
-    ...process.env,
-    ORBIS_DATA_DIR: dataDirectory,
-    ORBIS_FIXTURE_ORIGIN: webUrl,
-    ORBIS_FIXTURE_PORT: String(ports.device),
-  },
-  stdio: "ignore",
+const api = startApi({
+  dataDirectory,
+  origin: webUrl,
+  port: ports.device,
 });
-const web = spawn(
-  "bun",
-  [
-    "x",
-    "vite",
-    "preview",
-    "--host",
-    "127.0.0.1",
-    "--port",
-    String(ports.web),
-    "--strictPort",
-  ],
-  {
-    cwd: path.join(root, "apps/web"),
-    env: { ...process.env, ORBIS_API_URL: apiUrl },
-    stdio: "ignore",
-  }
-);
+const web = startPreview({ apiUrl, port: ports.web });
 
 // Direct calls with no Origin, the way the TV makes them.
 const post = async (pathname, body, key) => {
@@ -91,7 +76,7 @@ const openLink = async (page, fragment) => {
 const spaced = (code) => `${code.slice(0, 3)} ${code.slice(3)}`;
 
 try {
-  await Promise.all([waitFor(`${apiUrl}/health`), waitFor(webUrl)]);
+  await Promise.all([waitFor(`${apiUrl}/health`, api), waitFor(webUrl, web)]);
   await mkdir(artifacts, { recursive: true });
 
   const association = await fetch(
