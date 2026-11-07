@@ -18,6 +18,9 @@ const Value = Schema.Union([
   Schema.Number,
   Schema.Struct({ hex: Schema.String }),
 ]);
+const isNumber = Schema.is(Schema.Number);
+const isString = Schema.is(Schema.String);
+const isBlob = Schema.is(Schema.Struct({ hex: Schema.String }));
 const Table = Schema.Struct({
   columns: Schema.Array(Schema.String),
   name: Schema.String,
@@ -64,18 +67,17 @@ const encodeValue = (value: unknown): typeof Value.Type => {
   }
   return decodeSqlValue(value);
 };
-// oxlint-disable anti-slop/no-runtime-typeof -- These values already passed the SQL value schema.
 const literal = (value: typeof Value.Type): string => {
   if (value === null) {
     return "NULL";
   }
-  if (typeof value === "number") {
+  if (isNumber(value)) {
     if (!Number.isFinite(value)) {
       throw new TypeError("Non-finite SQLite value.");
     }
     return String(value);
   }
-  if (typeof value === "string") {
+  if (isString(value)) {
     return value.includes("\0")
       ? `CAST(X'${[...new TextEncoder().encode(value)].map((byte) => byte.toString(16).padStart(2, "0")).join("")}' AS TEXT)`
       : `'${value.replaceAll("'", "''")}'`;
@@ -86,12 +88,12 @@ const literal = (value: typeof Value.Type): string => {
   return `X'${value.hex}'`;
 };
 const decodeValue = (value: typeof Value.Type) =>
-  typeof value === "object" && value !== null
+  isBlob(value)
     ? Uint8Array.from(value.hex.match(/../gu) ?? [], (byte) =>
         Number.parseInt(byte, 16)
       )
     : value;
-// oxlint-enable anti-slop/no-runtime-typeof
+
 export const inspectDatabase = (db: SqlDatabase): DatabaseDump => {
   const tables = rows(
     db,
