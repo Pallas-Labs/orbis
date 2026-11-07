@@ -1,6 +1,6 @@
 # Project-local Apple skills
 
-Skills-only installation, 2026-09-11. Canonical copies live in `.agents/skills/` for Pi/Codex shared project discovery; four selective relative symlinks in `.claude/skills/` expose the same copies to Claude. `git check-ignore` confirms both locations are ignored, so this note is the durable record.
+Skills-only installation, 2026-09-11. Canonical copies live in `.agents/skills/` for Pi/Codex shared project discovery; the install puts four selective relative symlinks in Claude's project folder `.claude/`, under a skills directory it creates there. Both locations are gitignored, so a fresh checkout holds neither, and this note is the durable record.
 
 Trees are byte-identical to the validated Mana-Margherita installation, not re-fetched from upstream here.
 
