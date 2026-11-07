@@ -116,8 +116,7 @@ export const ShownCode = ({
   readonly label: string;
 }) => {
   const { copy, copyText } = useCopy(code);
-  // oxlint-disable-next-line typescript/no-misused-spread -- sign-in codes are ASCII, so each code point is one character.
-  const characters = [...code];
+  const characters = code.split("");
   const spoken = slotGroups(format)
     .map((indexes) => indexes.map((index) => characters[index]).join(" "))
     .join(", ");

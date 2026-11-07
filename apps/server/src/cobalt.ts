@@ -84,10 +84,7 @@ export class Cobalt extends Context.Service<
   }
 >()("@orbis/Cobalt") {
   static layer(options: CobaltOptions = {}): Layer.Layer<Cobalt> {
-    const fetchFn =
-      options.fetch ??
-      // oxlint-disable-next-line orbis/fetch-needs-timeout -- each caller passes a signal: the Cobalt request's holds COBALT_TIMEOUT_MS, and the tunnel's is the download's own, because a whole download has no fixed length.
-      (async (url, init) => await fetch(url, init));
+    const fetchFn = options.fetch ?? fetch;
     const configured =
       (options.cobaltUrl?.length ?? 0) > 0 &&
       (options.cobaltApiKey?.length ?? 0) > 0;
