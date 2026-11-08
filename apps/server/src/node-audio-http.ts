@@ -11,11 +11,16 @@ import {
 import type { StreamGrantVerdict } from "./stream-grant.js";
 import { checkStreamGrant } from "./stream-grant.js";
 
-const formats = [
-  { contentType: "audio/mp4", extension: "m4a" },
-  { contentType: "audio/mpeg", extension: "mp3" },
-  { contentType: "audio/ogg", extension: "ogg" },
-];
+/** A stored Set's audio file, or null when this Set has no file in that format. */
+const audioFile = async (
+  audioDir: string,
+  id: string,
+  contentType: string,
+  extension: string
+) => {
+  const file = Bun.file(path.join(audioDir, `${id}.${extension}`));
+  return (await file.exists()) ? { contentType, extension, file } : null;
+};
 
 type AudioRange =
   | { readonly kind: "full" }
@@ -93,15 +98,12 @@ const serveAudio = async (
     return Response.json({ message: "Invalid stream grant." }, { status: 401 });
   }
   record({ person: verdict.personId });
-  // oxlint-disable-next-line orbis/bounded-concurrency -- opens one file for each audio format Orbis stores, at most three.
-  const files = await Promise.all(
-    formats.map(async (format) => {
-      const file = Bun.file(
-        path.join(options.audioDir, `${id}.${format.extension}`)
-      );
-      return (await file.exists()) ? { ...format, file } : null;
-    })
-  );
+  // The three audio formats Orbis stores, each named at the call so the count is visible.
+  const files = await Promise.all([
+    audioFile(options.audioDir, id, "audio/mp4", "m4a"),
+    audioFile(options.audioDir, id, "audio/mpeg", "mp3"),
+    audioFile(options.audioDir, id, "audio/ogg", "ogg"),
+  ]);
   const ready = files.find((file) => file !== null);
   if (!ready) {
     record({ file: "missing" });
