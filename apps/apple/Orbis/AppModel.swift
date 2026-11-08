@@ -1062,8 +1062,12 @@ final class AppModel {
   /// Asks for Apple Music access before an Apple Music Set plays, until the answer is yes. A Set
   /// with Retained Audio needs none.
   private func mayPlay(_ id: String) async -> Bool {
-    guard (savedSet(id) ?? visitedSets[id])?.source == .appleMusic, appleMusicAccess != .allowed
-    else { return true }
+    guard let set = savedSet(id) ?? visitedSets[id] else { return true }
+    return await mayPlay(set)
+  }
+
+  private func mayPlay(_ set: SavedSet) async -> Bool {
+    guard set.source == .appleMusic, appleMusicAccess != .allowed else { return true }
     appleMusicAccess = await appleMusicAuthorization.request()
     return appleMusicAccess == .allowed
   }
@@ -1470,10 +1474,11 @@ final class AppModel {
     }
   }
 
-  /// Replaces the queue with a Playlist's playable members, in Playlist order, and starts the
-  /// first of them. A Playlist with no playable member leaves the queue empty, which stops
-  /// playback: the queue no longer holds the Set that was playing.
-  func playPlaylist(_ id: String) async {
+  /// Replaces the queue with a Playlist's playable members, in Playlist order or shuffled, and
+  /// starts the first of them. Nothing from the old queue stays. A Playlist with no playable
+  /// member leaves the queue empty, which stops playback: the queue no longer holds the Set that
+  /// was playing.
+  func playPlaylist(_ id: String, shuffled: Bool = false) async {
     guard let client else { return }
     queueNotice = nil
     recordPendingActivation(.superseded)
@@ -1489,7 +1494,7 @@ final class AppModel {
       guard let self, generation == self.playGeneration, self.client?.token == client.token else {
         throw CancellationError()
       }
-      return try await client.playPlaylist(id)
+      return try await client.playPlaylist(id, shuffled: shuffled)
     }
     let revision = queueMutationGeneration
     defer {
@@ -1513,6 +1518,15 @@ final class AppModel {
       recordPendingActivation(.accepted)
       let wantsSound = pendingActivation?.wantsSound ?? false
       pendingActivation = nil
+      // Which Set comes first is known only now, after a shuffle, so an Apple Music Set asks for
+      // access here, as it does when played by itself. Refused, the queue stays and nothing plays.
+      if let active = loaded.active, !(await mayPlay(active)) {
+        guard generation == playGeneration else { return }
+        audioPlayer.stop()
+        stopReportingPosition()
+        return
+      }
+      guard generation == playGeneration else { return }
       playActiveEntry(of: loaded, from: client, autoplay: wantsSound)
     } catch is CancellationError {
       if generation == playGeneration { recordPendingActivation(.cancelled) }
@@ -2417,40 +2431,6 @@ final class AppModel {
           group.addTask { (next, try? await client.tracklist(next)) }
         }
       }
-    }
-  }
-
-  /// Plays a Playlist's playable members in a random order: the first starts now and the rest
-  /// follow it in the queue.
-  ///
-  /// The service has no route that queues many Sets at once, and each one goes to the end, so the
-  /// requests run one after another to keep the shuffled order. The queue is published once, from
-  /// the last answer, rather than redrawn for every Set.
-  func shufflePlaylist(_ id: String) async {
-    guard let client, case .loaded(let members) = playlistMembers else { return }
-    let order = members.filter(\.isPlayable).shuffled()
-    guard let first = order.first else { return }
-    await playSet(first.id)
-    guard audioPlayer.currentSetId == first.id, pendingActivation == nil else { return }
-    let generation = playGeneration
-    var queued: ListeningQueue?
-    do {
-      for set in order.dropFirst() {
-        // Another play, or signing out, replaced this shuffle.
-        guard generation == playGeneration else { return }
-        let request = enqueueQueueMutation { try await client.queueSet(set.id, placement: .end) }
-        queued = try await request.value
-      }
-    } catch OrbisError.cancelled {
-    } catch let error as OrbisError {
-      guard generation == playGeneration else { return }
-      setFailure = error.failure(at: client.address)
-    } catch {
-      guard generation == playGeneration else { return }
-      setFailure = OrbisError.unreachable.failure(at: client.address)
-    }
-    if let queued, generation == playGeneration {
-      queue = .loaded(queued)
     }
   }
 

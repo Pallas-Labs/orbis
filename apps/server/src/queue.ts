@@ -1,8 +1,12 @@
-import type { ListeningQueue, QueuePlacement } from "@orbis/contracts";
+import type {
+  ListeningQueue,
+  PlaylistOrder,
+  QueuePlacement,
+} from "@orbis/contracts";
 import { isPlayableSet } from "@orbis/contracts";
 import { and, asc, eq } from "drizzle-orm";
 import type { Stream } from "effect";
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer, Random } from "effect";
 
 import { insertBatches } from "./db/batches.js";
 import { playlistSets, playlists, queueEntries } from "./db/schema.js";
@@ -77,9 +81,11 @@ export class Queue extends Context.Service<
       id: string,
       placement: QueuePlacement
     ) => Effect.Effect<ListeningQueue, LibraryError>;
+    /** Replaces the whole queue with a Playlist's playable members and starts the first. */
     readonly replaceWithPlaylist: (
       playlistId: string,
-      creatorId?: string
+      creatorId?: string,
+      order?: PlaylistOrder
     ) => Effect.Effect<ListeningQueue, LibraryError>;
     /** Removes the finished Set, resets its position, and starts what followed it. */
     readonly complete: (
@@ -208,7 +214,11 @@ export class Queue extends Context.Service<
     );
 
     const replaceWithPlaylist = Effect.fn("Queue.replaceWithPlaylist")(
-      (playlistId: string, creatorId: string = personId) =>
+      (
+        playlistId: string,
+        creatorId: string = personId,
+        playlistOrder: PlaylistOrder = "playlist"
+      ) =>
         Effect.gen(function* replaceQueueFromPlaylist() {
           const [playlist] = yield* execute(
             db
@@ -242,14 +252,15 @@ export class Queue extends Context.Service<
           );
           const rows = yield* execute(order());
           const previousActive = activeIn(rows);
-          const playableMembers = members.filter(isPlayableSet);
-          const activeSetId = playableMembers[0]?.id ?? null;
-          yield* execute(
-            writeQueue(
-              playableMembers.map((set) => set.id),
-              activeSetId
-            )
-          );
+          const playableIds = members
+            .filter(isPlayableSet)
+            .map((set) => set.id);
+          const ids =
+            playlistOrder === "shuffled"
+              ? yield* Random.shuffle(playableIds)
+              : playableIds;
+          const activeSetId = ids[0] ?? null;
+          yield* execute(writeQueue(ids, activeSetId));
           if (activeSetId !== null && activeSetId !== previousActive) {
             yield* stats.recordListen(activeSetId);
           }

@@ -392,8 +392,16 @@ struct QueueEntryRequest: Encodable {
   let setId: String
 }
 
+/// The order a Playlist plays in. `shuffled` is random; `playlist` keeps the Playlist's own order.
+enum PlaylistOrder: String, Encodable {
+  case playlist
+  case shuffled
+}
+
+/// `order` left out keeps Playlist order, which is what a service from before shuffle reads.
 struct PlaylistQueueRequest: Encodable {
   let playlistId: String
+  let order: PlaylistOrder?
 }
 
 /// A Playback Position in whole seconds. The service bounds it to the Set's own length.

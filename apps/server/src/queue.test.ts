@@ -9,6 +9,8 @@
 //   playback.
 // - A Set without Retained Audio enters the queue, or its refusal changes the
 //   queue.
+// - Shuffling a Playlist keeps Sets from the old queue, drops a playable
+//   member, or starts something other than the first entry it shows.
 // - Completion leaves the finished Set in the queue, keeps its Playback
 //   Position, or does not start the next Set.
 // - The queue loses its order or its active Set across a restart.
@@ -22,7 +24,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { createTestApp as createApp } from "./test-app.js";
-import { request, statusLine, transcript } from "./test-http.js";
+import {
+  request,
+  runTimesInOrder,
+  statusLine,
+  transcript,
+} from "./test-http.js";
 import {
   addToQueue,
   complete,
@@ -223,6 +230,52 @@ test("playing a Playlist replaces the queue in Playlist order, with its playable
       const queue = queueIn(replaced);
       expect(queue.entries.map((entry) => entry.id)).toEqual(["c", "a", "b"]);
       expect(queue.activeSetId).toBe("c");
+    }
+  );
+});
+
+test("shuffling a Playlist replaces the whole queue with its playable members in a random order", async () => {
+  await withSeededApp(
+    [
+      ...ready(["a", "b", "c", "e", "f", "g", "x", "y"]),
+      { downloadState: "none", id: "d" },
+    ],
+    async (app) => {
+      const created = await request(app, {
+        method: "POST",
+        payload: { name: "Late sets" },
+        url: "/playlists",
+      });
+      const { id: playlistId } = created.json();
+      await request(app, {
+        method: "PUT",
+        payload: { setIds: ["a", "b", "c", "d", "e", "f", "g"] },
+        url: `/playlists/${playlistId}/sets`,
+      });
+      // A queue from before the shuffle, holding Sets outside the Playlist and one inside it.
+      await play(app, "x");
+      await addToQueue(app, "y");
+      await addToQueue(app, "c");
+
+      const orders = new Set<string>();
+      // Each shuffle replaces the same queue, so they run one at a time.
+      await runTimesInOrder(8, async () => {
+        const shuffled = await request(app, {
+          method: "PUT",
+          payload: { order: "shuffled", playlistId },
+          url: "/queue/playlist",
+        });
+        expect(shuffled.statusCode).toBe(200);
+        const queue = queueIn(shuffled);
+        const ids = queue.entries.map((entry) => entry.id);
+        expect(ids).toHaveLength(6);
+        expect(new Set(ids)).toEqual(new Set(["a", "b", "c", "e", "f", "g"]));
+        expect(queue.activeSetId).toBe(ids[0] ?? null);
+        expect(await order(app)).toEqual(ids);
+        orders.add(ids.join(" "));
+      });
+      // Six members have 720 orders; eight shuffles that all agree would mean no shuffle.
+      expect(orders.size).toBeGreaterThan(1);
     }
   );
 });

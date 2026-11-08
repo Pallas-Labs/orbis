@@ -1624,7 +1624,8 @@ export const createPortableApp = (options: {
                 return {
                   queue: yield* queue.replaceWithPlaylist(
                     input.playlistId,
-                    creatorId
+                    creatorId,
+                    input.order
                   ),
                 };
               }).pipe(

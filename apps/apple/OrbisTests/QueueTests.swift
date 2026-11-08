@@ -42,6 +42,32 @@ final class QueueTests: XCTestCase {
     return "{\"queue\":{\"activeSetId\":\(activeJson),\"entries\":[\(entries.joined(separator: ","))]}}"
   }
 
+  private nonisolated static func appleMusicSet(id: String) -> String {
+    """
+    {"id":"\(id)","url":"https://music.apple.com/album/1440818839","title":"Set \(id)",
+    "source":"apple-music","tags":[],"createdAt":"2026-01-01T00:00:00.000Z","creator":null,
+    "artworkUrl":null,"durationSeconds":5400,"metadataState":"enriched",
+    "downloadState":"none","playlistIds":[],"playbackPositionSeconds":0,
+    "listenCount":0,"finishCount":0,"lastListenedAt":null}
+    """
+  }
+
+  /// How many times the model asked for Apple Music access, and the answer it gives.
+  final class AccessRequests: @unchecked Sendable {
+    private let lock = NSLock()
+    private var asked = 0
+    var count: Int { lock.withLock { asked } }
+
+    func authorization(answer: AppleMusicAccess) -> AppleMusicAuthorization {
+      AppleMusicAuthorization(
+        current: { .unknown },
+        request: {
+          self.lock.withLock { self.asked += 1 }
+          return answer
+        })
+    }
+  }
+
   /// The JSON a request carried, as fields, because `JSONEncoder` decides the order of keys and a
   /// test that compares raw text is testing the encoder rather than the request.
   private func body(_ data: Data?) -> [String: String] {
@@ -145,6 +171,68 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(StubProtocol.lastRequest?.url?.path(), "/queue/playlist")
     XCTAssertEqual(body(StubProtocol.lastBody), ["playlistId": "closing"])
     XCTAssertEqual(queue(model)?.entries.map(\.id), ["a", "b"])
+  }
+
+  /// Shuffle asks the service for the whole Playlist in a random order in one request. Queueing
+  /// the members one at a time behind `PUT /queue/active` kept the old queue around them.
+  func testShufflingAPlaylistReplacesTheQueueInOneRequest() async throws {
+    let log = RequestLog()
+    let model = try model(log: log) { request in
+      if request.url?.path() == "/queue/playlist" {
+        return (
+          200,
+          Self.queueBody(active: "c", entries: [Self.set(id: "c"), Self.set(id: "a"), Self.set(id: "b")])
+        )
+      }
+      return (200, "{}")
+    }
+
+    await model.playPlaylist("closing", shuffled: true)
+
+    XCTAssertEqual(log.all.filter { $0.contains("/queue") }, ["PUT /queue/playlist"])
+    XCTAssertEqual(body(StubProtocol.lastBody), ["order": "shuffled", "playlistId": "closing"])
+    XCTAssertEqual(queue(model)?.activeSetId, "c")
+    XCTAssertEqual(queue(model)?.entries.map(\.id), ["c", "a", "b"])
+  }
+
+  /// A shuffle whose first Set is from Apple Music asks for access before that Set starts, as
+  /// playing the Set by itself does. Refused, the queue is the Playlist's and nothing plays.
+  func testShufflingIntoAnAppleMusicSetAsksForAccessFirst() async throws {
+    let model = try model { request in
+      if request.url?.path() == "/queue/playlist" {
+        return (
+          200,
+          Self.queueBody(active: "am", entries: [Self.appleMusicSet(id: "am"), Self.set(id: "b")])
+        )
+      }
+      return (200, "{}")
+    }
+    let requests = AccessRequests()
+    model.appleMusicAuthorization = requests.authorization(answer: .refused)
+
+    await model.playPlaylist("closing", shuffled: true)
+
+    XCTAssertEqual(requests.count, 1)
+    XCTAssertEqual(model.appleMusicAccess, .refused)
+    XCTAssertEqual(queue(model)?.entries.map(\.id), ["am", "b"])
+    XCTAssertNil(model.audioPlayer.currentSetId)
+  }
+
+  /// A Set with Retained Audio at the front needs no Apple Music access, so nothing asks.
+  func testShufflingIntoASetWithRetainedAudioAsksNothing() async throws {
+    let model = try model { request in
+      if request.url?.path() == "/queue/playlist" {
+        return (200, Self.queueBody(active: "a", entries: [Self.set(id: "a"), Self.appleMusicSet(id: "am")]))
+      }
+      return (200, "{}")
+    }
+    let requests = AccessRequests()
+    model.appleMusicAuthorization = requests.authorization(answer: .refused)
+
+    await model.playPlaylist("closing", shuffled: true)
+
+    XCTAssertEqual(requests.count, 0)
+    XCTAssertEqual(model.audioPlayer.currentSetId, "a")
   }
 
   func testAPlaylistWithNothingPlayableStopsPlayback() async throws {
