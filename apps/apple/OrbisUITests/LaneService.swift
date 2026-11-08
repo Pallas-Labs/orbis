@@ -78,6 +78,14 @@ struct LaneService {
     let name: String
   }
 
+  /// The Listening Queue: the Set ids in play order, and the one playing now.
+  struct Queue: Decodable {
+    let activeSetId: String?
+    let entries: [Set]
+    var ids: [String] { entries.map(\.id) }
+  }
+
+  private struct QueueResponse: Decodable { let queue: Queue }
   private struct Sets: Decodable { let sets: [Set] }
   private struct Playlists: Decodable { let playlists: [Playlist] }
 
@@ -181,6 +189,24 @@ struct LaneService {
   func members(of playlistId: String) throws -> [Set] {
     let response: Sets = try send("GET", "sets?playlistId=\(playlistId)", nil)
     return response.sets
+  }
+
+  func queue() throws -> Queue {
+    let response: QueueResponse = try send("GET", "queue", nil)
+    return response.queue
+  }
+
+  /// Makes a Set the active one, as tapping Play does.
+  @discardableResult
+  func play(_ id: String) throws -> Queue {
+    let response: QueueResponse = try send("PUT", "queue/active", ["setId": id])
+    return response.queue
+  }
+
+  @discardableResult
+  func addToQueue(_ id: String) throws -> Queue {
+    let response: QueueResponse = try send("POST", "queue/entries", ["placement": "end", "setId": id])
+    return response.queue
   }
 
   func library() throws -> [Set] {

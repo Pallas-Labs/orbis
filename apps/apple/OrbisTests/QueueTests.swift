@@ -147,6 +147,28 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(queue(model)?.entries.map(\.id), ["a", "b"])
   }
 
+  /// Shuffle asks the service for the whole Playlist in a random order in one request. Queueing
+  /// the members one at a time behind `PUT /queue/active` kept the old queue around them.
+  func testShufflingAPlaylistReplacesTheQueueInOneRequest() async throws {
+    let log = RequestLog()
+    let model = try model(log: log) { request in
+      if request.url?.path() == "/queue/playlist" {
+        return (
+          200,
+          Self.queueBody(active: "c", entries: [Self.set(id: "c"), Self.set(id: "a"), Self.set(id: "b")])
+        )
+      }
+      return (200, "{}")
+    }
+
+    await model.playPlaylist("closing", shuffled: true)
+
+    XCTAssertEqual(log.all.filter { $0.contains("/queue") }, ["PUT /queue/playlist"])
+    XCTAssertEqual(body(StubProtocol.lastBody), ["order": "shuffled", "playlistId": "closing"])
+    XCTAssertEqual(queue(model)?.activeSetId, "c")
+    XCTAssertEqual(queue(model)?.entries.map(\.id), ["c", "a", "b"])
+  }
+
   func testAPlaylistWithNothingPlayableStopsPlayback() async throws {
     let model = try model { request in
       if request.url?.path() == "/queue/playlist" {

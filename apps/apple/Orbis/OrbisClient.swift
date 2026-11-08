@@ -740,9 +740,10 @@ struct OrbisClient: Sendable {
     return try decodedQueue(response)
   }
 
-  /// Replaces the queue with a Playlist's playable members, in Playlist order.
-  func playPlaylist(_ playlistId: String) async throws -> ListeningQueue {
-    let body = try Self.encoder.encode(PlaylistQueueRequest(playlistId: playlistId))
+  /// Replaces the whole queue with a Playlist's playable members, in Playlist order or shuffled.
+  func playPlaylist(_ playlistId: String, shuffled: Bool = false) async throws -> ListeningQueue {
+    let body = try Self.encoder.encode(
+      PlaylistQueueRequest(playlistId: playlistId, order: shuffled ? .shuffled : nil))
     let response = try await send(path: "queue/playlist", method: "PUT", body: body)
     return try decodedQueue(response)
   }

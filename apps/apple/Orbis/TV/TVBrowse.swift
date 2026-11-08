@@ -526,13 +526,7 @@
     private func startPlayback() {
       let order = pendingPlay
       pendingPlay = nil
-      Task {
-        if order == .shuffled {
-          await model.shufflePlaylist(playlistId)
-        } else {
-          await model.playPlaylist(playlistId)
-        }
-      }
+      Task { await model.playPlaylist(playlistId, shuffled: order == .shuffled) }
     }
   }
 

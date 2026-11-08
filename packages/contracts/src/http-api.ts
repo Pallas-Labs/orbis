@@ -247,7 +247,13 @@ export const QueueEntryPayload = Schema.Struct({
   placement: Schema.Literals(["next", "end"]),
   setId: QueueSetId,
 });
-export const QueuePlaylistPayload = Schema.Struct({ playlistId: QueueSetId });
+/**
+ * `shuffled` puts the playable members in a random order; without it they keep Playlist order.
+ */
+export const QueuePlaylistPayload = Schema.Struct({
+  order: Schema.optionalKey(Schema.Literals(["playlist", "shuffled"])),
+  playlistId: QueueSetId,
+});
 export const PositionPayload = Schema.Struct({
   seconds: Schema.Number.check(
     Schema.isGreaterThanOrEqualTo(0),

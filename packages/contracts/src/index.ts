@@ -13,6 +13,7 @@ import type {
   PresenceSchema,
   PresenceSessionSchema,
   QueueEntryPayload,
+  QueuePlaylistPayload,
   SaveSetPayload,
   SavedSetSchema,
   SharedSetSchema,
@@ -67,6 +68,9 @@ export type ListeningQueue = typeof ListeningQueueSchema.Type;
 
 /** Where a queued Set goes. `next` starts after the active Set; `end` goes last. */
 export type QueuePlacement = (typeof QueueEntryPayload.Type)["placement"];
+export type PlaylistOrder = NonNullable<
+  (typeof QueuePlaylistPayload.Type)["order"]
+>;
 
 export {
   normalizeSourceUrl,

@@ -464,13 +464,7 @@ struct PlaylistDetailView: View {
   private func startPlayback() {
     let order = pendingPlay
     pendingPlay = nil
-    Task {
-      if order == .shuffled {
-        await model.shufflePlaylist(playlist.id)
-      } else {
-        await model.playPlaylist(playlist.id)
-      }
-    }
+    Task { await model.playPlaylist(playlist.id, shuffled: order == .shuffled) }
   }
 
   /// The Playlist, large: its Sets' artwork fanned out, its name and length, and the two ways to

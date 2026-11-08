@@ -251,6 +251,94 @@ final class TVJourney: XCTestCase {
       "tv-apple-music-journey", ["setId": seeded.id, "askedForAccess": asked, "note": note.label])
   }
 
+  /// Shuffle on a Playlist replaces the whole queue (PAL-1792). The Person starts with a queue of
+  /// two Sets outside the Playlist and one inside it; after Shuffle, Up Next must hold the
+  /// Playlist's Sets and nothing else, with the first one playing, in the order the service plays
+  /// them. The capture is taken before the checks, so a failed run still shows what was queued.
+  func testShufflingAPlaylistQueuesExactlyThatPlaylist() throws {
+    // The lane's second Person, so the host's Library, which the first journey reads, stays as
+    // seeded.
+    let service = try LaneService.settingsPerson()
+    let members = try (1...4).map {
+      try service.saveReadySet(
+        title: "Shuffle member \($0)", url: "https://www.youtube.com/watch?v=shufflemix\($0)")
+    }
+    let outsiders = try (1...2).map {
+      try service.saveReadySet(
+        title: "Queued before \($0)", url: "https://www.youtube.com/watch?v=queuedbfor\($0)")
+    }
+    let playlist = try service.createPlaylist(named: "Shuffle night")
+    try service.setMembers(of: playlist.id, to: members.map(\.id))
+    addTeardownBlock {
+      try? service.deletePlaylist(playlist.id)
+      for set in members + outsiders { _ = try? service.removeSet(set.id) }
+    }
+    try service.play(outsiders[0].id)
+    try service.addToQueue(outsiders[1].id)
+    let before = try service.addToQueue(members[2].id)
+    let memberIds = Set(members.map(\.id))
+
+    let app = launchOrbis(address: service.address, token: service.token)
+    self.app = app
+    let remote = XCUIRemote.shared
+    XCTAssertTrue(app.descendants(matching: .any)["tv-home"].waitForExistence(timeout: 30))
+    remote.press(.right)
+    remote.press(.right)
+    XCTAssertTrue(app.descendants(matching: .any)["tv-playlists"].waitForExistence(timeout: 15))
+    let folder = app.buttons["tv-playlist-\(playlist.id)"]
+    XCTAssertTrue(folder.waitForExistence(timeout: 30), "Playlists must show the seeded folder")
+    XCTAssertTrue(moveFocus(to: folder, pressing: .down, limit: 4), "The folder must take focus")
+    remote.press(.select)
+
+    XCTAssertTrue(app.descendants(matching: .any)["tv-playlist-page"].waitForExistence(timeout: 15))
+    let shuffle = app.buttons["playlist-shuffle"]
+    XCTAssertTrue(shuffle.waitForExistence(timeout: 15))
+    XCTAssertTrue(waitUntil(timeout: 30) { shuffle.isEnabled }, "Shuffle waits for the members")
+    XCTAssertTrue(moveFocus(to: shuffle, pressing: .right, limit: 3), "Shuffle must take focus")
+    capture("tv-playlist-before-shuffle")
+    remote.press(.select)
+    let replace = app.buttons["Replace the queue"]
+    if replace.waitForExistence(timeout: 3) {
+      XCTAssertTrue(moveFocus(to: replace, pressing: .up, limit: 3))
+      remote.press(.select)
+    }
+    XCTAssertTrue(
+      waitUntil(timeout: 20) { (try? service.queue()).map { Set($0.ids) == memberIds } ?? false },
+      "The service's queue must become the Playlist's Sets")
+
+    let nowPlayingTab = app.tabBars.buttons["Now Playing"]
+    XCTAssertTrue(nowPlayingTab.waitForExistence(timeout: 20))
+    XCTAssertTrue(pressUntil(.up, limit: 6) { app.tabBars.buttons.allElementsBoundByIndex.contains { $0.hasFocus } })
+    XCTAssertTrue(pressUntil(.right, limit: 6) { nowPlayingTab.hasFocus }, "The bar must reach Now Playing")
+    XCTAssertTrue(app.descendants(matching: .any)["now-playing"].waitForExistence(timeout: 15))
+    let upNext = app.buttons["now-playing-queue"]
+    XCTAssertTrue(upNext.waitForExistence(timeout: 15))
+    remote.press(.down)
+    XCTAssertTrue(
+      moveFocus(to: upNext, pressing: .right, limit: 8) || moveFocus(to: upNext, pressing: .left, limit: 10),
+      "Up Next must take focus")
+    remote.press(.select)
+    XCTAssertTrue(app.descendants(matching: .any)["queue-screen"].waitForExistence(timeout: 15))
+    let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'queue-entry-'"))
+    XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 15))
+    XCTAssertTrue(waitUntilSettled(rows.firstMatch), "Up Next must come to rest")
+    capture("tv-queue-after-shuffle")
+
+    let onScreen = rows.allElementsBoundByIndex
+      .sorted { $0.frame.minY < $1.frame.minY }
+      .map { String($0.identifier.dropFirst("queue-entry-".count)) }
+    let after = try service.queue()
+    try record(
+      "tv-queue-after-shuffle",
+      [
+        "playlist": members.map(\.id), "queueBefore": before.ids, "queueAfter": after.ids,
+        "activeAfter": after.activeSetId ?? "", "upNextOnScreen": onScreen,
+      ])
+    XCTAssertEqual(Set(after.ids), memberIds, "The queue holds the Playlist's Sets and nothing else")
+    XCTAssertEqual(after.activeSetId, after.ids.first, "The first shuffled Set plays")
+    XCTAssertEqual(onScreen, after.ids, "Up Next shows the queue the service plays, in order")
+  }
+
   private func labelled(_ element: XCUIElement, _ label: String) -> XCTNSPredicateExpectation {
     XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", label), object: element)
   }
