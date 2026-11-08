@@ -1062,8 +1062,12 @@ final class AppModel {
   /// Asks for Apple Music access before an Apple Music Set plays, until the answer is yes. A Set
   /// with Retained Audio needs none.
   private func mayPlay(_ id: String) async -> Bool {
-    guard (savedSet(id) ?? visitedSets[id])?.source == .appleMusic, appleMusicAccess != .allowed
-    else { return true }
+    guard let set = savedSet(id) ?? visitedSets[id] else { return true }
+    return await mayPlay(set)
+  }
+
+  private func mayPlay(_ set: SavedSet) async -> Bool {
+    guard set.source == .appleMusic, appleMusicAccess != .allowed else { return true }
     appleMusicAccess = await appleMusicAuthorization.request()
     return appleMusicAccess == .allowed
   }
@@ -1514,6 +1518,15 @@ final class AppModel {
       recordPendingActivation(.accepted)
       let wantsSound = pendingActivation?.wantsSound ?? false
       pendingActivation = nil
+      // Which Set comes first is known only now, after a shuffle, so an Apple Music Set asks for
+      // access here, as it does when played by itself. Refused, the queue stays and nothing plays.
+      if let active = loaded.active, !(await mayPlay(active)) {
+        guard generation == playGeneration else { return }
+        audioPlayer.stop()
+        stopReportingPosition()
+        return
+      }
+      guard generation == playGeneration else { return }
       playActiveEntry(of: loaded, from: client, autoplay: wantsSound)
     } catch is CancellationError {
       if generation == playGeneration { recordPendingActivation(.cancelled) }
