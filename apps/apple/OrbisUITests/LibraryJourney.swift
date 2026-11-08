@@ -104,12 +104,18 @@ class LibraryJourney: XCTestCase {
       while Date() < deadline {
         if app.navigationBars[name].exists { return }
         let frame = tab.frame
-        guard frame.width > 40, frame.minY > 600 else {
+        let window = app.windows.firstMatch.frame
+        guard frame.width > 40 else {
           usleep(200_000)
           continue
         }
+        // A bar along the bottom takes the tap near its top edge; a bar down the side, as an
+        // iPhone Duo draws it, takes it at the button's centre.
+        let isBottomBar = frame.minY > window.height / 2
         app.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
-          .withOffset(CGVector(dx: frame.midX, dy: frame.minY + 18))
+          .withOffset(
+            CGVector(dx: frame.midX, dy: isBottomBar ? frame.minY + 18 : frame.midY)
+          )
           .tap()
         if app.navigationBars[name].waitForExistence(timeout: 2) { return }
       }

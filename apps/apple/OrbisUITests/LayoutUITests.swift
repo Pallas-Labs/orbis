@@ -29,7 +29,8 @@ final class LayoutUITests: LibraryJourney {
       XCTWaiter.wait(for: [elapsed(on: detailSeek) { $0 > 0 }], timeout: 8), .completed)
     capture("layout-set-page")
 
-    app.navigationBars.buttons.firstMatch.tap()
+    // Another tab, not Back: where the bars sit, and so where Back is, depends on the pose.
+    selectTab("Home", in: app, sidebarIdentifier: "sidebar-home")
     let openNowPlaying = app.buttons.matching(
       NSPredicate(
         format: "identifier == %@ AND label == %@", "mini-player", "Now playing, \(seeded.title)")
@@ -63,7 +64,8 @@ final class LayoutUITests: LibraryJourney {
       XCTAssertTrue(sheet.waitForNonExistence(timeout: 10))
     }
     app.buttons["now-playing-close"].tap()
-    XCTAssertTrue(title.waitForNonExistence(timeout: 10))
+    // The player stays built while the Set plays, folded into the mini player.
+    XCTAssertTrue(openNowPlaying.waitForExistence(timeout: 10))
 
     selectTab("Playlists", in: app, sidebarIdentifier: "sidebar-playlists")
     capture("layout-playlists")
