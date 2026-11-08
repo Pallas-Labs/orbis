@@ -48,13 +48,14 @@ import SwiftUI
     @State private var pull: CGFloat = 0
     /// The window's bounds, which the player fills when open.
     @State private var screen = CGRect.zero
+    /// Changes when the window changes size mid-move, which ends the move where it was going,
+    /// without animation: the frames it set out between are gone.
+    @State private var moveGeneration = 0
     @Namespace private var namespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// A drag past this, or a flick that would carry past twice it, closes the player.
     private static let closingPull: CGFloat = 140
-    /// The player's corners while it moves or is pulled, close to the display's own.
-    private static let screenRadius: CGFloat = 55
     private static let thumbID = "mini-player-thumb"
 
     private var animation: Animation? {
@@ -94,6 +95,8 @@ import SwiftUI
             .opacity(isMoving ? 1 : 0)
         }
       }
+      // A new identity drops the move's animations, so a resize mid-move lands at once.
+      .id(moveGeneration)
       .offset(y: pull)
       .gesture(pullDown, isEnabled: isExpanded && !isMoving)
       .allowsHitTesting(isExpanded || isMoving)
@@ -105,12 +108,17 @@ import SwiftUI
         if isPresented, !isExpanded { expand() }
         if !isPresented, isExpanded { collapse() }
       }
+      .onChange(of: screen.size) { landMove() }
     }
 
-    /// Square at rest, where the display rounds the corners itself.
-    private var radius: CGFloat {
-      guard isExpanded else { return barFrame.height / 2 }
-      return isMoving || pull > 0 ? Self.screenRadius : 0
+    /// Ends a move at its target without animation, when the window changes size under it, as
+    /// opening or closing an iPhone Duo does.
+    private func landMove() {
+      guard isMoving else { return }
+      isMoving = false
+      pull = 0
+      moveGeneration += 1
+      if !isExpanded { isPresented = false }
     }
 
     /// Now Playing, laid out once at full size and only moved and clipped while it grows, so no
@@ -137,9 +145,15 @@ import SwiftUI
         GeometryReader { proxy in
           let origin = proxy.frame(in: .global).origin
           let window = isExpanded ? screen : barFrame
-          RoundedRectangle(cornerRadius: radius)
-            .frame(width: window.width, height: window.height)
-            .offset(x: window.minX - origin.x, y: window.minY - origin.y)
+          // Concentric with the display's own corners, whatever the display: in the bar the
+          // corners are the capsule's, and over the window they are the display's.
+          // `position`, not `offset`, so the shape is laid out where it is drawn and measures
+          // its corners from there.
+          ConcentricRectangle(
+            corners: .concentric(minimum: .fixed(barFrame.height / 2)), isUniform: true
+          )
+          .frame(width: window.width, height: window.height)
+          .position(x: window.midX - origin.x, y: window.midY - origin.y)
         }
       }
     }

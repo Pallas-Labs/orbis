@@ -130,7 +130,7 @@ struct PlaylistsDestination: View {
         Text("Your sets, sorted for the moment.")
           .font(.orbis.detail)
           .foregroundStyle(.secondary)
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 14)], spacing: 22) {
+        CardGrid(spacing: 22) {
           ForEach(items) { playlist in
             Button {
               model.openPlaylist(playlist.id)

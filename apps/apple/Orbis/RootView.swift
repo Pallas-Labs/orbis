@@ -2,54 +2,90 @@ import OrbisDesign
 import SwiftUI
 
 #if os(iOS)
-  /// iPhone. Library is a tab; Search takes the search role, so the system draws it as the
-  /// separate button beside the tab bar and opens the field in its place. Now playing rides the
-  /// tab bar as its bottom accessory, the way a music app carries it, and the bar recedes as the
-  /// list scrolls.
-  struct CompactShell: View {
+  /// iPhone and iPad, at every width. One tab view in the adaptable style: tabs along the bottom
+  /// where the window is narrow, and a sidebar with the Playlists under the destinations where it
+  /// is wide, such as an iPad or an unfolded iPhone Duo. The tree is the same at every width, so a
+  /// fold or a resize keeps each tab's stack, the open player and every scroll position.
+  ///
+  /// Search is a tab like the others, as in Apple Music. The search role would split it off into
+  /// a circle that turns into a field, and the field belongs at the top of Search. Now playing
+  /// rides the tab view as its bottom accessory, the way a music app carries it, and the bar
+  /// recedes as the list scrolls.
+  struct TabShell: View {
     @Bindable var model: AppModel
 
+    private enum Selection: Hashable {
+      case destination(Destination)
+      case playlist(String)
+    }
+
     /// A tap on the tab already open takes it back to its first page, and on Search asks for the
-    /// field too, as a second tap does in Apple Music.
-    private var tabSelection: Binding<Destination> {
+    /// field too, as a second tap does in Apple Music. A Playlist in the sidebar opens on the
+    /// Playlists tab, so the selection always reads as a destination and the Playlists tab keeps
+    /// one stack.
+    private var tabSelection: Binding<Selection> {
       Binding(
-        get: { model.destination },
+        get: { .destination(model.destination) },
         set: { next in
-          if next == model.destination {
-            model.returnToRoot()
-            if next == .search { model.searchFocusRequests += 1 }
+          switch next {
+          case .destination(let destination):
+            if destination == model.destination {
+              model.returnToRoot()
+              if destination == .search { model.searchFocusRequests += 1 }
+            }
+            model.destination = destination
+          case .playlist(let id):
+            model.showPlaylist(id)
           }
-          model.destination = next
         })
     }
-    /// Now Playing covers the whole shell, so it opens the same from any tab.
-    @State private var isNowPlayingShown = false
     /// Where the mini player sits in the window, which Now Playing grows out of.
     @State private var miniPlayerFrame: CGRect = .zero
     /// The mini player, following `showsMiniPlayer` once a page has finished zooming in or out:
     /// the bar leaving or arriving mid-zoom moves the tab bar under the page as it lands.
     @State private var showsAccessory = false
     @State private var pageMoved: ContinuousClock.Instant?
+    /// True when the window is wide and lies on its side, where a grid of cards takes an even
+    /// count of columns so the middle gap, not a card, meets the fold.
+    @State private var prefersEvenColumns = false
+    @Environment(\.horizontalSizeClass) private var sizeClass
     /// About as long as the zoom into a Set's page.
     private static let pageZoom: Duration = .milliseconds(450)
 
     var body: some View {
       TabView(selection: tabSelection) {
-        // Search is a tab like the others, as in Apple Music. The search role would split it
-        // off into a circle that turns into a field, and the field belongs at the top of Search.
         ForEach([Destination.home, .library, .playlists, .people, .search]) { destination in
-          Tab(destination.rawValue, systemImage: destination.symbol, value: destination) {
+          Tab(
+            destination.rawValue, systemImage: destination.symbol,
+            value: Selection.destination(destination)
+          ) {
             NavigationStack {
               DestinationView(model: model, destination: destination)
             }
           }
         }
+        // The sidebar lists every Playlist, so a person moves between them without going back
+        // to the grid. The tab bar has no room for them.
+        TabSection("Playlists") {
+          ForEach(model.playlistItems) { playlist in
+            Tab(
+              playlist.name, systemImage: "rectangle.stack",
+              value: Selection.playlist(playlist.id)
+            ) {
+              // Never shown: choosing a Playlist selects the Playlists tab, which opens it.
+              Color.clear
+            }
+          }
+        }
+        .defaultVisibility(.hidden, for: .tabBar)
       }
+      .tabViewStyle(.sidebarAdaptable)
+      .sidebarWhereThereIsRoom()
       .tabBarMinimizeBehavior(.onScrollDown)
       // `isEnabled` is why the target is iOS 26.1: 26.0 reserves an empty pill for an empty
       // accessory, and the only way round it there is to rebuild the tab view.
       .tabViewBottomAccessory(isEnabled: showsAccessory) {
-        NowPlayingBar(model: model) { isNowPlayingShown = true }
+        NowPlayingBar(model: model) { model.isNowPlayingOpen = true }
           .onGeometryChange(for: CGRect.self) {
             $0.frame(in: .global)
           } action: {
@@ -57,8 +93,19 @@ import SwiftUI
           }
       }
       // VoiceOver reads only the player while it is open; the bar and tabs sit outside it.
-      .accessibilityHidden(isNowPlayingShown)
-      .nowPlayingExpansion(model: model, isPresented: $isNowPlayingShown, from: miniPlayerFrame)
+      .accessibilityHidden(model.isNowPlayingOpen)
+      .nowPlayingExpansion(
+        model: model, isPresented: $model.isNowPlayingOpen, from: miniPlayerFrame
+      )
+      .onGeometryChange(for: Bool.self) { proxy in
+        proxy.size.width > proxy.size.height
+      } action: { isLandscape in
+        prefersEvenColumns = isLandscape && sizeClass == .regular
+      }
+      .onChange(of: sizeClass) { _, sizeClass in
+        if sizeClass != .regular { prefersEvenColumns = false }
+      }
+      .environment(\.prefersEvenColumns, prefersEvenColumns)
       .onChange(of: model.openedSetId) { pageMoved = .now }
       .task(id: model.showsMiniPlayer) {
         // Only a page in motion is worth waiting for; a Set starting or ending changes the bar
@@ -71,20 +118,74 @@ import SwiftUI
       }
       // The player goes with the last Set, so the next one played starts folded in the bar.
       .onChange(of: model.audioPlayer.currentSetId == nil) { _, isEmpty in
-        if isEmpty { isNowPlayingShown = false }
+        if isEmpty {
+          model.isNowPlayingOpen = false
+          model.nowPlayingPanel = nil
+        }
       }
     }
   }
 
+  extension View {
+    /// An iPhone wide enough for a sidebar, such as an unfolded iPhone Duo, opens on it. The
+    /// placement is iOS 27; iPadOS adapts by itself and ignores it.
+    @ViewBuilder fileprivate func sidebarWhereThereIsRoom() -> some View {
+      if #available(iOS 27, *) {
+        defaultTabBarPlacement(.sidebar)
+      } else {
+        self
+      }
+    }
+  }
 #endif
 
-/// iPad and macOS. The same destinations become sidebar items. A plain list with explicit
-/// selection buttons is used because SwiftUI's selection-based `List` initializers are
-/// unavailable on iOS.
-struct SidebarShell: View {
-  @Bindable var model: AppModel
+extension EnvironmentValues {
+  /// Asks a grid of cards for an even count of columns, so that on an unfolded iPhone Duo on its
+  /// side no card straddles the fold.
+  @Entry var prefersEvenColumns = false
+}
 
-  #if os(macOS)
+/// A grid of cards at least 160 points wide, as many as fit, or one fewer when the shell asks for
+/// an even count.
+struct CardGrid<Content: View>: View {
+  let spacing: CGFloat
+  @ViewBuilder let content: Content
+  @Environment(\.prefersEvenColumns) private var prefersEvenColumns
+  @State private var width: CGFloat = 0
+
+  private static var minimum: CGFloat { 160 }
+  private static var gutter: CGFloat { 14 }
+
+  /// The columns for a grid this wide: the adaptive column a phone has always had, or a fixed
+  /// even count.
+  static func columns(width: CGFloat, prefersEven: Bool) -> [GridItem] {
+    let fits = Int((width + gutter) / (minimum + gutter))
+    guard prefersEven, fits >= 2 else {
+      return [GridItem(.adaptive(minimum: minimum), spacing: gutter)]
+    }
+    let count = fits.isMultiple(of: 2) ? fits : fits - 1
+    return Array(repeating: GridItem(.flexible(), spacing: gutter), count: count)
+  }
+
+  var body: some View {
+    LazyVGrid(
+      columns: Self.columns(width: width, prefersEven: prefersEvenColumns), spacing: spacing
+    ) {
+      content
+    }
+    .onGeometryChange(for: CGFloat.self) {
+      $0.size.width
+    } action: {
+      width = $0
+    }
+  }
+}
+
+#if os(macOS)
+  /// The Mac. The destinations are sidebar items, and the Playlists follow them.
+  struct SidebarShell: View {
+    @Bindable var model: AppModel
+
     private enum Selection: Hashable {
       case destination(Destination)
       case playlist(String)
@@ -120,20 +221,10 @@ struct SidebarShell: View {
       if case .failed = model.playlists { return true }
       return !model.playlistItems.isEmpty
     }
-  #else
-    @State private var columnVisibility: NavigationSplitViewVisibility = .automatic
-  #endif
-  @State private var isNowPlayingShown = false
-  @Namespace private var nowPlaying
+    @Namespace private var nowPlaying
 
-  var body: some View {
-    #if os(macOS)
-      let visibility: Binding<NavigationSplitViewVisibility> = .constant(.all)
-    #else
-      let visibility = $columnVisibility
-    #endif
-    NavigationSplitView(columnVisibility: visibility) {
-      #if os(macOS)
+    var body: some View {
+      NavigationSplitView(columnVisibility: .constant(.all)) {
         List(selection: selection) {
           Label("Search", systemImage: "magnifyingglass")
             .tag(Selection.destination(.search))
@@ -174,115 +265,49 @@ struct SidebarShell: View {
             .accessibilityIdentifier("sidebar-settings")
         }
         .accessibilityIdentifier("sidebar")
-      #else
-        List {
-          ForEach(Destination.shellCases) { destination in
-            Button {
-              if model.destination == destination { model.returnToRoot() }
-              model.destination = destination
-            } label: {
-              HStack(spacing: 8) {
-                Label(destination.rawValue, systemImage: destination.symbol)
-                Spacer(minLength: 0)
-                // The tint alone says nothing to a person who cannot see it, so the row is marked.
-                if model.destination == destination {
-                  Image(systemName: "checkmark")
-                    .font(.orbis.caption)
-                    .foregroundStyle(.secondary)
-                }
-              }
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .contentShape(Rectangle())
+      } detail: {
+        // One stack serves every destination here. A new identity per destination keeps a page
+        // pushed in one, and the page's own state, out of the next.
+        NavigationStack {
+          DestinationView(model: model, destination: model.destination)
+        }
+        .id(model.destination)
+        .safeAreaBar(edge: .bottom) {
+          if model.showsMiniPlayer {
+            NowPlayingBar(model: model, surface: .floating, transition: nowPlaying) {
+              model.isNowPlayingOpen = true
             }
-            .buttonStyle(.plain)
-            .accessibilityAddTraits(model.destination == destination ? [.isSelected] : [])
-            .listRowBackground(
-              model.destination == destination
-                ? Color.accentColor.opacity(0.18)
-                : Color.clear
-            )
-            .accessibilityIdentifier("sidebar-\(destination.rawValue.lowercased())")
-          }
-          Section("Playlists") {
-            ForEach(model.playlistItems) { playlist in
-              playlistRow(playlist.id, name: playlist.name, count: playlist.setCount)
-            }
-            if case .failed(let failure) = model.playlists {
-              playlistsErrorRow(failure)
-            }
+            .frame(maxWidth: 560)
+            .padding()
           }
         }
-        .navigationTitle("Orbis")
-        .accessibilityIdentifier("sidebar")
-      #endif
-    } detail: {
-      // One stack serves every destination here, where a phone has one per tab. A new identity
-      // per destination keeps a page pushed in one, and the page's own state, out of the next.
-      NavigationStack {
-        DestinationView(model: model, destination: model.destination)
       }
-      .id(model.destination)
-      .safeAreaBar(edge: .bottom) {
-        if model.showsMiniPlayer {
-          NowPlayingBar(model: model, surface: .floating, transition: nowPlaying) {
-            isNowPlayingShown = true
-          }
-          .frame(maxWidth: 560)
-          .padding()
-        }
-      }
-    }
-    .nowPlayingCover(isPresented: $isNowPlayingShown) {
-      NowPlayingScreen(model: model)
-        .zoomsFromMiniPlayer(nowPlaying)
-        #if os(macOS)
-          // As large as the window allows: the player and its Tracklist sit side by side.
+      // A Mac sheet, as large as the window allows: the player and its Tracklist sit side by
+      // side.
+      .sheet(isPresented: $model.isNowPlayingOpen) {
+        NowPlayingScreen(model: model)
           .frame(minWidth: 900, idealWidth: 1100, minHeight: 640, idealHeight: 760)
-        #endif
-    }
-    #if os(macOS)
+      }
       .toolbar(removing: .sidebarToggle)
       .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-    #endif
-  }
-
-  /// A playlist section that failed to load must say so, because an empty section reads
-  /// as "no playlists" and invites relaunching the app instead of trying again here.
-  private func playlistsErrorRow(_ failure: OrbisFailure) -> some View {
-    VStack(alignment: .leading, spacing: 4) {
-      Text(failure.message)
-        .font(.orbis.caption)
-        .foregroundStyle(.secondary)
-      Button("Try again") { Task { await model.loadPlaylists() } }
-        .buttonStyle(.plain)
-        .foregroundStyle(Color.orbis.tint)
-        .accessibilityIdentifier("playlists-retry")
     }
-    .accessibilityIdentifier("playlists-error")
-  }
 
-  /// A playlist in the sidebar opens its own page, with Play and Shuffle, the same page a
-  /// folder on the Playlists tab opens.
-  private func playlistRow(_ id: String, name: String, count: Int) -> some View {
-    let isOpen = model.destination == .playlists && model.openedPlaylistId == id
-    return Button {
-      model.showPlaylist(id)
-    } label: {
-      PlaylistRow(
-        name,
-        count: count,
-        category: SetPresentation.category(for: name),
-        isSelected: isOpen
-      )
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .contentShape(Rectangle())
+    /// A playlist section that failed to load must say so, because an empty section reads
+    /// as "no playlists" and invites relaunching the app instead of trying again here.
+    private func playlistsErrorRow(_ failure: OrbisFailure) -> some View {
+      VStack(alignment: .leading, spacing: 4) {
+        Text(failure.message)
+          .font(.orbis.caption)
+          .foregroundStyle(.secondary)
+        Button("Try again") { Task { await model.loadPlaylists() } }
+          .buttonStyle(.plain)
+          .foregroundStyle(Color.orbis.tint)
+          .accessibilityIdentifier("playlists-retry")
+      }
+      .accessibilityIdentifier("playlists-error")
     }
-    .buttonStyle(.plain)
-    .accessibilityAddTraits(isOpen ? [.isSelected] : [])
-    .listRowBackground(isOpen ? Color.accentColor.opacity(0.18) : Color.clear)
-    .accessibilityIdentifier("playlist-\(name)")
   }
-}
+#endif
 
 struct DestinationView: View {
   @Bindable var model: AppModel
@@ -939,7 +964,7 @@ struct HomeRails: View {
       SectionHeading("Playlists", subtitle: "Your sets, sorted for the moment.")
       // Two folders across a phone, as on the Playlists page; a Mac or iPad window fits more
       // rather than stretching two.
-      LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 14)], spacing: 18) {
+      CardGrid(spacing: 18) {
         ForEach(model.playlistItems) { playlist in
           Button {
             #if os(iOS)
@@ -1146,6 +1171,8 @@ struct SearchDestination: View {
   /// change to a search field that is still first responder, so a clear that only set the
   /// binding left the old query on screen while the screen said nothing had been asked.
   @FocusState private var isFieldFocused: Bool
+  /// How wide the results are, which decides where the Tracklist matches go.
+  @State private var searchWidth: CGFloat = 0
 
   var body: some View {
     searchPage
@@ -1257,11 +1284,36 @@ struct SearchDestination: View {
       }
       .background { ArtworkGlow(url: topResult.flatMap(SetPresentation.pageArtwork), reach: 0.55) }
     #else
-      resultList(
-        cuesBelow: cues, foundCues: !cues.isEmpty,
-        backdrop: .artwork(topResult.flatMap(SetPresentation.pageArtwork)))
+      // A wide window, such as an unfolded iPhone Duo, has the room to put them beside the Sets
+      // as a Mac does. The list stays the stack's first view either way, so a resize keeps it.
+      let isBeside = !cues.isEmpty && searchWidth >= Self.cuesBesideWidth
+      let artwork = topResult.flatMap(SetPresentation.pageArtwork)
+      HStack(alignment: .top, spacing: 0) {
+        resultList(
+          cuesBelow: isBeside ? [] : cues, foundCues: !cues.isEmpty,
+          backdrop: isBeside ? .none : .artwork(artwork))
+        if isBeside {
+          ScrollView {
+            TracklistMatches(model: model, matches: cues)
+              .padding()
+          }
+          .frame(width: 280)
+          .accessibilityIdentifier("search-cues-column")
+        }
+      }
+      .background {
+        if isBeside { ArtworkGlow(url: artwork, reach: 0.55) }
+      }
+      .onGeometryChange(for: CGFloat.self) {
+        $0.size.width
+      } action: {
+        searchWidth = $0
+      }
     #endif
   }
+
+  /// The narrowest results that take the Tracklist matches in a column beside them.
+  private static let cuesBesideWidth: CGFloat = 760
 
   private var isTagQuery: Bool { SetPresentation.isTagQuery(model.searchResultsFor ?? "") }
 

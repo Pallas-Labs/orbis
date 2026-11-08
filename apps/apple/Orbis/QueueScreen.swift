@@ -12,7 +12,7 @@ struct QueueScreen: View {
 
   var body: some View {
     NavigationStack {
-      content
+      QueueList(model: model)
         .navigationTitle("Queue")
         #if os(iOS)
           .navigationBarTitleDisplayMode(.inline)
@@ -25,8 +25,19 @@ struct QueueScreen: View {
         }
     }
     .accessibilityIdentifier("queue-screen")
-    // Read again on open: the other device may be the one that changed it.
-    .task { await model.loadQueue() }
+  }
+}
+
+/// The queue's entries, in the Queue sheet and in Now Playing's Up Next panel.
+struct QueueList: View {
+  @Bindable var model: AppModel
+  /// The sheet draws the page's paper; the panel lets Now Playing's backdrop show through.
+  var background: Color = Color.orbis.paper
+
+  var body: some View {
+    content
+      // Read again on open: the other device may be the one that changed it.
+      .task { await model.loadQueue() }
   }
 
   @ViewBuilder private var content: some View {
@@ -34,7 +45,7 @@ struct QueueScreen: View {
     case .idle, .loading:
       ProgressView()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.orbis.paper)
+        .background(background)
     case .failed(let failure):
       UnavailableState(failure: failure, context: "loading the queue") {
         Task { await model.loadQueue() }
@@ -47,7 +58,7 @@ struct QueueScreen: View {
         } description: {
           Text("Play a set, or add one with Play next.")
         }
-        .background(Color.orbis.paper)
+        .background(background)
         .accessibilityIdentifier("queue-empty")
       } else {
         listing(queue)
@@ -67,7 +78,7 @@ struct QueueScreen: View {
       }
       .padding()
     }
-    .background(Color.orbis.paper)
+    .background(background)
     .accessibilityIdentifier("queue-list")
   }
 
