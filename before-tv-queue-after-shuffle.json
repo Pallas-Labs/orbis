@@ -1,0 +1,30 @@
+{
+  "activeAfter" : "533ac9d4-b5f1-47da-b4b5-69f6377927d1",
+  "playlist" : [
+    "3fb59fa6-99f0-4486-b4af-9bc4516a38df",
+    "5bb1bf3f-055b-4fb2-9673-f91f2803a235",
+    "533ac9d4-b5f1-47da-b4b5-69f6377927d1",
+    "3394a404-e885-4f05-b125-95b0bc21e812"
+  ],
+  "queueAfter" : [
+    "b250eaff-8fab-40c7-aa12-adc1aa4d6f78",
+    "b434cb96-46a0-4dd3-8694-b29c6dbccf2e",
+    "533ac9d4-b5f1-47da-b4b5-69f6377927d1",
+    "3fb59fa6-99f0-4486-b4af-9bc4516a38df",
+    "3394a404-e885-4f05-b125-95b0bc21e812",
+    "5bb1bf3f-055b-4fb2-9673-f91f2803a235"
+  ],
+  "queueBefore" : [
+    "b250eaff-8fab-40c7-aa12-adc1aa4d6f78",
+    "b434cb96-46a0-4dd3-8694-b29c6dbccf2e",
+    "533ac9d4-b5f1-47da-b4b5-69f6377927d1"
+  ],
+  "upNextOnScreen" : [
+    "b250eaff-8fab-40c7-aa12-adc1aa4d6f78",
+    "b434cb96-46a0-4dd3-8694-b29c6dbccf2e",
+    "533ac9d4-b5f1-47da-b4b5-69f6377927d1",
+    "3fb59fa6-99f0-4486-b4af-9bc4516a38df",
+    "3394a404-e885-4f05-b125-95b0bc21e812",
+    "5bb1bf3f-055b-4fb2-9673-f91f2803a235"
+  ]
+}
