@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Orbis on iPhone Duo — wireframes</title>
+    <!--
+  The wireframes in docs/design/iphone-duo.md. Each <section class="board"> is one PNG.
+  The dashed line is the fold: the inner display is two outer displays joined along their
+  long side (2 × 466 ≈ 951, 669 ≈ 678), so it crosses portrait and runs down landscape.
+  Frames are drawn at the Duo's point sizes: outer display 466×678, inner display 669×951 in
+  portrait and 951×669 in landscape (Apple's simulator captures, 1398×2034 px and
+  2007×2853 px at 3x). Regenerate the PNGs with docs/design/iphone-duo/render.sh.
+-->
+    <style>
+      :root {
+        --paper: #fdfdfd;
+        --raised: #f2f2f6;
+        --ink: #2a2236;
+        --muted: #77707f;
+        --line: #d9d6df;
+        --tint: #8a2be2;
+        --tint-soft: #efe2fb;
+        --dark: #15131b;
+        --dark-raised: #2a2733;
+        --note: #b4500e;
+        --note-soft: #fff1e4;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #e9e7ee;
+        font:
+          13px/1.35 -apple-system,
+          "SF Pro Text",
+          "Inter",
+          "Helvetica Neue",
+          Arial,
+          sans-serif;
+        color: var(--ink);
+      }
+      .board {
+        display: inline-block;
+        padding: 28px 32px 32px;
+        background: #e9e7ee;
+      }
+      .board h1 {
+        margin: 0 0 4px;
+        font-size: 22px;
+      }
+      .board > p {
+        margin: 0 0 20px;
+        color: var(--muted);
+        max-width: 1180px;
+        font-size: 14px;
+      }
+      .row {
+        display: flex;
+        gap: 36px;
+        align-items: flex-start;
+      }
+      .col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .label {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .label small {
+        font-weight: 400;
+        color: var(--muted);
+      }
+      .caption {
+        max-width: 420px;
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .caption b {
+        color: var(--ink);
+      }
+
+      .device {
+        position: relative;
+        background: var(--paper);
+        border: 10px solid #1d1b22;
+        border-radius: 46px;
+        overflow: hidden;
+        flex: none;
+      }
+      .device.outer {
+        width: 486px;
+        height: 698px;
+      }
+      .device.inner-p {
+        width: 689px;
+        height: 971px;
+        border-radius: 40px;
+      }
+      .device.inner-l {
+        width: 971px;
+        height: 689px;
+        border-radius: 40px;
+      }
+      .device.dark {
+        background: var(--dark);
+        color: #f2eef8;
+      }
+      .screen {
+        position: absolute;
+        inset: 0;
+        display: flex;
+      }
+      .status {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 26px;
+        font-weight: 600;
+        font-size: 13px;
+        z-index: 5;
+        pointer-events: none;
+      }
+      .island {
+        position: absolute;
+        top: 11px;
+        right: 70px;
+        width: 96px;
+        height: 28px;
+        background: #000;
+        border-radius: 16px;
+        z-index: 6;
+      }
+      .inner-p .island,
+      .inner-l .island {
+        right: auto;
+        left: 50%;
+        width: 14px;
+        height: 14px;
+        margin-left: -7px;
+        top: 14px;
+      }
+      .fold {
+        position: absolute;
+        z-index: 7;
+        pointer-events: none;
+      }
+      .inner-p .fold {
+        left: 0;
+        right: 0;
+        top: 50%;
+        border-top: 1px dashed rgba(180, 80, 14, 0.55);
+      }
+      .inner-l .fold {
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        border-left: 1px dashed rgba(180, 80, 14, 0.55);
+      }
+
+      .main {
+        flex: 1;
+        position: relative;
+        padding: 48px 18px 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .vbar {
+        width: 49px;
+        flex: none;
+        background: rgba(245, 244, 248, 0.92);
+        border-left: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 56px 0 18px;
+      }
+      .dark .vbar {
+        background: rgba(40, 37, 48, 0.9);
+        border-color: #3a3644;
+      }
+      .vbar .sp {
+        flex: 1;
+      }
+      .ico {
+        width: 26px;
+        height: 26px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .ico.on {
+        color: var(--tint);
+        background: var(--tint-soft);
+      }
+      .sidebar {
+        width: 250px;
+        flex: none;
+        background: var(--raised);
+        border-right: 1px solid var(--line);
+        padding: 54px 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .sidebar h3 {
+        margin: 0 8px 10px;
+        font-size: 22px;
+      }
+      .sidebar .item {
+        padding: 7px 10px;
+        border-radius: 9px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .sidebar .item.on {
+        background: var(--tint-soft);
+        color: var(--tint);
+        font-weight: 600;
+      }
+      .sidebar .sec {
+        margin: 14px 10px 4px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .toptabs {
+        align-self: center;
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 20px;
+        background: rgba(242, 242, 246, 0.95);
+        border: 1px solid var(--line);
+        margin-bottom: 10px;
+      }
+      .toptabs span {
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+      }
+      .toptabs span.on {
+        background: var(--tint-soft);
+        color: var(--tint);
+        font-weight: 600;
+      }
+      .navrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 30px;
+        color: var(--tint);
+        font-size: 18px;
+      }
+      .title {
+        font-size: 30px;
+        font-weight: 700;
+        margin: 2px 0 12px;
+      }
+      .title.inline {
+        font-size: 16px;
+        text-align: center;
+        margin: 0 0 10px;
+      }
+
+      .row-item {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .dark .row-item {
+        border-color: #34303e;
+      }
+      .art {
+        background: linear-gradient(135deg, #b48be8, #5a3c96 60%, #1d1530);
+        border-radius: 6px;
+        flex: none;
+      }
+      .art.alt1 {
+        background: linear-gradient(135deg, #f2a65a, #b8396b 60%, #2b1330);
+      }
+      .art.alt2 {
+        background: linear-gradient(135deg, #5ad1c8, #2b6aa8 60%, #0f1a33);
+      }
+      .art.alt3 {
+        background: linear-gradient(135deg, #e7e07a, #5f9a3c 60%, #14260f);
+      }
+      .lines {
+        flex: 1;
+        min-width: 0;
+      }
+      .l1 {
+        height: 10px;
+        border-radius: 5px;
+        background: #cfcad6;
+        width: 72%;
+        margin-bottom: 6px;
+      }
+      .l2 {
+        height: 8px;
+        border-radius: 4px;
+        background: #e2dee7;
+        width: 46%;
+      }
+      .dark .l1 {
+        background: #5b5566;
+      }
+      .dark .l2 {
+        background: #403b49;
+      }
+      .cols {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .chip {
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: var(--raised);
+        border: 1px solid var(--line);
+        font-size: 10.5px;
+      }
+      .tabbar {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 16px;
+        height: 54px;
+        border-radius: 27px;
+        background: rgba(245, 244, 248, 0.95);
+        border: 1px solid var(--line);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+      .mini {
+        height: 52px;
+        border-radius: 26px;
+        background: rgba(245, 244, 248, 0.96);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 10px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      }
+      .mini .art {
+        width: 52px;
+        height: 30px;
+      }
+      .mini .ctl {
+        font-size: 16px;
+        padding: 0 6px;
+      }
+      .bottomdock {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        bottom: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .note {
+        position: absolute;
+        z-index: 9;
+        background: var(--note-soft);
+        color: var(--note);
+        border: 1px solid #f0c49c;
+        border-radius: 8px;
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        max-width: 240px;
+      }
+      .hero {
+        display: flex;
+        gap: 22px;
+        align-items: center;
+        margin-bottom: 18px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 40px;
+        padding: 0 18px;
+        border-radius: 12px;
+        background: var(--raised);
+        color: var(--tint);
+        font-weight: 600;
+      }
+      .btn.solid {
+        background: var(--tint);
+        color: #fff;
+      }
+      .rail {
+        display: flex;
+        gap: 12px;
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+      .card {
+        flex: none;
+      }
+      .card .art {
+        border-radius: 10px;
+      }
+      .sect {
+        font-weight: 700;
+        font-size: 16px;
+        margin: 6px 0 8px;
+      }
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+      .scrub {
+        height: 4px;
+        border-radius: 2px;
+        background: #4a4555;
+        position: relative;
+        margin: 18px 0 6px;
+      }
+      .scrub i {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 38%;
+        background: #f2eef8;
+        border-radius: 2px;
+      }
+      .times {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #a49eb0;
+      }
+      .transport {
+        display: flex;
+        justify-content: center;
+        gap: 34px;
+        font-size: 26px;
+        margin: 14px 0;
+      }
+      .bottomrow {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 12px;
+        font-size: 18px;
+        color: #c9c3d4;
+      }
+      .bottomrow .on {
+        color: #fff;
+      }
+      .panel {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 18px;
+        padding: 12px 14px;
+        overflow: hidden;
+      }
+      .seg {
+        display: flex;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 9px;
+        padding: 2px;
+        margin-bottom: 10px;
+      }
+      .seg span {
+        flex: 1;
+        text-align: center;
+        padding: 5px 0;
+        border-radius: 7px;
+        font-size: 12px;
+        color: #c9c3d4;
+      }
+      .seg span.on {
+        background: rgba(255, 255, 255, 0.22);
+        color: #fff;
+        font-weight: 600;
+      }
+      .cue {
+        display: flex;
+        gap: 10px;
+        padding: 7px 0;
+        font-size: 13px;
+        color: #a49eb0;
+      }
+      .cue.now {
+        color: #fff;
+        font-weight: 700;
+        font-size: 15px;
+      }
+      .cue span:first-child {
+        width: 42px;
+        flex: none;
+        font-variant-numeric: tabular-nums;
+      }
+      .sheet {
+        position: absolute;
+        background: var(--paper);
+        border-radius: 26px 26px 0 0;
+        box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.18);
+        padding: 14px 18px;
+        z-index: 8;
+      }
+      .sheet.form {
+        border-radius: 26px;
+        box-shadow: 0 12px 50px rgba(0, 0, 0, 0.25);
+      }
+      .grabber {
+        width: 36px;
+        height: 5px;
+        border-radius: 3px;
+        background: #cfcad6;
+        margin: 0 auto 12px;
+      }
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: rgba(20, 16, 28, 0.32);
+        z-index: 7;
+      }
+      .field {
+        height: 40px;
+        border-radius: 12px;
+        background: var(--raised);
+        border: 1px solid var(--line);
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        color: var(--muted);
+      }
+      .arrow {
+        align-self: center;
+        font-size: 34px;
+        color: var(--muted);
+      }
+      .avatar {
+        border-radius: 50%;
+        background: linear-gradient(135deg, #c9b2ef, #7b5bb5);
+        flex: none;
+      }
+      .glow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          ellipse at 30% 0%,
+          rgba(138, 43, 226, 0.14),
+          transparent 60%
+        );
+        pointer-events: none;
+      }
+      .np-bg {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 40% 20%, #4a2c78, #15131b 70%);
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Small builders, so each board reads as layout rather than markup.
+      const arts = ["", "alt1", "alt2", "alt3"];
+      const art = (w, h, i = 0, r) =>
+        `<div class="art ${arts[i % 4]}" style="width:${w}px;height:${h}px${r ? `;border-radius:${r}px` : ""}"></div>`;
+      const lines = (a = 72, b = 46) =>
+        `<div class="lines"><div class="l1" style="width:${a}%"></div><div class="l2" style="width:${b}%"></div></div>`;
+      const status = () =>
+        `<div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="island"></div>`;
+      const phoneRow = (i) =>
+        `<div class="row-item">${art(64, 36, i)}${lines(60 + ((i * 7) % 30), 35 + ((i * 11) % 25))}<span style="color:var(--muted)">⋯</span></div>`;
+      const tableRow = (i, tags = ["house", "live"]) =>
+        `<div class="row-item">${art(64, 36, i)}${lines(70, 40)}<div class="cols" style="width:170px">${tags.map((t) => `<span class="chip">${t}</span>`).join("")}</div><div class="cols" style="width:50px;justify-content:flex-end">1:${(12 + i * 7) % 60}:0${i % 10}</div></div>`;
+      const tabIcons = (on) =>
+        ["⌂ Home", "♫ Library", "▤ Playlists", "☺ People", "⌕ Search"]
+          .map(
+            (t) =>
+              `<div class="ico ${t.includes(on) ? "on" : ""}" title="${t}">${t[0]}</div>`
+          )
+          .join("");
+      const vbar = (on, extra = "") =>
+        `<div class="vbar">${extra}<div class="sp"></div>${tabIcons(on)}</div>`;
+      const sidebar = (on, playlists = true) =>
+        `<div class="sidebar"><h3>Orbis</h3>${["Home", "Library", "Playlists", "People", "Search"].map((d) => `<div class="item ${d === on ? "on" : ""}">${{ Home: "⌂", Library: "♫", Playlists: "▤", People: "☺", Search: "⌕" }[d]} ${d}</div>`).join("")}${playlists ? `<div class="sec">Playlists</div>${["Sunday mornings", "Warehouse", "Ambient for work", "Road trip"].map((p) => `<div class="item">▤ ${p}</div>`).join("")}` : ""}</div>`;
+      const toptabs = (on) =>
+        `<div class="toptabs"><span>☰</span>${["Home", "Library", "Playlists", "People", "Search"].map((d) => `<span class="${d === on ? "on" : ""}">${d}</span>`).join("")}</div>`;
+      const mini = () =>
+        `<div class="mini">${art(52, 30, 1, 5)}${lines(60, 40)}<span class="ctl">❚❚</span><span class="ctl">▶▶</span></div>`;
+      const note = (text, css) =>
+        `<div class="note" style="${css}">${text}</div>`;
+      const device = (kind, inner, opts = {}) =>
+        `<div class="device ${kind} ${opts.dark ? "dark" : ""}">${opts.bg || ""}<div class="screen">${inner}</div>${status()}${kind !== "outer" ? '<div class="fold"></div>' : ""}</div>`;
+      const frame = (label, sub, dev, caption) =>
+        `<div class="col"><div class="label">${label} <small>${sub}</small></div>${dev}<div class="caption">${caption}</div></div>`;
+      const OUT = "outer · 466 × 678 pt · folded";
+      const INP = "inner · 669 × 951 pt · unfolded, portrait";
+      const INL = "inner · 951 × 669 pt · unfolded, landscape";
+      const board = (id, title, intro, frames) =>
+        document.write(
+          `<section class="board" id="${id}"><h1>${title}</h1><p>${intro}</p><div class="row">${frames.join("")}</div></section><br>`
+        );
+
+      const cuesList = (n = 9, now = 3) =>
+        Array.from(
+          { length: n },
+          (_, i) =>
+            `<div class="cue ${i === now ? "now" : ""}"><span>${String(12 + i * 6).padStart(2, "0")}:${String((i * 17) % 60).padStart(2, "0")}</span><span>${["Fred again.. — Delilah", "Four Tet — Baby", "Kerri Chandler — Rain", "Floating Points — LesAlpx", "Caribou — Can’t Do Without You", "Jamie xx — Gosh", "Bicep — Glue", "Overmono — So U Kno", "Ross From Friends — Talk to Me"][i % 9]}</span></div>`
+        ).join("");
+      const queueList = (n = 6) =>
+        Array.from(
+          { length: n },
+          (_, i) =>
+            `<div class="row-item" style="border-color:#34303e">${art(52, 30, i + 1)}${lines(66, 40)}<span style="color:#a49eb0">≡</span></div>`
+        ).join("");
+    </script>
+
+    <script>
+      // 1. Shell and Library
+      board(
+        "library",
+        "Shell and Library",
+        "One TabView at both widths. Folded, the five tabs sit in the system bar; built with the iOS 27.1 SDK that bar runs down the trailing edge of the outer display. Unfolded, the same tabs become a sidebar with the Playlists section under them, and Library rows widen into the table the Mac already draws. The mini player is the tab view’s bottom accessory in both.",
+        [
+          frame(
+            "Folded",
+            OUT,
+            device(
+              "outer",
+              `<div class="main"><div class="navrow"><span></span><span>＋ &nbsp;⋯</span></div><div class="title">Library</div><div class="rail">${["house", "live", "ambient", "disco"].map((t) => `<span class="chip">${t}</span>`).join("")}</div>${[0, 1, 2, 3, 4, 5, 6, 7].map(phoneRow).join("")}<div class="bottomdock">${mini()}</div></div>${vbar("Library")}`
+            ),
+            "<b>Bar on the trailing edge</b> (27.1 SDK). Tabs keep their order; toolbar items (＋, More) join the same edge above them. Two-line rows, as on any iPhone."
+          ),
+          frame(
+            "Unfolded",
+            INL,
+            device(
+              "inner-l",
+              `${sidebar("Library")}<div class="main"><div class="navrow"><span></span><span>＋ &nbsp;⋯</span></div><div class="title">Library</div><div class="rail">${["house", "live", "ambient", "disco", "techno"].map((t) => `<span class="chip">${t}</span>`).join("")}</div>${[0, 1, 2, 3, 4, 5, 6].map((i) => tableRow(i)).join("")}<div class="bottomdock" style="left:18px;right:18px">${mini()}</div></div>`
+            ),
+            "<b>Sidebar replaces the tab bar.</b> Playlists list under the destinations, as the iPad sidebar has today. Rows show Tags and length in columns (the Mac’s <code>ViewThatFits</code> table). The mini player spans the content column."
+          ),
+        ]
+      );
+
+      // 2. Home
+      board(
+        "home",
+        "Home",
+        "Home already chooses its hero layout from the size class. Unfolded, the hero sits beside its words and the rails run wider; nothing else changes. In inner portrait the sidebar folds behind the toggle and the tabs float at the top.",
+        [
+          frame(
+            "Folded",
+            OUT,
+            device(
+              "outer",
+              `<div class="glow"></div><div class="main"><div class="navrow"><span></span><span>＋ &nbsp;⚙</span></div><div class="title">Home</div><div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:16px">${art(300, 169, 0, 12)}<div class="l1" style="width:55%"></div><div class="btn solid">▶ 1 h 12 min left</div></div><div class="sect">Continue</div><div class="rail">${[1, 2, 3].map((i) => `<div class="card">${art(150, 84, i, 10)}</div>`).join("")}</div><div class="bottomdock">${mini()}</div></div>${vbar("Home")}`
+            ),
+            "Hero stacked: artwork over title and the one play button."
+          ),
+          frame(
+            "Unfolded",
+            INP,
+            device(
+              "inner-p",
+              `<div class="glow"></div><div class="main" style="padding-top:50px">${toptabs("Home")}<div class="navrow"><span></span><span>＋ &nbsp;⚙</span></div><div class="title">Home</div><div class="hero">${art(300, 169, 0, 12)}<div style="flex:1"><div class="l1" style="width:90%"></div><div class="l2" style="width:60%;margin-bottom:14px"></div><div class="btn solid">▶ 1 h 12 min left</div></div></div><div class="sect">Continue</div><div class="rail">${[1, 2, 3, 0].map((i) => `<div class="card">${art(190, 107, i, 10)}</div>`).join("")}</div><div class="sect">Recently filed</div><div class="rail">${[2, 3, 0, 1].map((i) => `<div class="card">${art(190, 107, i, 10)}</div>`).join("")}</div><div class="sect">Tags</div><div class="rail">${["house", "live", "ambient", "disco", "techno"].map((t) => `<span class="chip" style="font-size:13px;padding:6px 12px">${t}</span>`).join("")}</div><div class="bottomdock">${mini()}</div></div>`
+            ),
+            "<b>Hero beside its words</b> (<code>HeroLayout</code> at <code>.regular</code>, already built). Inner portrait keeps horizontal bars: tabs at the top, sidebar behind ☰."
+          ),
+        ]
+      );
+
+      // 3. Set page
+      board(
+        "set",
+        "A Set’s page",
+        "Folded, the page is the phone’s column. Unfolded, it takes the Mac’s layout: artwork beside the title, transport and actions, with the Tracklist running under both. The page is pushed in the same stack in both states, so Back still returns to the list that opened it.",
+        [
+          frame(
+            "Folded",
+            OUT,
+            device(
+              "outer",
+              `<div class="glow"></div><div class="main"><div style="padding:0 12px">${art(368, 207, 2, 12)}</div><div style="text-align:center;margin:14px 0 10px"><div class="l1" style="width:70%;margin:0 auto 8px;height:14px"></div><div class="l2" style="width:40%;margin:0 auto"></div></div><div style="display:flex;gap:10px"><div class="btn solid" style="flex:1">▶ Play</div><div class="btn" style="flex:1">⟲ From start</div></div><div class="sect" style="margin-top:14px">Tracklist</div>${[0, 1, 2].map(phoneRow).join("")}</div>${vbar("Library", '<div class="ico">‹</div><div class="ico">⋯</div>')}`
+            ),
+            "Artwork, then words, then the Tracklist. Back and the page menu join the trailing bar."
+          ),
+          frame(
+            "Unfolded",
+            INL,
+            device(
+              "inner-l",
+              `${sidebar("Library")}<div class="glow" style="left:250px"></div><div class="main"><div class="navrow"><span>‹ Library</span><span>⋯</span></div><div class="hero" style="margin-top:6px">${art(320, 180, 2, 12)}<div style="flex:1"><div class="l1" style="width:90%;height:16px"></div><div class="l2" style="width:50%;margin-bottom:8px"></div><div class="l2" style="width:70%;margin-bottom:16px"></div><div style="display:flex;gap:10px"><div class="btn solid">▶ Play</div><div class="btn">⟲ From start</div></div><div style="margin-top:12px;display:flex;gap:8px"><span class="chip">house</span><span class="chip">live</span><span class="chip">＋ Tag</span></div></div></div><div class="sect">Tracklist</div>${[0, 1, 2, 3].map(phoneRow).join("")}</div>`
+            ),
+            "<b>Beside layout on iOS too.</b> <code>SetDetail</code> chooses it from the size class instead of <code>#if os(macOS)</code>. The artwork caps at 420 pt."
+          ),
+        ]
+      );
+
+      // 4. Playlists
+      board(
+        "playlists",
+        "Playlists and one Playlist",
+        "The grid of Playlists is adaptive already and simply gains columns. A Playlist’s page uses the hero layout Home uses. Unfolded, the sidebar lists every Playlist, so a person can move between them without going back to the grid.",
+        [
+          frame(
+            "Folded",
+            OUT,
+            device(
+              "outer",
+              `<div class="main"><div class="navrow"><span></span><span>＋</span></div><div class="title">Playlists</div><div class="grid" style="grid-template-columns:repeat(2,1fr)">${[0, 1, 2, 3, 1, 2].map((i) => `<div>${art(185, 185, i, 14)}<div class="l1" style="width:70%;margin-top:6px"></div></div>`).join("")}</div><div class="bottomdock">${mini()}</div></div>${vbar("Playlists")}`
+            ),
+            "Two columns at 417 pt of content width."
+          ),
+          frame(
+            "Unfolded",
+            INP,
+            device(
+              "inner-p",
+              `<div class="main" style="padding-top:50px">${toptabs("Playlists")}<div class="navrow"><span>‹ Playlists</span><span>Edit &nbsp;＋ &nbsp;⋯</span></div><div class="hero">${art(260, 260, 1, 14)}<div style="flex:1"><div style="font-size:11px;color:var(--muted);font-weight:700">PLAYLIST · 14 SETS</div><div style="font-size:26px;font-weight:700;margin:4px 0 14px">Warehouse</div><div style="display:flex;gap:10px"><div class="btn solid">▶ Play</div><div class="btn">⤮ Shuffle</div></div></div></div>${[0, 1, 2, 3, 4, 5, 6].map(phoneRow).join("")}<div class="bottomdock">${mini()}</div></div>`
+            ),
+            "<b>One Playlist, hero beside.</b> <code>Edit</code> is a text toggle, so it stays in the horizontal part of the bar; Add Sets and More carry titles and symbols."
+          ),
+        ]
+      );
+
+      // 5. People
+      board(
+        "people",
+        "People and a person",
+        "People lists the Group, then a person’s page opens over it with their Sets and Playlists. Both are scrolling content: they gain width and grid columns, never a new structure.",
+        [
+          frame(
+            "Folded",
+            OUT,
+            device(
+              "outer",
+              `<div class="main"><div class="title">People</div><div class="rail">${[0, 1, 2, 3].map(() => `<div class="card" style="width:76px;text-align:center">${'<div class="avatar" style="width:68px;height:68px;margin:0 auto 6px"></div>'}<div class="l2" style="width:80%;margin:0 auto"></div></div>`).join("")}</div><div class="sect">Listening now</div>${[1, 2].map(phoneRow).join("")}<div class="sect">From the Group</div><div class="grid" style="grid-template-columns:repeat(2,1fr)">${[3, 0].map((i) => `<div>${art(185, 104, i, 10)}</div>`).join("")}</div><div class="bottomdock">${mini()}</div></div>${vbar("People")}`
+            ),
+            "Avatar rail, then rows and a two-column grid."
+          ),
+          frame(
+            "Unfolded",
+            INP,
+            device(
+              "inner-p",
+              `<div class="main" style="padding-top:50px">${toptabs("People")}<div class="navrow"><span>‹ People</span><span></span></div><div style="text-align:center;margin-bottom:14px"><div class="avatar" style="width:96px;height:96px;margin:0 auto 8px"></div><div style="font-size:26px;font-weight:700">maya</div><div style="color:var(--muted)">42 Sets · 6 Playlists · shares both ways</div></div><div class="sect">Playlists</div><div class="grid" style="grid-template-columns:repeat(4,1fr)">${[0, 1, 2, 3].map((i) => `<div>${art(140, 140, i, 12)}</div>`).join("")}</div><div class="sect">Sets</div>${[1, 2, 3, 0].map(phoneRow).join("")}<div class="bottomdock">${mini()}</div></div>`
+            ),
+            "<b>Even column counts.</b> The adaptive grid can land on an odd count. In landscape the fold runs down the middle, and an even count keeps every card on one side of it (27.1: read the division region)."
+          ),
+        ]
+      );
+
+      // 6. Search
+      board(
+        "search",
+        "Search",
+        "Search is a tab in both states, and a sidebar row when unfolded (today the iPad sidebar has no Search row). Unfolded in landscape, Tracklist matches move into a column beside the results, as on the Mac.",
+        [
+          frame(
+            "Folded",
+            OUT,
+            device(
+              "outer",
+              `<div class="main"><div class="title">Search</div><div class="field">⌕ &nbsp;warehouse</div><div class="sect" style="margin-top:14px">Top result</div><div class="row-item">${art(96, 54, 2)}${lines(70, 40)}</div><div class="sect">Sets</div>${[0, 1, 3].map(phoneRow).join("")}<div class="sect">In Tracklists</div>${[2, 1].map(phoneRow).join("")}<div class="bottomdock">${mini()}</div></div>${vbar("Search")}`
+            ),
+            "Field over the results; Tracklist matches follow the Sets."
+          ),
+          frame(
+            "Unfolded",
+            INL,
+            device(
+              "inner-l",
+              `${sidebar("Search", false)}<div class="main"><div class="title">Search</div><div class="field">⌕ &nbsp;warehouse</div><div style="display:flex;gap:16px;margin-top:12px;flex:1"><div style="flex:1"><div class="sect">Top result</div><div class="row-item">${art(96, 54, 2)}${lines(70, 40)}</div><div class="sect">Sets</div>${[0, 1, 3, 2].map(phoneRow).join("")}</div><div style="width:280px;border-left:1px solid var(--line);padding-left:14px"><div class="sect">In Tracklists</div>${[2, 1, 0].map(phoneRow).join("")}</div></div><div class="bottomdock">${mini()}</div></div>`
+            ),
+            "<b>Matches beside the results</b> once the content column is at least 760 pt wide; below that they stay under the Sets."
+          ),
+        ]
+      );
+    </script>
+
+    <script>
+      // 7. Now Playing
+      const npColumn = (artW, extraTop = 0) =>
+        `<div style="display:flex;flex-direction:column;align-items:center;padding-top:${extraTop}px">${art(artW, Math.round((artW * 9) / 16), 1, 14)}</div><div style="margin-top:22px;display:flex;align-items:center;gap:10px"><div class="lines"><div class="l1" style="width:80%;height:14px"></div><div class="l2" style="width:55%"></div></div><span style="font-size:18px">⋯</span></div><div class="scrub"><i></i></div><div class="times"><span>34:12</span><span>−55:48</span></div><div class="transport"><span>⏮</span><span>❚❚</span><span>⏭</span></div>`;
+      board(
+        "now-playing",
+        "Now Playing",
+        "Folded, Now Playing is the phone’s column and Up Next is a sheet. Unfolded, a panel holds the Tracklist or Up Next beside the player, so neither covers the controls. The split follows the window’s long side: stacked in portrait, side by side in landscape, and along the fold when the phone is half open (27.1 split arrangement). The bottom row stays horizontal in every pose.",
+        [
+          frame(
+            "Folded",
+            OUT,
+            device(
+              "outer",
+              `<div class="main" style="padding:56px 28px 16px"><div style="text-align:center;font-size:18px;margin:-8px 0 16px">⌄</div>${npColumn(296)}<div class="panel" style="margin:4px 0 14px;padding:10px 12px;font-size:12px;color:#c9c3d4">Next: Kerri Chandler — Rain · 41:00</div><div class="sp" style="flex:1"></div><div class="bottomrow"><span>❝</span><span>⌁</span><span>≡</span></div></div>`,
+              { dark: true, bg: '<div class="np-bg"></div>' }
+            ),
+            "As today. ❝ swaps the Tracklist in for the artwork; ≡ opens Up Next as a sheet."
+          ),
+          frame(
+            "Unfolded",
+            INP,
+            device(
+              "inner-p",
+              `<div class="main" style="padding:56px 40px 18px"><div style="text-align:center;font-size:18px;margin:-8px 0 12px">⌄</div><div style="display:flex;gap:22px;align-items:center">${art(240, 135, 1, 12)}<div style="flex:1"><div class="l1" style="width:90%;height:14px"></div><div class="l2" style="width:60%"></div></div></div><div class="scrub"><i></i></div><div class="times"><span>34:12</span><span>−55:48</span></div><div class="transport" style="margin:10px 0 16px"><span>⏮</span><span>❚❚</span><span>⏭</span></div><div class="panel" style="flex:1"><div class="seg"><span class="on">Tracklist</span><span>Up Next</span></div>${cuesList(12, 4)}</div><div class="bottomrow" style="margin-top:12px"><span class="on">❝</span><span>⌁</span><span>≡</span></div></div>`,
+              { dark: true, bg: '<div class="np-bg"></div>' }
+            ),
+            "<b>Stacked split.</b> Player on top, panel below. ❝ and ≡ choose what the panel shows instead of opening anything."
+          ),
+          frame(
+            "Unfolded",
+            INL,
+            device(
+              "inner-l",
+              `<div class="main" style="padding:52px 36px 18px;flex-direction:row;gap:34px"><div style="width:420px;display:flex;flex-direction:column"><div style="font-size:18px;margin:-6px 0 8px">⌄</div>${npColumn(360)}<div class="sp" style="flex:1"></div><div class="bottomrow"><span>❝</span><span>⌁</span><span class="on">≡</span></div></div><div class="panel" style="flex:1"><div class="seg"><span>Tracklist</span><span class="on">Up Next</span></div>${queueList(8)}</div></div>`,
+              { dark: true, bg: '<div class="np-bg"></div>' }
+            ),
+            "<b>Side-by-side split.</b> The player column caps at 420 pt; the panel takes the rest. This is the Mac’s layout with Up Next added."
+          ),
+        ]
+      );
+
+      // 8. The fold, while playing
+      board(
+        "fold",
+        "The fold, while a Set plays",
+        "What a person had open before the fold is what they have open after it. Each arrow is one open or close of the phone; the audio does not stop and the seek bar does not jump.",
+        [
+          frame(
+            "Before",
+            OUT,
+            device(
+              "outer",
+              `<div class="main" style="padding:56px 28px 16px"><div style="text-align:center;font-size:18px;margin:-8px 0 16px">⌄</div>${npColumn(296)}</div><div class="scrim"></div><div class="sheet" style="left:0;right:0;bottom:0;height:380px;background:#221f2a;color:#f2eef8"><div class="grabber"></div><div style="display:flex;justify-content:space-between;font-weight:600;margin-bottom:8px"><span></span><span>Queue</span><span style="color:#c9a6f5">Done</span></div>${queueList(5)}</div>`,
+              { dark: true, bg: '<div class="np-bg"></div>' }
+            ),
+            "Folded, Now Playing open, Up Next sheet up, 34:12 into the Set."
+          ),
+          '<div class="arrow">→<div style="font-size:12px;text-align:center">open</div></div>',
+          frame(
+            "After",
+            INL,
+            device(
+              "inner-l",
+              `<div class="main" style="padding:52px 36px 18px;flex-direction:row;gap:34px"><div style="width:420px;display:flex;flex-direction:column"><div style="font-size:18px;margin:-6px 0 8px">⌄</div>${npColumn(360)}<div class="sp" style="flex:1"></div><div class="bottomrow"><span>❝</span><span>⌁</span><span class="on">≡</span></div></div><div class="panel" style="flex:1"><div class="seg"><span>Tracklist</span><span class="on">Up Next</span></div>${queueList(8)}</div></div>`,
+              { dark: true, bg: '<div class="np-bg"></div>' }
+            ),
+            "<b>Sheet becomes the panel.</b> The Up Next sheet closes without animation and the panel opens on Up Next. Still 34:12, still playing. Closing the phone again reopens the sheet."
+          ),
+        ]
+      );
+
+      // 9. Sheets
+      board(
+        "sheets",
+        "Sheets",
+        "System sheets already adapt: a bottom sheet with detents folded, a centred form sheet unfolded, and both keep clear of the fold. Orbis keeps every sheet as a system sheet and draws no sheet of its own.",
+        [
+          frame(
+            "Folded",
+            OUT,
+            device(
+              "outer",
+              `<div class="main"><div class="title">Library</div>${[0, 1, 2, 3].map(phoneRow).join("")}</div>${vbar("Library")}<div class="scrim"></div><div class="sheet" style="left:0;right:0;bottom:0;height:330px"><div class="grabber"></div><div style="font-weight:700;font-size:18px;margin-bottom:10px">File a set</div><div class="field">Paste a SoundCloud, YouTube or Apple Music link</div><div style="display:flex;gap:10px;margin-top:14px"><div class="btn solid" style="flex:1">File</div><div class="btn" style="flex:1">Import a playlist</div></div></div>`
+            ),
+            "Filing sheet at its medium detent."
+          ),
+          frame(
+            "Unfolded",
+            INL,
+            device(
+              "inner-l",
+              `${sidebar("Library")}<div class="main"><div class="title">Library</div>${[0, 1, 2, 3, 4].map((i) => tableRow(i)).join("")}</div><div class="scrim"></div><div class="sheet form" style="left:250px;right:0;margin:auto;top:120px;width:500px;height:330px"><div style="font-weight:700;font-size:18px;margin-bottom:10px">File a set</div><div class="field">Paste a SoundCloud, YouTube or Apple Music link</div><div style="display:flex;gap:10px;margin-top:14px"><div class="btn solid" style="flex:1">File</div><div class="btn" style="flex:1">Import a playlist</div></div></div>`
+            ),
+            "<b>Form sheet, centred.</b> Detents do not apply; the sheet sizes to its content. The sheet’s state (the pasted link, the naming step) carries across the fold because the view that owns it stays."
+          ),
+        ]
+      );
+    </script>
+    <script>
+      // wireframes.html#<board id> shows that board alone, which render.sh captures.
+      const only = location.hash.slice(1);
+      if (only) {
+        document.querySelectorAll(".board").forEach((b) => {
+          if (b.id !== only) b.remove();
+        });
+        document.querySelectorAll("br").forEach((b) => b.remove());
+      }
+    </script>
+  </body>
+</html>
