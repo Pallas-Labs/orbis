@@ -110,10 +110,12 @@ struct NowPlayingScreen: View {
 
   private var isStacked: Bool { isSplit && !isSideBySide }
 
-  /// Up Next is a sheet only in the column; in the split the panel shows it.
+  /// Up Next is a sheet only in the column; in the split the panel shows it. The player stays built
+  /// while closed, so the sheet also waits for Now Playing to be open: a fold after the player
+  /// closes on Up Next must not open the sheet over the shell.
   private var isShowingQueue: Binding<Bool> {
     Binding(
-      get: { !isSplit && model.nowPlayingPanel == .upNext },
+      get: { model.isNowPlayingOpen && !isSplit && model.nowPlayingPanel == .upNext },
       set: { isShown in
         guard !isShown, !isSplit, model.nowPlayingPanel == .upNext else { return }
         model.nowPlayingPanel = panelBeforeQueue
