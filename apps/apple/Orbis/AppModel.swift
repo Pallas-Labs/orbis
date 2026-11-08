@@ -274,6 +274,13 @@ final class AppModel {
   }
 
   var destination: Destination = .home
+  /// Whether Now Playing is open over the shell. Held here, not in a view, so a fold or a resize
+  /// that lays the shell out again leaves the player open.
+  var isNowPlayingOpen = false
+  /// What Now Playing shows besides the player: in a narrow window the Tracklist in the
+  /// artwork's place or Up Next as a sheet, and in a wide one the panel's segment. Nil is the
+  /// artwork alone, and in a wide window the panel's own choice.
+  var nowPlayingPanel: NowPlayingPanel?
   /// Counts taps on the Search tab while Search is already open. Each one focuses the field, the
   /// way a second tap on Search does in Apple Music.
   var searchFocusRequests = 0
@@ -2446,6 +2453,14 @@ final class AppModel {
   }
 }
 
+/// What Now Playing shows beside or in place of the player's artwork.
+enum NowPlayingPanel: String, Hashable, CaseIterable, Identifiable {
+  case tracklist = "Tracklist"
+  case upNext = "Up Next"
+
+  var id: Self { self }
+}
+
 enum Destination: String, CaseIterable, Identifiable, Hashable {
   case home = "Home"
   case library = "Library"
@@ -2456,7 +2471,7 @@ enum Destination: String, CaseIterable, Identifiable, Hashable {
   /// Identity is the destination itself, so a list binding can select the case directly.
   var id: Self { self }
 
-  /// Search is a tab role on iPhone and is not repeated in the sidebar list.
+  /// The Mac sidebar lists Search first, apart from the other destinations.
   static var shellCases: [Destination] {
     allCases.filter { $0 != .search }
   }

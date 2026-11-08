@@ -49,7 +49,6 @@ struct RootView: View {
   @State private var isWelcomeLeaving = false
 
   #if os(iOS)
-    @Environment(\.horizontalSizeClass) private var sizeClass
     /// The splash covers one launch and one load: a refresh, a Playlist, or a screen change is
     /// not an opening, so nothing puts it back.
     @State private var splash: SplashPhase = .up
@@ -143,11 +142,7 @@ struct RootView: View {
       #elseif os(tvOS)
         TVShell(model: model)
       #else
-        if sizeClass == .compact {
-          CompactShell(model: model)
-        } else {
-          SidebarShell(model: model)
-        }
+        TabShell(model: model)
       #endif
     } else {
       #if os(tvOS)
@@ -299,28 +294,6 @@ extension View {
       navigationTitle("")
     #else
       navigationTitle(title)
-    #endif
-  }
-
-  /// Now Playing covers the whole screen where the platform can, the way a music app's player
-  /// does; a sheet at full height floats with rounded bottom corners. The zoom from the mini player
-  /// keeps it closable with a swipe.
-  func nowPlayingCover<Content: View>(
-    isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> Content
-  ) -> some View {
-    #if os(iOS)
-      fullScreenCover(isPresented: isPresented, content: content)
-    #else
-      sheet(isPresented: isPresented, content: content)
-    #endif
-  }
-
-  /// Zooms Now Playing out of the mini player's artwork, where the platform has the transition.
-  @ViewBuilder func zoomsFromMiniPlayer(_ namespace: Namespace.ID) -> some View {
-    #if os(iOS)
-      navigationTransition(.zoom(sourceID: MiniPlayer.transitionID, in: namespace))
-    #else
-      self
     #endif
   }
 

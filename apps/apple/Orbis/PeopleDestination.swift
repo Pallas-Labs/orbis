@@ -565,7 +565,7 @@ struct PersonScreen: View {
           SectionHeading("Playlists")
           // Two folders across a phone, as on Home; a Mac window fits more rather than stretching
           // two.
-          LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 14)], spacing: 18) {
+          CardGrid(spacing: 18) {
             ForEach(content.playlists) { playlist in
               Button {
                 openedPlaylist = playlist

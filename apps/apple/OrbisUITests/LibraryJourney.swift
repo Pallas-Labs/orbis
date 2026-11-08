@@ -79,9 +79,9 @@ class LibraryJourney: XCTestCase {
         "a second tap on Search must focus the field\n\(app.debugDescription)")
       return nil
     }
-    let sidebarSearch = app.buttons["sidebar-search"]
+    let sidebarSearch = sidebarItem("Search", in: app, identifier: "sidebar-search")
     XCTAssertTrue(
-      sidebarSearch.waitForExistence(timeout: 15),
+      sidebarSearch.exists,
       "Search must be reachable from a tab bar or the sidebar\n\(app.debugDescription)"
     )
     sidebarSearch.tap()
@@ -116,12 +116,26 @@ class LibraryJourney: XCTestCase {
       XCTFail("\(name) must open from its tab\n\(app.debugDescription)")
       return
     }
-    let sidebar = app.buttons[sidebarIdentifier]
+    let sidebar = sidebarItem(name, in: app, identifier: sidebarIdentifier)
     XCTAssertTrue(
-      sidebar.waitForExistence(timeout: 15),
+      sidebar.exists,
       "\(name) must be reachable from a tab bar or the sidebar\n\(app.debugDescription)"
     )
     sidebar.tap()
+  }
+
+  /// A destination's row in the sidebar: the Mac's own row by its identifier, or the row the
+  /// adaptable tab view draws in its sidebar on a wide iPhone or an iPad, by its name.
+  func sidebarItem(_ name: String, in app: XCUIApplication, identifier: String) -> XCUIElement {
+    let candidates = [
+      app.buttons[identifier], app.collectionViews.cells[name], app.cells[name], app.buttons[name],
+    ]
+    let deadline = Date().addingTimeInterval(15)
+    repeat {
+      if let found = candidates.first(where: { $0.exists }) { return found }
+      usleep(200_000)
+    } while Date() < deadline
+    return candidates[0]
   }
 
   /// The prompt the field shows while it is empty. XCUITest reports it as the field's value.
