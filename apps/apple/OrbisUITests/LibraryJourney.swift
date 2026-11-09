@@ -136,10 +136,14 @@ class LibraryJourney: XCTestCase {
   }
 
   /// A destination's row in the sidebar: the Mac's own row by its identifier, or the row the
-  /// adaptable tab view draws in its sidebar on a wide iPhone or an iPad, by its name.
+  /// adaptable tab view draws in its sidebar on a wide iPhone or an iPad, by its name. An iPad in
+  /// portrait shows the floating tab bar instead, whose items are found the same way.
   func sidebarItem(_ name: String, in app: XCUIApplication, identifier: String) -> XCUIElement {
+    // An iPad's floating tab bar reports each item as a button inside a button of the same
+    // name, so each query takes its first match.
     let candidates = [
-      app.buttons[identifier], app.collectionViews.cells[name], app.cells[name], app.buttons[name],
+      app.buttons[identifier].firstMatch, app.collectionViews.cells[name].firstMatch,
+      app.cells[name].firstMatch, app.buttons[name].firstMatch,
     ]
     let deadline = Date().addingTimeInterval(15)
     repeat {
