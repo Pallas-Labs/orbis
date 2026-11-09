@@ -928,12 +928,8 @@ async function downloadTunnel(
           contentType: response.headers.get("content-type") ?? "unknown",
         };
       } finally {
-        const cleanup = [];
-        if (file) {
-          cleanup.push(file.close());
-        }
-        // oxlint-disable-next-line orbis/bounded-concurrency -- waits for cleanup already started; it starts nothing.
-        await Promise.allSettled(cleanup);
+        // The handle is the write's only cleanup, so the one promise is named at the call.
+        await Promise.allSettled([file?.close()]);
         if (!completed) {
           await rm(filePath, { force: true });
         }
