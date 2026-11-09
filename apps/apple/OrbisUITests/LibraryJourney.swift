@@ -84,7 +84,12 @@ class LibraryJourney: XCTestCase {
       sidebarSearch.exists,
       "Search must be reachable from a tab bar or the sidebar\n\(app.debugDescription)"
     )
-    sidebarSearch.tap()
+    // A tap while the sidebar still settles can leave the last page selected, so it waits for
+    // Search's field and taps again, as `selectTab` does for a tab.
+    for _ in 0..<3 {
+      sidebarSearch.tap()
+      if app.searchFields.firstMatch.waitForExistence(timeout: 5) { break }
+    }
     return nil
   }
 

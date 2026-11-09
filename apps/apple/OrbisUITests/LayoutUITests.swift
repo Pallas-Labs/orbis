@@ -7,6 +7,8 @@ import XCTest
 /// the set to compare.
 final class LayoutUITests: LibraryJourney {
   func testMainScreensWhileASetPlays() throws {
+    // The simulator keeps the pose an earlier test left, so this run sets its own.
+    XCUIDevice.shared.orientation = .portrait
     try walkMainScreens(named: "layout", video: "layoutset01")
   }
 
