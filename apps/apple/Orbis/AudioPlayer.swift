@@ -118,6 +118,10 @@ final class AudioPlayer {
   @ObservationIgnored private var soundRequestedAt: TimeInterval?
   @ObservationIgnored private var hasStartedSound = false
   @ObservationIgnored private var completionReported = false
+  /// Where the item last ended early, and under which generation. A held stream ends early once
+  /// and then moves on when its bytes arrive; audio that is shorter than the service's duration
+  /// ends again at the same place and never moves.
+  @ObservationIgnored private var prematureEnd: (generation: Int, position: TimeInterval)?
   /// Which seek is the newest. A seek that a later one interrupts still calls back, unfinished,
   /// and must not end the wait for the later one: a tick in between would put the old position
   /// back on the bar.
@@ -738,6 +742,7 @@ final class AudioPlayer {
     soundRequestedAt = nil
     hasStartedSound = false
     completionReported = false
+    prematureEnd = nil
     lastDiagnosticSample = 0
     serviceDuration = nil
     for observer in observers {
@@ -848,6 +853,7 @@ final class AudioPlayer {
     latestSeek += 1
     let seekNumber = latestSeek
     let generation = playbackGeneration
+    prematureEnd = nil
     let requestedAt = ProcessInfo.processInfo.systemUptime
     logger.debug(
       "Seek requested generation=\(generation, privacy: .public) seek=\(seekNumber, privacy: .public) target=\(seconds, privacy: .public)"
@@ -908,6 +914,7 @@ final class AudioPlayer {
       sampleTimeline()
       let seconds = engine.currentTime
       guard !isSeeking, pendingSeek == nil, seconds.isFinite else { return }
+      if let end = prematureEnd, abs(seconds - end.position) > 0.5 { prematureEnd = nil }
       let previousCue = currentCue?.position
       elapsed = seconds
       if currentCue?.position != previousCue {
@@ -966,6 +973,24 @@ final class AudioPlayer {
     if let duration = [duration, serviceDuration].compactMap({ $0 }).min(),
       actual.isFinite, actual < duration - 2
     {
+      // A second early end at the same place, with no progress between, means the audio is
+      // shorter than the expected length and nothing more will arrive.
+      if let end = prematureEnd, end.generation == playbackGeneration,
+        abs(actual - end.position) <= 0.5
+      {
+        record(
+          .ended(
+            .init(
+              actual: .init(actual), expected: .init(duration), premature: true,
+              reason: .repeated)))
+        logger.notice(
+          "Repeated premature item end generation=\(self.playbackGeneration, privacy: .public) actual=\(actual, privacy: .public) duration=\(duration, privacy: .public); finishing"
+        )
+        completionReported = true
+        onFinished?(finished)
+        return
+      }
+      prematureEnd = (playbackGeneration, actual)
       record(.ended(.init(actual: .init(actual), expected: .init(duration), premature: true)))
       logger.notice(
         "Premature item end generation=\(self.playbackGeneration, privacy: .public) actual=\(actual, privacy: .public) duration=\(duration, privacy: .public)"

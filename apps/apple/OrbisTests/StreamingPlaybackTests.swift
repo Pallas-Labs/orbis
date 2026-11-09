@@ -27,20 +27,20 @@ final class StreamingPlaybackTests: XCTestCase {
 
   private var samples: [[String: Any]] = []
 
-  private func fixture() async throws -> Fixture {
+  private func fixture(_ seed: String = "ready-ogg", duration: Int = 600) async throws -> Fixture {
     let environment = ProcessInfo.processInfo.environment
     guard let address = environment["ORBIS_UI_TEST_ADDRESS"].flatMap(URL.init(string:)),
       let token = environment["ORBIS_UI_TEST_TOKEN"], !token.isEmpty,
-      let seed = environment["ORBIS_UI_TEST_SEED_ADDRESS"].flatMap(URL.init(string:))
+      let seedAddress = environment["ORBIS_UI_TEST_SEED_ADDRESS"].flatMap(URL.init(string:))
     else { throw XCTSkip("Run through native-lanes with the real HTTP audio fixture") }
     let client = OrbisClient(address: address, token: token)
     let video = String(UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(11))
     let saved = try await client.save(url: "https://www.youtube.com/watch?v=\(video)")
-    try await control("ready-ogg", id: saved.id, seed: seed)
+    try await control(seed, id: saved.id, seed: seedAddress)
     let library = try await client.library()
     let ready = try XCTUnwrap(library.first { $0.id == saved.id })
-    XCTAssertEqual(ready.durationSeconds, 600)
-    return Fixture(client: client, set: ready, seed: seed)
+    XCTAssertEqual(ready.durationSeconds, duration)
+    return Fixture(client: client, set: ready, seed: seedAddress)
   }
 
   private func control(_ action: String, id: String, seed: URL) async throws {
@@ -134,10 +134,12 @@ final class StreamingPlaybackTests: XCTestCase {
     } while ProcessInfo.processInfo.systemUptime < deadline
   }
 
-  private func report(_ player: AudioPlayer) throws -> PlaybackDiagnostics.Report {
+  private func report(
+    _ player: AudioPlayer, name: String = "held-stream-playback-report.json"
+  ) throws -> PlaybackDiagnostics.Report {
     let text = player.playbackReport()
     let attachment = XCTAttachment(data: Data(text.utf8), uniformTypeIdentifier: "public.json")
-    attachment.name = "held-stream-playback-report.json"
+    attachment.name = name
     attachment.lifetime = .keepAlways
     add(attachment)
     let decoder = JSONDecoder()
@@ -273,6 +275,43 @@ final class StreamingPlaybackTests: XCTestCase {
     XCTAssertEqual(finishes, 1, "One natural audio end must finish the Listen exactly once")
   }
 
+  /// The service can record a Set as a few seconds longer than the audio the player decodes. The
+  /// item then ends early with every byte already in hand, so waiting for more audio never ends.
+  func testAudioShorterThanItsServiceDurationFinishesOnce() async throws {
+    let fixture = try await fixture("ready-ogg-overstated", duration: 604)
+    let player = AudioPlayer()
+    var finishes = 0
+    player.onFinished = { [weak player] _ in
+      finishes += 1
+      if let player { self.sample(player, phase: "overstated Ogg completion") }
+    }
+    defer {
+      retain("overstated-ogg-end-timeline")
+      player.stop()
+    }
+    player.play(
+      set: fixture.set, baseURL: fixture.client.address, token: fixture.client.token, startAt: 590)
+    player.player?.volume = 0
+    try await waitUntil(
+      "Audio shorter than its service duration must finish the Set", player: player, seconds: 25
+    ) { finishes > 0 }
+    try await observe(player, phase: "after overstated Ogg completion", seconds: 3)
+    XCTAssertEqual(finishes, 1, "A repeated early end must finish the Listen exactly once")
+    let entries = try report(player, name: "overstated-ogg-playback-report.json").entries
+    let ends = entries.compactMap { entry -> PlaybackDiagnostics.EndEvent? in
+      if case .ended(let end) = entry.event { return end }
+      return nil
+    }
+    let finishing = try XCTUnwrap(ends.last, "The player must record the end it finished on")
+    XCTAssertTrue(finishing.premature, "The audio ended before the service duration")
+    XCTAssertEqual(finishing.reason, .repeated, "The record must say why it finished anyway")
+    XCTAssertEqual(finishing.expected.value ?? 0, 604, accuracy: 0.01)
+    XCTAssertLessThan(finishing.actual.value ?? 604, 602)
+    XCTAssertEqual(
+      ends.filter { $0.reason == nil }.count, ends.count - 1,
+      "Only the end that finished carries a reason")
+  }
+
   func testWithheldOggAudioKeepsPlayIntentAndRecoversWithoutSkipping() async throws {
     let fixture = try await fixture()
     let player = AudioPlayer()
@@ -280,6 +319,7 @@ final class StreamingPlaybackTests: XCTestCase {
     player.onFinished = { _ in finishes += 1 }
     defer {
       retain("ogg-withheld-audio-recovery-timeline")
+      _ = try? report(player, name: "ogg-withheld-audio-playback-report.json")
       player.stop()
     }
     player.play(set: fixture.set, baseURL: fixture.streamAddress, token: fixture.client.token)

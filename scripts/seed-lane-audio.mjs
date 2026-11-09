@@ -178,9 +178,14 @@ const respond = (response, status, body) => {
 };
 
 const handleStream = (route, request, response) => {
-  const ready = /^\/ready-ogg\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(route);
+  // `ready-ogg-overstated` records a duration 4 s longer than the 600 s of audio, as ffprobe
+  // did for a retained Set whose last seconds the player could not decode.
+  const ready =
+    /^\/ready-ogg(?<overstated>-overstated)?\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
+      route
+    );
   if (ready?.groups && request.method === "POST") {
-    const { setId } = ready.groups;
+    const { overstated, setId } = ready.groups;
     if (!db.query("SELECT id FROM sets WHERE id = ?").get(setId)) {
       respond(response, 404);
       return true;
@@ -193,8 +198,8 @@ const handleStream = (route, request, response) => {
       destination
     );
     db.query(
-      "UPDATE sets SET download_state = 'ready', retained_audio_format = ?, retained_audio_bytes = ?, duration_seconds = 600 WHERE id = ?"
-    ).run("ogg", bytes.length, setId);
+      "UPDATE sets SET download_state = 'ready', retained_audio_format = ?, retained_audio_bytes = ?, duration_seconds = ? WHERE id = ?"
+    ).run("ogg", bytes.length, overstated ? 604 : 600, setId);
     respond(response, 204);
     return true;
   }
