@@ -1,5 +1,6 @@
 import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
+import assert from "node:assert/strict";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -151,10 +152,10 @@ test("Presence reaches only viewers who pass the gate and lapses when reports st
     const seen = await viewerA.presence((names) => names.includes("b"));
     expect(seen).toMatchObject([{ personId: "b", set: { id: set.id } }]);
     // C fails the gate, so C never receives B's Presence.
-    // oxlint-disable-next-line typescript/await-thenable, typescript/no-confusing-void-expression -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
-    await expect(
-      viewerC.presence((names) => names.includes("b"), 2500)
-    ).rejects.toThrow("No matching presence event arrived");
+    await assert.rejects(
+      viewerC.presence((names) => names.includes("b"), 2500),
+      /No matching presence event arrived/u
+    );
     // B stops reporting, so the Presence lapses.
     await viewerA.presence((names) => names.length === 0);
   } finally {

@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import assert from "node:assert/strict";
 
 import { makeAlarmScheduler } from "./alarm-scheduler.js";
 
@@ -76,8 +77,7 @@ test("an alarm the storage refused is written again on the next change", async (
   const scheduler = makeAlarmScheduler(store);
   const presence = scheduler.slot("presence");
   store.failNextWrite();
-  // oxlint-disable-next-line typescript/await-thenable, typescript/no-confusing-void-expression -- bun-types types the rejects matchers as void, but bun returns a promise the test must await.
-  await expect(presence.set(1000)).rejects.toThrow("storage refused");
+  await assert.rejects(presence.set(1000), /storage refused/u);
   await presence.set(1000);
   expect(store.calls).toEqual([1000]);
 });
