@@ -16,8 +16,9 @@ import {
   decodePlaybackDiagnosticsBatch,
   playbackLosses,
 } from "../packages/contracts/dist/playback-diagnostics.js";
+import { makeAudioFaults } from "./lane-audio-faults.mjs";
 
-const [dataDirectory, fixture, port] = process.argv.slice(2);
+const [dataDirectory, fixture, port, serviceAddress] = process.argv.slice(2);
 if (!dataDirectory || !fixture || !port) {
   throw new Error("Expected a lane data directory, audio fixture, and port");
 }
@@ -27,6 +28,7 @@ const db = new Database(path.join(dataDirectory, "library.sqlite"));
 // that meets one of its writes fails with SQLITE_BUSY and takes this server down with it.
 db.run("PRAGMA busy_timeout = 5000");
 const audioDirectory = path.join(dataDirectory, "audio");
+const audioFaults = makeAudioFaults({ audioDirectory, serviceAddress });
 const slowSets = new Map();
 const downloads = new Map();
 const audio = readFileSync(fixture);
@@ -447,6 +449,9 @@ const seedAnalysis = (setId) => {
 const handle = async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
   if (await routeDiagnostics(route, request, response)) {
+    return;
+  }
+  if (await audioFaults.route(route, request, response)) {
     return;
   }
   if (handleStream(route, request, response)) {

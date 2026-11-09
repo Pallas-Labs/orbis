@@ -211,8 +211,12 @@ test("OTLP records carry resource attributes, event attributes, and the Set ID",
           },
         }),
         entry(4, { state: { _0: { from: "playing", to: "paused" } } }),
+        entry(5, { stallUnrecovered: {} }, { bufferEmpty: true }),
+        entry(6, {
+          command: { _0: { kind: "reload", origin: "automatic", target: 12 } },
+        }),
       ],
-      throughSequence: 4,
+      throughSequence: 6,
     };
     const response = await s.send(JSON.stringify(body));
     expect(response.status).toBe(200);
@@ -233,7 +237,7 @@ test("OTLP records carry resource attributes, event attributes, and the Set ID",
       "service.namespace": { stringValue: "orbis" },
       "service.version": { stringValue: fixture.metadata.appVersion },
     });
-    const [command, seek, item, state] = recordsOf(sent);
+    const [command, seek, item, state, unrecovered, reload] = recordsOf(sent);
     expect(command).toMatchObject({
       "orbis.set_id": { stringValue: "set-42" },
       "playback.command.kind": { stringValue: "seek" },
@@ -255,6 +259,19 @@ test("OTLP records carry resource attributes, event attributes, and the Set ID",
     expect(state).toMatchObject({
       "playback.state.from": { stringValue: "playing" },
     });
+    expect(unrecovered).toMatchObject({
+      "event.name": { stringValue: "playback.stall_unrecovered" },
+    });
+    expect(reload).toMatchObject({
+      "event.name": { stringValue: "playback.command" },
+      "playback.command.kind": { stringValue: "reload" },
+      "playback.command.origin": { stringValue: "automatic" },
+    });
+    expect(
+      sent.resourceLogs[0]?.scopeLogs[0]?.logRecords.map(
+        (record) => record.severityText
+      )
+    ).toEqual(["INFO", "INFO", "WARN", "INFO", "WARN", "INFO"]);
   } finally {
     await s.close();
   }

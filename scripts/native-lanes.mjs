@@ -248,6 +248,7 @@ try {
           tvos ? "silent-set.m4a" : "ready-set.m4a"
         ),
         String(seedPort),
+        address,
       ],
       { cwd: root, stdio: ["ignore", "ignore", "inherit"] }
     );

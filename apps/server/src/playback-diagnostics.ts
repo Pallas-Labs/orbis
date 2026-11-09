@@ -101,6 +101,7 @@ const eventAttributes: EventAttributes = {
     ...maybeDouble("playback.seek.actual", _0.actual),
   ],
   session: ({ _0 }) => [text("playback.phase", _0.phase)],
+  stallUnrecovered: none,
   stalled: none,
   state: ({ _0 }) => [text("playback.state.from", _0.from)],
   timeJumped: none,
@@ -179,6 +180,12 @@ const factsFor = (event: Event) => {
       kind: "stalled",
     };
   }
+  if ("stallUnrecovered" in event) {
+    return {
+      attributes: eventAttributes.stallUnrecovered(event.stallUnrecovered),
+      kind: "stall_unrecovered",
+    };
+  }
   if ("state" in event) {
     return { attributes: eventAttributes.state(event.state), kind: "state" };
   }
@@ -205,6 +212,7 @@ const logsFor = (batch: PlaybackDiagnosticsPayload, environment: string) => {
     const { attributes, kind } = factsFor(event);
     const warning =
       "stalled" in event ||
+      "stallUnrecovered" in event ||
       "error" in event ||
       ("item" in event && event.item._0.phase === "failed") ||
       ("session" in event && event.session._0.phase === "failed") ||

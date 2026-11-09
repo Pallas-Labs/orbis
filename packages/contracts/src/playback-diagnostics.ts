@@ -74,11 +74,13 @@ const Event = Schema.Union([
           "skipForward",
           "skipBackward",
           "stop",
+          "reload",
         ]),
         origin: Schema.Literals([
           "app",
           "systemRemote",
           "internalOperation",
+          "automatic",
           "unknown",
         ]),
         target: Finite,
@@ -104,6 +106,7 @@ const Event = Schema.Union([
     waiting: Schema.Struct({ _0: Schema.Struct({ reason: WaitingReason }) }),
   }),
   Schema.Struct({ stalled: Empty }),
+  Schema.Struct({ stallUnrecovered: Empty }),
   Schema.Struct({
     discontinuity: Schema.Struct({
       _0: Schema.Struct({

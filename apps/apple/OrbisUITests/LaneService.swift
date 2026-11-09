@@ -115,6 +115,61 @@ struct LaneService {
     try seed("ready-audio/\(id)")
   }
 
+  /// How the lane's seed server spoils a Set's audio, for a journey that launches the app
+  /// through `proxyAddress()`. `heldBody` sends the headers and never the body, as a path that
+  /// holds the bytes does. `pausedBody` sends the first third of the file and its tail, then
+  /// pauses, so the item plays ten seconds and stalls.
+  enum AudioFault: String {
+    case heldBody = "held-body"
+    case pausedBody = "paused-body"
+  }
+
+  /// Spoils the audio of the first item the app loads for `id`, or of every item when
+  /// `everySession` is set, so a reload meets the same fault.
+  func fault(_ id: String, with fault: AudioFault, everySession: Bool = false) throws {
+    try seed("\(fault.rawValue)/\(id)\(everySession ? "?sessions=all" : "")")
+  }
+
+  /// The service address through the seed server, which answers faulted audio itself, keeps the
+  /// app's playback diagnostics, and passes everything else to the lane service.
+  static func proxyAddress() throws -> String {
+    try "\(seedAddress())/via"
+  }
+
+  /// The playback diagnostics the app sent through the proxy for `id`, oldest first.
+  func proxiedDiagnostics(for id: String) throws -> [[String: Any]] {
+    let answer = try seedJSON("via-diagnostics?setId=\(id)")
+    return answer["entries"] as? [[String: Any]] ?? []
+  }
+
+  /// Each audio request the faulted Set received: its player session, range, and bytes sent.
+  func faultState(of id: String) throws -> [String: Any] {
+    try seedJSON("audio-fault-state/\(id)")
+  }
+
+  private static func seedAddress() throws -> String {
+    guard let seedAddress = ProcessInfo.processInfo.environment["ORBIS_UI_TEST_SEED_ADDRESS"],
+      !seedAddress.isEmpty
+    else { throw XCTSkip("the lane must supply ORBIS_UI_TEST_SEED_ADDRESS") }
+    return seedAddress
+  }
+
+  private func seedJSON(_ path: String) throws -> [String: Any] {
+    guard let endpoint = URL(string: "\(try Self.seedAddress())/\(path)") else {
+      throw URLError(.badURL)
+    }
+    var result: Data?
+    let done = DispatchSemaphore(value: 0)
+    URLSession.shared.dataTask(with: endpoint) { data, response, _ in
+      if (response as? HTTPURLResponse)?.statusCode == 200 { result = data }
+      done.signal()
+    }.resume()
+    guard done.wait(timeout: .now() + 20) == .success, let result,
+      let object = try JSONSerialization.jsonObject(with: result) as? [String: Any]
+    else { throw URLError(.badServerResponse) }
+    return object
+  }
+
   func finishSlowDownload(_ id: String) throws {
     try seed("finish-download/\(id)")
   }
