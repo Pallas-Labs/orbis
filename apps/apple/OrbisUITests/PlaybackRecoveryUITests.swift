@@ -69,12 +69,10 @@ final class PlaybackRecoveryUITests: LibraryJourney {
       events.filter { ["stallUnrecovered", "command.reload.automatic"].contains($0) },
       ["stallUnrecovered", "command.reload.automatic"],
       "One unrecovered stall, then one automatic reload: \(events)")
-    let stalledAt = Self.wallTime(of: "stalled", in: entries)
-    let unrecoveredAt = Self.wallTime(of: "stallUnrecovered", in: entries)
-    findings["secondsFromStallToUnrecovered"] = unrecoveredAt.flatMap { end in
-      stalledAt.map { (end - $0) / 1_000 }
-    } ?? -1
-    let window = try XCTUnwrap(findings["secondsFromStallToUnrecovered"] as? Double)
+    let stalledAt = try XCTUnwrap(Self.wallTime(of: "stalled", in: entries))
+    let unrecoveredAt = try XCTUnwrap(Self.wallTime(of: "stallUnrecovered", in: entries))
+    let window = (unrecoveredAt - stalledAt) / 1_000
+    findings["secondsFromStallToUnrecovered"] = window
     XCTAssertTrue((0...30).contains(window), "The stall must be acted on within 30 s: \(window)")
   }
 
