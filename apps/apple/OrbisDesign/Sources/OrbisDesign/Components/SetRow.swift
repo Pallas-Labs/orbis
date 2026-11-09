@@ -152,11 +152,17 @@ public struct SetRow: View {
           textControl
         }
       } else {
-        #if os(macOS)
-          HStack(alignment: .center, spacing: 16) {
+        #if os(tvOS)
+          HStack(alignment: .top, spacing: 12) {
             artworkControl(size: .row)
-            // A narrow column, such as Search's list beside its Tracklist matches, has no room
-            // for the table, so the row falls back to the phone's two lines.
+            textControl
+          }
+        #else
+          HStack(alignment: Self.rowAlignment, spacing: Self.rowSpacing) {
+            artworkControl(size: .row)
+            // A window wide enough for the table, a Mac or an unfolded iPhone Duo, lays the row
+            // out in columns. A narrow one, a phone or Search's list beside its Tracklist
+            // matches, has no room for it, so the row falls back to two lines.
             control(select) {
               ViewThatFits(in: .horizontal) {
                 columns
@@ -164,11 +170,6 @@ public struct SetRow: View {
               }
               .contentShape(.rect)
             }
-          }
-        #else
-          HStack(alignment: .top, spacing: 12) {
-            artworkControl(size: .row)
-            textControl
           }
         #endif
       }
@@ -257,7 +258,7 @@ public struct SetRow: View {
     .frame(maxWidth: .infinity, alignment: .leading)
   }
 
-  /// A Mac window lays the row out as a table: the title and who made it, then the Tags, the
+  /// A wide window lays the row out as a table: the title and who made it, then the Tags, the
   /// length and the kept-audio symbol in columns, so lengths line up down the list.
   private var columns: some View {
     HStack(alignment: .center, spacing: 16) {
@@ -313,6 +314,14 @@ public struct SetRow: View {
   }
 
   private static let minimumTitleWidth: CGFloat = 200
+
+  #if os(macOS)
+    private static let rowAlignment = VerticalAlignment.center
+    private static let rowSpacing: CGFloat = 16
+  #else
+    private static let rowAlignment = VerticalAlignment.top
+    private static let rowSpacing: CGFloat = 12
+  #endif
 
   /// The Tags the list is filtered by are true of every row, so a row leaves them out.
   private var otherTags: [Tag] {

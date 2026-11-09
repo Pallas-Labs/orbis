@@ -79,12 +79,17 @@ class LibraryJourney: XCTestCase {
         "a second tap on Search must focus the field\n\(app.debugDescription)")
       return nil
     }
-    let sidebarSearch = app.buttons["sidebar-search"]
+    let sidebarSearch = sidebarItem("Search", in: app, identifier: "sidebar-search")
     XCTAssertTrue(
-      sidebarSearch.waitForExistence(timeout: 15),
+      sidebarSearch.exists,
       "Search must be reachable from a tab bar or the sidebar\n\(app.debugDescription)"
     )
-    sidebarSearch.tap()
+    // A tap while the sidebar still settles can leave the last page selected, so it waits for
+    // Search's field and taps again, as `selectTab` does for a tab.
+    for _ in 0..<3 {
+      sidebarSearch.tap()
+      if app.searchFields.firstMatch.waitForExistence(timeout: 5) { break }
+    }
     return nil
   }
 
@@ -104,24 +109,48 @@ class LibraryJourney: XCTestCase {
       while Date() < deadline {
         if app.navigationBars[name].exists { return }
         let frame = tab.frame
-        guard frame.width > 40, frame.minY > 600 else {
+        let window = app.windows.firstMatch.frame
+        guard frame.width > 40 else {
           usleep(200_000)
           continue
         }
+        // A bar along the bottom takes the tap near its top edge; a bar down the side, as an
+        // iPhone Duo draws it, takes it at the button's centre.
+        let isBottomBar = frame.minY > window.height / 2
         app.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
-          .withOffset(CGVector(dx: frame.midX, dy: frame.minY + 18))
+          .withOffset(
+            CGVector(dx: frame.midX, dy: isBottomBar ? frame.minY + 18 : frame.midY)
+          )
           .tap()
         if app.navigationBars[name].waitForExistence(timeout: 2) { return }
       }
       XCTFail("\(name) must open from its tab\n\(app.debugDescription)")
       return
     }
-    let sidebar = app.buttons[sidebarIdentifier]
+    let sidebar = sidebarItem(name, in: app, identifier: sidebarIdentifier)
     XCTAssertTrue(
-      sidebar.waitForExistence(timeout: 15),
+      sidebar.exists,
       "\(name) must be reachable from a tab bar or the sidebar\n\(app.debugDescription)"
     )
     sidebar.tap()
+  }
+
+  /// A destination's row in the sidebar: the Mac's own row by its identifier, or the row the
+  /// adaptable tab view draws in its sidebar on a wide iPhone or an iPad, by its name. An iPad in
+  /// portrait shows the floating tab bar instead, whose items are found the same way.
+  func sidebarItem(_ name: String, in app: XCUIApplication, identifier: String) -> XCUIElement {
+    // An iPad's floating tab bar reports each item as a button inside a button of the same
+    // name, so each query takes its first match.
+    let candidates = [
+      app.buttons[identifier].firstMatch, app.collectionViews.cells[name].firstMatch,
+      app.cells[name].firstMatch, app.buttons[name].firstMatch,
+    ]
+    let deadline = Date().addingTimeInterval(15)
+    repeat {
+      if let found = candidates.first(where: { $0.exists }) { return found }
+      usleep(200_000)
+    } while Date() < deadline
+    return candidates[0]
   }
 
   /// The prompt the field shows while it is empty. XCUITest reports it as the field's value.

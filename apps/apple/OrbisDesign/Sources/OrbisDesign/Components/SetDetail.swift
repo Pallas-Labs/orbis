@@ -141,12 +141,27 @@ public struct SetDetail: View {
   @State private var topInset: CGFloat = 0
   private static let content = "set-detail-content"
 
+  #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+  #endif
+
+  /// A wide window, a Mac or an iPhone or iPad at regular width, puts the artwork beside the words
+  /// and the controls, as Home's hero and a Playlist's do, with the Tracklist under both. A narrow
+  /// one stacks them in a column.
+  private var isBeside: Bool {
+    #if os(macOS)
+      true
+    #elseif os(iOS)
+      sizeClass == .regular
+    #else
+      false
+    #endif
+  }
+
   public var body: some View {
     ScrollView {
       VStack(spacing: 0) {
-        #if os(macOS)
-          // A Mac window is wide, so the artwork sits beside the words and the controls, as
-          // Home's hero and a Playlist's do, and the Tracklist runs under both.
+        if isBeside {
           HStack(alignment: .center, spacing: 36) {
             cover
               .frame(maxWidth: 420)
@@ -166,7 +181,7 @@ public struct SetDetail: View {
           .padding(.horizontal)
           .padding(.top, 28)
           .padding(.bottom, 32)
-        #else
+        } else {
           cover
             .padding(.horizontal, 30)
             .padding(.top, 8)
@@ -180,8 +195,9 @@ public struct SetDetail: View {
           .padding(.horizontal)
           .padding(.top, 18)
           .padding(.bottom, 32)
-        #endif
+        }
       }
+      .environment(\.setHeaderIsBeside, isBeside)
       .coordinateSpace(.named(Self.content))
       // The glow belongs to the header, so it scrolls away with it rather than staying behind the
       // tracklist. One screen tall, and raised under the bar, where the content does not reach.
@@ -226,10 +242,11 @@ public struct SetDetail: View {
   }
 
   private var header: some View {
-    VStack(alignment: HeaderAlignment.horizontal, spacing: 2) {
+    let alignment = HeaderAlignment(isBeside: isBeside)
+    return VStack(alignment: alignment.horizontal, spacing: 2) {
       Text(title)
         .font(.orbis.title)
-        .multilineTextAlignment(HeaderAlignment.text)
+        .multilineTextAlignment(alignment.text)
         .accessibilityLabel(Self.headerLabel(title: title, source: source))
         .accessibilityAddTraits(.isHeader)
         .accessibilityIdentifier("detail-title")
@@ -242,7 +259,7 @@ public struct SetDetail: View {
         let name = Text(creator)
           .font(.title3)
           .foregroundStyle(Color.orbis.tint)
-          .multilineTextAlignment(HeaderAlignment.text)
+          .multilineTextAlignment(alignment.text)
         if let showCreator {
           Button(action: showCreator) { name }
             .buttonStyle(.plain)
@@ -269,23 +286,34 @@ public struct SetDetail: View {
         .padding(.top, 4)
       }
     }
-    .frame(maxWidth: .infinity, alignment: HeaderAlignment.frame)
+    .frame(maxWidth: .infinity, alignment: alignment.frame)
   }
 
 }
 
-/// The header and its Tags sit centred under the artwork on a phone, and beside it on a Mac, where
-/// they read from the leading edge.
-private enum HeaderAlignment {
-  #if os(macOS)
-    static let horizontal = HorizontalAlignment.leading
-    static let text = TextAlignment.leading
-    static let frame = Alignment.leading
-  #else
-    static let horizontal = HorizontalAlignment.center
-    static let text = TextAlignment.center
-    static let frame = Alignment.center
-  #endif
+/// The header and its Tags sit centred under the artwork in a column, and beside it in a wide
+/// window, where they read from the leading edge.
+private struct HeaderAlignment {
+  let horizontal: HorizontalAlignment
+  let text: TextAlignment
+  let frame: Alignment
+
+  init(isBeside: Bool) {
+    horizontal = isBeside ? .leading : .center
+    text = isBeside ? .leading : .center
+    frame = isBeside ? .leading : .center
+  }
+}
+
+extension EnvironmentValues {
+  /// Whether the Set's page lays its header beside the artwork, which the Tags follow.
+  @Entry var setHeaderIsBeside: Bool = {
+    #if os(macOS)
+      true
+    #else
+      false
+    #endif
+  }()
 }
 
 /// A Set's Tags, each one tap from the Library filtered by it, and a "+" to change them.
@@ -321,9 +349,12 @@ public struct SetManagement: View {
     )
   }
 
+  @Environment(\.setHeaderIsBeside) private var isBeside
+
   public var body: some View {
-    GlassEffectContainer(spacing: 8) {
-      ChipFlow(spacing: 8, alignment: HeaderAlignment.horizontal) {
+    let alignment = HeaderAlignment(isBeside: isBeside)
+    return GlassEffectContainer(spacing: 8) {
+      ChipFlow(spacing: 8, alignment: alignment.horizontal) {
         ForEach(tags, id: \.self) { tag in
           Button {
             showTag(tag)
@@ -349,7 +380,7 @@ public struct SetManagement: View {
         .accessibilityIdentifier("detail-tags-row")
       }
     }
-    .frame(maxWidth: .infinity, alignment: HeaderAlignment.frame)
+    .frame(maxWidth: .infinity, alignment: alignment.frame)
   }
 }
 

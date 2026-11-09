@@ -6,13 +6,25 @@ import SwiftUI
 /// The Tracklist takes the artwork's place the way lyrics do, so the mix can be read and stepped
 /// through without leaving the player. Always dark, on the artwork's colour. The screen follows
 /// the player, and closes when it empties.
+///
+/// Given room on both sides, as on an iPad or an unfolded iPhone Duo, the player shares the screen
+/// with a panel that shows the Tracklist or Up Next: stacked when the window stands upright, side
+/// by side when it lies on its side. What the panel shows is the model's, so a fold carries it to
+/// the column, where the Tracklist is in the artwork's place and Up Next is a sheet.
 struct NowPlayingScreen: View {
   @Bindable var model: AppModel
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openURL) private var openURL
   @State private var isRenaming = false
-  @State private var isShowingQueue = false
-  @State private var showsTracklist = false
+  /// What the column showed before Up Next opened as a sheet, which closing the sheet goes back
+  /// to.
+  @State private var panelBeforeQueue: NowPlayingPanel?
+  /// True when the window has room for the player and the panel together.
+  @State private var isSplit = false
+  /// True when that room lies side by side rather than stacked.
+  @State private var isSideBySide = false
+  /// The player column's width, which the artwork takes three quarters of in the split.
+  @State private var playerWidth: CGFloat = 0
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
   /// Closes the screen when something other than a sheet presents it, such as the player that
   /// grows out of the mini player. Nil dismisses the sheet.
@@ -50,16 +62,26 @@ struct NowPlayingScreen: View {
     .background {
       if drawsBackground { NowPlayingBackground(set: set) }
     }
+    #if os(iOS)
+      .onGeometryChange(for: CGSize.self) {
+        $0.size
+      } action: {
+        resize(to: $0)
+      }
+    #endif
     .environment(\.colorScheme, .dark)
     .setChangeStatus(model)
-    .sheet(isPresented: $isShowingQueue) {
+    .sheet(isPresented: isShowingQueue) {
       // Dark like the player it opens over, not the light of the app behind.
       QueueScreen(model: model).preferredColorScheme(.dark)
     }
     #if os(iOS)
       // The swipe down is invisible and VoiceOver cannot make it, so the chevron where the
       // grabber sat is the way out anyone can see.
-      .overlay(alignment: .top) { closeButton(systemImage: "chevron.down") }
+      // Side by side, the middle of the window is the fold, so the chevron tops the player.
+      .overlay(alignment: isSideBySide ? .topLeading : .top) {
+        closeButton(systemImage: "chevron.down").padding(.leading, isSideBySide ? 24 : 0)
+      }
     #elseif os(macOS)
       // A Mac sheet has no grabber to pull down and no swipe, so Now Playing closes from a button
       // and from Escape.
@@ -73,9 +95,52 @@ struct NowPlayingScreen: View {
 
   /// The height the close button takes at the top, which the column starts below.
   private static let closeClearance: CGFloat = 44
-  /// The artwork's widest: about three quarters of a phone's width. At the column's full width a
-  /// 16:9 picture crowds the page.
-  private static let artworkWidth: CGFloat = 296
+  /// The artwork's widest in the column: about three quarters of a phone's width. At the column's
+  /// full width a 16:9 picture crowds the page.
+  private static let columnArtworkWidth: CGFloat = 296
+  /// The widest the player gets beside its panel, and the widest its artwork gets.
+  private static let splitPlayerWidth: CGFloat = 420
+  /// The shortest side a window needs for the player and the panel together.
+  private static let splitMinimum: CGFloat = 600
+
+  /// Three quarters of the player column in the split, at most 420 points.
+  private var artworkWidth: CGFloat {
+    isSplit ? min(Self.splitPlayerWidth, playerWidth * 0.75) : Self.columnArtworkWidth
+  }
+
+  private var isStacked: Bool { isSplit && !isSideBySide }
+
+  /// Up Next is a sheet only in the column; in the split the panel shows it. The player stays built
+  /// while closed, so the sheet also waits for Now Playing to be open: a fold after the player
+  /// closes on Up Next must not open the sheet over the shell.
+  private var isShowingQueue: Binding<Bool> {
+    Binding(
+      get: { model.isNowPlayingOpen && !isSplit && model.nowPlayingPanel == .upNext },
+      set: { isShown in
+        guard !isShown, !isSplit, model.nowPlayingPanel == .upNext else { return }
+        model.nowPlayingPanel = panelBeforeQueue
+      })
+  }
+
+  /// What the panel shows: the model's choice, or else the Tracklist when the Set has one.
+  private func shownPanel(cues: [Cue]) -> NowPlayingPanel {
+    model.nowPlayingPanel ?? (cues.isEmpty ? .upNext : .tracklist)
+  }
+
+  /// Chooses the column or the split from the room the window gives, not from the device. A fold
+  /// changes the layout at once: the window's own resize is the only motion, and the Up Next
+  /// sheet closes without animation as the panel takes it.
+  private func resize(to size: CGSize) {
+    let split = min(size.width, size.height) >= Self.splitMinimum
+    let beside = split && size.width > size.height
+    guard split != isSplit || beside != isSideBySide else { return }
+    var transaction = Transaction()
+    transaction.disablesAnimations = true
+    withTransaction(transaction) {
+      isSplit = split
+      isSideBySide = beside
+    }
+  }
 
   private func closeButton(systemImage: String) -> some View {
     Button("Close", systemImage: systemImage, action: closeScreen)
@@ -103,26 +168,92 @@ struct NowPlayingScreen: View {
       .padding(.horizontal, 32)
       .padding(.top, 24)
     #else
-      let column = playerColumn(set, cues: cues, showsTracklistInPlace: showsTracklist)
+      let layout =
+        isSideBySide
+        ? AnyLayout(HStackLayout(alignment: .top, spacing: 8))
+        : AnyLayout(VStackLayout(spacing: 16))
+      // One tree in every pose: the layout changes around the player, so a fold keeps it.
+      let page = VStack(spacing: 0) {
+        layout {
+          playerColumn(
+            set, cues: cues,
+            showsTracklistInPlace: !isSplit && model.nowPlayingPanel == .tracklist,
+            includesBottomRow: !isStacked
+          )
+          .frame(maxWidth: isSideBySide ? Self.splitPlayerWidth + 48 : .infinity)
+          .fixedSize(horizontal: false, vertical: isStacked)
+          if isSplit {
+            panel(set, cues: cues)
+              .padding(.horizontal, isSideBySide ? 0 : 24)
+              .padding(.trailing, isSideBySide ? 24 : 0)
+              .padding(.top, isSideBySide ? Self.closeClearance : 0)
+              .padding(.bottom, 12)
+          }
+        }
+        if isStacked {
+          bottomRow(cues: cues)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 12)
+        }
+      }
       // At the largest text sizes the column is taller than the screen, so it scrolls rather
       // than push the bottom row off.
-      if dynamicTypeSize.isAccessibilitySize {
-        ScrollView { column }
+      if dynamicTypeSize.isAccessibilitySize, !isSplit {
+        ScrollView { page }
       } else {
-        column
+        page
       }
     #endif
   }
 
+  /// The panel beside or under the player in the split: the Tracklist or Up Next, chosen from
+  /// its segments or from the bottom row's buttons.
+  private func panel(_ set: SavedSet, cues: [Cue]) -> some View {
+    let shown = shownPanel(cues: cues)
+    return VStack(spacing: 8) {
+      Picker(
+        "Show",
+        selection: Binding(get: { shown }, set: { model.nowPlayingPanel = $0 })
+      ) {
+        ForEach(NowPlayingPanel.allCases) { panel in
+          Text(panel.rawValue).tag(panel)
+        }
+      }
+      .pickerStyle(.segmented)
+      .accessibilityIdentifier("now-playing-panel-picker")
+      switch shown {
+      case .tracklist:
+        if cues.isEmpty {
+          ContentUnavailableView {
+            Label("No Tracklist", systemImage: "quote.bubble")
+          } description: {
+            Text("This set has no Tracklist yet.")
+          }
+          .frame(maxHeight: .infinity)
+        } else {
+          LyricsTracklist(model: model, set: set, cues: cues)
+        }
+      case .upNext:
+        QueueList(model: model, background: .clear)
+          .accessibilityIdentifier("now-playing-up-next")
+      }
+    }
+    .padding(12)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    .background(.white.opacity(0.08), in: .rect(cornerRadius: 24))
+    .accessibilityElement(children: .contain)
+    .accessibilityIdentifier("now-playing-panel")
+  }
+
   private func playerColumn(
-    _ set: SavedSet, cues: [Cue], showsTracklistInPlace: Bool
+    _ set: SavedSet, cues: [Cue], showsTracklistInPlace: Bool, includesBottomRow: Bool = true
   ) -> some View {
     let player = model.audioPlayer
     let isPlaying = player.state == .playing || player.state == .loading
     return VStack(spacing: 0) {
       if showsTracklistInPlace, !cues.isEmpty {
         Button {
-          showsTracklist = false
+          model.nowPlayingPanel = nil
         } label: {
           HStack(spacing: 12) {
             Artwork(url: SetPresentation.pageArtwork(set), seed: set.title, size: .row)
@@ -148,7 +279,7 @@ struct NowPlayingScreen: View {
         // The artwork sits back while the Set is paused and steps forward when it plays, the way
         // Apple Music's does: the state of the player, read from across the room.
         Artwork(url: SetPresentation.pageArtwork(set), seed: set.title, size: .header)
-          .frame(maxWidth: Self.artworkWidth)
+          .frame(maxWidth: artworkWidth)
           .nowPlayingArtworkAnchor(artworkAnchor)
           .opacity(hidesArtwork ? 0 : 1)
           // One radius: a blur that changes size is redrawn every frame of the step.
@@ -172,35 +303,58 @@ struct NowPlayingScreen: View {
       )
       .padding(.top, 20)
       if !showsTracklistInPlace {
-        NextCueBar(player: player) { showsTracklist = true }
+        NextCueBar(player: player) { model.nowPlayingPanel = .tracklist }
           .padding(.top, 16)
       }
-      Spacer(minLength: 20)
-      HStack {
-        #if os(iOS)
-          Button("Tracklist", systemImage: showsTracklist ? "quote.bubble.fill" : "quote.bubble") {
-            showsTracklist.toggle()
-          }
-          .disabled(cues.isEmpty)
-          .accessibilityIdentifier("now-playing-tracklist")
-          Spacer()
-        #endif
-        AirPlayButton()
-        Spacer()
-        Button("Up Next", systemImage: "list.bullet") { isShowingQueue = true }
-          .accessibilityIdentifier("now-playing-queue")
+      if includesBottomRow {
+        Spacer(minLength: 20)
+        bottomRow(cues: cues)
       }
-      .labelStyle(.iconOnly)
-      .buttonStyle(.orbisIcon)
-      .font(.title3)
-      .padding(.horizontal, 12)
     }
     .padding(.horizontal, 24)
-    .padding(.bottom, 12)
-    .orbisAnimation(.cueChanged, value: showsTracklist)
+    .padding(.bottom, includesBottomRow ? 12 : 0)
+    .onGeometryChange(for: CGFloat.self) {
+      $0.size.width - 48
+    } action: {
+      playerWidth = $0
+    }
+    .orbisAnimation(.cueChanged, value: model.nowPlayingPanel)
     .task(id: model.tracklistRead(set.id)) {
       if set.tracklistState != .none { await model.loadTracklist(set.id) }
     }
+  }
+
+  /// The Tracklist, AirPlay and Up Next. In the column, the Tracklist takes the artwork's place
+  /// and Up Next opens a sheet; in the split, each chooses the panel's segment.
+  private func bottomRow(cues: [Cue]) -> some View {
+    let shown = shownPanel(cues: cues)
+    let showsTracklist = isSplit ? shown == .tracklist : model.nowPlayingPanel == .tracklist
+    return HStack {
+      #if os(iOS)
+        Button("Tracklist", systemImage: showsTracklist ? "quote.bubble.fill" : "quote.bubble") {
+          if isSplit {
+            model.nowPlayingPanel = .tracklist
+          } else {
+            model.nowPlayingPanel = showsTracklist ? nil : .tracklist
+          }
+        }
+        .disabled(cues.isEmpty)
+        .accessibilityIdentifier("now-playing-tracklist")
+        Spacer()
+      #endif
+      AirPlayButton()
+      Spacer()
+      Button("Up Next", systemImage: "list.bullet") {
+        if !isSplit { panelBeforeQueue = model.nowPlayingPanel }
+        model.nowPlayingPanel = .upNext
+      }
+      .accessibilityAddTraits(isSplit && shown == .upNext ? .isSelected : [])
+      .accessibilityIdentifier("now-playing-queue")
+    }
+    .labelStyle(.iconOnly)
+    .buttonStyle(.orbisIcon)
+    .font(.title3)
+    .padding(.horizontal, 12)
   }
 }
 
