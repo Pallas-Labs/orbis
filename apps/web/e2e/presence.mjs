@@ -197,8 +197,9 @@ try {
       "playing audio did not renew its lease",
       125
     );
-    // oxlint-disable-next-line typescript/no-confusing-void-expression -- the type checker reads this find as void, but it returns the first renew action, which the next lines read.
-    const renew = actions.find((action) => action.kind === "renew");
+    const renewIndex = actions.findIndex((action) => action.kind === "renew");
+    assert.notEqual(renewIndex, -1, "playing audio did not renew its lease");
+    const renew = actions[renewIndex];
     assert.equal(renew.sessionId, actions[0].sessionId);
     assert.ok(renew.actionNumber > actions[0].actionNumber);
     step("playing audio renews the lease in the same session");
