@@ -1,10 +1,11 @@
 import { Action, ActionPanel, Form, popToRoot, Toast } from "@raycast/api";
 import { useState } from "react";
 
-import { signIn, startToast } from "./orbis-client";
+import { settleToast, signIn, startToast } from "./orbis-client";
 
 interface SignInValues {
-  readonly code: string;
+  /** Vicinae submits a text field the user never touched as null. */
+  readonly code: string | null;
 }
 
 export default function SignIn() {
@@ -16,14 +17,26 @@ export default function SignIn() {
     const result = await signIn(code);
     setIsLoading(false);
     if (result.kind === "failed") {
-      toast.style = Toast.Style.Failure;
-      toast.title = "Couldn't sign in";
-      toast.message = result.message;
+      await settleToast(
+        toast,
+        {
+          message: result.message,
+          style: Toast.Style.Failure,
+          title: "Couldn't sign in",
+        },
+        { endsAtRoot: false }
+      );
       return;
     }
-    toast.style = Toast.Style.Success;
-    toast.title = `Signed in as ${result.username}`;
-    toast.message = "Save Current Tab and Save Clipboard are ready.";
+    await settleToast(
+      toast,
+      {
+        message: "Save Current Tab and Save Clipboard are ready.",
+        style: Toast.Style.Success,
+        title: `Signed in as ${result.username}`,
+      },
+      { endsAtRoot: true }
+    );
     await popToRoot();
   };
 

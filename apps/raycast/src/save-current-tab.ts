@@ -3,6 +3,7 @@ import { BrowserExtension, Toast } from "@raycast/api";
 import {
   canonicalSourceUrl,
   finishSave,
+  settleCommand,
   startProgressToast,
 } from "./orbis-client";
 
@@ -37,26 +38,32 @@ export default async function SaveCurrentTab() {
   try {
     tabs = await BrowserExtension.getTabs();
   } catch (error) {
-    toast.style = Toast.Style.Failure;
-    toast.title = "Couldn't read the current tab";
-    toast.message =
-      error instanceof Error
-        ? error.message
-        : "Raycast's browser extension didn't answer.";
+    await settleCommand(toast, {
+      message:
+        error instanceof Error
+          ? error.message
+          : "Raycast's browser extension didn't answer.",
+      style: Toast.Style.Failure,
+      title: "Couldn't read the current tab",
+    });
     return;
   }
   const active = tabs.filter((tab) => tab.active);
   if (active.length === 0) {
-    toast.style = Toast.Style.Failure;
-    toast.title = "No active tab";
-    toast.message = "Open a browser tab and try again.";
+    await settleCommand(toast, {
+      message: "Open a browser tab and try again.",
+      style: Toast.Style.Failure,
+      title: "No active tab",
+    });
     return;
   }
   const tab = await focusedTab(active);
   if (!tab) {
-    toast.style = Toast.Style.Failure;
-    toast.title = "Couldn't tell which window is in front";
-    toast.message = "Click the window with the Set, then try again.";
+    await settleCommand(toast, {
+      message: "Click the window with the Set, then try again.",
+      style: Toast.Style.Failure,
+      title: "Couldn't tell which window is in front",
+    });
     return;
   }
   await finishSave(toast, canonicalSourceUrl(tab.url));

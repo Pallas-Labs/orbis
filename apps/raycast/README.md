@@ -19,6 +19,26 @@ For one-shortcut capture, assign **Save Current Tab** a hotkey in Raycast Settin
 
 The **Orbis Service URL** preference defaults to `https://orbis.p11a.xyz/api`, and the extension sends a code or key only over HTTPS. The **Device Token** preference is for setups from before **Sign In**; a key from **Sign In** takes its place. To sign in as another Person, run **Sign In** again.
 
+## Vicinae on Linux
+
+[Vicinae](https://vicinae.com) runs this extension as built by `ray build`, with no Vicinae SDK. From the repository root:
+
+```sh
+bun install
+bun run --filter './apps/raycast' build
+mkdir -p ~/.local/share/vicinae/extensions/orbis
+rsync -a --delete --exclude '*.map' apps/raycast/dist/ ~/.local/share/vicinae/extensions/orbis/
+```
+
+Vicinae loads the folder without a restart. Run the same two last steps again after a change. Then run **Sign In** from Vicinae as in [Setup](#setup); the device still appears as "Raycast". For **Save Current Tab**, install the [Vicinae Integration](https://chromewebstore.google.com/detail/vicinae-integration/kcmipingpfbohfjckomimmahknoddnke) browser extension instead of Raycast's.
+
+How the commands differ in Vicinae:
+
+- Vicinae's root search shows no toast, so **Save Current Tab** and **Save Clipboard**, and a successful **Sign In**, show their outcome as a HUD that closes the window. The HUD shortens long text.
+- Vicinae cannot read a page's content (`BrowserExtension.getContent`). With one browser window open, **Save Current Tab** saves its active tab. With more than one, it cannot tell which window is in front and saves nothing; clicking the window does not help in Vicinae. Close the other windows, or copy the link and run **Save Clipboard**.
+
+Checked on 2026-11-09 with Vicinae v0.29.0 (`68847f4b7`, the Pond build).
+
 ## Development
 
 ```

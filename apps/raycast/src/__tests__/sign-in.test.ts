@@ -67,6 +67,14 @@ test("Sign In sends nothing for a blank code", async () => {
   expect(requests).toEqual([]);
 });
 
+test("Sign In sends nothing when Vicinae submits the untouched field as null", async () => {
+  expect(await signIn(null)).toEqual({
+    kind: "failed",
+    message: "Type the Sign-in Code from Orbis Settings.",
+  });
+  expect(requests).toEqual([]);
+});
+
 test("Sign In shows the server's message for a used or expired code and keeps the old key", async () => {
   raycast.storage.set("deviceToken", "earlier-key");
   mockFetch(() =>
