@@ -49,6 +49,9 @@
         "@types/react": "19.0.10",
       },
     },
+    "apps/rune": {
+      "name": "@orbis/rune",
+    },
     "apps/server": {
       "name": "@orbis/server",
       "version": "0.0.0",
@@ -475,6 +478,8 @@
     "@orbis/api": ["@orbis/api@workspace:apps/api"],
 
     "@orbis/contracts": ["@orbis/contracts@workspace:packages/contracts"],
+
+    "@orbis/rune": ["@orbis/rune@workspace:apps/rune"],
 
     "@orbis/server": ["@orbis/server@workspace:apps/server"],
 

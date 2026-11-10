@@ -1,0 +1,180 @@
+kit-root	group	kit-root	-	-	0,0,1120,760	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1120,760	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1120,760	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,220,760	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,220,760	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	18,0,192,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	18,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	18,32,156,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	182,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	18,56,192,704	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	18,56,192,704	#00000000	-	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	18,56,192,704	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	18,56,192,108	#00000000	-	1.00
+         nav-library	listitem	nav-library	Library	-	18,56,192,32	#eeeaf703	-	1.00
+          icon	icon	icon	-	-	26,64,16,16	#00000000	#eeeaf7ff	1.00
+          label	text	label	-	Library	48,62,141,20	#00000000	#eeeaf7ff	1.00
+          detail	text	detail	-	9	195,66,7,12	#00000000	#76737eff	1.00
+         nav-queue	listitem	nav-queue	Listening Queue	-	18,90,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,98,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Listening Queue	48,96,140,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-	4	194,100,8,12	#00000000	#76737eff	1.00
+         nav-playing	listitem	nav-playing	Now Playing	-	18,124,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,132,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Now Playing	48,130,144,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-		198,134,4,12	#00000000	#76737eff	1.00
+    pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
+    pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	214,0,6,760	#00000000	-	0.02
+   main-column	group	main-column	-	-	220,0,900,760	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	220,0,900,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	220,8,900,752	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	220,8,892,744	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	Library	-	220,8,892,48	#00000000	-	1.00
+       center	group	center	-	-	220,8,892,48	#00000000	-	1.00
+        title	text	title	-	Library	644,22,44,20	#00000000	#eeeaf7ff	1.00
+       leading	group	leading	-	-	232,32,0,0	#00000000	-	1.00
+       spacer	group	spacer	-	-	240,32,796,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1044,22,56,20	#00000000	-	1.00
+        reload	button	reload	Reload	-	1044,22,56,20	#00000000	-	1.00
+         label	text	label	-	Reload	1054,26,36,12	#00000000	#a3a0acff	1.00
+      main	group	main	-	-	220,56,892,696	#00000000	-	1.00
+       #0	group	-	-	-	220,56,892,636	#00000000	-	1.00
+        library	group	library	-	-	220,56,892,636	#00000000	-	1.00
+         #0	group	-	-	-	220,56,892,48	#00000000	-	1.00
+          #0	group	-	-	-	236,68,401.5,28	#00000000	-	1.00
+           search	textbox	search	-	-	236,68,280,28	#040405ff	-	1.00
+            value	group	value	-	-	236,68,272,28	#00000000	-	1.00
+             leading	group	leading	-	-	236,74,24,16	#00000000	-	1.00
+              #0	icon	-	-	-	244,74,16,16	#00000000	#a3a0acff	1.00
+             input	textbox	input	Search the Library		266,74,242,16	#00000000	#eeeaf7ff	1.00
+          #1	group	-	-	-	649.5,82,401.5,0	#00000000	-	1.00
+          library-count	text	library-count	-	9 Sets	1063,76,33,12	#00000000	#a3a0acff	1.00
+         library-scroll	group	library-scroll	-	-	220,104,892,588	#00000000	-	1.00
+          sets	group	sets	-	-	220,104,892,494	#00000000	-	1.00
+           set-long	button	set-long	Play An All-Night Session Recorded Live from the Harbour Warehouse, Parts One Through Four, with the Sunrise Encore and the Crowd Singing Along	-	228,104,876,70	#00000000	-	1.00
+            #0	group	-	-	-	236,121,36,36	#254c88ff	-	1.00
+             #0	text	-	-	A	250,133,8,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,112,688,54	#00000000	-	1.00
+             #0	group	-	-	-	284,112,688,40	#00000000	-	1.00
+              #0	icon	-	-	-	284,126,12,12	#00000000	#a54dffff	1.00
+              #1	text	-	-	An All-Night Session Recorded Live from the Harbour Warehouse, Parts One Through Four, with the Sunrise Encore and the Crowd Singing Along	302,112,670,40	#00000000	#a54dffff	1.00
+             #1	text	-	-	The Extremely Long Collective Name of Avery Coast, Harbour Unit and Friends · 4:02:00	284,154,688,12	#00000000	#a3a0acff	1.00
+            #2	group	-	-	-	984,127,112,24	#00000000	-	0.00
+             next-long	button	next-long	Play Next	-	1046,127,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1050,131,16,16	#00000000	#a3a0acff	0.00
+             add-long	button	add-long	Add to Queue	-	1072,127,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1076,131,16,16	#00000000	#a3a0acff	0.00
+           set-s-sunrise	button	set-s-sunrise	Play Sunrise on the Pier	-	228,174,876,52	#00000000	-	1.00
+            #0	group	-	-	-	236,182,36,36	#7e3029ff	-	1.00
+             #0	text	-	-	S	250,194,8,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,183,688,34	#00000000	-	1.00
+             #0	group	-	-	-	284,183,688,20	#00000000	-	1.00
+              #0	text	-	-	Sunrise on the Pier	284,183,688,20	#00000000	#eeeaf7ff	1.00
+             #1	text	-	-	Avery Coast · 58:12	284,205,688,12	#00000000	#a3a0acff	1.00
+            #2	group	-	-	-	984,188,112,24	#00000000	-	0.00
+             next-s-sunrise	button	next-s-sunrise	Play Next	-	1046,188,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1050,192,16,16	#00000000	#a3a0acff	0.00
+             add-s-sunrise	button	add-s-sunrise	Add to Queue	-	1072,188,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1076,192,16,16	#00000000	#a3a0acff	0.00
+           set-s-low-tide	button	set-s-low-tide	Play Low Tide Dub	-	228,226,876,52	#00000000	-	1.00
+            #0	group	-	-	-	236,234,36,36	#2d4a88ff	-	1.00
+             #0	text	-	-	L	250.5,246,7,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,235,688,34	#00000000	-	1.00
+             #0	group	-	-	-	284,235,688,20	#00000000	-	1.00
+              #0	text	-	-	Low Tide Dub	284,235,688,20	#00000000	#eeeaf7ff	1.00
+             #1	text	-	-	Harbour Unit · 1:10:10	284,257,688,12	#00000000	#a3a0acff	1.00
+            #2	group	-	-	-	984,240,112,24	#00000000	-	0.00
+             next-s-low-tide	button	next-s-low-tide	Play Next	-	1046,240,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1050,244,16,16	#00000000	#a3a0acff	0.00
+             add-s-low-tide	button	add-s-low-tide	Add to Queue	-	1072,240,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1076,244,16,16	#00000000	#a3a0acff	0.00
+           set-s-ferry	button	set-s-ferry	Play Night Ferry	-	228,278,876,52	#00000000	-	1.00
+            #0	group	-	-	-	236,286,36,36	#6b4400ff	-	1.00
+             #0	text	-	-	N	249.5,298,9,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,287,688,34	#00000000	-	1.00
+             #0	group	-	-	-	284,287,688,20	#00000000	-	1.00
+              #0	text	-	-	Night Ferry	284,287,688,20	#00000000	#eeeaf7ff	1.00
+             #1	text	-	-	Avery Coast · 45:45	284,309,688,12	#00000000	#a3a0acff	1.00
+            #2	group	-	-	-	984,292,112,24	#00000000	-	0.00
+             next-s-ferry	button	next-s-ferry	Play Next	-	1046,292,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1050,296,16,16	#00000000	#a3a0acff	0.00
+             add-s-ferry	button	add-s-ferry	Add to Queue	-	1072,292,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1076,296,16,16	#00000000	#a3a0acff	0.00
+           set-s-static	button	set-s-static	Play Salt and Static	-	228,330,876,52	#00000000	-	1.00
+            #0	group	-	-	-	236,338,36,36	#7a2f4cff	-	1.00
+             #0	text	-	-	S	250,350,8,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,339,688,34	#00000000	-	1.00
+             #0	group	-	-	-	284,339,688,20	#00000000	-	1.00
+              #0	text	-	-	Salt and Static	284,339,688,20	#00000000	#eeeaf7ff	1.00
+             #1	text	-	-	Mira Holt · 1:30:03	284,361,688,12	#00000000	#a3a0acff	1.00
+            #2	group	-	-	-	984,344,112,24	#00000000	-	0.00
+             next-s-static	button	next-s-static	Play Next	-	1046,344,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1050,348,16,16	#00000000	#a3a0acff	0.00
+             add-s-static	button	add-s-static	Add to Queue	-	1072,344,24,24	#00000000	-	0.00
+              icon	icon	icon	-	-	1076,348,16,16	#00000000	#a3a0acff	0.00
+           set-s-last-light	button	set-s-last-light	Play Last Light Session	-	228,382,876,52	#00000000	-	1.00
+            #0	group	-	-	-	236,390,36,36	#005c6cff	-	1.00
+             #0	text	-	-	L	250.5,402,7,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,391,591,34	#00000000	-	1.00
+             #0	group	-	-	-	284,391,591,20	#00000000	-	1.00
+              #0	text	-	-	Last Light Session	284,391,591,20	#00000000	#eeeaf7ff	1.00
+             #1	text	-	-	Harbour Unit · 1:00:00	284,413,591,12	#00000000	#a3a0acff	1.00
+            state-s-last-light	group	state-s-last-light	-	-	887,399,85,18	#eeeaf70d	-	1.00
+             #0	text	-	-	Downloading	895,402,69,12	#00000000	#6bb0ffff	1.00
+            #3	group	-	-	-	984,408,112,0	#00000000	-	0.00
+           set-s-dunes	button	set-s-dunes	Play Dune Radio 41	-	228,434,876,52	#00000000	-	1.00
+            #0	group	-	-	-	236,442,36,36	#454387ff	-	1.00
+             #0	text	-	-	D	250,454,8,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,443,574,34	#00000000	-	1.00
+             #0	group	-	-	-	284,443,574,20	#00000000	-	1.00
+              #0	text	-	-	Dune Radio 41	284,443,574,20	#00000000	#eeeaf7ff	1.00
+             #1	text	-	-	Ines Varga · 1:59:58	284,465,574,12	#00000000	#a3a0acff	1.00
+            state-s-dunes	group	state-s-dunes	-	-	870,451,102,18	#eeeaf70d	-	1.00
+             #0	text	-	-	Not downloaded	878,454,86,12	#00000000	#76737eff	1.00
+            #3	group	-	-	-	984,450,112,20	#00000000	-	0.00
+             download-s-dunes	button	download-s-dunes	Download	-	1003,450,93,20	#00000000	-	0.00
+              icon	icon	icon	-	-	1013,453,14,14	#00000000	#eeeaf7ff	0.00
+              label	text	label	-	Download	1033,454,53,12	#00000000	#eeeaf7ff	0.00
+           set-s-glass	button	set-s-glass	Play Glasshouse Mix	-	228,486,876,52	#00000000	-	1.00
+            #0	group	-	-	-	236,494,36,36	#005f57ff	-	1.00
+             #0	text	-	-	G	249.5,506,9,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,495,576,34	#00000000	-	1.00
+             #0	group	-	-	-	284,495,576,20	#00000000	-	1.00
+              #0	text	-	-	Glasshouse Mix	284,495,576,20	#00000000	#eeeaf7ff	1.00
+             #1	text	-	-	Theo Brandt	284,517,576,12	#00000000	#a3a0acff	1.00
+            state-s-glass	group	state-s-glass	-	-	872,503,100,18	#eeeaf70d	-	1.00
+             #0	text	-	-	Download failed	880,506,84,12	#00000000	#ff847dff	1.00
+            #3	group	-	-	-	984,502,112,20	#00000000	-	0.00
+             download-s-glass	button	download-s-glass	Download	-	1003,502,93,20	#00000000	-	0.00
+              icon	icon	icon	-	-	1013,505,14,14	#00000000	#eeeaf7ff	0.00
+              label	text	label	-	Download	1033,506,53,12	#00000000	#eeeaf7ff	0.00
+           set-s-apple	button	set-s-apple	Play Coastline Selections, Vol. 2	-	228,538,876,52	#00000000	-	1.00
+            #0	group	-	-	-	236,546,36,36	#6d346aff	-	1.00
+             #0	text	-	-	C	249.5,558,9,12	#00000000	#eeeaf7d9	1.00
+            #1	group	-	-	-	284,547,595,34	#00000000	-	1.00
+             #0	group	-	-	-	284,547,595,20	#00000000	-	1.00
+              #0	text	-	-	Coastline Selections, Vol. 2	284,547,595,20	#00000000	#eeeaf7ff	1.00
+             #1	text	-	-	Mira Holt · 1:16:20	284,569,595,12	#00000000	#a3a0acff	1.00
+            state-s-apple	group	state-s-apple	-	-	891,555,81,18	#eeeaf70d	-	1.00
+             #0	text	-	-	Apple Music	899,558,65,12	#00000000	#a3a0acff	1.00
+            #3	group	-	-	-	984,564,112,0	#00000000	-	0.00
+       bar	group	bar	-	-	220,692,892,60	#00000000	-	1.00
+        #0	group	-	-	-	220,692,892,2	#26232dff	-	1.00
+         #0	group	-	-	-	220,692,553,2	#a54dffff	-	1.00
+        #1	group	-	-	-	220,694,892,58	#00000000	-	1.00
+         bar-open	button	bar-open	Open Now Playing: An All-Night Session Recorded Live from the Harbour Warehouse, Parts One Through Four, with the Sunrise Encore and the Crowd Singing Along	-	232,702,682,42	#00000000	-	1.00
+          #0	group	-	-	-	236,707,32,32	#254c88ff	-	1.00
+           #0	text	-	-	A	248,717,8,12	#00000000	#eeeaf7d9	1.00
+          #1	group	-	-	-	278,706,632,34	#00000000	-	1.00
+           #0	text	-	-	An All-Night Session Recorded Live from the Harbour Warehouse, Parts One Through Four, with the Sunrise Encore and the Crowd Singing Along	278,706,632,20	#00000000	#eeeaf7ff	1.00
+           #1	text	-	-	The Extremely Long Collective Name of Avery Coast, Harbour Unit and Friends	278,728,632,12	#00000000	#a3a0acff	1.00
+         #1	group	-	-	-	926,707,174,32	#00000000	-	1.00
+          bar-time	text	bar-time	-	2:30:01 / 4:02:00	926,717,94,12	#00000000	#a3a0acff	1.00
+          #1	group	-	-	-	1026,723,6,0	#00000000	-	1.00
+          bar-play	button	bar-play	Pause	-	1038,707,32,32	#a54dffff	-	1.00
+           #0	icon	-	-	-	1047.6,716.6,12.8,12.8	#00000000	#ffffffff	1.00
+          bar-next	button	bar-next	Next Set	-	1076,711,24,24	#00000000	-	1.00
+           icon	icon	icon	-	-	1080,715,16,16	#00000000	#a3a0acff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	182,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	188,24,16,16	#00000000	#a3a0acff	1.00

@@ -16,6 +16,7 @@ Source ownership, local setup, and verification.
 | Identity, trust storage, and administration | [`identity.ts`](../apps/server/src/identity.ts), [`trust-storage.ts`](../apps/server/src/trust-storage.ts), and [`admin.ts`](../apps/server/src/admin.ts) |
 | Web routes and player | [`apps/web/src/routes`](../apps/web/src/routes) and [`player.tsx`](../apps/web/src/components/player/player.tsx) |
 | Apple client and project specification | [`apps/apple/Orbis`](../apps/apple/Orbis) and [`project.yml`](../apps/apple/project.yml) |
+| Rune desktop client | [`apps/rune`](../apps/rune) and its [README](../apps/rune/README.md) |
 | Native fixture setup and HTTP client | [`scripts/native-lanes.mjs`](../scripts/native-lanes.mjs), [`seed-lane-audio.mjs`](../scripts/seed-lane-audio.mjs), and [`LaneService.swift`](../apps/apple/OrbisUITests/LaneService.swift) |
 | Domain terms and decisions | [GLOSSARY.md](../GLOSSARY.md) and [ADRs](adr) |
 
@@ -56,7 +57,7 @@ Authorization headers, cookies, request bodies, source links, stream grants, and
 
 ## Checks
 
-Run `bun run check` for cached lint, formatting, the bounded-read ratchet, the fence's own tests, TypeScript, tests, Effect diagnostics, and React Doctor. Turbo runs independent tasks in parallel, bounded by the available CPU count, and builds shared contracts before consumers. `bun run check:force` bypasses task-cache reads. `bun run fix` applies Ultracite fixes; it is never cached.
+Run `bun run check` for cached lint, formatting, the bounded-read ratchet, the fence's own tests, TypeScript, tests, Effect diagnostics, and React Doctor. Its `test` task also runs the Rune client's gate, `apps/rune/scripts/check` (rustfmt, clippy, tests and scene goldens), which needs rustup and, on Linux, the `libxkbcommon` and `wayland` development files. Turbo runs independent tasks in parallel, bounded by the available CPU count, and builds shared contracts before consumers. `bun run check:force` bypasses task-cache reads. `bun run fix` applies Ultracite fixes; it is never cached.
 
 React Doctor is the `doctor` task of `apps/web`: `bunx react-doctor@0.9.18 . --scope changed --base origin/main --blocking error`, the command, version and blocking level the `Code quality` workflow's React Doctor action ran for `apps/web`. It reports only the errors the checkout adds against `origin/main`, so `origin/main` must be fetched. The task is never cached, because its result depends on that ref.
 
@@ -136,6 +137,7 @@ Build shared contracts before running a focused lane from the repository root:
 | Cloudflare Group and audio node | `bun run --filter @orbis/api test` | Workerd journeys write `.cache/api-group`, `.cache/audio-node`, `.cache/api-grants`, and `.cache/api-recovery`; requires ffmpeg and ffprobe |
 | Group data transfer | `bun run --filter @orbis/api test:transfer` | See [data transfer](data-transfer.md) for restore and comparison artifacts |
 | Web client | `bun run --filter @orbis/web test` | Production browser journeys and artifacts listed in [web verification](../apps/web/README.md#verify-the-migration); install Chromium with `bun x playwright install chromium` |
+| Rune desktop client | `apps/rune/scripts/check` | Press tests and scene goldens in `apps/rune/goldens`; for a live window, `apps/rune/scripts/stand-in` (see the [Rune README](../apps/rune/README.md#against-a-stand-in-orbis)) |
 | Apple client | `bun run native:lanes --journeys` | Simulator journeys; see [native clients](#native-clients) for outputs and required tools. Add `--tvos` for the Apple TV journey |
 
 These local checks use disposable storage. Record production acceptance separately on the issue.

@@ -1,0 +1,8 @@
+{
+  "name": "@orbis/rune",
+  "private": true,
+  "description": "The Orbis desktop client in Rune. Its gate is scripts/check: format, code shape, clippy, tests and goldens.",
+  "scripts": {
+    "test": "scripts/check"
+  }
+}

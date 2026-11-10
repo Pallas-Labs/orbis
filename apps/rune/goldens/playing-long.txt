@@ -1,0 +1,95 @@
+kit-root	group	kit-root	-	-	0,0,1120,760	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1120,760	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1120,760	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,220,760	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,220,760	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	18,0,192,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	18,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	18,32,156,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	182,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	18,56,192,704	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	18,56,192,704	#00000000	-	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	18,56,192,704	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	18,56,192,108	#00000000	-	1.00
+         nav-library	listitem	nav-library	Library	-	18,56,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,64,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Library	48,62,141,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-	8	195,66,7,12	#00000000	#76737eff	1.00
+         nav-queue	listitem	nav-queue	Listening Queue	-	18,90,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,98,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Listening Queue	48,96,140,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-	4	194,100,8,12	#00000000	#76737eff	1.00
+         nav-playing	listitem	nav-playing	Now Playing	-	18,124,192,32	#eeeaf703	-	1.00
+          icon	icon	icon	-	-	26,132,16,16	#00000000	#eeeaf7ff	1.00
+          label	text	label	-	Now Playing	48,130,144,20	#00000000	#eeeaf7ff	1.00
+          detail	text	detail	-		198,134,4,12	#00000000	#76737eff	1.00
+    pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
+    pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	214,0,6,760	#00000000	-	0.02
+   main-column	group	main-column	-	-	220,0,900,760	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	220,0,900,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	220,8,900,752	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	220,8,892,744	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	Now Playing	-	220,8,892,48	#00000000	-	1.00
+       center	group	center	-	-	220,8,892,48	#00000000	-	1.00
+        title	text	title	-	Now Playing	627,22,78,20	#00000000	#eeeaf7ff	1.00
+       leading	group	leading	-	-	232,32,0,0	#00000000	-	1.00
+       spacer	group	spacer	-	-	240,32,852,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1100,32,0,0	#00000000	-	1.00
+        #0	group	-	-	-	1100,32,0,0	#00000000	-	1.00
+      main	group	main	-	-	220,56,892,696	#00000000	-	1.00
+       #0	group	-	-	-	220,56,892,696	#00000000	-	1.00
+        playing-scroll	group	playing-scroll	-	-	220,56,892,696	#00000000	-	1.00
+         now-playing	group	now-playing	-	-	286,56,760,624	#00000000	-	1.00
+          #0	group	-	-	-	318,88,696,178	#00000000	-	1.00
+           #0	group	-	-	-	318,101,152,152	#254c88ff	-	1.00
+            #0	text	-	-	A	374.5,143.6,39,66.9	#00000000	#eeeaf7d9	1.00
+           about	group	about	-	-	494,88,520,178	#00000000	-	1.00
+            set-title	text	set-title	-	An All-Night Session Recorded Live from the Harbour Warehouse, Parts One Through Four, with the Sunrise Encore and the Crowd Singing Along	494,88,520,112	#00000000	#eeeaf7ff	1.00
+            set-creator	text	set-creator	-	The Extremely Long Collective Name of Avery Coast, Harbour Unit and Friends	494,206,520,42	#00000000	#a3a0acff	1.00
+            set-facts	text	set-facts	-	YouTube · a tag that runs on for a while · deep	494,254,520,12	#00000000	#76737eff	1.00
+          #1	group	-	-	-	318,290,696,34	#00000000	-	1.00
+           seek	slider	seek	Place in the Set	-	318,290,696,16	#00000000	-	1.00
+            #0	group	-	-	-	318,296,696,4	#eeeaf71f	-	1.00
+             seek-fill	group	seek-fill	-	-	318,296,431.5,4	#a54dffff	-	1.00
+           #1	group	-	-	-	318,312,696,12	#00000000	-	1.00
+            elapsed	text	elapsed	-	2:30:01	318,312,42,12	#00000000	#a3a0acff	1.00
+            remaining	text	remaining	-	−1:31:59	965,312,49,12	#00000000	#a3a0acff	1.00
+          controls	group	controls	-	-	318,348,696,48	#00000000	-	1.00
+           back	button	back	Back 15 seconds	-	582,360,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	586,364,16,16	#00000000	#eeeaf7ff	1.00
+           play	button	play	Pause	-	622,348,48,48	#a54dffff	-	1.00
+            #0	icon	-	-	-	636.4,362.4,19.2,19.2	#00000000	#ffffffff	1.00
+           ahead	button	ahead	Ahead 30 seconds	-	686,360,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	690,364,16,16	#00000000	#eeeaf7ff	1.00
+           next	button	next	Next Set	-	726,360,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	730,364,16,16	#00000000	#eeeaf7ff	1.00
+          tracklist	group	tracklist	-	-	318,420,696,228	#00000000	-	1.00
+           #0	text	-	-	Tracklist	318,420,696,20	#00000000	#a3a0acff	1.00
+           cues	group	cues	-	-	318,448,696,200	#00000000	-	1.00
+            cue-0	button	cue-0	Intro (the version with the field recording from the pier before the first kick comes in) by Avery Coast	-	318,448,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,467,52,12	#00000000	-	1.00
+              #0	text	-	-	0:00	328,467,25,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,456,612,34	#00000000	-	1.00
+              #0	text	-	-	Intro (the version with the field recording from the pier before the first kick comes in)	392,456,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Avery Coast	392,478,612,12	#00000000	#a3a0acff	1.00
+            cue-1	button	cue-1	A Very Long Remix Title (Harbour Unit's Twelve-Inch Extended Dub Reinterpretation) by Harbour Unit, Mira Holt and The Extremely Long Collective	-	318,498,696,50	#a54dff24	-	1.00
+             #0	group	-	-	-	328,517,52,12	#00000000	-	1.00
+              #0	text	-	-	1:20:00	328,517,42,12	#00000000	#a54dffff	1.00
+             #1	group	-	-	-	392,506,612,34	#00000000	-	1.00
+              #0	text	-	-	A Very Long Remix Title (Harbour Unit's Twelve-Inch Extended Dub Reinterpretation)	392,506,612,20	#00000000	#a54dffff	1.00
+              #1	text	-	-	Harbour Unit, Mira Holt and The Extremely Long Collective	392,528,612,12	#00000000	#a3a0acff	1.00
+            cue-2	button	cue-2	Untitled by Unknown	-	318,548,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,567,52,12	#00000000	-	1.00
+              #0	text	-	-		328,567,3,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,556,612,34	#00000000	-	1.00
+              #0	text	-	-	Untitled	392,556,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Unknown	392,578,612,12	#00000000	#a3a0acff	1.00
+            cue-3	button	cue-3	Encore by Everyone	-	318,598,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,617,52,12	#00000000	-	1.00
+              #0	text	-	-	3:51:40	328,617,42,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,606,612,34	#00000000	-	1.00
+              #0	text	-	-	Encore	392,606,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Everyone	392,628,612,12	#00000000	#a3a0acff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	182,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	188,24,16,16	#00000000	#a3a0acff	1.00

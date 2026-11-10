@@ -1,0 +1,96 @@
+kit-root	group	kit-root	-	-	0,0,1120,760	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1120,760	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1120,760	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,220,760	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,220,760	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	18,0,192,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	18,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	18,32,156,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	182,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	18,56,192,704	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	18,56,192,704	#00000000	-	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	18,56,192,704	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	18,56,192,108	#00000000	-	1.00
+         nav-library	listitem	nav-library	Library	-	18,56,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,64,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Library	48,62,141,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-	8	195,66,7,12	#00000000	#76737eff	1.00
+         nav-queue	listitem	nav-queue	Listening Queue	-	18,90,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,98,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Listening Queue	48,96,140,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-	4	194,100,8,12	#00000000	#76737eff	1.00
+         nav-playing	listitem	nav-playing	Now Playing	-	18,124,192,32	#eeeaf703	-	1.00
+          icon	icon	icon	-	-	26,132,16,16	#00000000	#eeeaf7ff	1.00
+          label	text	label	-	Now Playing	48,130,144,20	#00000000	#eeeaf7ff	1.00
+          detail	text	detail	-		198,134,4,12	#00000000	#76737eff	1.00
+    pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
+    pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	214,0,6,760	#00000000	-	0.02
+   main-column	group	main-column	-	-	220,0,900,760	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	220,0,900,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	220,8,900,752	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	220,8,892,744	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	Now Playing	-	220,8,892,48	#00000000	-	1.00
+       center	group	center	-	-	220,8,892,48	#00000000	-	1.00
+        title	text	title	-	Now Playing	627,22,78,20	#00000000	#eeeaf7ff	1.00
+       leading	group	leading	-	-	232,32,0,0	#00000000	-	1.00
+       spacer	group	spacer	-	-	240,32,852,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1100,32,0,0	#00000000	-	1.00
+        #0	group	-	-	-	1100,32,0,0	#00000000	-	1.00
+      main	group	main	-	-	220,56,892,696	#00000000	-	1.00
+       #0	group	-	-	-	220,56,892,696	#00000000	-	1.00
+        playing-scroll	group	playing-scroll	-	-	220,56,892,696	#00000000	-	1.00
+         now-playing	group	now-playing	-	-	286,56,760,418	#00000000	-	1.00
+          #0	group	-	-	-	318,88,696,152	#00000000	-	1.00
+           #0	group	-	-	-	318,88,152,152	#2d4a88ff	-	1.00
+            #0	text	-	-	L	378.5,130.6,31,66.9	#00000000	#eeeaf7d9	1.00
+           about	group	about	-	-	494,127.5,520,73	#00000000	-	1.00
+            set-title	text	set-title	-	Low Tide Dub	494,127.5,520,28	#00000000	#eeeaf7ff	1.00
+            set-creator	text	set-creator	-	Harbour Unit	494,161.5,520,21	#00000000	#a3a0acff	1.00
+            set-facts	text	set-facts	-	YouTube · dub	494,188.5,520,12	#00000000	#76737eff	1.00
+          #1	group	-	-	-	318,264,696,34	#00000000	-	1.00
+           seek	slider	seek	Place in the Set	-	318,264,696,16	#00000000	-	1.00
+            #0	group	-	-	-	318,270,696,4	#eeeaf71f	-	1.00
+             seek-fill	group	seek-fill	-	-	318,270,0,4	#a54dffff	-	1.00
+           #1	group	-	-	-	318,286,696,12	#00000000	-	1.00
+            elapsed	text	elapsed	-	0:00	318,286,25,12	#00000000	#a3a0acff	1.00
+            remaining	text	remaining	-	−1:10:10	965,286,49,12	#00000000	#a3a0acff	1.00
+          controls	group	controls	-	-	318,322,696,48	#00000000	-	1.00
+           back	button	back	Back 15 seconds	-	582,334,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	586,338,16,16	#00000000	#eeeaf7ff	1.00
+           play	button	play	Loading	-	622,322,48,48	#a54dffff	-	1.00
+            #0	progressbar	-	Loading	-	636.4,336.4,19.2,19.2	#00000000	-	1.00
+             d0	group	d0	-	-	637.6,337.6,2.4,2.4	#ffffffff	-	0.20
+             d1	group	d1	-	-	641.2,337.6,2.4,2.4	#ffffffff	-	0.20
+             d2	group	d2	-	-	644.8,337.6,2.4,2.4	#ffffffff	-	0.20
+             d3	group	d3	-	-	648.4,337.6,2.4,2.4	#ffffffff	-	0.20
+             d4	group	d4	-	-	652,337.6,2.4,2.4	#ffffffff	-	0.20
+             d5	group	d5	-	-	637.6,341.2,2.4,2.4	#ffffffff	-	1.00
+             d6	group	d6	-	-	641.2,341.2,2.4,2.4	#ffffffff	-	1.00
+             d7	group	d7	-	-	644.8,341.2,2.4,2.4	#ffffffff	-	0.20
+             d8	group	d8	-	-	648.4,341.2,2.4,2.4	#ffffffff	-	0.20
+             d9	group	d9	-	-	652,341.2,2.4,2.4	#ffffffff	-	0.20
+             d10	group	d10	-	-	637.6,344.8,2.4,2.4	#ffffffff	-	0.61
+             d11	group	d11	-	-	641.2,344.8,2.4,2.4	#ffffffff	-	0.61
+             d12	group	d12	-	-	644.8,344.8,2.4,2.4	#ffffffff	-	0.64
+             d13	group	d13	-	-	648.4,344.8,2.4,2.4	#ffffffff	-	0.20
+             d14	group	d14	-	-	652,344.8,2.4,2.4	#ffffffff	-	0.20
+             d15	group	d15	-	-	637.6,348.4,2.4,2.4	#ffffffff	-	0.47
+             d16	group	d16	-	-	641.2,348.4,2.4,2.4	#ffffffff	-	0.36
+             d17	group	d17	-	-	644.8,348.4,2.4,2.4	#ffffffff	-	0.23
+             d18	group	d18	-	-	648.4,348.4,2.4,2.4	#ffffffff	-	0.20
+             d19	group	d19	-	-	652,348.4,2.4,2.4	#ffffffff	-	0.20
+             d20	group	d20	-	-	637.6,352,2.4,2.4	#ffffffff	-	0.36
+             d21	group	d21	-	-	641.2,352,2.4,2.4	#ffffffff	-	0.28
+             d22	group	d22	-	-	644.8,352,2.4,2.4	#ffffffff	-	0.23
+             d23	group	d23	-	-	648.4,352,2.4,2.4	#ffffffff	-	0.21
+             d24	group	d24	-	-	652,352,2.4,2.4	#ffffffff	-	0.20
+           ahead	button	ahead	Ahead 30 seconds	-	686,334,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	690,338,16,16	#00000000	#eeeaf7ff	1.00
+           next	button	next	Next Set	-	726,334,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	730,338,16,16	#00000000	#eeeaf7ff	1.00
+          tracklist	group	tracklist	-	-	318,394,696,48	#00000000	-	1.00
+           #0	text	-	-	Tracklist	318,394,696,20	#00000000	#a3a0acff	1.00
+           tracklist-note	text	tracklist-note	-	Finding the Tracklist…	318,422,696,20	#00000000	#a3a0acff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	182,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	188,24,16,16	#00000000	#a3a0acff	1.00

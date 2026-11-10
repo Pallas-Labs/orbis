@@ -1,0 +1,49 @@
+kit-root	group	kit-root	-	-	0,0,1120,760	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1120,760	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1120,760	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,220,760	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,220,760	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	18,0,192,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	18,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	18,32,156,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	182,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	18,56,192,704	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	18,56,192,704	#00000000	-	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	18,56,192,704	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	18,56,192,108	#00000000	-	1.00
+         nav-library	listitem	nav-library	Library	-	18,56,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,64,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Library	48,62,141,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-	8	195,66,7,12	#00000000	#76737eff	1.00
+         nav-queue	listitem	nav-queue	Listening Queue	-	18,90,192,32	#eeeaf703	-	1.00
+          icon	icon	icon	-	-	26,98,16,16	#00000000	#eeeaf7ff	1.00
+          label	text	label	-	Listening Queue	48,96,141,20	#00000000	#eeeaf7ff	1.00
+          detail	text	detail	-	0	195,100,7,12	#00000000	#76737eff	1.00
+         nav-playing	listitem	nav-playing	Now Playing	-	18,124,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,132,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Now Playing	48,130,144,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-		198,134,4,12	#00000000	#76737eff	1.00
+    pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
+    pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	214,0,6,760	#00000000	-	0.02
+   main-column	group	main-column	-	-	220,0,900,760	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	220,0,900,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	220,8,900,752	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	220,8,892,744	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	Listening Queue	-	220,8,892,48	#00000000	-	1.00
+       center	group	center	-	-	220,8,892,48	#00000000	-	1.00
+        title	text	title	-	Listening Queue	615.5,22,101,20	#00000000	#eeeaf7ff	1.00
+       leading	group	leading	-	-	232,32,0,0	#00000000	-	1.00
+       spacer	group	spacer	-	-	240,32,796,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1044,22,56,20	#00000000	-	1.00
+        reload	button	reload	Reload	-	1044,22,56,20	#00000000	-	1.00
+         label	text	label	-	Reload	1054,26,36,12	#00000000	#a3a0acff	1.00
+      main	group	main	-	-	220,56,892,696	#00000000	-	1.00
+       #0	group	-	-	-	220,56,892,696	#00000000	-	1.00
+        queue	group	queue	-	-	220,56,892,696	#00000000	-	1.00
+         queue-empty	group	queue-empty	-	-	220,56,892,152	#00000000	-	1.00
+          #0	text	-	-	The Listening Queue is empty. Play a Set, or add one from the Library.	451,104,430,20	#00000000	#a3a0acff	1.00
+          queue-empty-action	button	queue-empty-action	Open Library	-	613.5,136,105,24	#14111aff	-	1.00
+           label	text	label	-	Open Library	625.5,138,81,20	#00000000	#eeeaf7ff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	182,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	188,24,16,16	#00000000	#a3a0acff	1.00

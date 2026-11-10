@@ -1,0 +1,113 @@
+kit-root	group	kit-root	-	-	0,0,1120,760	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1120,760	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1120,760	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,220,760	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,220,760	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	18,0,192,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	18,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	18,32,156,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	182,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	18,56,192,704	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	18,56,192,704	#00000000	-	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	18,56,192,704	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	18,56,192,108	#00000000	-	1.00
+         nav-library	listitem	nav-library	Library	-	18,56,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,64,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Library	48,62,141,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-	8	195,66,7,12	#00000000	#76737eff	1.00
+         nav-queue	listitem	nav-queue	Listening Queue	-	18,90,192,32	#00000000	-	1.00
+          icon	icon	icon	-	-	26,98,16,16	#00000000	#a3a0acff	1.00
+          label	text	label	-	Listening Queue	48,96,140,20	#00000000	#a3a0acff	1.00
+          detail	text	detail	-	4	194,100,8,12	#00000000	#76737eff	1.00
+         nav-playing	listitem	nav-playing	Now Playing	-	18,124,192,32	#eeeaf703	-	1.00
+          icon	icon	icon	-	-	26,132,16,16	#00000000	#eeeaf7ff	1.00
+          label	text	label	-	Now Playing	48,130,144,20	#00000000	#eeeaf7ff	1.00
+          detail	text	detail	-		198,134,4,12	#00000000	#76737eff	1.00
+    pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
+    pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	214,0,6,760	#00000000	-	0.02
+   main-column	group	main-column	-	-	220,0,900,760	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	220,0,900,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	220,8,900,752	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	220,8,892,744	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	Now Playing	-	220,8,892,48	#00000000	-	1.00
+       center	group	center	-	-	220,8,892,48	#00000000	-	1.00
+        title	text	title	-	Now Playing	627,22,78,20	#00000000	#eeeaf7ff	1.00
+       leading	group	leading	-	-	232,32,0,0	#00000000	-	1.00
+       spacer	group	spacer	-	-	240,32,852,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1100,32,0,0	#00000000	-	1.00
+        #0	group	-	-	-	1100,32,0,0	#00000000	-	1.00
+      main	group	main	-	-	220,56,892,696	#00000000	-	1.00
+       #0	group	-	-	-	220,56,892,696	#00000000	-	1.00
+        playing-scroll	group	playing-scroll	-	-	220,56,892,696	#00000000	-	1.00
+         now-playing	group	now-playing	-	-	286,56,760,748	#00000000	-	1.00
+          #0	group	-	-	-	318,88,696,152	#00000000	-	1.00
+           #0	group	-	-	-	318,88,152,152	#7e3029ff	-	1.00
+            #0	text	-	-	S	376,130.6,36,66.9	#00000000	#eeeaf7d9	1.00
+           about	group	about	-	-	494,127.5,520,73	#00000000	-	1.00
+            set-title	text	set-title	-	Sunrise on the Pier	494,127.5,520,28	#00000000	#eeeaf7ff	1.00
+            set-creator	text	set-creator	-	Avery Coast	494,161.5,520,21	#00000000	#a3a0acff	1.00
+            set-facts	text	set-facts	-	YouTube · morning · ambient	494,188.5,520,12	#00000000	#76737eff	1.00
+          #1	group	-	-	-	318,264,696,34	#00000000	-	1.00
+           seek	slider	seek	Place in the Set	-	318,264,696,16	#00000000	-	1.00
+            #0	group	-	-	-	318,270,696,4	#eeeaf71f	-	1.00
+             seek-fill	group	seek-fill	-	-	318,270,283.4,4	#a54dffff	-	1.00
+           #1	group	-	-	-	318,286,696,12	#00000000	-	1.00
+            elapsed	text	elapsed	-	23:42	318,286,32,12	#00000000	#a3a0acff	1.00
+            remaining	text	remaining	-	−34:30	975,286,39,12	#00000000	#a3a0acff	1.00
+          controls	group	controls	-	-	318,322,696,48	#00000000	-	1.00
+           back	button	back	Back 15 seconds	-	582,334,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	586,338,16,16	#00000000	#eeeaf7ff	1.00
+           play	button	play	Pause	-	622,322,48,48	#a54dffff	-	1.00
+            #0	icon	-	-	-	636.4,336.4,19.2,19.2	#00000000	#ffffffff	1.00
+           ahead	button	ahead	Ahead 30 seconds	-	686,334,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	690,338,16,16	#00000000	#eeeaf7ff	1.00
+           next	button	next	Next Set	-	726,334,24,24	#00000000	-	1.00
+            icon	icon	icon	-	-	730,338,16,16	#00000000	#eeeaf7ff	1.00
+          tracklist	group	tracklist	-	-	318,394,696,378	#00000000	-	1.00
+           #0	text	-	-	Tracklist	318,394,696,20	#00000000	#a3a0acff	1.00
+           cues	group	cues	-	-	318,422,696,350	#00000000	-	1.00
+            cue-0	button	cue-0	Tide Tables by Avery Coast	-	318,422,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,441,52,12	#00000000	-	1.00
+              #0	text	-	-	0:00	328,441,25,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,430,612,34	#00000000	-	1.00
+              #0	text	-	-	Tide Tables	392,430,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Avery Coast	392,452,612,12	#00000000	#a3a0acff	1.00
+            cue-1	button	cue-1	Gull Song by Mira Holt	-	318,472,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,491,52,12	#00000000	-	1.00
+              #0	text	-	-	6:52	328,491,25,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,480,612,34	#00000000	-	1.00
+              #0	text	-	-	Gull Song	392,480,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Mira Holt	392,502,612,12	#00000000	#a3a0acff	1.00
+            cue-2	button	cue-2	Breakwater by Harbour Unit	-	318,522,696,50	#a54dff24	-	1.00
+             #0	group	-	-	-	328,541,52,12	#00000000	-	1.00
+              #0	text	-	-	16:55	328,541,32,12	#00000000	#a54dffff	1.00
+             #1	group	-	-	-	392,530,612,34	#00000000	-	1.00
+              #0	text	-	-	Breakwater	392,530,612,20	#00000000	#a54dffff	1.00
+              #1	text	-	-	Harbour Unit	392,552,612,12	#00000000	#a3a0acff	1.00
+            cue-3	button	cue-3	Ferry Lights by Avery Coast	-	318,572,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,591,52,12	#00000000	-	1.00
+              #0	text	-	-	27:40	328,591,32,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,580,612,34	#00000000	-	1.00
+              #0	text	-	-	Ferry Lights	392,580,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Avery Coast	392,602,612,12	#00000000	#a3a0acff	1.00
+            cue-4	button	cue-4	ID by Unknown	-	318,622,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,641,52,12	#00000000	-	1.00
+              #0	text	-	-		328,641,3,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,630,612,34	#00000000	-	1.00
+              #0	text	-	-	ID	392,630,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Unknown	392,652,612,12	#00000000	#a3a0acff	1.00
+            cue-5	button	cue-5	Morning Fog by Ines Varga	-	318,672,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,691,52,12	#00000000	-	1.00
+              #0	text	-	-	41:20	328,691,32,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,680,612,34	#00000000	-	1.00
+              #0	text	-	-	Morning Fog	392,680,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Ines Varga	392,702,612,12	#00000000	#a3a0acff	1.00
+            cue-6	button	cue-6	Home Port by Avery Coast	-	318,722,696,50	#00000000	-	1.00
+             #0	group	-	-	-	328,741,52,12	#00000000	-	1.00
+              #0	text	-	-	51:45	328,741,32,12	#00000000	#76737eff	1.00
+             #1	group	-	-	-	392,730,612,34	#00000000	-	1.00
+              #0	text	-	-	Home Port	392,730,612,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Avery Coast	392,752,612,12	#00000000	#a3a0acff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	182,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	188,24,16,16	#00000000	#a3a0acff	1.00
