@@ -459,3 +459,45 @@ fn presence_refused_while_the_queue_catches_up_is_asked_again_once_it_has() {
     assert_eq!(plays.len(), 2, "asked again once the completion landed: {plays:?}");
     assert_ne!(plays[0]["actionNumber"], plays[1]["actionNumber"]);
 }
+
+#[test]
+fn a_stream_that_ends_early_keeps_the_place_and_ends_the_set_only_the_second_time() {
+    use crate::audio::Event;
+    let mut rt = live(Screen::Playing);
+    fixture::reply("PUT /sets/s-sunrise/position", set_json("s-sunrise", "Sunrise on the Pier"));
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    let generation = rt.state.playing.generation();
+    let at = rt.state.playing.position;
+    rt.update(move |s, _| s.heard(generation, Event::Ended));
+    land(&mut rt);
+    assert!(matches!(rt.state.playing.status, Status::Failed(_)), "{:?}", rt.state.playing.status);
+    assert!(!calls().iter().any(|c| c.starts_with("POST /queue/completion")), "no Finish: {:?}", calls());
+    assert!((rt.state.playing.position - at).abs() < 1.0, "the place stays");
+    // Play again; the stream ends at the same place: now the Set is over.
+    fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": null, "entries": [] } }));
+    rt.update(|s, _| s.toggle());
+    rt.frame(1.0 / 60.0);
+    let generation = rt.state.playing.generation();
+    rt.update(move |s, _| {
+        s.playing.position = at;
+        s.heard(generation, Event::Ended);
+    });
+    land(&mut rt);
+    assert!(calls().iter().any(|c| c.starts_with("POST /queue/completion")), "{:?}", calls());
+}
+
+#[test]
+fn leaving_approve_before_its_code_arrives_lets_a_sign_in_code_go() {
+    let mut rt = runtime(App { signed_out: true, service: api::Service::Fixture, ..App::new() });
+    rt.frame(0.0);
+    rt.update(|s, _| s.sign_in_by(crate::account::Method::Approve));
+    rt.update(|s, _| {
+        s.sign_in_by(crate::account::Method::Code);
+        s.account.signin.code = rune::TextEdit::new("ABCD EFGH");
+    });
+    rt.frame(1.0 / 60.0);
+    api::settle(&mut rt.state);
+    rt.update(|s, _| s.redeem_code());
+    assert!(calls().iter().any(|c| c.starts_with("POST /sign-in/code")), "{:?}", calls());
+}

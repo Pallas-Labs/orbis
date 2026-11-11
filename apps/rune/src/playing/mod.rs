@@ -77,6 +77,8 @@ pub struct State {
     clock: Option<f64>,
     /// The place last saved.
     saved: f64,
+    /// Where the last early end of the stream left the Set, by its id.
+    early_end: Option<(String, f64)>,
     /// Seeks asked for, for the playback report.
     seeks: u64,
     /// The place at the last report sample.
@@ -440,7 +442,7 @@ impl App {
     }
 
     /// What the player reported about the Set of `generation`.
-    fn heard(&mut self, generation: u64, event: Event) {
+    pub(crate) fn heard(&mut self, generation: u64, event: Event) {
         let p = &mut self.playing;
         if p.generation != generation {
             return;
@@ -463,10 +465,27 @@ impl App {
                 let (actual, expected) = (self.playing.position, self.playing.duration);
                 let premature = expected.is_some_and(|d| actual < d - 2.0);
                 self.report(json!({ "ended": { "_0": { "actual": actual, "expected": expected, "premature": premature } } }));
-                self.finish();
+                if premature && !self.ended_here_before(actual) {
+                    // As the Apple app does (PAL-1840): the first early end is a stop, not a
+                    // Finish. The place is kept, so Play goes on from here.
+                    self.save_place();
+                    self.fail(generation, "The stream stopped early. Press Play to go on from here.".to_owned());
+                } else {
+                    self.finish();
+                }
             }
             Event::Failed(why) => self.fail(generation, why),
         }
+    }
+
+    /// Whether the stream ended early at `at` once already: the audio is shorter than Orbis said,
+    /// so this end is the Set's end. Remembers `at` otherwise.
+    fn ended_here_before(&mut self, at: f64) -> bool {
+        let p = &mut self.playing;
+        let Some(id) = p.set.as_ref().map(|x| x.id.clone()) else { return false };
+        let again = p.early_end.as_ref().is_some_and(|(was, there)| *was == id && (there - at).abs() < 0.5);
+        p.early_end = Some((id, at));
+        again
     }
 
     fn fail(&mut self, generation: u64, why: String) {

@@ -83,7 +83,8 @@ impl App {
     pub fn sign_in_by(&mut self, method: Method) {
         let si = &mut self.account.signin;
         si.method = method;
-        si.error = None;
+        // A request still out for the method left behind no longer holds the form.
+        (si.error, si.busy) = (None, false);
         si.waits += 1;
         si.approval = None;
         if method == Method::Approve {
