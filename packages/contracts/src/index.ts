@@ -1,6 +1,8 @@
 import type {
   AppleMusicAlbumSchema,
   AudioStateSchema,
+  CollectionPayload,
+  CollectionSchema,
   HealthResponseSchema,
   LibraryFiltersSchema,
   LibraryResponseSchema,
@@ -57,6 +59,8 @@ export type LibraryFilters = {
 
 export type LibraryResponse = typeof LibraryResponseSchema.Type;
 
+export type Collection = typeof CollectionSchema.Type;
+export type CollectionInput = typeof CollectionPayload.Type;
 export type Playlist = typeof PlaylistSchema.Type;
 export type PlaylistImport = typeof PlaylistImportSchema.Type;
 export type Presence = typeof PresenceSchema.Type;

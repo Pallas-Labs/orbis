@@ -19,6 +19,8 @@ struct CarPlayCatalog: Equatable {
   /// Home, picked by the same rules as the phone's, from the playable Sets.
   let home: HomeSelection
   let playlists: [Playlist]
+  /// The Person's saved Collections, listed after Heavy Rotation.
+  let collections: [ListeningCollection]
   /// Every playable Set, in the Library's order.
   let sets: [SavedSet]
   /// The Set in the player, which its rows mark.
@@ -33,6 +35,7 @@ struct CarPlayCatalog: Equatable {
       playlistsStatus = .signedOut
       home = HomeSelection(library: [], visible: [])
       playlists = []
+      collections = []
       sets = []
       playingSetId = nil
       cues = []
@@ -47,6 +50,7 @@ struct CarPlayCatalog: Equatable {
       library: sets, visible: visible.filter(Self.isPlayable),
       heavyRotation: model.heavyRotation.filter(Self.isPlayable))
     playlists = model.playlistItems
+    collections = model.collectionItems
     playingSetId = model.audioPlayer.currentSetId
     cues = playingSetId.flatMap { model.tracklists[$0]?.cues } ?? []
   }

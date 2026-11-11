@@ -13,6 +13,8 @@
 //   equal time.
 // - It shows a shelf for one or two Sets, or more Sets than the shelf holds.
 // - Two Sets with equal time come back in a different order on each call.
+// - A Collection's least time counts the weighted score, so an hour heard a
+//   month ago misses an hour floor.
 import { expect, test } from "bun:test";
 
 import {
@@ -188,4 +190,20 @@ test("the collection holds at most its limit, and equal time orders by id", () =
   const expected = [...ids];
   expected.sort();
   expect(ranked).toEqual(expected.slice(0, HEAVY_ROTATION.limit));
+});
+
+test("a Collection can show one Set, and can ask for a least time heard", () => {
+  const days = [day("long", 0, 2 * HOUR), day("short", 1, HOUR / 2)];
+  expect(heavyRotation(days, NOW)).toEqual([]);
+  expect(heavyRotation(days, NOW, "month", { minimumSets: 1 })).toEqual([
+    "long",
+    "short",
+  ]);
+  // The least time counts the seconds heard, not the weighted score.
+  expect(
+    heavyRotation([day("old hour", 29, HOUR), ...days], NOW, "month", {
+      minimumSeconds: HOUR,
+      minimumSets: 1,
+    })
+  ).toEqual(["long", "old hour"]);
 });

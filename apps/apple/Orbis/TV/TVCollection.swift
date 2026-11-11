@@ -2,10 +2,12 @@
   import OrbisDesign
   import SwiftUI
 
-  /// Heavy Rotation on the TV: the range as three buttons, the two ways to play it, then its
-  /// Sets as tiles in rank order.
-  struct TVHeavyRotationPage: View {
+  /// A collection on the TV: for Heavy Rotation, the range as three buttons; then the two ways to
+  /// play it, and its Sets as tiles in rank order. A saved Collection's filter is edited on a
+  /// phone, iPad or Mac; the TV shows and plays it.
+  struct TVCollectionPage: View {
     @Bindable var model: AppModel
+    let kind: CollectionKind
     /// The destination whose stack shows the page, which the Sets opened from it are pushed on.
     let place: Destination
     @FocusState private var focus: Focus?
@@ -16,7 +18,8 @@
     }
 
     private var range: ListeningRange { model.rotationRange }
-    private var state: Loadable<[SavedSet]> { model.rotationSets[range] ?? .idle }
+    private var state: Loadable<[SavedSet]> { model.members(of: kind) }
+    private var title: String { kind.title(in: model) }
     private var sets: [SavedSet] {
       if case .loaded(let sets) = state { sets } else { [] }
     }
@@ -35,14 +38,16 @@
       }
       .defaultFocus($focus, .play)
       .confirmationDialog(
-        "Play Heavy Rotation?", isPresented: isConfirmingPlay, titleVisibility: .visible
+        "Play \(title)?", isPresented: isConfirmingPlay, titleVisibility: .visible
       ) {
         Button("Replace the queue") { startPlayback() }
         Button("Cancel", role: .cancel) {}
       } message: {
         Text("This replaces what is playing now.")
       }
-      .task(id: range) { await model.loadRotation(range) }
+      .task(id: kind == .heavyRotation ? "\(range)" : "\(kind)") {
+        await model.loadMembers(of: kind)
+      }
       .navigationDestination(item: openedSet(model, place)) { id in
         TVSetPage(model: model, setId: id).id(id)
       }
@@ -53,27 +58,29 @@
     private var hero: some View {
       HStack(alignment: .center, spacing: 64) {
         SleeveFan(
-          seed: "Heavy Rotation",
+          seed: title,
           artwork: sets.prefix(3).map { SetPresentation.row($0).artwork },
-          category: SetPresentation.category(for: "Heavy Rotation"),
+          category: SetPresentation.category(for: title),
           width: 400
         )
         .frame(width: 600, height: 340)
         VStack(alignment: .leading, spacing: 20) {
           Eyebrow("Collection")
-          Text("Heavy Rotation")
+          Text(title)
             .font(.orbis.largeTitle)
             .accessibilityAddTraits(.isHeader)
-          Text(range.summary)
+          Text(kind.summary(in: model))
             .font(.title3)
             .foregroundStyle(.secondary)
-          HStack(spacing: 20) {
-            ForEach(ListeningRange.allCases) { option in
-              Button(option.title) { model.rotationRange = option }
-                .buttonStyle(.glass)
-                .tint(option == range ? Color.orbis.tint : nil)
-                .accessibilityAddTraits(option == range ? .isSelected : [])
-                .accessibilityIdentifier("rotation-range-\(option.rawValue)")
+          if kind == .heavyRotation {
+            HStack(spacing: 20) {
+              ForEach(ListeningRange.allCases) { option in
+                Button(option.title) { model.rotationRange = option }
+                  .buttonStyle(.glass)
+                  .tint(option == range ? Color.orbis.tint : nil)
+                  .accessibilityAddTraits(option == range ? .isSelected : [])
+                  .accessibilityIdentifier("rotation-range-\(option.rawValue)")
+              }
             }
           }
           HStack(spacing: 20) {
@@ -108,17 +115,22 @@
           .accessibilityIdentifier("rotation-loading")
       case .failed(let failure):
         TVPageState {
-          UnavailableState(failure: failure, context: "loading Heavy Rotation") {
-            Task { await model.loadRotation(range) }
+          UnavailableState(failure: failure, context: "loading \(title)") {
+            Task { await model.loadMembers(of: kind) }
           }
         }
         .accessibilityIdentifier("rotation-error")
       case .loaded(let sets) where sets.isEmpty:
         TVPageState {
           ContentUnavailableView {
-            Label("Not enough listening yet", systemImage: "chart.bar")
+            Label(
+              kind == .heavyRotation ? "Not enough listening yet" : "Nothing fits yet",
+              systemImage: "chart.bar")
           } description: {
-            Text("Play three Sets for a few minutes each, and the ones you hear most show up here.")
+            Text(
+              kind == .heavyRotation
+                ? "Play three Sets for a few minutes each, and the ones you hear most show up here."
+                : "Sets you hear that fit this filter show up here.")
           }
         }
         .accessibilityIdentifier("rotation-empty")
@@ -140,21 +152,23 @@
     private func startPlayback() {
       let shuffled = pendingShuffle ?? false
       pendingShuffle = nil
-      let range = range
-      Task { await model.playHeavyRotation(range, shuffled: shuffled) }
+      let kind = kind
+      Task { await model.play(kind, shuffled: shuffled) }
     }
   }
 
   extension View {
-    /// Pushes the Heavy Rotation collection on `place`'s stack while it is open there.
-    func tvHeavyRotationPage(_ model: AppModel, in place: Destination) -> some View {
+    /// Pushes the open collection on `place`'s stack while it is open there.
+    func tvCollectionPage(_ model: AppModel, in place: Destination) -> some View {
       navigationDestination(
         isPresented: Binding(
-          get: { model.rotationPlace == place },
-          set: { if !$0, model.rotationPlace == place { model.closeHeavyRotation() } }
+          get: { model.openedCollection?.place == place },
+          set: { if !$0, model.openedCollection?.place == place { model.closeCollection() } }
         )
       ) {
-        TVHeavyRotationPage(model: model, place: place)
+        if let kind = model.openedCollection?.kind {
+          TVCollectionPage(model: model, kind: kind, place: place)
+        }
       }
     }
   }

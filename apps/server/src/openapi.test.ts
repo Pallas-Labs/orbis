@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   AppleMusicSearchSchema,
   AudioStateSchema,
+  CollectionSchema,
   ListeningQueueSchema,
   PlaylistImportSchema,
   PlaylistSchema,
@@ -19,6 +20,8 @@ const Samples = Schema.Struct({
   appleMusicSearch: AppleMusicSearchSchema,
   audioGrant: Schema.Struct({ url: Schema.String }),
   audioState: AudioStateSchema,
+  collection: CollectionSchema,
+  collections: Schema.Struct({ collections: Schema.Array(CollectionSchema) }),
   health: Schema.Struct({ status: Schema.Literal("ok") }),
   library: Schema.Struct({ sets: Schema.Array(SavedSetSchema) }),
   me: Schema.Struct({
@@ -78,6 +81,7 @@ const decodeOpenApiDocument = Schema.decodeUnknownSync(OpenApiDocument);
 
 /** Operations that answer with a list of Sets. */
 const LIBRARY_OPERATIONS = new Set([
+  "library.collectionSets",
   "library.heavyRotation",
   "people.sets",
   "playlists.replaceMembers",
@@ -114,6 +118,18 @@ const sampleKeyFor = (operationId: string): keyof typeof samples => {
   }
   if (operationId === "library.tags") {
     return "tags";
+  }
+  if (operationId === "library.collections") {
+    return "collections";
+  }
+  if (
+    [
+      "library.createCollection",
+      "library.removeCollection",
+      "library.updateCollection",
+    ].includes(operationId)
+  ) {
+    return "collection";
   }
   if (operationId.startsWith("people.")) {
     if (operationId === "people.list") {
@@ -320,7 +336,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(57);
+    expect(checked).toBe(63);
   } finally {
     await app.dispose();
   }

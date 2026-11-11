@@ -447,7 +447,7 @@ struct DestinationView: View {
         #if os(iOS)
           .playlistPage(model, in: .playlists, zoom: setZoom) { id in setPage(id) }
         #endif
-        .heavyRotationPage(model, in: .playlists, zoom: setZoom) { id in setPage(id) }
+        .collectionPage(model, in: .playlists, zoom: setZoom) { id in setPage(id) }
         .navigationDestination(item: openedSet) { id in setPage(id) }
     case .people:
       PeopleDestination(model: model)
@@ -565,7 +565,7 @@ struct DestinationView: View {
     #if os(iOS)
       .playlistPage(model, in: .home, zoom: setZoom) { id in setPage(id) }
     #endif
-    .heavyRotationPage(model, in: .home, zoom: setZoom) { id in setPage(id) }
+    .collectionPage(model, in: .home, zoom: setZoom) { id in setPage(id) }
     .navigationDestination(item: openedSet) { id in setPage(id) }
   }
 

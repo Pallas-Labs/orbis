@@ -264,6 +264,37 @@ export const QueueHeavyRotationPayload = Schema.Struct({
   order: Schema.optionalKey(Schema.Literals(["ranked", "shuffled"])),
   range: ListeningRangeSchema,
 });
+/**
+ * A Collection: a saved filter over one Person's Listening Time, ranked as Heavy Rotation is.
+ * A null filter admits every Set. `creator` is the name the creator filter was saved with.
+ */
+export const CollectionSchema = Schema.Struct({
+  createdAt: Schema.String,
+  creator: Schema.NullOr(Schema.String),
+  creatorId: Schema.NullOr(Schema.String),
+  id: Schema.String,
+  minimumMinutes: Schema.Int,
+  name: Schema.String,
+  range: ListeningRangeSchema,
+  source: Schema.NullOr(SavedSetSchema.fields.source),
+  tag: Schema.NullOr(Schema.String),
+  updatedAt: Schema.String,
+});
+export const CollectionPayload = Schema.Struct({
+  creatorId: Schema.NullOr(Schema.String.check(Schema.isMaxLength(200))),
+  minimumMinutes: Schema.Int.check(
+    Schema.isGreaterThanOrEqualTo(0),
+    Schema.isLessThanOrEqualTo(6000)
+  ),
+  name: Schema.String.check(Schema.isMaxLength(60)),
+  range: ListeningRangeSchema,
+  source: Schema.NullOr(SavedSetSchema.fields.source),
+  tag: Schema.NullOr(Schema.String.check(Schema.isMaxLength(100))),
+});
+export const QueueCollectionPayload = Schema.Struct({
+  collectionId: QueueSetId,
+  order: Schema.optionalKey(Schema.Literals(["ranked", "shuffled"])),
+});
 export const PositionPayload = Schema.Struct({
   seconds: Schema.Number.check(
     Schema.isGreaterThanOrEqualTo(0),
@@ -748,6 +779,11 @@ export const OrbisApi = PlaylistApi.add(
         payload: QueueHeavyRotationPayload,
         success: QueueResponse,
       }),
+      HttpApiEndpoint.put("replaceWithCollection", "/queue/collection", {
+        error: [BadRequest, NotFound, InternalError],
+        payload: QueueCollectionPayload,
+        success: QueueResponse,
+      }),
       HttpApiEndpoint.post("complete", "/queue/completion", {
         error: [BadRequest, NotFound, InternalError],
         payload: QueueSetPayload,
@@ -772,6 +808,33 @@ export const OrbisApi = PlaylistApi.add(
         HttpApiEndpoint.get("heavyRotation", "/heavy-rotation", {
           error: [BadRequest, InternalError],
           query: { range: Schema.optionalKey(ListeningRangeSchema) },
+          success: LibraryResponseSchema,
+        }),
+        HttpApiEndpoint.get("collections", "/collections", {
+          error: InternalError,
+          success: Schema.Struct({
+            collections: Schema.Array(CollectionSchema),
+          }),
+        }),
+        HttpApiEndpoint.post("createCollection", "/collections", {
+          error: [BadRequest, Conflict, InternalError],
+          payload: CollectionPayload,
+          success: CollectionSchema.pipe(HttpApiSchema.status(201)),
+        }),
+        HttpApiEndpoint.put("updateCollection", "/collections/:id", {
+          error: [BadRequest, NotFound, Conflict, InternalError],
+          params: SetId,
+          payload: CollectionPayload,
+          success: CollectionSchema,
+        }),
+        HttpApiEndpoint.delete("removeCollection", "/collections/:id", {
+          error: [NotFound, InternalError],
+          params: SetId,
+          success: CollectionSchema,
+        }),
+        HttpApiEndpoint.get("collectionSets", "/collections/:id/sets", {
+          error: [NotFound, InternalError],
+          params: SetId,
           success: LibraryResponseSchema,
         }),
         HttpApiEndpoint.patch("updateTags", "/sets/:id/tags", {

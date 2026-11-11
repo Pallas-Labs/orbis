@@ -59,6 +59,10 @@ _Avoid_: Play time, watch time
 The collection of the Sets one Person heard most over a range (30 days, 3 months, or the past year), ranked by Listening Time and opened like a Playlist. A day under two minutes of a Set does not count. Recent days weigh more over 30 days, a little more over 3 months, and the same over a year. Home's shelf shows the 30-day collection's first Sets, and the collection is empty until three Sets qualify.
 _Avoid_: Top Sets, most played
 
+**Collection**:
+A filter one Person saves over their own Listening Time: a range, and at will a Source, a creator, a Tag, and a least time heard. Its Sets are the ones that pass, ranked as Heavy Rotation ranks them, and opened like a Playlist. Listening fills it, so a Person edits the filter, never its Sets. Heavy Rotation is the collection with no filter.
+_Avoid_: Smart playlist, saved search
+
 **Finish**:
 A Listen that reaches the natural end of its Set. A Listen can produce at most one Finish.
 _Avoid_: Completion
