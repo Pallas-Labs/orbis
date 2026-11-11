@@ -795,3 +795,22 @@ fn work_keeps_the_key_it_started_with_through_an_account_switch() {
     });
     assert_eq!(*seen.lock().unwrap(), [Some("key-a".to_owned()), Some("key-a".to_owned())], "every request in the work speaks as A");
 }
+
+#[test]
+fn an_idle_set_never_started_here_takes_the_place_another_device_reached() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("GET /sets/s-sunrise/tracklist", json!({ "cues": [], "state": "none" }));
+    rt.update(|s, _| {
+        s.playing = Default::default();
+        s.queue_landed();
+    });
+    let mut moved = set_json("s-sunrise", "Sunrise on the Pier");
+    (moved["playbackPositionSeconds"], moved["durationSeconds"]) = (json!(2_000), json!(3_492));
+    fixture::reply("GET /sets", json!({ "sets": [moved] }));
+    rt.update(|s, _| s.reload_library());
+    land(&mut rt);
+    rt.update(|s, _| s.toggle());
+    rt.frame(1.0 / 60.0);
+    assert_eq!(rt.state.playing.status, Status::Playing);
+    assert!((rt.state.playing.position - 2_000.0).abs() < 1.0, "from the other device's place: {}", rt.state.playing.position);
+}

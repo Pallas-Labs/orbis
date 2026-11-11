@@ -107,6 +107,17 @@ pub struct State {
 }
 
 impl State {
+    /// Orbis now has `seconds` as the resume point of `id`. When that is the loaded Set, it resumes
+    /// there; an idle player, which never started it here, also moves its place there. A paused
+    /// or failed one keeps its own place, which is newer.
+    pub fn resume_at(&mut self, id: &str, seconds: f64) {
+        let Some(loaded) = self.set.as_mut().filter(|x| x.id == id) else { return };
+        loaded.playback_position_seconds = seconds;
+        if self.status == Status::Idle {
+            (self.position, self.saved) = (seconds, seconds);
+        }
+    }
+
     /// Orbis's queue names another Set active: the loaded one asks again before it plays.
     pub fn unconfirm(&mut self) {
         self.activated = false;
@@ -215,9 +226,7 @@ impl App {
         for x in library.chain(queue).chain(playlist).filter(|x| x.id == set.id) {
             *x = set.clone();
         }
-        if let Some(loaded) = self.playing.set.as_mut().filter(|x| x.id == set.id) {
-            loaded.playback_position_seconds = set.playback_position_seconds;
-        }
+        self.playing.resume_at(&set.id, set.playback_position_seconds);
     }
 
     /// Shows `set` in the player without playing it: the queue's active Set when the app opens.
@@ -257,10 +266,9 @@ impl App {
                 *x = (*new).clone();
             }
         }
-        if let Some(loaded) = self.playing.set.as_mut()
-            && let Some(new) = fresh.get(loaded.id.as_str())
-        {
-            loaded.playback_position_seconds = new.playback_position_seconds;
+        let loaded = self.playing.set.as_ref().and_then(|x| fresh.get(x.id.as_str())).map(|new| (new.id.clone(), new.playback_position_seconds));
+        if let Some((id, seconds)) = loaded {
+            self.playing.resume_at(&id, seconds);
         }
     }
 
