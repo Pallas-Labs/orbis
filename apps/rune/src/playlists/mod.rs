@@ -68,7 +68,9 @@ impl App {
             |s, got| {
                 let ours = matches!((&s.screen, &got), (Screen::Playlist(open), Ok(p)) if *open == p.id);
                 if ours || got.is_err() {
-                    let urls: Vec<String> = got.iter().flat_map(|p| p.sets.iter().filter_map(|x| x.artwork_url.clone())).collect();
+                    // The rows' thumbnails, and the large picture a cover of under four Sets draws.
+                    let cover = got.iter().filter(|p| p.sets.len() < 4).filter_map(|p| p.sets.first()?.artwork_large_url.clone());
+                    let urls: Vec<String> = got.iter().flat_map(|p| p.sets.iter().filter_map(|x| x.artwork_url.clone())).chain(cover).collect();
                     s.playlists.open.land(got);
                     s.want_artwork(urls.iter().map(String::as_str));
                 }

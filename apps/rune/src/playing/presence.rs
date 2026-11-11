@@ -16,6 +16,8 @@ use crate::model;
 
 /// How often a playing session renews its lease.
 const RENEW: Duration = Duration::from_secs(15);
+/// Tries of a play that failed in passing (no answer, 408, 429, 5xx), 15 s apart.
+const PLAY_TRIES: u32 = 8;
 /// How long Orbis keeps a lease after the last action it accepted (ADR 0019).
 const LEASE: f64 = 30.0;
 
@@ -44,6 +46,8 @@ struct Session {
     state: Local,
     /// Rune's clock when Orbis last accepted an action of this session.
     accepted_at: f64,
+    /// Plays tried again after failing in passing.
+    tries: u32,
 }
 
 #[derive(Debug)]
@@ -68,7 +72,7 @@ impl App {
     pub fn presence_begin(&mut self, set_id: &str) {
         self.presence_act(Kind::Stop);
         let now = self.timers.now();
-        self.presence.session = Some(Session { id: new_id(), set_id: set_id.to_owned(), actions: 0, owner: None, state: Local::Idle, accepted_at: now });
+        self.presence.session = Some(Session { id: new_id(), set_id: set_id.to_owned(), actions: 0, owner: None, state: Local::Idle, accepted_at: now, tries: 0 });
     }
 
     /// Asks for Presence again for the Set playing now, when Orbis refused its play. Orbis
@@ -177,9 +181,21 @@ impl App {
                                 }
                             }
                         }
-                        Err(_) if kind == Kind::Play => {
+                        Err(failure) if kind == Kind::Play => {
+                            let passing = matches!(failure.status, None | Some(408 | 429 | 500..=599));
                             if let Some(session) = s.presence.session.as_mut().filter(|x| x.id == id && x.state == Local::Playing) {
                                 session.state = Local::Idle;
+                                // A refusal waits for the queue to land (`presence_retry`); a
+                                // failure in passing is tried again on its own, a few times.
+                                if passing && session.tries < PLAY_TRIES {
+                                    session.tries += 1;
+                                    let again = id.clone();
+                                    s.after(RENEW, move |s| {
+                                        if s.presence.session.as_ref().is_some_and(|x| x.id == again) {
+                                            s.presence_retry();
+                                        }
+                                    });
+                                }
                             }
                         }
                         Err(_) => {}

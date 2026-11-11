@@ -47,6 +47,12 @@ impl Artwork {
         self.waiting.clear();
     }
 
+    /// Whether `url` was asked for.
+    #[cfg(test)]
+    pub fn asked(&self, url: &str) -> bool {
+        self.order.iter().any(|o| o == url)
+    }
+
     /// Fetches out now.
     #[cfg(test)]
     pub fn fetching(&self) -> usize {

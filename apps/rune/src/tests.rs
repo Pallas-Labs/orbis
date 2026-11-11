@@ -865,3 +865,36 @@ fn a_pending_tracklist_is_asked_again_until_orbis_has_it() {
     land(&mut rt);
     assert_eq!(calls().iter().filter(|c| *c == "GET /sets/s-ferry/tracklist").count(), asks, "a ready Tracklist isn't asked again");
 }
+
+#[test]
+fn a_presence_play_lost_to_a_passing_outage_is_tried_again() {
+    let mut rt = live(Screen::Library);
+    fixture::refuse_with("POST /presence/actions", 503, "unavailable");
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    fixture::reply(
+        "POST /presence/actions",
+        json!({ "outcome": "accepted", "session": { "state": "playing", "actionNumber": 2, "ownerGeneration": 4, "sessionId": "x", "setId": "s-sunrise", "leaseExpiresAt": "2027-01-15T08:00:30Z" } }),
+    );
+    rt.frame(16.0);
+    rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    let plays = fixture::bodies("POST /presence/actions").into_iter().filter(|b| b["kind"] == "play").count();
+    assert_eq!(plays, 2, "tried again while the Set plays");
+}
+
+#[test]
+fn a_small_playlists_cover_fetches_the_large_artwork_it_draws() {
+    let mut rt = live(Screen::Library);
+    let mut one = set_json("s-ferry", "Night Ferry");
+    (one["artworkUrl"], one["artworkLargeUrl"]) = (json!("https://art/small"), json!("https://art/large"));
+    fixture::reply("GET /playlists/p-solo", json!({ "id": "p-solo", "name": "Solo", "setCount": 1, "creator": { "id": "u-me", "username": "avery" }, "role": "creator", "sets": [one] }));
+    rt.update(|s, _| {
+        s.artwork.start(std::sync::Arc::new(|| {}));
+        s.open_playlist("p-solo");
+    });
+    land(&mut rt);
+    assert!(rt.state.artwork.asked("https://art/small"), "the row's thumbnail");
+    assert!(rt.state.artwork.asked("https://art/large"), "the cover's large picture");
+}
