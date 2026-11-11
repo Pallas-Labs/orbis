@@ -1715,10 +1715,13 @@ final class AppModel {
   }
 
   /// Reads the Heavy Rotation shelf again. A failed read keeps the shelf as it was: Home has no
-  /// place to show an error for one shelf, and the next refresh tries again.
+  /// place to show an error for one shelf, and the next refresh tries again. An answer from a
+  /// session that has since signed out is dropped, so it cannot fill another Person's Home.
   func loadHeavyRotation() async {
     guard let client, let sets = try? await client.heavyRotation() else { return }
-    guard !Task.isCancelled, sets != heavyRotation else { return }
+    guard self.client?.token == client.token, !Task.isCancelled, sets != heavyRotation else {
+      return
+    }
     heavyRotation = sets
   }
 

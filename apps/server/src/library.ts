@@ -706,42 +706,67 @@ export class Library extends Context.Service<
                 ? wanted
                 : Math.min(wanted, current.durationSeconds)
             );
-            const [previous] = yield* db
-              .select({ seconds: playbackPositions.seconds })
-              .from(playbackPositions)
-              .where(
-                and(
-                  eq(playbackPositions.personId, personId),
-                  eq(playbackPositions.setId, id)
-                )
-              )
-              .limit(1);
-            yield* db
-              .insert(playbackPositions)
-              .values({ personId, seconds: bounded, setId: id })
-              .onConflictDoUpdate({
-                set: { seconds: bounded },
-                target: [playbackPositions.personId, playbackPositions.setId],
-              });
-            const heard = listenedBetween(previous?.seconds ?? 0, bounded);
-            if (heard > 0) {
-              yield* db
-                .insert(listeningTime)
-                .values({
-                  day: utcDay(new Date()),
-                  personId,
-                  seconds: heard,
-                  setId: id,
-                })
-                .onConflictDoUpdate({
-                  set: { seconds: sql`${listeningTime.seconds} + ${heard}` },
-                  target: [
-                    listeningTime.personId,
-                    listeningTime.day,
-                    listeningTime.setId,
-                  ],
-                });
-            }
+            // One transaction, so two saves at once cannot both credit the same step.
+            yield* db.transaction((tx) =>
+              Effect.gen(function* savePositionTransaction() {
+                const now = Date.now();
+                const [previous] = yield* tx
+                  .select({
+                    savedAt: playbackPositions.savedAt,
+                    seconds: playbackPositions.seconds,
+                  })
+                  .from(playbackPositions)
+                  .where(
+                    and(
+                      eq(playbackPositions.personId, personId),
+                      eq(playbackPositions.setId, id)
+                    )
+                  )
+                  .limit(1);
+                yield* tx
+                  .insert(playbackPositions)
+                  .values({
+                    personId,
+                    savedAt: now,
+                    seconds: bounded,
+                    setId: id,
+                  })
+                  .onConflictDoUpdate({
+                    set: { savedAt: now, seconds: bounded },
+                    target: [
+                      playbackPositions.personId,
+                      playbackPositions.setId,
+                    ],
+                  });
+                const heard = listenedBetween(
+                  previous?.seconds ?? 0,
+                  bounded,
+                  previous === undefined || previous.savedAt === null
+                    ? null
+                    : (now - previous.savedAt) / 1000
+                );
+                if (heard > 0) {
+                  yield* tx
+                    .insert(listeningTime)
+                    .values({
+                      day: utcDay(new Date(now)),
+                      personId,
+                      seconds: heard,
+                      setId: id,
+                    })
+                    .onConflictDoUpdate({
+                      set: {
+                        seconds: sql`${listeningTime.seconds} + ${heard}`,
+                      },
+                      target: [
+                        listeningTime.personId,
+                        listeningTime.day,
+                        listeningTime.setId,
+                      ],
+                    });
+                }
+              })
+            );
             return yield* hydrateSet(current);
           })
         )

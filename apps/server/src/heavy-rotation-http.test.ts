@@ -5,6 +5,8 @@
 //   fills from real playback.
 // - A seek forward, a jump back, or the reset when a Set finishes counts as
 //   listening.
+// - A skip forward while playing, a skip while paused, or two devices playing
+//   the same Set credits time nobody heard.
 // - Listening Time from another Person, from a day outside the window, or for
 //   a Set this Person removed reaches the shelf.
 // - The shelf shows with fewer than three Sets, or in an order other than the
@@ -13,7 +15,7 @@
 // The transcript prints the shelf after each step, so a change to these rules
 // shows in its snapshot diff.
 import { Database } from "bun:sqlite";
-import { expect, test } from "bun:test";
+import { expect, setSystemTime, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -37,6 +39,23 @@ const shelf = async (app: App) => {
   return `${response.statusCode} ${sets.length === 0 ? "(hidden)" : sets.map((set) => set.id).join(" ")}`;
 };
 
+// The service credits a step only when it matches the time since the last save, so the test
+// sets the clock and moves it on. Noon keeps every step on one UTC day.
+const TODAY = "2026-11-10";
+let clock = Date.parse(`${TODAY}T12:00:00Z`);
+
+/** Moves the clock on, then saves a position. */
+const putPositionAfter = async (
+  app: App,
+  setId: string,
+  seconds: number,
+  afterSeconds: number
+) => {
+  clock += afterSeconds * 1000;
+  setSystemTime(new Date(clock));
+  await putPosition(app, setId, seconds);
+};
+
 /** Plays a Set from `from` to `to` seconds, saving the position each minute. */
 const listen = (app: App, setId: string, from: number, to: number) =>
   runInOrder(
@@ -45,7 +64,7 @@ const listen = (app: App, setId: string, from: number, to: number) =>
       (_, step) => from + step * 60
     ),
     async (seconds) => {
-      await putPosition(app, setId, seconds);
+      await putPositionAfter(app, setId, seconds, 60);
     }
   );
 
@@ -68,23 +87,26 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-rotation-"));
   const databasePath = path.join(directory, "library.sqlite");
   try {
-    await seedSets(databasePath, ready(["a", "b", "c", "d", "e", "f"]));
+    await seedSets(
+      databasePath,
+      ready(["a", "b", "c", "d", "e", "f", "g", "h"])
+    );
     const seed = new Database(databasePath);
     try {
-      // The service credits the UTC day it runs on, so the seeds count days back from SQLite's
-      // own clock rather than the test's.
+      // The seeds count days back from the test's clock, which the service reads.
       const insert = seed.query(
-        "INSERT INTO listening_time (person_id, day, set_id, seconds) VALUES (?, date('now', ?), ?, ?)"
+        "INSERT INTO listening_time (person_id, day, set_id, seconds) VALUES (?, date(?, ?), ?, ?)"
       );
       // An old binge outside the window, and another Person's listening today.
-      insert.run("host", "-30 days", "e", 36_000);
-      insert.run("someone-else", "+0 days", "f", 36_000);
+      insert.run("host", TODAY, "-30 days", "e", 36_000);
+      insert.run("someone-else", TODAY, "+0 days", "f", 36_000);
       // Ten minutes of d three weeks ago, inside the window.
-      insert.run("host", "-21 days", "d", 600);
+      insert.run("host", TODAY, "-21 days", "d", 600);
     } finally {
       seed.close();
     }
 
+    setSystemTime(new Date(clock));
     const app = createApp({ databasePath });
     try {
       const t = transcript();
@@ -94,13 +116,13 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
       t.step("listen to a for 5 minutes", await shelf(app));
 
       await listen(app, "b", 0, 60);
-      await putPosition(app, "b", 590);
+      await putPositionAfter(app, "b", 590, 5);
       t.step("skim b for a minute, then seek near its end", await shelf(app));
 
       await listen(app, "c", 0, 180);
       t.step("listen to c for 3 minutes", await shelf(app));
 
-      await putPosition(app, "a", 0);
+      await putPositionAfter(app, "a", 0, 5);
       await listen(app, "a", 0, 240);
       t.step("jump back in a and hear 4 more minutes", await shelf(app));
 
@@ -113,6 +135,30 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
       });
       t.step(`remove c (${removed.statusCode})`, await shelf(app));
 
+      await listen(app, "g", 0, 60);
+      await putPositionAfter(app, "g", 95, 5);
+      await putPositionAfter(app, "g", 100, 5);
+      t.step(
+        "hear a minute of g, skip 30 s while playing, hear 5 s",
+        await shelf(app)
+      );
+
+      await putPositionAfter(app, "h", 0, 5);
+      await runInOrder([30, 60, 90, 120], async (seconds) => {
+        await putPositionAfter(app, "h", seconds, 2);
+      });
+      await putPositionAfter(app, "h", 150, 600);
+      t.step(
+        "pause h, skip 30 s four times, wait 10 minutes, skip again",
+        await shelf(app)
+      );
+
+      // Device A plays g at 100 s and device B at 130 s; each saves every 5 s, in turn.
+      await runInOrder([130, 105, 135, 110, 140], async (seconds) => {
+        await putPositionAfter(app, "g", seconds, 2.5);
+      });
+      t.step("two devices play g 30 s apart for 12.5 s", await shelf(app));
+
       t.step("listening time", listeningTime(databasePath));
 
       expect(t.text()).toMatchInlineSnapshot(`
@@ -124,13 +170,17 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
         jump back in a and hear 4 more minutes  -> 200 a d c
         hear 3 more minutes of b  -> 200 a d b c
         remove c (200)  -> 200 a d b
-        listening time  -> host a 540, host b 240, host c 180, host d 600, host e 36000, someone-else f 36000
+        hear a minute of g, skip 30 s while playing, hear 5 s  -> 200 a d b
+        pause h, skip 30 s four times, wait 10 minutes, skip again  -> 200 a d b
+        two devices play g 30 s apart for 12.5 s  -> 200 a d b
+        listening time  -> host a 540, host b 240, host c 180, host d 600, host e 36000, someone-else f 36000, host g 65
         "
       `);
     } finally {
       await app.dispose();
     }
   } finally {
+    setSystemTime();
     await rm(directory, { force: true, recursive: true });
   }
 });

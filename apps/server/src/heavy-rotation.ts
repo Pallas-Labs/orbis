@@ -20,6 +20,11 @@ export const HEAVY_ROTATION = {
   minimumSets: 3,
   /** The weight of the oldest day in the window; today weighs 1. */
   oldestWeight: 0.5,
+  /**
+   * How far a step may differ from the time since the last save and still count as playback.
+   * It absorbs the client's timer and the network; a seek or two devices moves much further.
+   */
+  slackSeconds: 3,
   /** Today and the 29 days before it. */
   windowDays: 30,
 } as const;
@@ -29,10 +34,27 @@ const DAY_MS = 86_400_000;
 /** The UTC day a moment falls on, as `YYYY-MM-DD`. */
 export const utcDay = (at: Date): string => at.toISOString().slice(0, 10);
 
-/** The seconds heard between two saved Playback Positions: a short step forward, or nothing. */
-export const listenedBetween = (from: number, to: number): number => {
+/**
+ * The seconds heard between two saved Playback Positions. Only a short step forward that matches
+ * the time since the last save is playback, and it never counts more than that time. A seek,
+ * a skip while paused, or two devices reporting the same Set credits nothing. `elapsedSeconds` is
+ * null when the last save has no time, which credits nothing.
+ */
+export const listenedBetween = (
+  from: number,
+  to: number,
+  elapsedSeconds: number | null
+): number => {
   const step = to - from;
-  return step > 0 && step <= HEAVY_ROTATION.maxStepSeconds ? step : 0;
+  if (
+    elapsedSeconds === null ||
+    step <= 0 ||
+    step > HEAVY_ROTATION.maxStepSeconds ||
+    Math.abs(step - elapsedSeconds) > HEAVY_ROTATION.slackSeconds
+  ) {
+    return 0;
+  }
+  return Math.max(Math.min(step, Math.round(elapsedSeconds)), 0);
 };
 
 /** The first day the window holds. */

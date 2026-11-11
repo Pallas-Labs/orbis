@@ -210,6 +210,8 @@ export const playbackPositions = sqliteTable(
   "playback_positions",
   {
     personId: text("person_id").notNull(),
+    /** When the position was last saved, in Unix milliseconds; null on rows saved before it. */
+    savedAt: integer("saved_at"),
     seconds: integer("seconds").notNull().default(0),
     setId: text("set_id")
       .notNull()

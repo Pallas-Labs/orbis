@@ -5,4 +5,5 @@ CREATE TABLE `listening_time` (
   `seconds` integer NOT NULL DEFAULT 0,
   PRIMARY KEY (`person_id`, `day`, `set_id`)
 );--> statement-breakpoint
-CREATE INDEX `listening_time_by_set` ON `listening_time` (`set_id`);
+CREATE INDEX `listening_time_by_set` ON `listening_time` (`set_id`);--> statement-breakpoint
+ALTER TABLE `playback_positions` ADD `saved_at` integer;
