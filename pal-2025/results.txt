@@ -1,0 +1,6 @@
+** BUILD SUCCEEDED **
+ios exit 0
+journey exit 0
+macos exit 0
+Test Case '-[OrbisUITests.CollectionsUITests testATagCollectionShowsOnlyItsHeardSets]' passed (191.025 seconds).
+tvos exit 0
