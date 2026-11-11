@@ -88,10 +88,12 @@ impl Queue {
     }
 
     /// Makes `set` the active Set, as Orbis does on Play: a Set already in the queue keeps its
-    /// place, and another goes in after the active one (ADR 0001).
+    /// place, and another goes in before the active one (ADR 0001).
     pub fn activate(&mut self, set: &Set) {
         if !self.entries.iter().any(|e| e.id == set.id) {
-            let at = self.active_set_id.as_ref().and_then(|a| self.entries.iter().position(|e| e.id == *a)).map_or(0, |i| i + 1);
+            // As Orbis's `placedBefore`: before the Set it interrupts, so that one plays next; at
+            // the end when nothing is active.
+            let at = self.active_set_id.as_ref().and_then(|a| self.entries.iter().position(|e| e.id == *a)).unwrap_or(self.entries.len());
             self.entries.insert(at, set.clone());
         }
         self.active_set_id = Some(set.id.clone());

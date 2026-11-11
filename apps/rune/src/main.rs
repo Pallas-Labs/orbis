@@ -71,6 +71,9 @@ pub struct App {
     pub playlist_menu: bool,
     /// Where a field's late edits land once its dialog closed.
     pub spare_edit: TextEdit,
+    /// Counts sign-ins and sign-outs. A call's answer lands only in the session that made it,
+    /// so one account's late answer never reaches the next.
+    pub session: u64,
     /// The event stream dropped, so what it carries is reloaded when it comes back.
     pub live_lost: bool,
     /// A short line that leaves on its own.

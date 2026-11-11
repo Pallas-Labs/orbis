@@ -192,6 +192,7 @@ impl App {
             self.say(why);
         }
         server.connect();
+        self.session += 1;
         self.signed_out = false;
         self.account.signin = SignIn::default();
         self.say(format!("Signed in as {}", signed.person.username));
@@ -335,13 +336,14 @@ impl App {
         }
     }
 
-    fn forget_account(&mut self) {
+    pub(crate) fn forget_account(&mut self) {
         api::events::stop();
         Server::forget();
         self.close();
         let service = std::mem::take(&mut self.service);
         let (artwork, diagnostics) = (std::mem::take(&mut self.artwork), std::mem::take(&mut self.diagnostics));
-        *self = App { service, artwork, diagnostics, signed_out: true, ..App::new() };
+        let session = self.session + 1;
+        *self = App { service, artwork, diagnostics, session, signed_out: true, ..App::new() };
     }
 }
 

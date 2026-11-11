@@ -533,3 +533,26 @@ fn trying_again_after_orbis_refused_a_play_asks_it_to_make_the_set_active_again(
     assert_eq!(rt.state.playing.status, Status::Playing);
     assert!((rt.state.playing.position - 600.0).abs() < 1.0, "from where the person was: {}", rt.state.playing.position);
 }
+
+#[test]
+fn playing_a_set_from_outside_the_queue_puts_it_before_the_one_it_interrupts() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("GET /sets/s-tram/tracklist", json!({ "cues": [], "state": "none" }));
+    rt.update(|s, _| s.play("s-tram"));
+    let order: Vec<String> = rt.state.queue.items.data.as_ref().unwrap().entries.iter().map(|x| x.id.clone()).collect();
+    assert_eq!(order[..3], ["s-tram", "s-sunrise", "s-low-tide"], "as Orbis's placedBefore: {order:?}");
+    let mut empty = crate::model::Queue { active_set_id: None, entries: vec![crate::model::Set { id: "a".into(), ..Default::default() }] };
+    empty.activate(&crate::model::Set { id: "b".into(), ..Default::default() });
+    assert_eq!(empty.entries.iter().map(|x| x.id.as_str()).collect::<Vec<_>>(), ["a", "b"], "with nothing active it goes at the end");
+}
+
+#[test]
+fn an_answer_from_before_a_sign_out_lands_nowhere() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("GET /sets", json!({ "sets": [set_json("s-theirs", "The Other Account's Set")] }));
+    rt.update(|s, _| s.reload_library());
+    rt.update(|s, _| s.forget_account());
+    land(&mut rt);
+    assert!(rt.state.signed_out);
+    assert!(rt.state.library.sets.data.is_none(), "the old account's Library didn't land: {:?}", rt.state.library.sets.data);
+}

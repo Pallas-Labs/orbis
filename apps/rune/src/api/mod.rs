@@ -53,6 +53,12 @@ thread_local! {
 impl App {
     /// Runs `work` off the UI thread, then `land`s what it returns in the app.
     pub fn spawn<T: Send + 'static>(&self, work: impl FnOnce() -> T + Send + 'static, land: impl FnOnce(&mut App, T) + Send + 'static) {
+        let session = self.session;
+        let land = move |s: &mut App, out: T| {
+            if s.session == session {
+                land(s, out);
+            }
+        };
         match &self.service {
             Service::Live(handle) => {
                 let handle = handle.clone();
