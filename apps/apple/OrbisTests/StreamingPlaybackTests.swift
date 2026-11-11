@@ -278,7 +278,7 @@ final class StreamingPlaybackTests: XCTestCase {
   /// The service can record a Set as a few seconds longer than the audio the player decodes. The
   /// item then ends early with every byte already in hand, so waiting for more audio never ends.
   func testAudioShorterThanItsServiceDurationFinishesOnce() async throws {
-    let fixture = try await fixture("ready-ogg-overstated", duration: 604)
+    let fixture = try await fixture("ready-ogg-overstated", duration: 607)
     let player = AudioPlayer()
     var finishes = 0
     player.onFinished = { [weak player] _ in
@@ -293,7 +293,7 @@ final class StreamingPlaybackTests: XCTestCase {
       set: fixture.set, baseURL: fixture.client.address, token: fixture.client.token, startAt: 590)
     player.player?.volume = 0
     try await waitUntil(
-      "Audio shorter than its service duration must finish the Set", player: player, seconds: 25
+      "Audio shorter than its service duration must finish the Set", player: player, seconds: 40
     ) { finishes > 0 }
     try await observe(player, phase: "after overstated Ogg completion", seconds: 3)
     XCTAssertEqual(finishes, 1, "A repeated early end must finish the Listen exactly once")
@@ -305,8 +305,8 @@ final class StreamingPlaybackTests: XCTestCase {
     let finishing = try XCTUnwrap(ends.last, "The player must record the end it finished on")
     XCTAssertTrue(finishing.premature, "The audio ended before the service duration")
     XCTAssertEqual(finishing.reason, .repeated, "The record must say why it finished anyway")
-    XCTAssertEqual(finishing.expected.value ?? 0, 604, accuracy: 0.01)
-    XCTAssertLessThan(finishing.actual.value ?? 604, 602)
+    XCTAssertEqual(finishing.expected.value ?? 0, 607, accuracy: 0.01)
+    XCTAssertLessThan(finishing.actual.value ?? 607, 605)
     XCTAssertEqual(
       ends.filter { $0.reason == nil }.count, ends.count - 1,
       "Only the end that finished carries a reason")

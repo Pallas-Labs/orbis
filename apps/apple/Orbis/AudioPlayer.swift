@@ -118,9 +118,8 @@ final class AudioPlayer {
   @ObservationIgnored private var soundRequestedAt: TimeInterval?
   @ObservationIgnored private var hasStartedSound = false
   @ObservationIgnored private var completionReported = false
-  /// Where the item last ended early, and under which generation. A held stream ends early once
-  /// and then moves on when its bytes arrive; audio that is shorter than the service's duration
-  /// ends again at the same place and never moves.
+  /// Where the item last ended early, and under which generation. Audio that is shorter than the
+  /// service's duration ends again at the same place, with every byte loaded, and never moves.
   @ObservationIgnored private var prematureEnd: (generation: Int, position: TimeInterval)?
   /// Which seek is the newest. A seek that a later one interrupts still calls back, unfinished,
   /// and must not end the wait for the later one: a tick in between would put the old position
@@ -973,10 +972,12 @@ final class AudioPlayer {
     if let duration = [duration, serviceDuration].compactMap({ $0 }).min(),
       actual.isFinite, actual < duration - 2
     {
-      // A second early end at the same place, with no progress between, means the audio is
-      // shorter than the expected length and nothing more will arrive.
+      // A second early end at the same place, with no progress between and the item loaded to
+      // the expected end, means the audio is shorter than the expected length and nothing more
+      // will arrive. A held stream also ends twice at one place, but its loaded range stops short.
       if let end = prematureEnd, end.generation == playbackGeneration,
-        abs(actual - end.position) <= 0.5
+        abs(actual - end.position) <= 0.5,
+        engine.buffer.ranges.contains(where: { $0.start + $0.duration >= duration - 2 })
       {
         record(
           .ended(

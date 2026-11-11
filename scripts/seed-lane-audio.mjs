@@ -6,6 +6,7 @@ import {
   readFileSync,
   rmSync,
   statSync,
+  writeFileSync,
 } from "node:fs";
 import { createServer } from "node:http";
 import path from "node:path";
@@ -178,8 +179,10 @@ const respond = (response, status, body) => {
 };
 
 const handleStream = (route, request, response) => {
-  // `ready-ogg-overstated` records a duration 4 s longer than the 600 s of audio, as ffprobe
-  // did for a retained Set whose last seconds the player could not decode.
+  // `ready-ogg-overstated` stores the audio with trailing bytes that hold no audio, so the player
+  // estimates a longer duration from the byte count, and records 607 s, 4 s past the decoded
+  // end. A retained Set in production ended 4.35 s before its service duration, while the
+  // player's estimate ran 241 s past it.
   const ready =
     /^\/ready-ogg(?<overstated>-overstated)?\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
       route
@@ -191,15 +194,17 @@ const handleStream = (route, request, response) => {
       return true;
     }
     mkdirSync(audioDirectory, { recursive: true });
-    const bytes = longOgg();
-    const destination = path.join(audioDirectory, `${setId}.ogg`);
-    copyFileSync(
-      path.join(dataDirectory, "streaming-fixture.ogg"),
-      destination
-    );
+    const audioBytes = longOgg();
+    const bytes = overstated
+      ? Buffer.concat([
+          audioBytes,
+          Buffer.alloc(Math.round(audioBytes.length * 0.03)),
+        ])
+      : audioBytes;
+    writeFileSync(path.join(audioDirectory, `${setId}.ogg`), bytes);
     db.query(
       "UPDATE sets SET download_state = 'ready', retained_audio_format = ?, retained_audio_bytes = ?, duration_seconds = ? WHERE id = ?"
-    ).run("ogg", bytes.length, overstated ? 604 : 600, setId);
+    ).run("ogg", bytes.length, overstated ? 607 : 600, setId);
     respond(response, 204);
     return true;
   }
