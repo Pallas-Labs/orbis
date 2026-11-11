@@ -5,7 +5,7 @@ import type {
   SaveSetInput,
   SetSource,
 } from "@orbis/contracts";
-import { and, asc, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
 import { Context, Effect, Layer, Schema } from "effect";
 
 import { albumCues, appleMusicDownloadRefused } from "./apple-music.js";
@@ -15,6 +15,7 @@ import {
   downloadJobs,
   downloadRequesters,
   libraryEntries,
+  listeningTime,
   listens,
   playbackPositions,
   playlistSets,
@@ -25,6 +26,13 @@ import {
 import { Database } from "./db/service.js";
 import { DownloadMoves, moveDownload } from "./download-state.js";
 import { asLibraryError, LibraryError } from "./errors.js";
+import {
+  HEAVY_ROTATION,
+  heavyRotation,
+  listenedBetween,
+  utcDay,
+  windowStart,
+} from "./heavy-rotation.js";
 import type { PersonRecord } from "./identity.js";
 import {
   MAX_PLAYLISTS_PER_SET,
@@ -166,6 +174,8 @@ export class Library extends Context.Service<
     readonly release: (id: string) => Effect.Effect<void, LibraryError>;
     readonly remove: (id: string) => Effect.Effect<SavedSet, LibraryError>;
     readonly tags: Effect.Effect<string[], LibraryError>;
+    /** The Sets on Home's Heavy Rotation shelf, most heard first; empty when it is hidden. */
+    readonly heavyRotation: Effect.Effect<SavedSet[], LibraryError>;
     readonly playlists: Effect.Effect<Playlist[], LibraryError>;
     readonly createPlaylist: (
       name: string
@@ -691,17 +701,47 @@ export class Library extends Context.Service<
           Effect.gen(function* setPlaybackPositionEffect() {
             const current = yield* resolve(id);
             const wanted = Math.max(seconds, 0);
-            const bounded =
+            const bounded = Math.round(
               current.durationSeconds === null
                 ? wanted
-                : Math.min(wanted, current.durationSeconds);
+                : Math.min(wanted, current.durationSeconds)
+            );
+            const [previous] = yield* db
+              .select({ seconds: playbackPositions.seconds })
+              .from(playbackPositions)
+              .where(
+                and(
+                  eq(playbackPositions.personId, personId),
+                  eq(playbackPositions.setId, id)
+                )
+              )
+              .limit(1);
             yield* db
               .insert(playbackPositions)
-              .values({ personId, seconds: Math.round(bounded), setId: id })
+              .values({ personId, seconds: bounded, setId: id })
               .onConflictDoUpdate({
-                set: { seconds: Math.round(bounded) },
+                set: { seconds: bounded },
                 target: [playbackPositions.personId, playbackPositions.setId],
               });
+            const heard = listenedBetween(previous?.seconds ?? 0, bounded);
+            if (heard > 0) {
+              yield* db
+                .insert(listeningTime)
+                .values({
+                  day: utcDay(new Date()),
+                  personId,
+                  seconds: heard,
+                  setId: id,
+                })
+                .onConflictDoUpdate({
+                  set: { seconds: sql`${listeningTime.seconds} + ${heard}` },
+                  target: [
+                    listeningTime.personId,
+                    listeningTime.day,
+                    listeningTime.setId,
+                  ],
+                });
+            }
             return yield* hydrateSet(current);
           })
         )
@@ -1071,6 +1111,40 @@ export class Library extends Context.Service<
           .pipe(Effect.map((rows) => rows.map((row) => row.tag)))
       )
     ).pipe(Effect.withSpan("Library.tags"));
+
+    const heavyRotationSets = Effect.suspend(() =>
+      execute(
+        Effect.gen(function* heavyRotationEffect() {
+          const now = new Date();
+          // One row for each Set heard on each of the last 30 days, kept to the Sets still in
+          // this Person's Library, so a removed Set leaves no gap. The limit only guards a
+          // pathological day count; a person hears a few Sets a day.
+          const days = yield* db
+            .select({
+              day: listeningTime.day,
+              seconds: listeningTime.seconds,
+              setId: listeningTime.setId,
+            })
+            .from(listeningTime)
+            .innerJoin(
+              libraryEntries,
+              and(
+                eq(libraryEntries.personId, listeningTime.personId),
+                eq(libraryEntries.setId, listeningTime.setId)
+              )
+            )
+            .where(
+              and(
+                eq(listeningTime.personId, personId),
+                gte(listeningTime.day, windowStart(now))
+              )
+            )
+            .orderBy(desc(listeningTime.day))
+            .limit(HEAVY_ROTATION.windowDays * 200);
+          return yield* byIds(heavyRotation(days, now));
+        })
+      )
+    ).pipe(Effect.withSpan("Library.heavyRotation"));
 
     const playlistsList = Effect.suspend(() =>
       execute(
@@ -1483,6 +1557,7 @@ export class Library extends Context.Service<
       find,
       findByUrl,
       finishDownload,
+      heavyRotation: heavyRotationSets,
       list,
       playlists: playlistsList,
       queueDownload,

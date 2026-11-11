@@ -754,6 +754,10 @@ export const OrbisApi = PlaylistApi.add(
           error: InternalError,
           success: Schema.Struct({ tags: Schema.Array(Schema.String) }),
         }),
+        HttpApiEndpoint.get("heavyRotation", "/heavy-rotation", {
+          error: InternalError,
+          success: LibraryResponseSchema,
+        }),
         HttpApiEndpoint.patch("updateTags", "/sets/:id/tags", {
           error: [BadRequest, NotFound, InternalError],
           params: SetId,

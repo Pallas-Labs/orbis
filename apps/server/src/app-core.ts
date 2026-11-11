@@ -1727,6 +1727,14 @@ export const createPortableApp = (options: {
                 })
               )
             )
+            .handle("heavyRotation", () =>
+              withFailureResponse(
+                Effect.gen(function* listHeavyRotation() {
+                  const personal = yield* Library;
+                  return { sets: yield* personal.heavyRotation };
+                })
+              )
+            )
             .handleRaw("updateTags", ({ params }) =>
               withFailureResponse(
                 Effect.gen(function* updateTags() {
@@ -2108,6 +2116,9 @@ export const createPortableApp = (options: {
                       );
                       yield* tx.run(
                         sql`DELETE FROM listens WHERE person_id = ${params.id}`
+                      );
+                      yield* tx.run(
+                        sql`DELETE FROM listening_time WHERE person_id = ${params.id}`
                       );
                       yield* tx.run(
                         sql`DELETE FROM library_entries WHERE person_id = ${params.id}`

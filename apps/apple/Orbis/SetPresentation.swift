@@ -16,7 +16,7 @@ struct SetRowModel {
   let progress: Double?
 }
 
-/// What Home shows: the Set it leads with and the Sets on its two rails. One definition for every
+/// What Home shows: the Set it leads with and the Sets on its rails. One definition for every
 /// surface that draws Home, the phone's page and the car's tab, so they cannot pick differently.
 struct HomeSelection: Equatable {
   /// A rail shows what is new, not the whole library.
@@ -26,10 +26,14 @@ struct HomeSelection: Equatable {
   let continueListening: [SavedSet]
   /// The newest Sets the Library's filter admits.
   let recentlyFiled: [SavedSet]
+  /// The Sets played most in the last 30 days, as the service ranked them. The service leaves
+  /// it empty until three Sets qualify, and an empty shelf is not drawn.
+  let heavyRotation: [SavedSet]
 
-  init(library: [SavedSet], visible: [SavedSet]) {
+  init(library: [SavedSet], visible: [SavedSet], heavyRotation: [SavedSet] = []) {
     continueListening = SetPresentation.continueListening(library)
     recentlyFiled = Array(visible.prefix(Self.recentLimit))
+    self.heavyRotation = heavyRotation
   }
 
   /// The one most recently left part-way, or else the newest filed.

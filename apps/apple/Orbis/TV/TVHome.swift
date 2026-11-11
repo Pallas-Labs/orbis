@@ -17,9 +17,9 @@
 
     private var home: HomeSelection {
       guard case .loaded(let visible) = model.visibleSets else {
-        return HomeSelection(library: librarySets, visible: [])
+        return HomeSelection(library: librarySets, visible: [], heavyRotation: model.heavyRotation)
       }
-      return HomeSelection(library: librarySets, visible: visible)
+      return HomeSelection(library: librarySets, visible: visible, heavyRotation: model.heavyRotation)
     }
 
     var body: some View {
@@ -49,6 +49,14 @@
               ForEach(home.continueRail) { set in
                 TVSetTile(model: model, set: set, detail: SetPresentation.timeLeft(set))
                   .accessibilityIdentifier("continue-card-\(set.id)")
+              }
+            }
+          }
+          if !home.heavyRotation.isEmpty {
+            TVRail(title: "Heavy rotation", subtitle: "What you've played most this month.") {
+              ForEach(home.heavyRotation) { set in
+                TVSetTile(model: model, set: set)
+                  .accessibilityIdentifier("rotation-card-\(set.id)")
               }
             }
           }

@@ -51,6 +51,14 @@ _Avoid_: Progress
 One Person's activation of a Set through an intentional play action or automatic Listening Queue advance. Pausing and resuming the active Set remain part of the same Listen.
 _Avoid_: Play, playback session
 
+**Listening Time**:
+The seconds of one Set one Person heard on one UTC day, credited from the short forward steps between saved Playback Positions. A seek forward is not Listening Time.
+_Avoid_: Play time, watch time
+
+**Heavy Rotation**:
+The Home shelf of the Sets one Person heard most in the last 30 days, ranked by Listening Time. A day under two minutes of a Set does not count, recent days weigh a little more, and the shelf is hidden until three Sets qualify.
+_Avoid_: Top Sets, most played
+
 **Finish**:
 A Listen that reaches the natural end of its Set. A Listen can produce at most one Finish.
 _Avoid_: Completion

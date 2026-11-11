@@ -241,6 +241,24 @@ export const listens = sqliteTable(
   ]
 );
 
+// One Person's Listening Time with one Set on one UTC day, credited where the Playback Position
+// is saved. A day rather than a Listen, because resuming a Set the next day reopens no Listen.
+export const listeningTime = sqliteTable(
+  "listening_time",
+  {
+    day: text("day").notNull(),
+    personId: text("person_id").notNull(),
+    seconds: integer("seconds").notNull().default(0),
+    setId: text("set_id")
+      .notNull()
+      .references(() => sets.id),
+  },
+  (table) => [
+    primaryKey({ columns: [table.personId, table.day, table.setId] }),
+    index("listening_time_by_set").on(table.setId),
+  ]
+);
+
 // `actionNumber` outlives result pruning so a pruned action can never reacquire ownership.
 export const presenceSessions = sqliteTable(
   "presence_sessions",
@@ -338,6 +356,7 @@ export const schema = {
   downloadJobs,
   downloadRequesters,
   libraryEntries,
+  listeningTime,
   listens,
   playbackPositions,
   playlistEditors,

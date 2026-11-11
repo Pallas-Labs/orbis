@@ -106,6 +106,9 @@ final class AppModel {
 
   private(set) var tagCounts: [String: Int] = [:]
 
+  /// The Sets on Home's Heavy Rotation shelf, ranked by the service. Empty hides the shelf.
+  private(set) var heavyRotation: [SavedSet] = []
+
   /// The Tags this device last put on a Set, newest first, and the last Tag filters it applied.
   /// Kept on the device, like recent searches: they are this person's habits here, not part of
   /// the library.
@@ -574,6 +577,7 @@ final class AppModel {
     // The next sign-in starts on Home, so the first Set opened lands in the stack on screen.
     destination = .home
     library = .idle
+    heavyRotation = []
     search = .idle
     searchResultsFor = nil
     playlists = .idle
@@ -615,6 +619,7 @@ final class AppModel {
       library = .loaded(sets)
       reloadsAfterCancellation = 0
       if openedLink?.state == .opening { await readOpenedLink() }
+      await loadHeavyRotation()
     } catch OrbisError.cancelled {
       guard generation == libraryGeneration, !Task.isCancelled else { return }
       // The screen that asked for this went away, which is not a failure. The retry runs
@@ -1692,6 +1697,7 @@ final class AppModel {
   /// a completion, a settled position — must not put a spinner where the list was.
   func refreshLibraryQuietly() async {
     guard let client else { return }
+    await loadHeavyRotation()
     // A load already in flight will answer; taking its generation would leave its spinner up if
     // this refresh then failed or was cancelled.
     if case .loading = library { return }
@@ -1706,6 +1712,14 @@ final class AppModel {
     // The same list again wakes every screen that shows the library for nothing.
     if case .loaded(let current) = library, current == sets { return }
     library = .loaded(sets)
+  }
+
+  /// Reads the Heavy Rotation shelf again. A failed read keeps the shelf as it was: Home has no
+  /// place to show an error for one shelf, and the next refresh tries again.
+  func loadHeavyRotation() async {
+    guard let client, let sets = try? await client.heavyRotation() else { return }
+    guard !Task.isCancelled, sets != heavyRotation else { return }
+    heavyRotation = sets
   }
 
   /// Counts the changes made to the loaded library here, for a quiet refresh to tell whether its

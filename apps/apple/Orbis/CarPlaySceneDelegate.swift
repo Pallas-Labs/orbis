@@ -148,7 +148,7 @@
       }
     }
 
-    /// Home in the phone's order: the lead Set as a card, the two rails, then the Playlists.
+    /// Home in the phone's order: the lead Set as a card, the rails, then the Playlists.
     private func homeSections(_ catalog: CarPlayCatalog) -> [CPListSection] {
       let home = catalog.home
       var sections: [CPListSection] = []
@@ -171,6 +171,7 @@
       }
       let rails: [(String, [SavedSet], (SavedSet) -> String?)] = [
         ("Continue listening", home.continueRail, SetPresentation.timeLeft),
+        ("Heavy rotation", home.heavyRotation, \.creator),
         ("Recently filed", home.recentlyFiled, \.creator),
       ]
       for (title, sets, detail) in rails where !sets.isEmpty {

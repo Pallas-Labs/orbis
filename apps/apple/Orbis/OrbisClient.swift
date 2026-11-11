@@ -591,6 +591,13 @@ struct OrbisClient: Sendable {
     return try Self.decode(LibraryResponse.self, from: response).sets
   }
 
+  /// The Sets this Person played most in the last 30 days, ranked by the service. Empty when
+  /// fewer than three qualify.
+  func heavyRotation() async throws -> [SavedSet] {
+    let response = try await send(path: "heavy-rotation", method: "GET", body: nil)
+    return try Self.decode(LibraryResponse.self, from: response).sets
+  }
+
   /// DJ mixes in the US Apple Music catalog for these words, then other albums.
   func searchAppleMusic(_ words: String) async throws -> [AppleMusicAlbum] {
     var components = URLComponents()

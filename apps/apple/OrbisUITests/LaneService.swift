@@ -240,6 +240,20 @@ struct LaneService {
     guard (200..<300).contains(code) else { throw URLError(.badServerResponse) }
   }
 
+  /// Listens to a Set for `minutes`, saving its Playback Position once a minute as a playing
+  /// device would.
+  func listen(to id: String, minutes: Int) throws {
+    for minute in 0...minutes {
+      try setPosition(of: id, to: minute * 60)
+    }
+  }
+
+  /// The ids on the Heavy Rotation shelf, in the service's order.
+  func heavyRotation() throws -> [String] {
+    let response: Sets = try send("GET", "heavy-rotation", nil)
+    return response.sets.map(\.id)
+  }
+
   struct Device: Decodable {
     let id: String
     let label: String

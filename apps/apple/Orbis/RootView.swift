@@ -795,6 +795,9 @@ struct HomeRails: View {
       if !home.continueRail.isEmpty {
         rail("Continue listening", subtitle: "Pick up where you left off.") { continueCards }
       }
+      if !home.heavyRotation.isEmpty {
+        rail("Heavy rotation", subtitle: "What you've played most this month.") { rotationCards }
+      }
       if !home.recentlyFiled.isEmpty {
         rail("Recently filed", subtitle: "The newest links in your library.") { recentCards }
       }
@@ -813,7 +816,8 @@ struct HomeRails: View {
   /// The Sets Home shows, whose pages are a tap away.
   private var shown: [SavedSet] {
     let home = home
-    return home.continueListening.prefix(HomeSelection.recentLimit) + home.recentlyFiled
+    return home.continueListening.prefix(HomeSelection.recentLimit) + home.heavyRotation
+      + home.recentlyFiled
   }
 
   /// The Set Home leads with: the one most recently left part-way, or else the newest filed.
@@ -825,9 +829,9 @@ struct HomeRails: View {
 
   private var home: HomeSelection {
     guard case .loaded(let visible) = model.visibleSets else {
-      return HomeSelection(library: librarySets, visible: [])
+      return HomeSelection(library: librarySets, visible: [], heavyRotation: model.heavyRotation)
     }
-    return HomeSelection(library: librarySets, visible: visible)
+    return HomeSelection(library: librarySets, visible: visible, heavyRotation: model.heavyRotation)
   }
 
   private func card(_ set: SavedSet, detail: String?) -> SetCard {
@@ -898,6 +902,25 @@ struct HomeRails: View {
       .accessibilityIdentifier("continue-card-\(set.id)")
       .contextMenu {
         cardMenu(set, place: "continue")
+      } preview: {
+        cardPreview(set)
+      }
+    }
+  }
+
+  private var rotationCards: some View {
+    ForEach(home.heavyRotation) { set in
+      Button {
+        zoom?.open(from: "rotation")
+        model.openSet(set.id)
+      } label: {
+        card(set, detail: set.creator)
+          .zoomsSetPage(set.id, place: "rotation")
+      }
+      .buttonStyle(.orbisPressable)
+      .accessibilityIdentifier("rotation-card-\(set.id)")
+      .contextMenu {
+        cardMenu(set, place: "rotation")
       } preview: {
         cardPreview(set)
       }
