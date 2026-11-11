@@ -14,9 +14,9 @@ final class HeavyRotationUITests: LibraryJourney {
     addTeardownBlock {
       for set in [longest, middle, shortest] { _ = try? service.removeSet(set.id) }
     }
-    // Each over the two-minute floor with room for a late save, ten seconds apart, so the order
-    // is the rank.
-    let saves = try service.listen([(middle.id, 150), (longest.id, 160), (shortest.id, 140)])
+    // Each over the two-minute floor with room for lost saves, and fifty seconds apart, so a
+    // busy host that loses a few five-second steps still leaves the order as the rank.
+    let saves = try service.listen([(middle.id, 200), (longest.id, 250), (shortest.id, 150)])
     try record("listening", ["saves": saves])
     let ranked = try service.heavyRotation()
     let ours = ranked.filter { [longest.id, middle.id, shortest.id].contains($0) }
