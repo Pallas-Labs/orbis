@@ -1,68 +1,50 @@
-//! Orbis on the desktop: the person's Library, their Listening Queue and Now Playing, against
-//! the Orbis API. It plays a Set's Retained Audio through mpv, keeps the place in it, and moves
-//! through the queue as each Set ends.
+//! Orbis on the desktop: the person's Library, Playlists, Listening Queue and Now Playing, and
+//! their account, against the Orbis API. It plays a Set's Retained Audio through mpv, keeps the
+//! place in it, moves through the queue as each Set ends, tells the Group what it plays, and
+//! follows Orbis's live events so changes from other devices show at once.
 //!
-//! `cargo run` opens the window, online, with the key from `ORBIS_URL` and `ORBIS_KEY` or the
-//! config file (`api::Server`). `cargo run -- --snap out.png --scene library --at 1.5` renders
-//! a scene headless, on made-up data and a frozen clock.
+//! `cargo run` opens the window, online: with `ORBIS_URL` and `ORBIS_KEY`, the saved key, or the
+//! sign-in page. `cargo run -- --snap out.png --scene library --at 1.5` renders a scene headless,
+//! on made-up data and a frozen clock.
 
+mod account;
 mod api;
+mod artwork;
 mod audio;
 mod clock;
 mod demo;
+mod diagnostics;
+mod dialogs;
 #[cfg(test)]
 mod goldens;
 mod library;
 mod load;
 mod model;
 mod playing;
+mod playlists;
 mod queue;
+mod rows;
+mod shell;
+#[cfg(test)]
+mod tests;
 mod theme;
 mod timers;
 
 use std::time::Duration;
 
-use rune::{AppSpec, Chrome, Cx, El, Icon, Key, KeyEvent, Spring, Tx, col, el, text};
-use rune_kit::shell::{self, PaneMotion, PaneState, Sidebar, SidebarRow, SidebarToggle, SplitView, Toolbar};
-use rune_kit::{Button, ButtonVariant, ControlSize, Toast, ToastRegion};
+use rune::{AppSpec, Chrome, KeyEvent, TextEdit, Tx, Waker};
+use rune_kit::shell::PaneState;
 
-use crate::theme::Look;
-
-/// The screens, in the sidebar's order.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// The screens. The sidebar lists them, and the Playlists under them.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Screen {
     #[default]
     Library,
+    /// One Playlist's page, by id.
+    Playlist(String),
     Queue,
     Playing,
-}
-
-impl Screen {
-    const ALL: [Screen; 3] = [Screen::Library, Screen::Queue, Screen::Playing];
-
-    fn title(self) -> &'static str {
-        match self {
-            Screen::Library => "Library",
-            Screen::Queue => "Listening Queue",
-            Screen::Playing => "Now Playing",
-        }
-    }
-
-    fn icon(self) -> &'static Icon {
-        match self {
-            Screen::Library => &theme::LIBRARY,
-            Screen::Queue => &theme::QUEUE,
-            Screen::Playing => &theme::WAVE,
-        }
-    }
-
-    fn key(self) -> &'static str {
-        match self {
-            Screen::Library => "nav-library",
-            Screen::Queue => "nav-queue",
-            Screen::Playing => "nav-playing",
-        }
-    }
+    Settings,
 }
 
 /// Everything the app knows. The view draws it; handlers, landings and `poll` change it.
@@ -73,28 +55,44 @@ pub struct App {
     pub timers: timers::Timers,
     pub screen: Screen,
     pub sidebar: PaneState,
-    /// No server and key to sign in with: the app says how to add them.
+    /// No key: the window shows the sign-in page.
     pub signed_out: bool,
+    pub account: account::State,
     pub library: library::State,
+    pub playlists: playlists::State,
     pub queue: queue::State,
     pub playing: playing::State,
+    pub presence: playing::presence::State,
+    pub diagnostics: diagnostics::State,
+    pub artwork: artwork::Artwork,
+    /// The open dialog, and the Set or Playlist menu.
+    pub dialog: Option<dialogs::Dialog>,
+    pub menu: Option<rows::SetMenu>,
+    pub playlist_menu: bool,
+    /// Where a field's late edits land once its dialog closed.
+    pub spare_edit: TextEdit,
+    /// The event stream dropped, so what it carries is reloaded when it comes back.
+    pub live_lost: bool,
     /// A short line that leaves on its own.
     pub toast: Option<String>,
 }
 
 impl App {
     fn new() -> App {
-        App { sidebar: PaneState::new(220.0).range(160.0, 360.0), ..App::default() }
+        App { sidebar: PaneState::new(240.0).range(160.0, 400.0), ..App::default() }
     }
 
     /// Opens `screen`, and reloads what it shows.
     pub fn go(&mut self, screen: Screen) {
-        self.screen = screen;
-        match screen {
+        self.menu = None;
+        match screen.clone() {
             Screen::Library => self.reload_library(),
+            Screen::Playlist(id) => return self.open_playlist(&id),
             Screen::Queue => self.reload_queue(),
             Screen::Playing => {}
+            Screen::Settings => return self.open_settings(),
         }
+        self.screen = screen;
     }
 
     /// Shows `line` for four seconds.
@@ -106,82 +104,48 @@ impl App {
             }
         });
     }
-}
 
-fn view(s: &App, cx: &mut Cx<App>) -> El {
-    let l = Look::new(cx.system_dark());
-    let main = if s.signed_out {
-        signed_out(&l)
-    } else {
-        let screen = match s.screen {
-            Screen::Library => library::view(s, &l),
-            Screen::Queue => queue::view(s, &l),
-            Screen::Playing => playing::screen(s, &l),
-        };
-        let bar = if s.screen == Screen::Playing { None } else { playing::bar(s, &l) };
-        col().w_full().h_full().min_h(0.0).child(col().w_full().grow(1.0).min_h(0.0).child(screen)).children(bar.map(|b| b.border_sides([1.0, 0.0, 0.0, 0.0], l.rule)))
-    };
-    let title = if s.signed_out { "Orbis" } else { s.screen.title() };
-    let toolbar = Toolbar::new().title(title).trailing(match s.screen {
-        _ if s.signed_out => el(),
-        Screen::Playing => el(),
-        _ => Button::new("Reload").variant(ButtonVariant::GhostMuted).control_size(ControlSize::Small).help("Reload (Ctrl+R)").on_press(|s: &mut App| s.go(s.screen)).build(&l.k).key("reload"),
-    });
-    let split = SplitView::new(main.key("main"))
-        .sidebar(&s.sidebar, |s: &mut App| &mut s.sidebar, sidebar(s, &l))
-        .toolbar(toolbar)
-        .titlebar_inset(cx.titlebar_inset())
-        .frame_inset(8.0)
-        .toolbar_in_panel()
-        .sidebar_padding(18.0, 10.0)
-        .sidebar_toggle(SidebarToggle::new().size(ControlSize::Large).past_lights(16.0).edge(18.0).gap(4.0).in_header())
-        .pane_motion(PaneMotion::new().spring(Spring::new(0.3, 0.0)).scale_with_width(480.0, 0.15, 0.3).fade_tail(0.15))
-        .reduced_motion(cx.is_reduced_motion())
-        .build(&l.k);
-    let toast = s.toast.as_ref().map(|line| ToastRegion::new().toast(Toast::new("toast", line.clone()).build(&l.k)).build(&l.k));
-    rune_kit::root(split, toast)
-}
+    /// Starts reading Orbis's live events, for a live, signed-in window.
+    fn listen(&mut self) {
+        #[cfg(not(test))]
+        if let api::Service::Live(handle) = &self.service {
+            let handle = handle.clone();
+            api::events::start(move |event| handle.update(move |s: &mut App, _| s.heard_live(event)));
+        }
+    }
 
-fn sidebar(s: &App, l: &Look) -> El {
-    let count = |n: Option<usize>| n.map(|n| n.to_string()).unwrap_or_default();
-    let detail = |screen| match screen {
-        Screen::Library => count(s.library.sets.data.as_ref().map(Vec::len)),
-        Screen::Queue => count(s.queue.items.data.as_ref().map(|q| q.entries.len())),
-        Screen::Playing => String::new(),
-    };
-    Screen::ALL
-        .iter()
-        .fold(Sidebar::new().label("Orbis").inset(0.0).row_gap(2.0), |bar, &screen| {
-            bar.child(
-                SidebarRow::new(screen.title())
-                    .icon(screen.icon())
-                    .height(32.0)
-                    .detail(detail(screen))
-                    .selected(s.screen == screen)
-                    .on_select(move |s: &mut App, _| s.go(screen))
-                    .build(&l.k)
-                    .key(screen.key()),
-            )
-        })
-        .build(&l.k)
-}
-
-fn signed_out(l: &Look) -> El {
-    // The home folder shows as ~, so a screenshot names no one.
-    let path = api::Server::config_path().display().to_string();
-    let path = std::env::var("HOME").ok().filter(|h| !h.is_empty()).and_then(|h| path.strip_prefix(&h).map(|rest| format!("~{rest}"))).unwrap_or(path);
-    col()
-        .key("signed-out")
-        .w_full()
-        .h_full()
-        .center()
-        .gap(10.0)
-        .px(32.0)
-        .child(text("Connect to Orbis").font(l.title).color(l.fg))
-        .child(text("Set ORBIS_URL and ORBIS_KEY, or write the API's address and a device key to").font(l.k.ty.ui).color(l.muted).wrap())
-        .child(text(path).key("config-path").font(l.k.ty.mono).color(l.fg).wrap())
-        .child(text(r#"{ "url": "https://…", "key": "…" }"#).font(l.k.ty.mono).color(l.muted).wrap())
-        .child(text("Then open the app again.").font(l.k.ty.ui).color(l.muted))
+    /// One live event from Orbis.
+    pub fn heard_live(&mut self, event: api::events::Event) {
+        use api::events::{Event, Topic};
+        match event {
+            Event::Queue { queue } => {
+                if self.queue.items.data.as_ref() != Some(&queue) {
+                    self.queue.items.land(Ok(queue));
+                    self.queue_landed();
+                }
+            }
+            Event::Presence { presence } => {
+                let me = self.account.me_id().to_owned();
+                self.presence.listening = presence.into_iter().filter(|p| p.person_id != me).collect();
+                let urls: Vec<String> = self.presence.listening.iter().filter_map(|p| p.set.artwork_url.clone()).collect();
+                self.want_artwork(urls.iter().map(String::as_str));
+            }
+            Event::Changed { topic: Topic::Library | Topic::Set } => self.reload_library(),
+            Event::Changed { topic: Topic::Playlist } => {
+                self.reload_playlists();
+                self.reload_playlist();
+            }
+            Event::PlaylistImport { import } if import["state"]["kind"] != "running" => self.reload_playlists(),
+            Event::Connected(true) if self.live_lost => {
+                self.live_lost = false;
+                self.reload_library();
+                self.reload_queue();
+                self.reload_playlists();
+            }
+            Event::Connected(false) => self.live_lost = true,
+            Event::Changed { topic: Topic::ListenHistory } | Event::PlaylistImport { .. } | Event::Heartbeat | Event::Connected(true) => {}
+        }
+    }
 }
 
 fn poll(s: &mut App, clock: f64, tx: &mut Tx) -> bool {
@@ -190,30 +154,52 @@ fn poll(s: &mut App, clock: f64, tx: &mut Tx) -> bool {
         tx.wake_after(wait);
     }
     let moved = playing::poll(s, clock, tx);
-    ran || moved
+    let pictures = s.artwork.poll();
+    ran || moved || pictures
 }
 
-/// Space plays and pauses; Ctrl+1, 2 and 3 open the screens; Ctrl+R reloads.
+/// Space plays and pauses; Ctrl+1 to 4 open the screens; Ctrl+N saves a link; Ctrl+R reloads;
+/// Ctrl+, opens Settings.
 fn on_key(s: &mut App, ev: &KeyEvent, _: &mut Tx) -> bool {
-    if shell::is_sidebar_toggle(ev) {
+    if s.signed_out {
+        return false;
+    }
+    if rune_kit::shell::is_sidebar_toggle(ev) {
         s.sidebar.toggle();
         return true;
     }
-    if ev.key == Key::Text(" ".to_owned()) && !ev.mods.cmd {
+    if ev.key == rune::Key::Text(" ".to_owned()) && !ev.mods.cmd {
         s.toggle();
         return true;
     }
     if ev.is_command('r') {
-        s.go(s.screen);
+        s.go(s.screen.clone());
         return true;
     }
-    for (digit, screen) in ['1', '2', '3'].into_iter().zip(Screen::ALL) {
+    if ev.is_command('n') {
+        s.save_link();
+        return true;
+    }
+    if ev.is_command(',') {
+        s.go(Screen::Settings);
+        return true;
+    }
+    for (digit, screen) in ['1', '2', '3', '4'].into_iter().zip([Screen::Library, Screen::Queue, Screen::Playing, Screen::Settings]) {
         if ev.is_command(digit) {
             s.go(screen);
             return true;
         }
     }
     false
+}
+
+/// Once, with the window's waker: the Artwork cache starts, and the demo draws its made-up
+/// Artwork.
+fn setup(s: &mut App, waker: Waker) {
+    s.artwork.start(waker);
+    if !s.online() {
+        demo::artwork(s);
+    }
 }
 
 /// The app as headless renders and the goldens start it: made-up data, nothing sent.
@@ -233,18 +219,21 @@ fn main() {
         clock::freeze();
     }
     rune::set_app_id("orbis-rune");
-    let spec = AppSpec { scenes: demo::SCENES, poll: Some(poll), on_key: Some(on_key), ..AppSpec::new("Orbis", (1120.0, 760.0), App::new, view) };
+    let spec = AppSpec { scenes: demo::SCENES, poll: Some(poll), on_key: Some(on_key), setup: Some(setup), ..AppSpec::new("Orbis", (1180.0, 780.0), App::new, shell::view) };
     let app = rune::App::new(spec).chrome(Chrome { full_size_content: true, traffic_lights: Some((16.0, 25.0)), drag_regions: true }).on_close(|s, _| s.close());
     let handle = app.handle();
     app.init(move || {
         if headless || std::env::var_os("ORBIS_RUNE_DEMO").is_some() {
             return demo_app();
         }
-        let Some(server) = api::Server::from_env_or_file() else { return App { signed_out: true, ..App::new() } };
-        server.connect();
         let mut s = App { service: api::Service::Live(handle), ..App::new() };
-        s.reload_library();
-        s.reload_queue();
+        match api::Server::from_env_or_file() {
+            Some(server) => {
+                server.connect();
+                s.go_live();
+            }
+            None => s.signed_out = true,
+        }
         s
     })
     .run();

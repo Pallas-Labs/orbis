@@ -227,6 +227,8 @@ export const PlaybackDiagnosticsBatch = Schema.Struct({
   metadata: Schema.Struct({
     appBuild: MetadataString,
     appVersion: MetadataString,
+    /** The app that sent the batch: absent for the Apple app, `rune` for the Rune desktop app. */
+    client: Schema.optionalKey(Schema.Literal("rune")),
     osName: MetadataString,
     osVersion: MetadataString,
   }),

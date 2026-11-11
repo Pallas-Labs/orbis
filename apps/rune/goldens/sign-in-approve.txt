@@ -1,0 +1,63 @@
+kit-root	group	kit-root	-	-	0,0,1180,780	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1180,780	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1180,780	#00000000	-	1.00
+   main-column	group	main-column	-	-	0,0,1180,780	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	0,0,1180,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	0,8,1180,772	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	8,8,1164,764	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	Orbis	-	8,8,1164,48	#00000000	-	1.00
+       center	group	center	-	-	8,8,1164,48	#00000000	-	1.00
+        title	text	title	-	Orbis	573,22,34,20	#00000000	#eeeaf7ff	1.00
+       leading	group	leading	-	-	20,32,0,0	#00000000	-	1.00
+       spacer	group	spacer	-	-	28,32,1124,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1160,32,0,0	#00000000	-	1.00
+      sign-in-page	group	sign-in-page	-	-	8,56,1164,716	#00000000	-	1.00
+       sign-in	group	sign-in	-	-	410,152,360,322	#00000000	-	1.00
+        #0	group	-	-	-	410,152,360,54	#00000000	-	1.00
+         #0	text	-	-	Sign in to Orbis	410,152,360,28	#00000000	#eeeaf7ff	1.00
+         #1	text	-	-	Use the Group you already listen with.	410,186,360,20	#00000000	#a3a0acff	1.00
+        sign-in-method	radiogroup	sign-in-method	How to sign in	-	410,226,360,28	#14111aff	-	1.00
+         indicator	group	indicator	-	-	530,226,120,28	#040405ff	-	1.00
+         segment0	radio	segment0	Sign-in Code	-	410,226,120,28	#00000000	-	1.00
+          label	text	label	-	Sign-in Code	429.5,233.5,81,13	#00000000	#a3a0acff	1.00
+         segment1	radio	segment1	Approve	-	530,226,120,28	#00000000	-	1.00
+          label	text	label	-	Approve	564,233.5,52,13	#00000000	#eeeaf7ff	1.00
+         segment2	radio	segment2	Join the Group	-	650,226,120,28	#00000000	-	1.00
+          label	text	label	-	Join the Group	664.5,233.5,91,13	#00000000	#a3a0acff	1.00
+        #2	group	-	-	-	410,274,360,156	#00000000	-	1.00
+         #0	text	-	-	On a signed-in iPhone, Mac or browser, open Settings, choose Approve a Device, and type this code.	410,274,360,40	#00000000	#a3a0acff	1.00
+         #1	group	-	-	-	410,328,360,102	#14111aff	-	1.00
+          approval-code	text	approval-code	-	482 719	511,348,158,40	#00000000	#eeeaf7ff	1.00
+          #1	group	-	-	-	527.5,398,125,12	#00000000	-	1.00
+           #0	progressbar	-	Loading	-	527.5,398,12,12	#00000000	-	1.00
+            d0	group	d0	-	-	528.3,398.8,1.5,1.5	#eeeaf7ff	-	0.20
+            d1	group	d1	-	-	530.5,398.8,1.5,1.5	#eeeaf7ff	-	0.20
+            d2	group	d2	-	-	532.8,398.8,1.5,1.5	#eeeaf7ff	-	0.20
+            d3	group	d3	-	-	535,398.8,1.5,1.5	#eeeaf7ff	-	0.20
+            d4	group	d4	-	-	537.3,398.8,1.5,1.5	#eeeaf7ff	-	0.20
+            d5	group	d5	-	-	528.3,401,1.5,1.5	#eeeaf7ff	-	1.00
+            d6	group	d6	-	-	530.5,401,1.5,1.5	#eeeaf7ff	-	1.00
+            d7	group	d7	-	-	532.8,401,1.5,1.5	#eeeaf7ff	-	0.20
+            d8	group	d8	-	-	535,401,1.5,1.5	#eeeaf7ff	-	0.20
+            d9	group	d9	-	-	537.3,401,1.5,1.5	#eeeaf7ff	-	0.20
+            d10	group	d10	-	-	528.3,403.3,1.5,1.5	#eeeaf7ff	-	0.61
+            d11	group	d11	-	-	530.5,403.3,1.5,1.5	#eeeaf7ff	-	0.61
+            d12	group	d12	-	-	532.8,403.3,1.5,1.5	#eeeaf7ff	-	0.64
+            d13	group	d13	-	-	535,403.3,1.5,1.5	#eeeaf7ff	-	0.20
+            d14	group	d14	-	-	537.3,403.3,1.5,1.5	#eeeaf7ff	-	0.20
+            d15	group	d15	-	-	528.3,405.5,1.5,1.5	#eeeaf7ff	-	0.47
+            d16	group	d16	-	-	530.5,405.5,1.5,1.5	#eeeaf7ff	-	0.36
+            d17	group	d17	-	-	532.8,405.5,1.5,1.5	#eeeaf7ff	-	0.23
+            d18	group	d18	-	-	535,405.5,1.5,1.5	#eeeaf7ff	-	0.20
+            d19	group	d19	-	-	537.3,405.5,1.5,1.5	#eeeaf7ff	-	0.20
+            d20	group	d20	-	-	528.3,407.8,1.5,1.5	#eeeaf7ff	-	0.36
+            d21	group	d21	-	-	530.5,407.8,1.5,1.5	#eeeaf7ff	-	0.28
+            d22	group	d22	-	-	532.8,407.8,1.5,1.5	#eeeaf7ff	-	0.23
+            d23	group	d23	-	-	535,407.8,1.5,1.5	#eeeaf7ff	-	0.21
+            d24	group	d24	-	-	537.3,407.8,1.5,1.5	#eeeaf7ff	-	0.20
+           #1	text	-	-	Waiting for approval	547.5,398,105,12	#00000000	#a3a0acff	1.00
+        #3	group	-	-	-	410,450,360,24	#00000000	-	1.00
+         #0	text	-	-	Signs in to orbis.p11a.xyz	410,456,130,12	#00000000	#76737eff	1.00
+         #1	group	-	-	-	546,462,80,0	#00000000	-	1.00
+         sign-in-other	button	sign-in-other	Use Another Orbis	-	632,450,138,24	#00000000	-	1.00
+          label	text	label	-	Use Another Orbis	644,452,114,20	#00000000	#a3a0acff	1.00

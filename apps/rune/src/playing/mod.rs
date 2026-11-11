@@ -5,12 +5,17 @@
 //!
 //! A live app streams through mpv ([`crate::audio`]). Headless renders, the demo and tests make
 //! no sound; their place moves on Rune's clock in [`poll`].
+//!
+//! Every change of state tells Presence ([`presence`]) and goes in the playback report
+//! ([`crate::diagnostics`]).
 
+pub mod presence;
 mod view;
 
 use std::time::Duration;
 
 use rune::Tx;
+use serde_json::{Value, json};
 
 use crate::App;
 use crate::api::{self, Service};
@@ -18,7 +23,15 @@ use crate::audio::{Event, Mpv};
 use crate::load::Load;
 use crate::model::{Set, Tracklist};
 
+pub use presence::new_id;
 pub use view::{bar, screen};
+
+/// Who asked for a command, for the playback report.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Origin {
+    App,
+    Internal,
+}
 
 /// How often a playing Set's place is saved.
 const SAVE_EVERY: f64 = 15.0;
@@ -64,6 +77,10 @@ pub struct State {
     clock: Option<f64>,
     /// The place last saved.
     saved: f64,
+    /// Seeks asked for, for the playback report.
+    seeks: u64,
+    /// The place at the last report sample.
+    sampled: f64,
 }
 
 impl State {
@@ -87,6 +104,45 @@ impl State {
         }
     }
 
+    /// The player's state now, for the playback report: numbers, fixed words and the Set's id.
+    pub fn snapshot(&self) -> Value {
+        let state = match self.status {
+            Status::Idle => "idle",
+            Status::Loading => "loading",
+            Status::Playing => "playing",
+            Status::Paused => "paused",
+            Status::Failed(_) => "failed",
+        };
+        let item = match (&self.status, &self.player) {
+            (Status::Failed(_), _) => "failed",
+            (Status::Idle, _) => "none",
+            (Status::Loading, _) => "unknown",
+            _ => "ready",
+        };
+        let mut snapshot = json!({
+            "actualTime": self.position, "displayedTime": self.position, "duration": self.duration,
+            "bufferEmpty": false, "bufferFull": false, "bufferRanges": [],
+            "itemState": item, "likelyToKeepUp": self.status == Status::Playing, "pendingSeek": null,
+            "playbackGeneration": self.generation, "rate": if self.status == Status::Playing { 1.0 } else { 0.0 },
+            "seekID": self.seeks, "seekInFlight": false, "sessionReady": true, "state": state,
+            "waitingReason": if self.status == Status::Loading { "other" } else { "none" },
+        });
+        if let Some(set) = &self.set {
+            snapshot["setId"] = json!(set.id);
+        }
+        snapshot
+    }
+
+    fn snapshot_state(&self, status: &Status) -> &'static str {
+        match status {
+            Status::Idle => "idle",
+            Status::Loading => "loading",
+            Status::Playing => "playing",
+            Status::Paused => "paused",
+            Status::Failed(_) => "failed",
+        }
+    }
+
     /// Stops the sound and forgets the Set.
     fn stop(&mut self) {
         self.player = Player::None;
@@ -95,19 +151,110 @@ impl State {
 }
 
 impl App {
-    /// Finds a Set the app has shown, in the Library or the queue.
+    /// Finds a Set the app has shown: in the Library, the queue, the open Playlist, or what
+    /// someone in the Group is listening to.
     pub fn find_set(&self, id: &str) -> Option<Set> {
         let library = self.library.sets.data.iter().flatten();
         let queue = self.queue.items.data.iter().flat_map(|q| q.entries.iter());
-        library.chain(queue).find(|x| x.id == id).cloned()
+        let playlist = self.playlists.open.data.iter().flat_map(|p| p.sets.iter());
+        let group = self.presence.listening.iter().map(|p| &p.set);
+        library.chain(queue).chain(playlist).chain(group).find(|x| x.id == id).cloned()
     }
 
     /// Puts what Orbis sent back for a Set wherever the app shows that Set.
     pub fn replace_set(&mut self, set: &Set) {
         let library = self.library.sets.data.iter_mut().flatten();
         let queue = self.queue.items.data.iter_mut().flat_map(|q| q.entries.iter_mut());
-        for x in library.chain(queue).filter(|x| x.id == set.id) {
+        let playlist = self.playlists.open.data.iter_mut().flat_map(|p| p.sets.iter_mut());
+        for x in library.chain(queue).chain(playlist).filter(|x| x.id == set.id) {
             *x = set.clone();
+        }
+        if let Some(loaded) = self.playing.set.as_mut().filter(|x| x.id == set.id) {
+            loaded.playback_position_seconds = set.playback_position_seconds;
+        }
+    }
+
+    /// Shows `set` in the player without playing it: the queue's active Set when the app opens.
+    /// Its Tracklist loads, so Now Playing has it before Play.
+    pub fn show_set(&mut self, set: Set) {
+        let p = &mut self.playing;
+        p.duration = set.duration_seconds;
+        p.position = set.playback_position_seconds;
+        p.saved = p.position;
+        p.tracklist = Load::default();
+        p.tracklist.begin();
+        let id = set.id.clone();
+        p.set = Some(set);
+        let generation = p.generation;
+        self.spawn(
+            move || api::tracklist(&id),
+            move |s, got| {
+                if s.playing.generation == generation {
+                    s.playing.tracklist.land(got);
+                }
+            },
+        );
+    }
+
+    /// Puts the Library's fresh Sets into the queue's and the open Playlist's copies, and the
+    /// loaded Set's resume point.
+    pub fn refresh_copies(&mut self) {
+        let Some(sets) = &self.library.sets.data else { return };
+        let fresh: std::collections::HashMap<&str, &Set> = sets.iter().map(|x| (x.id.as_str(), x)).collect();
+        let queue = self.queue.items.data.iter_mut().flat_map(|q| q.entries.iter_mut());
+        let playlist = self.playlists.open.data.iter_mut().flat_map(|p| p.sets.iter_mut());
+        for x in queue.chain(playlist) {
+            if let Some(new) = fresh.get(x.id.as_str()) {
+                *x = (*new).clone();
+            }
+        }
+        if let Some(loaded) = self.playing.set.as_mut()
+            && let Some(new) = fresh.get(loaded.id.as_str())
+        {
+            loaded.playback_position_seconds = new.playback_position_seconds;
+        }
+    }
+
+    /// Plays `set`, which is already the queue's active Set.
+    pub fn start_set(&mut self, set: Set) {
+        self.start(Some(set));
+    }
+
+    /// Records `event` in the playback report with the player's state now.
+    fn report(&mut self, event: Value) {
+        let snapshot = self.playing.snapshot();
+        self.record_playback(event, snapshot);
+    }
+
+    /// Records a command.
+    pub fn command(&mut self, kind: &str, origin: Origin, target: Option<f64>) {
+        let origin = if origin == Origin::App { "app" } else { "internalOperation" };
+        self.report(json!({ "command": { "_0": { "kind": kind, "origin": origin, "target": target } } }));
+    }
+
+    /// Moves the player to `to`, and tells Presence and the report.
+    fn set_status(&mut self, to: Status) {
+        let from = std::mem::replace(&mut self.playing.status, to.clone());
+        if from == to {
+            return;
+        }
+        match to {
+            Status::Playing => {
+                // A Set loaded without a fresh start (the queue's active one) has no session yet.
+                if let Some(id) = self.playing.set.as_ref().map(|x| x.id.clone()) {
+                    self.presence_ensure(&id);
+                }
+                self.presence_act(presence::Kind::Play);
+            }
+            Status::Paused => self.presence_act(presence::Kind::Pause),
+            Status::Idle | Status::Failed(_) => self.presence_act(presence::Kind::Stop),
+            Status::Loading => {}
+        }
+        let word = |s: &Status| self.playing.snapshot_state(s);
+        let event = json!({ "state": { "_0": { "from": word(&from), "to": word(&to) } } });
+        self.report(event);
+        if let Status::Failed(_) = to {
+            self.report(json!({ "error": { "_0": { "domain": "other", "code": 0 } } }));
         }
     }
 
@@ -151,11 +298,12 @@ impl App {
             Some(set) => {
                 let why = set.unplayable_reason().unwrap_or_default().to_owned();
                 let generation = self.begin(set);
-                self.playing.status = Status::Failed(why);
+                self.set_status(Status::Failed(why));
                 generation
             }
             None => {
                 self.save_place();
+                self.set_status(Status::Idle);
                 let generation = self.playing.generation + 1;
                 self.playing = State { generation, ..State::default() };
                 generation
@@ -165,6 +313,7 @@ impl App {
 
     /// Play and pause. With nothing loaded, plays the queue's active Set.
     pub fn toggle(&mut self) {
+        self.command("toggle", Origin::App, None);
         let p = &mut self.playing;
         match (&p.status, &p.player) {
             (Status::Playing, Player::Live(mpv)) => mpv.pause(true),
@@ -172,34 +321,55 @@ impl App {
             (Status::Playing | Status::Paused, _) => {}
             (Status::Loading, _) => return,
             (Status::Idle | Status::Failed(_), _) => {
-                let next = p.set.clone().or_else(|| self.queue.items.data.as_ref().and_then(|q| q.active().cloned()));
+                // Trying the loaded Set again resumes where the person was in it, not where it opened.
+                let here = p.set.clone().map(|mut x| {
+                    x.playback_position_seconds = p.position;
+                    x
+                });
+                let next = here.or_else(|| self.queue.items.data.as_ref().and_then(|q| q.active().cloned()));
                 if let Some(set) = next.filter(|set| self.can("play", set)) {
                     self.start(Some(set));
                 }
                 return;
             }
         }
-        let p = &mut self.playing;
-        p.status = if p.status == Status::Playing { Status::Paused } else { Status::Playing };
-        if p.status == Status::Paused {
+        let to = if self.playing.status == Status::Playing { Status::Paused } else { Status::Playing };
+        self.set_status(to);
+        if self.playing.status == Status::Paused {
             self.save_place();
         }
     }
 
     /// Moves to `seconds` in the Set.
     pub fn seek(&mut self, seconds: f64) {
-        let p = &mut self.playing;
-        if p.set.is_none() {
+        self.seek_as("seek", seconds);
+    }
+
+    /// Moves `by` seconds, back or ahead.
+    pub fn skip(&mut self, by: f64) {
+        let at = self.playing.position + by;
+        self.seek_as(if by < 0.0 { "skipBackward" } else { "skipForward" }, at);
+    }
+
+    fn seek_as(&mut self, kind: &str, seconds: f64) {
+        if self.playing.set.is_none() {
             return;
         }
-        p.position = seconds.clamp(0.0, p.duration.unwrap_or(f64::MAX));
+        let target = seconds.clamp(0.0, self.playing.duration.unwrap_or(f64::MAX));
+        self.command(kind, Origin::App, Some(target));
+        let p = &mut self.playing;
+        p.position = target;
+        p.seeks += 1;
         if let Player::Live(mpv) = &p.player {
             mpv.seek(p.position);
         }
+        let event = json!({ "seekResult": { "_0": { "actual": target, "duration": p.duration, "finished": true, "seekID": p.seeks, "target": target } } });
+        self.report(event);
     }
 
     /// Ends the Set now, as if it had played out: the next one in the queue plays.
     pub fn next(&mut self) {
+        self.command("stop", Origin::App, None);
         self.finish();
     }
 
@@ -212,13 +382,18 @@ impl App {
         let near_end = set.duration_seconds.is_some_and(|d| set.playback_position_seconds > d - 5.0);
         p.position = if near_end { 0.0 } else { set.playback_position_seconds };
         p.saved = p.position;
+        p.sampled = p.position;
         p.duration = set.duration_seconds;
-        p.status = Status::Loading;
         p.tracklist = Load::default();
         p.tracklist.begin();
         let id = set.id.clone();
         p.set = Some(set);
         let generation = p.generation;
+        self.presence_begin(&id);
+        self.set_status(Status::Loading);
+        self.report(json!({ "session": { "_0": { "phase": "startRequested", "playbackGeneration": generation, "requestID": generation } } }));
+        let urls = self.playing.set.iter().flat_map(|x| [x.artwork_large_url.clone(), x.artwork_url.clone()]).flatten().collect::<Vec<_>>();
+        self.want_artwork(urls.iter().map(String::as_str));
         self.spawn(
             move || api::tracklist(&id),
             move |s, got| {
@@ -236,7 +411,7 @@ impl App {
         if !matches!(self.service, Service::Live(_)) {
             // Headless, the demo and tests: no sound, and no stream to ask for.
             self.playing.player = Player::Silent;
-            self.playing.status = Status::Playing;
+            self.set_status(Status::Playing);
             return;
         }
         self.spawn(
@@ -266,27 +441,43 @@ impl App {
             Event::Time(t) => {
                 p.position = t;
                 if p.status == Status::Loading {
-                    p.status = Status::Playing;
+                    self.set_status(Status::Playing);
+                    self.report(json!({ "session": { "_0": { "phase": "ready", "playbackGeneration": generation, "requestID": generation } } }));
                 }
-                if (p.position - p.saved).abs() >= SAVE_EVERY {
-                    self.save_place();
-                }
+                self.tick();
             }
             Event::Paused(paused) if p.status != Status::Loading => {
-                p.status = if paused { Status::Paused } else { Status::Playing };
+                self.set_status(if paused { Status::Paused } else { Status::Playing });
             }
             Event::Paused(_) => {}
             Event::Duration(d) => p.duration = Some(d),
-            Event::Ended => self.finish(),
+            Event::Ended => {
+                let (actual, expected) = (self.playing.position, self.playing.duration);
+                let premature = expected.is_some_and(|d| actual < d - 2.0);
+                self.report(json!({ "ended": { "_0": { "actual": actual, "expected": expected, "premature": premature } } }));
+                self.finish();
+            }
             Event::Failed(why) => self.fail(generation, why),
         }
     }
 
     fn fail(&mut self, generation: u64, why: String) {
+        if self.playing.generation == generation {
+            self.playing.player = Player::None;
+            self.set_status(Status::Failed(why));
+        }
+    }
+
+    /// A playing second passed: the place is saved every 15 s, and the report samples every 5 s.
+    fn tick(&mut self) {
         let p = &mut self.playing;
-        if p.generation == generation {
-            p.player = Player::None;
-            p.status = Status::Failed(why);
+        if (p.position - p.saved).abs() >= SAVE_EVERY {
+            self.save_place();
+        }
+        let p = &mut self.playing;
+        if (p.position - p.sampled).abs() >= 5.0 {
+            p.sampled = p.position;
+            self.report(json!({ "sample": {} }));
         }
     }
 
@@ -316,13 +507,16 @@ impl App {
         self.playing.position = 0.0;
         self.playing.saved = 0.0;
         let next = self.queue.items.data.as_mut().and_then(|q| q.advance(&id));
-        self.start(next);
+        // A Set the person starts before Orbis answers wins: an answer for an older generation
+        // changes nothing, queue included. The event stream brings the queue back in step.
+        let generation = self.start(next);
         self.spawn(
             move || {
                 let _ = api::save_position(&id, 0.0);
                 api::complete(&id)
             },
             move |s, got| match got {
+                Ok(_) if s.playing.generation != generation => {}
                 Ok(queue) => {
                     let active = queue.active().cloned();
                     s.queue.items.land(Ok(queue));
@@ -338,6 +532,7 @@ impl App {
     /// The window closes: the sound stops with it. The place saved last stands, at most
     /// [`SAVE_EVERY`] seconds behind.
     pub fn close(&mut self) {
+        self.set_status(Status::Idle);
         self.playing.stop();
     }
 }
@@ -364,8 +559,9 @@ pub fn poll(s: &mut App, clock: f64, tx: &mut Tx) -> bool {
         return true;
     }
     tx.wake_after(Duration::from_secs_f64((1.0 - p.position.fract()).max(0.01)));
-    if (p.position - p.saved).abs() >= SAVE_EVERY {
-        s.save_place();
+    let moved = p.position.floor() != before;
+    if moved {
+        s.tick();
     }
-    s.playing.position.floor() != before
+    moved
 }

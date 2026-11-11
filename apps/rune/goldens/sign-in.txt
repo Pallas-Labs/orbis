@@ -1,0 +1,42 @@
+kit-root	group	kit-root	-	-	0,0,1180,780	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1180,780	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1180,780	#00000000	-	1.00
+   main-column	group	main-column	-	-	0,0,1180,780	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	0,0,1180,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	0,8,1180,772	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	8,8,1164,764	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	Orbis	-	8,8,1164,48	#00000000	-	1.00
+       center	group	center	-	-	8,8,1164,48	#00000000	-	1.00
+        title	text	title	-	Orbis	573,22,34,20	#00000000	#eeeaf7ff	1.00
+       leading	group	leading	-	-	20,32,0,0	#00000000	-	1.00
+       spacer	group	spacer	-	-	28,32,1124,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1160,32,0,0	#00000000	-	1.00
+      sign-in-page	group	sign-in-page	-	-	8,56,1164,716	#00000000	-	1.00
+       sign-in	group	sign-in	-	-	410,152,360,308	#00000000	-	1.00
+        #0	group	-	-	-	410,152,360,54	#00000000	-	1.00
+         #0	text	-	-	Sign in to Orbis	410,152,360,28	#00000000	#eeeaf7ff	1.00
+         #1	text	-	-	Use the Group you already listen with.	410,186,360,20	#00000000	#a3a0acff	1.00
+        sign-in-method	radiogroup	sign-in-method	How to sign in	-	410,226,360,28	#14111aff	-	1.00
+         indicator	group	indicator	-	-	410,226,120,28	#040405ff	-	1.00
+         segment0	radio	segment0	Sign-in Code	-	410,226,120,28	#00000000	-	1.00
+          label	text	label	-	Sign-in Code	429.5,233.5,81,13	#00000000	#eeeaf7ff	1.00
+         segment1	radio	segment1	Approve	-	530,226,120,28	#00000000	-	1.00
+          label	text	label	-	Approve	564,233.5,52,13	#00000000	#a3a0acff	1.00
+         segment2	radio	segment2	Join the Group	-	650,226,120,28	#00000000	-	1.00
+          label	text	label	-	Join the Group	664.5,233.5,91,13	#00000000	#a3a0acff	1.00
+        #2	group	-	-	-	410,274,360,142	#00000000	-	1.00
+         #0	text	-	-	On a device that's signed in, open Settings and choose Sign In Another Device. Type the code it shows.	410,274,360,40	#00000000	#a3a0acff	1.00
+         #1	group	-	-	-	410,328,360,50	#00000000	-	1.00
+          #0	text	-	-	Sign-in Code	410,328,360,12	#00000000	#a3a0acff	1.00
+          sign-in-code	textbox	sign-in-code	-	-	410,346,280,32	#040405ff	-	1.00
+           value	group	value	-	-	410,346,272,32	#00000000	-	1.00
+            #0	group	-	-	-	410,362,2,0	#00000000	-	1.00
+            input	textbox	input	Sign-in Code		418,353,264,18	#00000000	#eeeaf7ff	1.00
+         #2	group	-	-	-	410,392,360,24	#00000000	-	1.00
+          sign-in-go	button	sign-in-go	Sign In	-	703,392,67,24	#eeeaf7ff	-	1.00
+           label	text	label	-	Sign In	715,394,43,20	#00000000	#040405ff	1.00
+        #3	group	-	-	-	410,436,360,24	#00000000	-	1.00
+         #0	text	-	-	Signs in to orbis.p11a.xyz	410,442,130,12	#00000000	#76737eff	1.00
+         #1	group	-	-	-	546,448,80,0	#00000000	-	1.00
+         sign-in-other	button	sign-in-other	Use Another Orbis	-	632,436,138,24	#00000000	-	1.00
+          label	text	label	-	Use Another Orbis	644,438,114,20	#00000000	#a3a0acff	1.00

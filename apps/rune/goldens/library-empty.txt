@@ -1,57 +1,77 @@
-kit-root	group	kit-root	-	-	0,0,1120,760	#00000000	-	1.00
- shell	group	shell	-	-	0,0,1120,760	#040405ff	-	1.00
-  split	group	split	-	-	0,0,1120,760	#00000000	-	1.00
-   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,220,760	#00000000	-	1.00
-    pane-content	group	pane-content	-	-	0,0,220,760	#00000000	-	1.00
-     sidebar-titlebar	group	sidebar-titlebar	-	-	18,0,192,56	#00000000	-	1.00
-      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	18,32,0,0	#00000000	-	1.00
-      sidebar-spacer	group	sidebar-spacer	-	-	18,32,156,0	#00000000	-	1.00
-      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	182,32,28,0	#00000000	-	1.00
-     pane-body	group	pane-body	-	-	18,56,192,704	#00000000	-	1.00
-      sidebar	group	sidebar	-	-	18,56,192,704	#00000000	-	1.00
-       sidebar-scroll	group	sidebar-scroll	-	-	18,56,192,704	#00000000	-	1.00
-        sidebar-list	list	sidebar-list	Orbis	-	18,56,192,108	#00000000	-	1.00
-         nav-library	listitem	nav-library	Library	-	18,56,192,32	#eeeaf703	-	1.00
-          icon	icon	icon	-	-	26,64,16,16	#00000000	#eeeaf7ff	1.00
-          label	text	label	-	Library	48,62,141,20	#00000000	#eeeaf7ff	1.00
-          detail	text	detail	-	0	195,66,7,12	#00000000	#76737eff	1.00
-         nav-queue	listitem	nav-queue	Listening Queue	-	18,90,192,32	#00000000	-	1.00
-          icon	icon	icon	-	-	26,98,16,16	#00000000	#a3a0acff	1.00
-          label	text	label	-	Listening Queue	48,96,141,20	#00000000	#a3a0acff	1.00
-          detail	text	detail	-	0	195,100,7,12	#00000000	#76737eff	1.00
-         nav-playing	listitem	nav-playing	Now Playing	-	18,124,192,32	#00000000	-	1.00
-          icon	icon	icon	-	-	26,132,16,16	#00000000	#a3a0acff	1.00
-          label	text	label	-	Now Playing	48,130,144,20	#00000000	#a3a0acff	1.00
-          detail	text	detail	-		198,134,4,12	#00000000	#76737eff	1.00
+kit-root	group	kit-root	-	-	0,0,1180,780	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1180,780	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1180,780	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,240,780	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,240,780	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	11,0,226,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	11,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	11,32,190,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	209,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	11,56,226,724	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	11,56,226,724	#00000000	-	1.00
+       sidebar-header	group	sidebar-header	-	-	11,56,226,98	#00000000	-	1.00
+        nav-library	listitem	nav-library	Library	-	11,56,226,28	#eeeaf703	-	1.00
+         icon	icon	icon	-	-	19,62,16,16	#00000000	#eeeaf7ff	1.00
+         label	text	label	-	Library	41,60,178,20	#00000000	#eeeaf7ff	1.00
+         detail	text	detail	-		225,64,4,12	#00000000	#76737eff	1.00
+        nav-queue	listitem	nav-queue	Listening Queue	-	11,87,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,93,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Listening Queue	41,91,178,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-		225,95,4,12	#00000000	#76737eff	1.00
+        nav-playing	listitem	nav-playing	Now Playing	-	11,118,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,124,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Now Playing	41,122,178,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-		225,126,4,12	#00000000	#76737eff	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	11,154,226,582	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	11,154,226,62	#00000000	-	1.00
+         playlists-section	group	playlists-section	Playlists	-	11,154,226,54	#00000000	-	1.00
+          section-header	heading	section-header	Playlists	-	11,154,226,28	#00000000	-	1.00
+           section-title	group	section-title	-	-	19,161,48,18	#00000000	-	1.00
+            #0	text	-	-	Playlists	19,161,48,18	#00000000	#a3a0acff	1.00
+           spacer	group	spacer	-	-	67,170,142,0	#00000000	-	1.00
+           new-playlist	button	new-playlist	New Playlist	-	209,160,20,20	#00000000	-	1.00
+            icon	icon	icon	-	-	211,162,16,16	#00000000	#a3a0acff	1.00
+          playlists-none	text	playlists-none	-	No Playlists yet	11,184,226,24	#00000000	#76737eff	1.00
+       sidebar-footer	group	sidebar-footer	-	-	11,736,226,44	#00000000	-	1.00
+        nav-settings	listitem	nav-settings	Settings	-	11,744,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,750,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Settings	41,748,178,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-		225,752,4,12	#00000000	#76737eff	1.00
     pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
     pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
-    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	214,0,6,760	#00000000	-	0.02
-   main-column	group	main-column	-	-	220,0,900,760	#00000000	-	1.00
-    titlebar-strip	group	titlebar-strip	-	-	220,0,900,8	#00000000	-	1.00
-    main-row	group	main-row	-	-	220,8,900,752	#00000000	-	1.00
-     main-pane	main	main-pane	-	-	220,8,892,744	#040405ff	-	1.00
-      toolbar	toolbar	toolbar	Library	-	220,8,892,48	#00000000	-	1.00
-       center	group	center	-	-	220,8,892,48	#00000000	-	1.00
-        title	text	title	-	Library	644,22,44,20	#00000000	#eeeaf7ff	1.00
-       leading	group	leading	-	-	232,32,0,0	#00000000	-	1.00
-       spacer	group	spacer	-	-	240,32,796,0	#00000000	-	1.00
-       trailing	group	trailing	-	-	1044,22,56,20	#00000000	-	1.00
-        reload	button	reload	Reload	-	1044,22,56,20	#00000000	-	1.00
-         label	text	label	-	Reload	1054,26,36,12	#00000000	#a3a0acff	1.00
-      main	group	main	-	-	220,56,892,696	#00000000	-	1.00
-       #0	group	-	-	-	220,56,892,696	#00000000	-	1.00
-        library	group	library	-	-	220,56,892,696	#00000000	-	1.00
-         #0	group	-	-	-	220,56,892,48	#00000000	-	1.00
-          #0	group	-	-	-	236,68,401.5,28	#00000000	-	1.00
-           search	textbox	search	-	-	236,68,280,28	#040405ff	-	1.00
-            value	group	value	-	-	236,68,272,28	#00000000	-	1.00
-             leading	group	leading	-	-	236,74,24,16	#00000000	-	1.00
-              #0	icon	-	-	-	244,74,16,16	#00000000	#a3a0acff	1.00
-             input	textbox	input	Search the Library		266,74,242,16	#00000000	#eeeaf7ff	1.00
-          #1	group	-	-	-	649.5,82,401.5,0	#00000000	-	1.00
-          library-count	text	library-count	-	0 Sets	1063,76,33,12	#00000000	#a3a0acff	1.00
-         library-scroll	group	library-scroll	-	-	220,104,892,648	#00000000	-	1.00
-          library-empty	group	library-empty	-	-	220,104,892,116	#00000000	-	1.00
-           #0	text	-	-	No Sets yet. Save one from the Orbis app on your phone, or with Raycast.	440,152,452,20	#00000000	#a3a0acff	1.00
-  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	182,18,28,28	#00000000	-	1.00
-   icon	icon	icon	-	-	188,24,16,16	#00000000	#a3a0acff	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	234,0,6,780	#00000000	-	0.02
+   main-column	group	main-column	-	-	240,0,940,780	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	240,0,940,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	240,8,940,772	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	240,8,932,764	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	-	-	240,8,932,48	#00000000	-	1.00
+       leading	group	leading	-	-	252,22,44,20	#00000000	-	1.00
+        screen-title	text	screen-title	-	Library	252,22,44,20	#00000000	#eeeaf7ff	1.00
+       spacer	group	spacer	-	-	304,32,796,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1108,20,52,24	#00000000	-	1.00
+        #0	group	-	-	-	1108,20,52,24	#00000000	-	1.00
+         save-link	button	save-link	Save a Link (Ctrl+N)	-	1108,20,24,24	#00000000	-	1.00
+          icon	icon	icon	-	-	1112,24,16,16	#00000000	#a3a0acff	1.00
+         reload	button	reload	Reload (Ctrl+R)	-	1136,20,24,24	#00000000	-	1.00
+          icon	icon	icon	-	-	1140,24,16,16	#00000000	#a3a0acff	1.00
+      main	group	main	-	-	240,56,932,716	#00000000	-	1.00
+       #0	group	-	-	-	240,56,932,716	#00000000	-	1.00
+        library	group	library	-	-	240,56,932,716	#00000000	-	1.00
+         #0	group	-	-	-	240,56,932,56	#00000000	-	1.00
+          search-box	group	search-box	-	-	264,68,884,36	#1b182199	-	1.00
+           #0	icon	-	-	-	276,78,16,16	#00000000	#a3a0acff	1.00
+           #1	group	-	-	-	300,72,799,28	#00000000	-	1.00
+            search	textbox	search	-	-	300,72,280,28	#00000000	-	1.00
+             value	group	value	-	-	300,72,272,28	#00000000	-	1.00
+              #0	group	-	-	-	300,86,2,0	#00000000	-	1.00
+              input	textbox	input	Search the Library		308,78,264,16	#00000000	#eeeaf7ff	1.00
+           library-count	text	library-count	-	0 Sets	1107,80,33,12	#00000000	#76737eff	1.00
+         library-empty	group	library-empty	-	-	240,112,932,156	#00000000	-	1.00
+          #0	group	-	-	-	512.5,164,387,64	#00000000	-	1.00
+           #0	text	-	-	No Sets yet	670,164,72,20	#00000000	#eeeaf7ff	1.00
+           #1	text	-	-	Save a YouTube, SoundCloud or Apple Music link, and it shows here.	512.5,188,387,40	#00000000	#a3a0acff	1.00
+          library-save	button	library-save	Save a Link	-	647.5,244,117,24	#14111aff	-	1.00
+           icon	icon	icon	-	-	659.5,248,16,16	#00000000	#eeeaf7ff	1.00
+           label	text	label	-	Save a Link	681.5,246,71,20	#00000000	#eeeaf7ff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	209,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	215,24,16,16	#00000000	#a3a0acff	1.00

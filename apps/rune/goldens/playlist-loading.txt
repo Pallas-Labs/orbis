@@ -1,0 +1,136 @@
+kit-root	group	kit-root	-	-	0,0,1180,780	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1180,780	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1180,780	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,240,780	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,240,780	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	11,0,226,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	11,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	11,32,190,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	209,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	11,56,226,724	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	11,56,226,724	#00000000	-	1.00
+       sidebar-header	group	sidebar-header	-	-	11,56,226,98	#00000000	-	1.00
+        nav-library	listitem	nav-library	Library	-	11,56,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,62,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Library	41,60,175,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-	9	222,64,7,12	#00000000	#76737eff	1.00
+        nav-queue	listitem	nav-queue	Listening Queue	-	11,87,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,93,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Listening Queue	41,91,174,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-	4	221,95,8,12	#00000000	#76737eff	1.00
+        nav-playing	listitem	nav-playing	Now Playing	-	11,118,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,124,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Now Playing	41,122,178,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-		225,126,4,12	#00000000	#76737eff	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	11,154,226,582	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	11,154,226,126	#00000000	-	1.00
+         playlists-section	group	playlists-section	Playlists	-	11,154,226,118	#00000000	-	1.00
+          section-header	heading	section-header	Playlists	-	11,154,226,28	#00000000	-	1.00
+           section-title	group	section-title	-	-	19,161,48,18	#00000000	-	1.00
+            #0	text	-	-	Playlists	19,161,48,18	#00000000	#a3a0acff	1.00
+           spacer	group	spacer	-	-	67,170,142,0	#00000000	-	1.00
+           new-playlist	button	new-playlist	New Playlist	-	209,160,20,20	#00000000	-	1.00
+            icon	icon	icon	-	-	211,162,16,16	#00000000	#a3a0acff	1.00
+          nav-playlist-p-morning	listitem	nav-playlist-p-morning	Morning	-	11,184,226,28	#eeeaf703	-	1.00
+           icon	icon	icon	-	-	19,190,16,16	#00000000	#eeeaf7ff	1.00
+           label	text	label	-	Morning	41,188,175,20	#00000000	#eeeaf7ff	1.00
+           detail	text	detail	-	3	222,192,7,12	#00000000	#76737eff	1.00
+          nav-playlist-p-harbour	listitem	nav-playlist-p-harbour	Harbour Nights	-	11,214,226,28	#00000000	-	1.00
+           icon	icon	icon	-	-	19,220,16,16	#00000000	#a3a0acff	1.00
+           label	text	label	-	Harbour Nights	41,218,177,20	#00000000	#a3a0acff	1.00
+           detail	text	detail	-	1	224,222,5,12	#00000000	#76737eff	1.00
+          nav-playlist-p-road	listitem	nav-playlist-p-road	Road Trip	-	11,244,226,28	#00000000	-	1.00
+           icon	icon	icon	-	-	19,250,16,16	#00000000	#a3a0acff	1.00
+           label	text	label	-	Road Trip	41,248,143,20	#00000000	#a3a0acff	1.00
+           detail	text	detail	-	by mira	190,252,39,12	#00000000	#76737eff	1.00
+       sidebar-footer	group	sidebar-footer	-	-	11,736,226,44	#00000000	-	1.00
+        nav-settings	listitem	nav-settings	Settings	-	11,744,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,750,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Settings	41,748,178,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-		225,752,4,12	#00000000	#76737eff	1.00
+    pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
+    pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	234,0,6,780	#00000000	-	0.02
+   main-column	group	main-column	-	-	240,0,940,780	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	240,0,940,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	240,8,940,772	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	240,8,932,764	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	-	-	240,8,932,48	#00000000	-	1.00
+       leading	group	leading	-	-	252,22,52,20	#00000000	-	1.00
+        screen-title	text	screen-title	-	Morning	252,22,52,20	#00000000	#eeeaf7ff	1.00
+       spacer	group	spacer	-	-	312,32,816,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1136,20,24,24	#00000000	-	1.00
+        #0	group	-	-	-	1136,20,24,24	#00000000	-	1.00
+         reload	button	reload	Reload (Ctrl+R)	-	1136,20,24,24	#00000000	-	1.00
+          icon	icon	icon	-	-	1140,24,16,16	#00000000	#a3a0acff	1.00
+      main	group	main	-	-	240,56,932,716	#00000000	-	1.00
+       #0	group	-	-	-	240,56,932,644	#00000000	-	1.00
+        playlist	group	playlist	-	-	240,56,932,644	#00000000	-	1.00
+         #0	group	-	-	-	240,56,932,525	#00000000	-	1.00
+          #0	group	-	-	-	240,56,932,168	#00000000	-	1.00
+           #0	group	-	-	-	264,76,132,132	#eeeaf70f	-	1.00
+           #1	group	-	-	-	416,76,220,132	#00000000	-	1.00
+            #0	group	-	-	-	416,116,220,14	#eeeaf70f	-	1.00
+            #1	group	-	-	-	416,140,140,8	#eeeaf70f	-	1.00
+          playlist-loading	progressbar	playlist-loading	Loading	-	240,224,932,341	#00000000	-	0.85
+           #0	group	-	-	-	252,224,908,56	#00000000	-	0.85
+            #0	group	-	-	-	264,232,40,40	#eeeaf70f	-	0.85
+            #1	group	-	-	-	316,241,140,22	#00000000	-	0.85
+             #0	group	-	-	-	316,241,140,8	#eeeaf70f	-	0.85
+             #1	group	-	-	-	316,257,90,6	#eeeaf70f	-	0.85
+           #1	group	-	-	-	252,281,908,56	#00000000	-	0.85
+            #0	group	-	-	-	264,289,40,40	#eeeaf70f	-	0.85
+            #1	group	-	-	-	316,298,200,22	#00000000	-	0.85
+             #0	group	-	-	-	316,298,200,8	#eeeaf70f	-	0.85
+             #1	group	-	-	-	316,314,120,6	#eeeaf70f	-	0.85
+           #2	group	-	-	-	252,338,908,56	#00000000	-	0.85
+            #0	group	-	-	-	264,346,40,40	#eeeaf70f	-	0.85
+            #1	group	-	-	-	316,355,260,22	#00000000	-	0.85
+             #0	group	-	-	-	316,355,260,8	#eeeaf70f	-	0.85
+             #1	group	-	-	-	316,371,90,6	#eeeaf70f	-	0.85
+           #3	group	-	-	-	252,395,908,56	#00000000	-	0.85
+            #0	group	-	-	-	264,403,40,40	#eeeaf70f	-	0.85
+            #1	group	-	-	-	316,412,140,22	#00000000	-	0.85
+             #0	group	-	-	-	316,412,140,8	#eeeaf70f	-	0.85
+             #1	group	-	-	-	316,428,120,6	#eeeaf70f	-	0.85
+           #4	group	-	-	-	252,452,908,56	#00000000	-	0.85
+            #0	group	-	-	-	264,460,40,40	#eeeaf70f	-	0.85
+            #1	group	-	-	-	316,469,200,22	#00000000	-	0.85
+             #0	group	-	-	-	316,469,200,8	#eeeaf70f	-	0.85
+             #1	group	-	-	-	316,485,90,6	#eeeaf70f	-	0.85
+           #5	group	-	-	-	252,509,908,56	#00000000	-	0.85
+            #0	group	-	-	-	264,517,40,40	#eeeaf70f	-	0.85
+            #1	group	-	-	-	316,526,260,22	#00000000	-	0.85
+             #0	group	-	-	-	316,526,260,8	#eeeaf70f	-	0.85
+             #1	group	-	-	-	316,542,120,6	#eeeaf70f	-	0.85
+       bar	group	bar	-	-	240,700,932,72	#00000000	-	1.00
+        bar-open	button	bar-open	Open Now Playing: Sunrise on the Pier	-	252,712,272.4,48	#00000000	-	1.00
+         #0	group	-	-	-	256,716,40,40	#00000000	-	1.00
+          #0	group	-	-	-	256,716,40,40	#5a251fff	-	1.00
+           #0	text	-	-	S	272,730,8,12	#00000000	#eeeaf7b3	1.00
+          #1	group	-	-	-	256,716,40,40	#00000000	-	1.00
+         #1	group	-	-	-	306,719,214.4,34	#00000000	-	1.00
+          #0	text	-	-	Sunrise on the Pier	306,719,214.4,20	#00000000	#eeeaf7ff	1.00
+          #1	text	-	-	Avery Coast	306,741,214.4,12	#00000000	#a3a0acff	1.00
+        #1	group	-	-	-	540.4,713,331.2,46	#00000000	-	1.00
+         #0	group	-	-	-	636,713,140,32	#00000000	-	1.00
+          bar-back	button	bar-back	Back 15 seconds	-	636,717,24,24	#00000000	-	1.00
+           icon	icon	icon	-	-	640,721,16,16	#00000000	#eeeaf7ff	1.00
+          bar-play	button	bar-play	Play	-	672,713,32,32	#a54dffff	-	1.00
+           #0	icon	-	-	-	681.6,722.6,12.8,12.8	#00000000	#ffffffff	1.00
+          bar-ahead	button	bar-ahead	Ahead 30 seconds	-	716,717,24,24	#00000000	-	1.00
+           icon	icon	icon	-	-	720,721,16,16	#00000000	#eeeaf7ff	1.00
+          bar-next	button	bar-next	Next Set	-	752,717,24,24	#00000000	-	1.00
+           icon	icon	icon	-	-	756,721,16,16	#00000000	#eeeaf7ff	1.00
+         #1	group	-	-	-	540.4,747,331.2,12	#00000000	-	1.00
+          elapsed	text	elapsed	-	23:41	540.4,747,48,12	#00000000	#a3a0acff	1.00
+          bar-seek	slider	bar-seek	Place in the Set	-	598.4,747,215.2,12	#00000000	-	1.00
+           #0	group	-	-	-	598.4,751,215.2,4	#eeeaf71f	-	1.00
+            bar-seek-fill	group	bar-seek-fill	-	-	598.4,751,87.6,4	#a54dffff	-	1.00
+             #0	group	-	-	-	680,747,12,12	#eeeaf7ff	-	0.00
+          remaining	text	remaining	-	−34:31	823.6,747,48,12	#00000000	#a3a0acff	1.00
+        #2	group	-	-	-	887.6,724,272.4,24	#00000000	-	1.00
+         bar-queue	button	bar-queue	Listening Queue	-	1136,724,24,24	#00000000	-	1.00
+          icon	icon	icon	-	-	1140,728,16,16	#00000000	#a3a0acff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	209,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	215,24,16,16	#00000000	#a3a0acff	1.00

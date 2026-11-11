@@ -35,10 +35,20 @@ enum Order {
     Seek(f64),
 }
 
+/// The mpv process, and whether the stream was given up. A stream given up before its process
+/// started still ends that process the moment it starts.
+#[derive(Default)]
+struct Slot {
+    child: Option<Child>,
+    stopped: bool,
+}
+
+type Shared = Arc<Mutex<Slot>>;
+
 /// One stream playing in mpv. Dropping it stops the sound and ends the process.
 pub struct Mpv {
     commands: Sender<Order>,
-    child: Arc<Mutex<Option<Child>>>,
+    child: Shared,
 }
 
 impl Mpv {
@@ -46,7 +56,7 @@ impl Mpv {
     /// each [`Event`].
     pub fn open(url: String, start: f64, report: impl Fn(Event) + Send + 'static) -> Mpv {
         let (commands, inbox) = channel();
-        let child = Arc::new(Mutex::new(None));
+        let child: Shared = Arc::default();
         let owner = Arc::clone(&child);
         std::thread::spawn(move || {
             if let Err(why) = run(&url, start, &owner, inbox, &report) {
@@ -67,12 +77,20 @@ impl Mpv {
 
 impl Drop for Mpv {
     fn drop(&mut self) {
-        if let Some(mut child) = self.child.lock().ok().and_then(|mut c| c.take()) {
-            let _ = child.kill();
-            // Reaping it can take a moment; the UI thread doesn't wait for that.
-            std::thread::spawn(move || child.wait());
+        let child = self.child.lock().ok().and_then(|mut slot| {
+            slot.stopped = true;
+            slot.child.take()
+        });
+        if let Some(child) = child {
+            end(child);
         }
     }
+}
+
+/// Kills `child` and reaps it on a thread of its own, so the UI thread never waits.
+fn end(mut child: Child) {
+    let _ = child.kill();
+    std::thread::spawn(move || child.wait());
 }
 
 fn socket_path() -> PathBuf {
@@ -83,7 +101,7 @@ fn socket_path() -> PathBuf {
 
 /// Runs one stream to its end: starts mpv, connects to its socket, sends it commands from
 /// `inbox` and reports what it says.
-fn run(url: &str, start: f64, child: &Mutex<Option<Child>>, inbox: Receiver<Order>, report: &dyn Fn(Event)) -> Result<(), String> {
+fn run(url: &str, start: f64, child: &Mutex<Slot>, inbox: Receiver<Order>, report: &dyn Fn(Event)) -> Result<(), String> {
     let socket = socket_path();
     let mut mpv = Command::new("mpv");
     mpv.args(["--no-config", "--no-video", "--no-terminal", "--idle=no", "--audio-display=no"])
@@ -96,13 +114,22 @@ fn run(url: &str, start: f64, child: &Mutex<Option<Child>>, inbox: Receiver<Orde
         .stderr(Stdio::null());
     die_with_parent(&mut mpv);
     let process = mpv.spawn().map_err(|_| "Playing needs mpv, and this computer doesn't have it. Install mpv, then press Play again.".to_owned())?;
-    *child.lock().map_err(|_| "The player stopped".to_owned())? = Some(process);
+    {
+        let mut slot = child.lock().map_err(|_| "The player stopped".to_owned())?;
+        if slot.stopped {
+            // Given up while mpv started: it ends now, and nothing is reported.
+            end(process);
+            return Ok(());
+        }
+        slot.child = Some(process);
+    }
 
     let deadline = Instant::now() + Duration::from_secs(5);
     let stream = loop {
         match UnixStream::connect(&socket) {
             Ok(stream) => break stream,
-            Err(_) if Instant::now() < deadline && child.lock().is_ok_and(|c| c.is_some()) => std::thread::sleep(Duration::from_millis(40)),
+            Err(_) if Instant::now() < deadline && child.lock().is_ok_and(|c| !c.stopped) => std::thread::sleep(Duration::from_millis(40)),
+            Err(_) if child.lock().is_ok_and(|c| c.stopped) => return Ok(()),
             Err(_) => return Err("mpv didn't start".to_owned()),
         }
     };
@@ -153,7 +180,7 @@ fn run(url: &str, start: f64, child: &Mutex<Option<Child>>, inbox: Receiver<Orde
         }
     }
     // The socket closed: mpv quit. When it wasn't asked to, and said nothing first, say so.
-    let asked = child.lock().map_or(true, |c| c.is_none());
+    let asked = child.lock().map_or(true, |c| c.stopped);
     if !asked && !finished {
         report(Event::Failed("The player stopped".to_owned()));
     }

@@ -40,6 +40,17 @@ pub struct Set {
     pub playback_position_seconds: f64,
     #[serde(default)]
     pub tags: Vec<String>,
+    /// The Artwork a listing draws, and the large one a Set's own page draws.
+    #[serde(default)]
+    pub artwork_url: Option<String>,
+    #[serde(default)]
+    pub artwork_large_url: Option<String>,
+    /// The caller's Playlists that hold this Set.
+    #[serde(default)]
+    pub playlist_ids: Vec<String>,
+    /// Set when the Person saved it, for "Recently filed".
+    #[serde(default)]
+    pub created_at: String,
 }
 
 impl Set {
@@ -135,4 +146,143 @@ pub fn clock_time(seconds: f64) -> String {
     let total = seconds.max(0.0).floor() as u64;
     let (h, m, s) = (total / 3600, total / 60 % 60, total % 60);
     if h > 0 { format!("{h}:{m:02}:{s:02}") } else { format!("{m}:{s:02}") }
+}
+
+/// A Playlist, as a list of them shows it.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Playlist {
+    pub id: String,
+    pub name: String,
+    pub set_count: usize,
+    /// The Person who made it, for a Collaborative Playlist someone else made.
+    #[serde(default)]
+    pub creator: Option<Person>,
+}
+
+/// What a Person may do with a Playlist: only its creator renames, deletes or names editors.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Role {
+    #[default]
+    Creator,
+    Editor,
+}
+
+/// One Playlist with its Sets in order (ADR 0010).
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaylistDetail {
+    pub id: String,
+    pub name: String,
+    pub creator: Person,
+    pub role: Role,
+    pub sets: Vec<Set>,
+}
+
+/// Someone in the Group, as another Person sees them.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+pub struct Person {
+    pub id: String,
+    pub username: String,
+}
+
+/// The signed-in Person and their settings.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Me {
+    pub id: String,
+    pub username: String,
+    pub auto_download: bool,
+    /// Share with Group: whether the Group sees what this Person listens to.
+    pub social: bool,
+    pub host: bool,
+}
+
+/// One device signed in as the Person.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Device {
+    pub id: String,
+    pub label: String,
+    pub added_at: String,
+    pub last_used_at: Option<String>,
+    /// This device.
+    pub current: bool,
+}
+
+/// What someone in the Group is listening to now.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Presence {
+    pub person_id: String,
+    pub username: String,
+    pub set: Set,
+}
+
+/// A code a signed-in device shows, for a new device to type (ADR 0020).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SignInCode {
+    pub code: String,
+    pub expires_at: String,
+}
+
+/// A new device's key, given once, and the Person it signs in as.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+pub struct SignedIn {
+    pub key: String,
+    pub person: Person,
+}
+
+/// An Approval Request a signed-out device started: the code it shows, and its secret.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Approval {
+    pub code: String,
+    pub expires_at: String,
+    pub secret: String,
+}
+
+/// What waiting on an Approval Request heard.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(tag = "status", rename_all = "lowercase")]
+pub enum ApprovalWait {
+    Pending,
+    Approved { key: String, person: Person },
+}
+
+/// What saving a link did, beside the Set it made: whether a Download started.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum AutoDownload {
+    Queued,
+    #[default]
+    Disabled,
+    Ready,
+    InProgress,
+    QueueFull,
+    Unavailable,
+}
+
+impl AutoDownload {
+    /// What to tell the person after saving `title`.
+    pub fn said(self, title: &str) -> String {
+        match self {
+            AutoDownload::Queued => format!("Saved {title}. Its audio is downloading."),
+            AutoDownload::InProgress => format!("Saved {title}. Its audio is already downloading."),
+            AutoDownload::QueueFull => format!("Saved {title}. The download queue is full, so download it later."),
+            AutoDownload::Ready | AutoDownload::Disabled | AutoDownload::Unavailable => format!("Saved {title}"),
+        }
+    }
+}
+
+/// The local date in `iso` (`2026-11-09T…`) as "9 Nov 2026", for lists of devices.
+pub fn day(iso: &str) -> String {
+    const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let mut parts = iso.get(..10).unwrap_or_default().split('-').map(|p| p.parse::<usize>().ok());
+    match (parts.next().flatten(), parts.next().flatten(), parts.next().flatten()) {
+        (Some(y), Some(m @ 1..=12), Some(d)) => format!("{d} {} {y}", MONTHS[m - 1]),
+        _ => iso.to_owned(),
+    }
 }

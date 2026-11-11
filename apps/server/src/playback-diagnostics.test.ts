@@ -234,6 +234,39 @@ test("OTLP records carry resource attributes, event attributes, and the Set ID",
   }
 });
 
+test("a batch from the Rune desktop app is service orbis-rune, and one that names no client stays orbis-apple", async () => {
+  const s = setup();
+  try {
+    const rune = {
+      ...batch(),
+      metadata: { ...fixture.metadata, client: "rune" },
+    };
+    const fromRune = await s.send(JSON.stringify(rune));
+    const fromApple = await s.send(JSON.stringify(batch()));
+    expect([fromRune.status, fromApple.status]).toEqual([200, 200]);
+    const services = s.requests.map(({ body }) => {
+      if (!isOtlpBody(body)) {
+        throw new Error("the relay did not post an OTLP body");
+      }
+      return attributeMap(body.resourceLogs[0]?.resource.attributes ?? [])[
+        "service.name"
+      ];
+    });
+    expect(services).toEqual([
+      { stringValue: "orbis-rune" },
+      { stringValue: "orbis-apple" },
+    ]);
+    const unknown = {
+      ...batch(),
+      metadata: { ...fixture.metadata, client: "android" },
+    };
+    const refused = await s.send(JSON.stringify(unknown));
+    expect(refused.status).toBe(400);
+  } finally {
+    await s.close();
+  }
+});
+
 test("strict nested privacy schema rejects unknown fields and inconsistent sequences", async () => {
   const s = setup();
   try {
