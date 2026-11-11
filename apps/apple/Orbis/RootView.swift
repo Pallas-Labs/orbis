@@ -447,6 +447,7 @@ struct DestinationView: View {
         #if os(iOS)
           .playlistPage(model, in: .playlists, zoom: setZoom) { id in setPage(id) }
         #endif
+        .heavyRotationPage(model, in: .playlists, zoom: setZoom) { id in setPage(id) }
         .navigationDestination(item: openedSet) { id in setPage(id) }
     case .people:
       PeopleDestination(model: model)
@@ -564,6 +565,7 @@ struct DestinationView: View {
     #if os(iOS)
       .playlistPage(model, in: .home, zoom: setZoom) { id in setPage(id) }
     #endif
+    .heavyRotationPage(model, in: .home, zoom: setZoom) { id in setPage(id) }
     .navigationDestination(item: openedSet) { id in setPage(id) }
   }
 
@@ -795,6 +797,12 @@ struct HomeRails: View {
       if !home.continueRail.isEmpty {
         rail("Continue listening", subtitle: "Pick up where you left off.") { continueCards }
       }
+      if !home.heavyRotation.isEmpty {
+        rail(
+          HeavyRotationView.title, subtitle: ListeningRange.month.summary,
+          seeAll: { model.openHeavyRotation(in: .home) }
+        ) { rotationCards }
+      }
       if !home.recentlyFiled.isEmpty {
         rail("Recently filed", subtitle: "The newest links in your library.") { recentCards }
       }
@@ -813,7 +821,8 @@ struct HomeRails: View {
   /// The Sets Home shows, whose pages are a tap away.
   private var shown: [SavedSet] {
     let home = home
-    return home.continueListening.prefix(HomeSelection.recentLimit) + home.recentlyFiled
+    return home.continueListening.prefix(HomeSelection.recentLimit) + home.heavyRotation
+      + home.recentlyFiled
   }
 
   /// The Set Home leads with: the one most recently left part-way, or else the newest filed.
@@ -825,9 +834,9 @@ struct HomeRails: View {
 
   private var home: HomeSelection {
     guard case .loaded(let visible) = model.visibleSets else {
-      return HomeSelection(library: librarySets, visible: [])
+      return HomeSelection(library: librarySets, visible: [], heavyRotation: model.heavyRotation)
     }
-    return HomeSelection(library: librarySets, visible: visible)
+    return HomeSelection(library: librarySets, visible: visible, heavyRotation: model.heavyRotation)
   }
 
   private func card(_ set: SavedSet, detail: String?) -> SetCard {
@@ -898,6 +907,25 @@ struct HomeRails: View {
       .accessibilityIdentifier("continue-card-\(set.id)")
       .contextMenu {
         cardMenu(set, place: "continue")
+      } preview: {
+        cardPreview(set)
+      }
+    }
+  }
+
+  private var rotationCards: some View {
+    ForEach(home.heavyRotation) { set in
+      Button {
+        zoom?.open(from: "rotation")
+        model.openSet(set.id)
+      } label: {
+        card(set, detail: set.creator)
+          .zoomsSetPage(set.id, place: "rotation")
+      }
+      .buttonStyle(.orbisPressable)
+      .accessibilityIdentifier("rotation-card-\(set.id)")
+      .contextMenu {
+        cardMenu(set, place: "rotation")
       } preview: {
         cardPreview(set)
       }
@@ -991,10 +1019,21 @@ struct HomeRails: View {
   }
 
   private func rail<Cards: View>(
-    _ name: String, subtitle: String, @ViewBuilder cards: () -> Cards
+    _ name: String, subtitle: String, seeAll: (() -> Void)? = nil,
+    @ViewBuilder cards: () -> Cards
   ) -> some View {
     VStack(alignment: .leading, spacing: 14) {
-      SectionHeading(name, subtitle: subtitle)
+      HStack(alignment: .firstTextBaseline) {
+        SectionHeading(name, subtitle: subtitle)
+        if let seeAll {
+          Button("See All", action: seeAll)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.orbis.tint)
+            .buttonStyle(.plain)
+            .accessibilityLabel("See all of \(name)")
+            .accessibilityIdentifier("rotation-see-all")
+        }
+      }
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(alignment: .top, spacing: 14) { cards() }
           .padding(.horizontal, Self.edgeInset)

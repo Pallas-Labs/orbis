@@ -43,7 +43,9 @@ struct CarPlayCatalog: Equatable {
     library = Self.status(of: model.library)
     playlistsStatus = Self.status(of: model.playlists)
     sets = all.filter(Self.isPlayable)
-    home = HomeSelection(library: sets, visible: visible.filter(Self.isPlayable))
+    home = HomeSelection(
+      library: sets, visible: visible.filter(Self.isPlayable),
+      heavyRotation: model.heavyRotation.filter(Self.isPlayable))
     playlists = model.playlistItems
     playingSetId = model.audioPlayer.currentSetId
     cues = playingSetId.flatMap { model.tracklists[$0]?.cues } ?? []

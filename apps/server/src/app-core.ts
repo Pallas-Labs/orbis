@@ -21,6 +21,7 @@ import {
   PositionPayload,
   PresenceActionPayload,
   QueueEntryPayload,
+  QueueHeavyRotationPayload,
   QueuePlaylistPayload,
   QueueSetPayload,
   SetAccess,
@@ -1635,6 +1636,26 @@ export const createPortableApp = (options: {
               )
             )
           )
+          .handleRaw("replaceWithHeavyRotation", () =>
+            withFailureResponse(
+              Effect.gen(function* replaceQueueFromHeavyRotation() {
+                const input = yield* HttpServerRequest.schemaBodyJson(
+                  QueueHeavyRotationPayload
+                );
+                const queue = yield* Queue;
+                return {
+                  queue: yield* queue.replaceWithHeavyRotation(
+                    input.range,
+                    input.order
+                  ),
+                };
+              }).pipe(
+                Effect.tap(() =>
+                  announceForCaller("listen-history", seesPerson)
+                )
+              )
+            )
+          )
           .handleRaw("complete", () =>
             withFailureResponse(
               Effect.gen(function* completeQueueEntry() {
@@ -1724,6 +1745,16 @@ export const createPortableApp = (options: {
                 Effect.gen(function* listPersonalTags() {
                   const personal = yield* Library;
                   return { tags: yield* personal.tags };
+                })
+              )
+            )
+            .handle("heavyRotation", ({ query }) =>
+              withFailureResponse(
+                Effect.gen(function* listHeavyRotation() {
+                  const personal = yield* Library;
+                  return {
+                    sets: yield* personal.heavyRotation(query.range ?? "month"),
+                  };
                 })
               )
             )
@@ -2108,6 +2139,9 @@ export const createPortableApp = (options: {
                       );
                       yield* tx.run(
                         sql`DELETE FROM listens WHERE person_id = ${params.id}`
+                      );
+                      yield* tx.run(
+                        sql`DELETE FROM listening_time WHERE person_id = ${params.id}`
                       );
                       yield* tx.run(
                         sql`DELETE FROM library_entries WHERE person_id = ${params.id}`

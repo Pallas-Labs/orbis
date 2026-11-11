@@ -106,6 +106,17 @@ final class AppModel {
 
   private(set) var tagCounts: [String: Int] = [:]
 
+  /// The Sets on Home's Heavy Rotation shelf, ranked by the service. Empty hides the shelf.
+  private(set) var heavyRotation: [SavedSet] = []
+
+  /// The Heavy Rotation collection's Sets for each range it has shown.
+  private(set) var rotationSets: [ListeningRange: Loadable<[SavedSet]>] = [:]
+  /// The range the collection shows. It stays when the collection closes, so the collection
+  /// opens on the range last chosen.
+  var rotationRange: ListeningRange = .month
+  /// The destination whose stack shows the Heavy Rotation collection; nil when it is closed.
+  var rotationPlace: Destination?
+
   /// The Tags this device last put on a Set, newest first, and the last Tag filters it applied.
   /// Kept on the device, like recent searches: they are this person's habits here, not part of
   /// the library.
@@ -574,6 +585,9 @@ final class AppModel {
     // The next sign-in starts on Home, so the first Set opened lands in the stack on screen.
     destination = .home
     library = .idle
+    heavyRotation = []
+    rotationSets = [:]
+    rotationPlace = nil
     search = .idle
     searchResultsFor = nil
     playlists = .idle
@@ -615,6 +629,7 @@ final class AppModel {
       library = .loaded(sets)
       reloadsAfterCancellation = 0
       if openedLink?.state == .opening { await readOpenedLink() }
+      await loadHeavyRotation()
     } catch OrbisError.cancelled {
       guard generation == libraryGeneration, !Task.isCancelled else { return }
       // The screen that asked for this went away, which is not a failure. The retry runs
@@ -1486,6 +1501,19 @@ final class AppModel {
   /// member leaves the queue empty, which stops playback: the queue no longer holds the Set that
   /// was playing.
   func playPlaylist(_ id: String, shuffled: Bool = false) async {
+    await replaceQueue { client in try await client.playPlaylist(id, shuffled: shuffled) }
+  }
+
+  /// Replaces the queue with the Sets in Heavy Rotation over a range, ranked or shuffled, and
+  /// starts the first of them, as a Playlist does.
+  func playHeavyRotation(_ range: ListeningRange, shuffled: Bool = false) async {
+    await replaceQueue { client in try await client.playHeavyRotation(range, shuffled: shuffled) }
+  }
+
+  /// Replaces the queue with what `call` answers and starts its active entry.
+  private func replaceQueue(
+    _ call: @escaping @Sendable (OrbisClient) async throws -> ListeningQueue
+  ) async {
     guard let client else { return }
     queueNotice = nil
     recordPendingActivation(.superseded)
@@ -1501,7 +1529,7 @@ final class AppModel {
       guard let self, generation == self.playGeneration, self.client?.token == client.token else {
         throw CancellationError()
       }
-      return try await client.playPlaylist(id, shuffled: shuffled)
+      return try await call(client)
     }
     let revision = queueMutationGeneration
     defer {
@@ -1692,6 +1720,7 @@ final class AppModel {
   /// a completion, a settled position — must not put a spinner where the list was.
   func refreshLibraryQuietly() async {
     guard let client else { return }
+    await loadHeavyRotation()
     // A load already in flight will answer; taking its generation would leave its spinner up if
     // this refresh then failed or was cancelled.
     if case .loading = library { return }
@@ -1706,6 +1735,49 @@ final class AppModel {
     // The same list again wakes every screen that shows the library for nothing.
     if case .loaded(let current) = library, current == sets { return }
     library = .loaded(sets)
+  }
+
+  /// Opens the Heavy Rotation collection on `place`'s stack, over whatever that stack showed.
+  func openHeavyRotation(in place: Destination) {
+    openedSets[place] = nil
+    rotationPlace = place
+  }
+
+  func closeHeavyRotation() {
+    rotationPlace = nil
+  }
+
+  /// Reads the collection for a range. A range already read keeps its Sets on screen while it
+  /// reads again, and a failure replaces them only when there were none.
+  func loadRotation(_ range: ListeningRange) async {
+    guard let client else { return }
+    if case .loaded = rotationSets[range] {} else { rotationSets[range] = .loading }
+    do {
+      let sets = try await client.heavyRotation(range)
+      guard self.client?.token == client.token, !Task.isCancelled else { return }
+      rotationSets[range] = .loaded(sets)
+      if range == .month, sets != heavyRotation { heavyRotation = sets }
+    } catch {
+      guard self.client?.token == client.token else { return }
+      if error is CancellationError || error as? OrbisError == .cancelled {
+        if case .loading = rotationSets[range] { rotationSets[range] = .idle }
+        return
+      }
+      if case .loaded = rotationSets[range] { return }
+      let failure = (error as? OrbisError ?? .unreachable).failure(at: client.address)
+      rotationSets[range] = .failed(failure)
+    }
+  }
+
+  /// Reads the Heavy Rotation shelf again. A failed read keeps the shelf as it was: Home has no
+  /// place to show an error for one shelf, and the next refresh tries again. An answer from a
+  /// session that has since signed out is dropped, so it cannot fill another Person's Home.
+  func loadHeavyRotation() async {
+    guard let client, let sets = try? await client.heavyRotation() else { return }
+    guard self.client?.token == client.token, !Task.isCancelled, sets != heavyRotation else {
+      return
+    }
+    heavyRotation = sets
   }
 
   /// Counts the changes made to the loaded library here, for a quiet refresh to tell whether its

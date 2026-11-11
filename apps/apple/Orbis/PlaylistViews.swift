@@ -131,6 +131,13 @@ struct PlaylistsDestination: View {
           .font(.orbis.detail)
           .foregroundStyle(.secondary)
         CardGrid(spacing: 22) {
+          Button {
+            model.openHeavyRotation(in: .playlists)
+          } label: {
+            HeavyRotationSleeve(model: model)
+          }
+          .buttonStyle(.orbisPressable)
+          .accessibilityIdentifier("rotation-folder")
           ForEach(items) { playlist in
             Button {
               model.openPlaylist(playlist.id)

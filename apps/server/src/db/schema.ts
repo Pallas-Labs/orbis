@@ -210,6 +210,8 @@ export const playbackPositions = sqliteTable(
   "playback_positions",
   {
     personId: text("person_id").notNull(),
+    /** When the position was last saved, in Unix milliseconds; null on rows saved before it. */
+    savedAt: integer("saved_at"),
     seconds: integer("seconds").notNull().default(0),
     setId: text("set_id")
       .notNull()
@@ -238,6 +240,24 @@ export const listens = sqliteTable(
   (table) => [
     index("listens_by_person_set").on(table.personId, table.setId, table.id),
     index("listens_by_set").on(table.setId),
+  ]
+);
+
+// One Person's Listening Time with one Set on one UTC day, credited where the Playback Position
+// is saved. A day rather than a Listen, because resuming a Set the next day reopens no Listen.
+export const listeningTime = sqliteTable(
+  "listening_time",
+  {
+    day: text("day").notNull(),
+    personId: text("person_id").notNull(),
+    seconds: integer("seconds").notNull().default(0),
+    setId: text("set_id")
+      .notNull()
+      .references(() => sets.id),
+  },
+  (table) => [
+    primaryKey({ columns: [table.personId, table.day, table.setId] }),
+    index("listening_time_by_set").on(table.setId),
   ]
 );
 
@@ -338,6 +358,7 @@ export const schema = {
   downloadJobs,
   downloadRequesters,
   libraryEntries,
+  listeningTime,
   listens,
   playbackPositions,
   playlistEditors,

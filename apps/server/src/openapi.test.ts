@@ -76,6 +76,14 @@ const OpenApiDocument = Schema.Struct({
 });
 const decodeOpenApiDocument = Schema.decodeUnknownSync(OpenApiDocument);
 
+/** Operations that answer with a list of Sets. */
+const LIBRARY_OPERATIONS = new Set([
+  "library.heavyRotation",
+  "people.sets",
+  "playlists.replaceMembers",
+  "sets.list",
+]);
+
 const sampleKeyFor = (operationId: string): keyof typeof samples => {
   if (operationId === "appleMusic.search") {
     return "appleMusicSearch";
@@ -83,10 +91,7 @@ const sampleKeyFor = (operationId: string): keyof typeof samples => {
   if (operationId === "sets.save") {
     return "saveResult";
   }
-  if (
-    operationId === "sets.list" ||
-    operationId === "playlists.replaceMembers"
-  ) {
+  if (LIBRARY_OPERATIONS.has(operationId)) {
     return "library";
   }
   if (operationId === "sets.audioState") {
@@ -116,9 +121,6 @@ const sampleKeyFor = (operationId: string): keyof typeof samples => {
     }
     if (operationId === "people.filters") {
       return "socialFilters";
-    }
-    if (operationId === "people.sets") {
-      return "library";
     }
     return "me";
   }
@@ -318,7 +320,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(55);
+    expect(checked).toBe(57);
   } finally {
     await app.dispose();
   }
