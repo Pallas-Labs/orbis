@@ -661,9 +661,15 @@ struct OrbisClient: Sendable {
   }
 
   func save(url: String, tags: [String] = []) async throws -> SavedSet {
+    try await saveReportingDownload(url: url, tags: tags).0
+  }
+
+  /// Files a link the way `save` does, and also says what the service did about its download.
+  func saveReportingDownload(url: String, tags: [String]) async throws -> (SavedSet, AutoDownload?) {
     let body = try Self.encoder.encode(SaveSetRequest(tags: tags, url: url))
     let response = try await send(path: "sets", method: "POST", body: body)
-    return try decodedSet(response)
+    let report = try? Self.decoder.decode(AutoDownloadReport.self, from: response)
+    return (try decodedSet(response), report?.autoDownloadResult)
   }
 
   func updateTitle(_ id: String, title: String) async throws -> SavedSet {

@@ -13,6 +13,9 @@ struct FilingSheet: View {
   let close: () -> Void
 
   @State private var detent: PresentationDetent = .medium
+  #if os(macOS)
+    @Environment(\.openWindow) private var openWindow
+  #endif
 
   var body: some View {
     NavigationStack {
@@ -111,6 +114,15 @@ struct FilingSheet: View {
         .buttonBorderShape(.capsule)
         .disabled(model.playlistImport.isImporting)
         .accessibilityIdentifier("paste-and-file")
+        #if os(macOS)
+          Button("Import Many Links…", systemImage: "list.bullet.rectangle") {
+            openWindow(id: BulkImportWindow.id)
+            close()
+          }
+          .foregroundStyle(Color.orbis.tint)
+          .buttonStyle(.plain)
+          .accessibilityIdentifier("open-bulk-import")
+        #endif
         if let notice = model.pasteNotice {
           Text(notice)
             .accessibilityIdentifier("paste-notice")
