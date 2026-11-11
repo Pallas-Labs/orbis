@@ -351,3 +351,26 @@ fn next_on_the_last_set_before_its_play_answers_still_completes_it_after() {
     let done = sent.iter().position(|c| c.starts_with("POST /queue/completion {\"setId\":\"s-tram\"}")).expect("the completion goes out");
     assert!(done > active, "{sent:?}");
 }
+
+#[test]
+fn of_two_sets_picked_quickly_orbis_hears_them_in_order_and_ends_on_the_second() {
+    let mut rt = live(Screen::Library);
+    for id in ["s-ferry", "s-tram", "s-static"] {
+        fixture::reply(&format!("GET /sets/{id}/tracklist"), json!({ "cues": [], "state": "none" }));
+    }
+    fixture::reply("PUT /queue/active", json!({ "queue": { "activeSetId": "s-static", "entries": [set_json("s-static", "Salt and Static")] } }));
+    rt.update(|s, _| {
+        s.play("s-ferry");
+        s.play("s-tram");
+        s.play("s-static");
+    });
+    let asked = |rt: &Runtime<App>| {
+        let _ = rt;
+        calls().into_iter().filter(|c| c.starts_with("PUT /queue/active")).collect::<Vec<_>>()
+    };
+    assert_eq!(asked(&rt), ["PUT /queue/active {\"setId\":\"s-ferry\"}"], "one at a time");
+    land(&mut rt);
+    assert_eq!(asked(&rt).last().map(String::as_str), Some("PUT /queue/active {\"setId\":\"s-static\"}"), "the newest goes last: {:?}", asked(&rt));
+    assert!(!asked(&rt).iter().any(|c| c.contains("s-tram")), "a choice already replaced isn't sent");
+    assert_eq!(rt.state.playing.set.as_ref().map(|x| x.id.as_str()), Some("s-static"));
+}

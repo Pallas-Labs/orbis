@@ -100,25 +100,9 @@ impl App {
 
     /// Replaces the Listening Queue with the Playlist's playable Sets and plays the first.
     pub fn play_playlist(&mut self, id: &str, shuffled: bool) {
-        let id = id.to_owned();
-        // Whatever the person plays after this, before Orbis answers, wins: a Set or another
-        // Playlist. This answer then changes nothing.
-        let intent = self.playing.intend();
-        self.spawn(
-            move || api::play_playlist(&id, shuffled),
-            move |s, got| match got {
-                _ if s.playing.intent() != intent => {}
-                Ok(queue) => {
-                    let first = queue.active().cloned();
-                    s.queue.items.land(Ok(queue));
-                    match first {
-                        Some(set) => s.start_set(set),
-                        None => s.say("Nothing in this Playlist can play yet".to_owned()),
-                    }
-                }
-                Err(why) => s.say(format!("Couldn't play the Playlist: {why}")),
-            },
-        );
+        // Told to Orbis in turn with the person's other choices; whatever they play after this,
+        // before Orbis answers, wins.
+        self.choose_playlist(id.to_owned(), shuffled);
     }
 
     /// Asks for a new Playlist's name; with `add`, that Set goes in it.

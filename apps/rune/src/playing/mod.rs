@@ -10,6 +10,7 @@
 //! ([`crate::diagnostics`]).
 
 pub mod presence;
+mod select;
 mod view;
 
 use std::time::Duration;
@@ -100,6 +101,8 @@ pub struct State {
     activating: Option<String>,
     /// A completion held until that activation answers, so Orbis hears them in order.
     held: Option<(String, u64)>,
+    /// Choices told to Orbis one at a time, in the order made.
+    lane: select::Lane,
     /// Where the last early end of the stream left the Set, by its id.
     early_end: Option<(String, f64)>,
     /// Seeks asked for, for the playback report.
@@ -128,11 +131,6 @@ impl State {
     /// Counts a play the person asked for, and returns its count.
     pub fn intend(&mut self) -> u64 {
         self.intent += 1;
-        self.intent
-    }
-
-    /// The latest play the person asked for.
-    pub fn intent(&self) -> u64 {
         self.intent
     }
 
@@ -360,22 +358,13 @@ impl App {
         let intent = self.playing.intend();
         let generation = self.start(Some(set));
         self.playing.activating = Some(id.clone());
-        let asked = id.clone();
-        self.spawn(
-            move || api::play(&id),
-            move |s, got| match got {
-                // A completion waiting on this activation goes out now, whatever it answered.
-                _ if s.release_completion(&asked) => {}
-                // The person chose something else since: its own answer brings the queue.
-                _ if s.playing.intent != intent => {}
-                Ok(queue) => {
-                    s.queue.items.land(Ok(queue));
-                    s.playing.activated = s.playing.generation == generation;
-                    s.presence_retry();
-                }
-                Err(why) => s.fail(generation, why),
-            },
-        );
+        self.choose(select::Choice::Set(id), intent, generation);
+    }
+
+    /// Plays a Playlist: Orbis replaces the queue with its playable Sets and names the first.
+    pub fn choose_playlist(&mut self, id: String, shuffled: bool) {
+        let intent = self.playing.intend();
+        self.choose(select::Choice::Playlist { id, shuffled }, intent, self.playing.generation);
     }
 
     /// Plays `next`, or stops when there is none. Returns its generation.
@@ -399,8 +388,8 @@ impl App {
                 // Writes still waiting or out, and an activation still out with the completion
                 // it holds, outlive the Set: they keep their order.
                 let p = &mut self.playing;
-                let (writes, writing, activating, held) = (std::mem::take(&mut p.writes), p.writing, p.activating.take(), p.held.take());
-                self.playing = State { generation, intent, writes, writing, activating, held, ..State::default() };
+                let (writes, writing, activating, held, lane) = (std::mem::take(&mut p.writes), p.writing, p.activating.take(), p.held.take(), std::mem::take(&mut p.lane));
+                self.playing = State { generation, intent, writes, writing, activating, held, lane, ..State::default() };
                 generation
             }
         }
