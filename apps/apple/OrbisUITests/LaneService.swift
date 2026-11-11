@@ -240,19 +240,37 @@ struct LaneService {
     guard (200..<300).contains(code) else { throw URLError(.badServerResponse) }
   }
 
-  /// Plays Sets side by side, each for its `seconds`, saving every Playback Position each five
-  /// seconds as a playing device would. The service counts a step as Listening Time only when it
-  /// matches the time since the last save, so this runs in real time.
-  func listen(_ plays: [(id: String, seconds: Int)]) throws {
+  /// Plays Sets side by side until each reaches its `seconds`, saving every Playback Position
+  /// about each five seconds as a playing device would. The service counts a step as Listening
+  /// Time only when it matches the time since the last save, so each position moves by the time
+  /// that passed, not by a fixed step: a busy host that saves late still saves the truth.
+  /// Returns each save as `id position +step after-seconds`, for a journey to attach.
+  @discardableResult
+  func listen(_ plays: [(id: String, seconds: Int)]) throws -> [String] {
+    var saves: [String] = []
+    var last: [String: (seconds: Int, at: Date)] = [:]
+    for play in plays {
+      try setPosition(of: play.id, to: 0)
+      last[play.id] = (0, Date())
+    }
     let start = Date()
-    let longest = plays.map(\.seconds).max() ?? 0
-    for position in stride(from: 0, through: longest, by: 5) {
-      let due = start.addingTimeInterval(TimeInterval(position))
+    var tick = 1
+    while plays.contains(where: { (last[$0.id]?.seconds ?? 0) < $0.seconds }) {
+      let due = start.addingTimeInterval(TimeInterval(tick * 5))
+      tick += 1
       if due > Date() { Thread.sleep(until: due) }
-      for play in plays where position <= play.seconds {
-        try setPosition(of: play.id, to: position)
+      for play in plays {
+        guard let previous = last[play.id], previous.seconds < play.seconds else { continue }
+        let now = Date()
+        let elapsed = now.timeIntervalSince(previous.at)
+        let next = previous.seconds + Int(elapsed.rounded())
+        try setPosition(of: play.id, to: next)
+        last[play.id] = (next, now)
+        saves.append(
+          "\(play.id.prefix(8)) \(next) +\(next - previous.seconds) after \(String(format: "%.1f", elapsed))")
       }
     }
+    return saves
   }
 
   /// The ids on the Heavy Rotation shelf, in the service's order.

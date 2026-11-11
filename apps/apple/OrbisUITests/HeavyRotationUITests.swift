@@ -16,7 +16,8 @@ final class HeavyRotationUITests: LibraryJourney {
     }
     // Each over the two-minute floor with room for a late save, ten seconds apart, so the order
     // is the rank.
-    try service.listen([(middle.id, 150), (longest.id, 160), (shortest.id, 140)])
+    let saves = try service.listen([(middle.id, 150), (longest.id, 160), (shortest.id, 140)])
+    try record("listening", ["saves": saves])
     let ranked = try service.heavyRotation()
     let ours = ranked.filter { [longest.id, middle.id, shortest.id].contains($0) }
     XCTAssertEqual(
