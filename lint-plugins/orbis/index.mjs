@@ -6,6 +6,8 @@
 // - no-shared-pending-cache, no-module-level-mutable-state: ported from rat-stack's
 //   `rat-stack-patterns` plugin (scripts/oxlint-plugin-patterns.ts, joelhooks/rat-stack).
 // - directive-needs-reason: every lint or Effect diagnostic override names its rule and a `-- reason`.
+// - no-flag-read-by-string: code reads a feature flag through its generated accessor in
+//   `flags.gen.ts`, never by key through `getBooleanValue` (factory v2 flags, PAL-1852).
 //
 // A site that the rule cannot see is bounded takes `// oxlint-disable-next-line orbis/<rule> -- <reason>`.
 // The rules read syntax only; `scripts/fence.test.mjs` runs real Oxlint on `lint-plugins/orbis/fixtures`.
@@ -529,12 +531,44 @@ const directiveNeedsReason = {
   },
 };
 
+// --- no-flag-read-by-string ---------------------------------------------------------------
+
+// `flags.gen.ts` gives each declared flag an accessor, so `flags check` can count its reads and an
+// undeclared flag does not compile. A `getBooleanValue("key", ...)` call skips both, so only the
+// generated file may call it.
+const noFlagReadByString = {
+  create(context) {
+    if (context.filename.endsWith("flags.gen.ts")) {
+      return {};
+    }
+    return {
+      CallExpression(node) {
+        if (propertyName(unwrap(node.callee)) === "getBooleanValue") {
+          context.report({ messageId: "byString", node });
+        }
+      },
+    };
+  },
+  meta: {
+    docs: {
+      description:
+        "Code reads a feature flag through its generated accessor, not by key (factory v2 flags).",
+    },
+    messages: {
+      byString:
+        "This reads a flag by key. Read it through its generated accessor in flags.gen.ts.",
+    },
+    type: "problem",
+  },
+};
+
 export default {
   meta: { name: "orbis" },
   rules: {
     "bounded-concurrency": boundedConcurrency,
     "directive-needs-reason": directiveNeedsReason,
     "fetch-needs-timeout": fetchNeedsTimeout,
+    "no-flag-read-by-string": noFlagReadByString,
     "no-module-level-mutable-state": noModuleLevelMutableState,
     "no-shared-pending-cache": noSharedPendingCache,
   },

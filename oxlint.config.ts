@@ -139,6 +139,7 @@ export default defineConfig({
   ],
   rules: {
     "orbis/directive-needs-reason": "error",
+    "orbis/no-flag-read-by-string": "error",
     "t3code/no-inline-schema-compile": "error",
     "t3code/prefer-effect-fn": "error",
     "t3code/require-suppression-reason": "error",

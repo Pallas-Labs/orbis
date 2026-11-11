@@ -43,6 +43,9 @@ targets:
     supportedDestinations: [iOS, macOS, tvOS]
     sources:
       - Orbis
+      # Flags.gen.swift, which `bun run flags generate` writes from flags.json. It sits outside
+      # Orbis/ because the generator's indentation is not this repo's swift-format style.
+      - Flags
     dependencies:
       - package: OrbisDesign
       - target: OrbisShare

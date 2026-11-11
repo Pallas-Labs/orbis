@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "flags.json",
+  "type": "object",
+  "properties": {
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "issue": {
+            "type": "string",
+            "pattern": "^PAL-[1-9][0-9]*$"
+          },
+          "key": {
+            "type": "string",
+            "pattern": "^(?=.{2,41}$)[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "release",
+              "ops"
+            ]
+          },
+          "onAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^\\S[\\s\\S]*\\S$|^\\S$|^$",
+            "minLength": 1
+          },
+          "purpose": {
+            "type": "string",
+            "pattern": "^\\S[\\s\\S]*\\S$|^\\S$|^$",
+            "minLength": 1
+          },
+          "removeBy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "off",
+              "internal",
+              "on"
+            ]
+          }
+        },
+        "required": [
+          "issue",
+          "key",
+          "kind",
+          "onAt",
+          "owner",
+          "purpose",
+          "removeBy",
+          "state"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "retired": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?=.{2,41}$)[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      }
+    }
+  },
+  "required": [
+    "flags",
+    "retired"
+  ],
+  "additionalProperties": true
+}
