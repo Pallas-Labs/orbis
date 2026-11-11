@@ -703,3 +703,44 @@ fn a_full_report_queue_evicts_around_the_batch_in_flight_and_acks_by_sequence() 
     assert_eq!(next["lost"][0]["throughSequence"].as_u64(), Some(last + 1));
     assert_eq!(next["entries"][0]["sequence"].as_u64(), Some(last + 2), "nothing unsent was dropped");
 }
+
+#[test]
+fn a_renewal_refused_after_the_lease_ran_out_plays_the_session_again() {
+    let mut rt = live(Screen::Library);
+    fixture::reply(
+        "POST /presence/actions",
+        json!({ "outcome": "accepted", "session": { "state": "playing", "actionNumber": 1, "ownerGeneration": 7, "sessionId": "x", "setId": "s-sunrise", "leaseExpiresAt": "2027-01-15T08:00:30Z" } }),
+    );
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    // Orbis was out of reach past the lease: it paused the session, and refuses its renewal.
+    fixture::refuse_with("POST /presence/actions", 409, "stale");
+    rt.frame(16.0);
+    rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    let sent = fixture::bodies("POST /presence/actions");
+    let kinds: Vec<&str> = sent.iter().map(|b| b["kind"].as_str().unwrap_or_default()).collect();
+    let renew = kinds.iter().position(|k| *k == "renew").expect("a renewal went out");
+    assert_eq!(kinds.get(renew + 1), Some(&"play"), "the session plays again: {kinds:?}");
+    assert_eq!(sent[renew + 1]["sessionId"], sent[0]["sessionId"]);
+}
+
+#[test]
+fn a_late_position_save_never_lands_after_the_completion_reset() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("PUT /sets/s-sunrise/position", set_json("s-sunrise", "Sunrise on the Pier"));
+    fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": null, "entries": [] } }));
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    rt.update(|s, _| {
+        s.playing.position = 1_800.0;
+        s.toggle();
+        s.next();
+    });
+    let order: Vec<String> = calls().into_iter().filter(|c| c.contains("/position") || c.contains("/queue/completion")).collect();
+    assert_eq!(order.len(), 1, "the reset waits for the save before it: {order:?}");
+    land(&mut rt);
+    let order: Vec<String> = calls().into_iter().filter(|c| c.contains("/position") || c.contains("/queue/completion")).collect();
+    assert_eq!(order, ["PUT /sets/s-sunrise/position {\"seconds\":1800.0}", "PUT /sets/s-sunrise/position {\"seconds\":0.0}", "POST /queue/completion {\"setId\":\"s-sunrise\"}"]);
+}

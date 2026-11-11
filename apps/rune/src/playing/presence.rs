@@ -153,6 +153,14 @@ impl App {
                             }
                         }
                         Err(failure) if failure.status == Some(404) => s.presence.supported = false,
+                        // The lease ran out while Orbis was out of reach: it paused the session
+                        // and refuses renewals. Play it again while the Set still plays.
+                        Err(failure) if kind == Kind::Renew && failure.status == Some(409) => {
+                            if let Some(session) = s.presence.session.as_mut().filter(|x| x.id == id && x.state == Local::Playing) {
+                                session.state = Local::Paused;
+                                s.presence_act(Kind::Play);
+                            }
+                        }
                         Err(_) if kind == Kind::Play => {
                             if let Some(session) = s.presence.session.as_mut().filter(|x| x.id == id && x.state == Local::Playing) {
                                 session.state = Local::Idle;

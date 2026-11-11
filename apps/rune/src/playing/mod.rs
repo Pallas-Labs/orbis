@@ -26,6 +26,14 @@ use crate::model::{Set, Tracklist};
 pub use presence::new_id;
 pub use view::{bar, screen};
 
+/// A write about a Set's place, in the order the player made it.
+#[derive(Debug)]
+enum Write {
+    Save(String, f64),
+    /// The Set played out, for the generation that came after it.
+    Complete(String, u64),
+}
+
 /// Who asked for a command, for the playback report.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Origin {
@@ -82,6 +90,10 @@ pub struct State {
     intent: u64,
     /// Orbis has confirmed the loaded Set as the queue's active one.
     activated: bool,
+    /// Position saves and completions, one at a time and in order, so a late save never lands
+    /// after a completion reset the place to the start.
+    writes: std::collections::VecDeque<Write>,
+    writing: bool,
     /// The Set whose activation (`PUT /queue/active`) is still out.
     activating: Option<String>,
     /// A completion held until that activation answers, so Orbis hears them in order.
@@ -357,7 +369,9 @@ impl App {
                 self.save_place();
                 self.set_status(Status::Idle);
                 let (generation, intent) = (self.playing.generation + 1, self.playing.intent);
-                self.playing = State { generation, intent, ..State::default() };
+                // Writes still waiting, or out, outlive the Set: they keep their order.
+                let (writes, writing) = (std::mem::take(&mut self.playing.writes), self.playing.writing);
+                self.playing = State { generation, intent, writes, writing, ..State::default() };
                 generation
             }
         }
@@ -571,14 +585,34 @@ impl App {
         }
         p.saved = p.position;
         let seconds = p.position;
-        self.spawn(
-            move || api::save_position(&id, seconds),
-            |s, got| {
-                if let Ok(set) = got {
-                    s.replace_set(&set);
-                }
-            },
-        );
+        self.write(Write::Save(id, seconds));
+    }
+
+    fn write(&mut self, write: Write) {
+        self.playing.writes.push_back(write);
+        self.next_write();
+    }
+
+    /// Sends the oldest waiting write, when none is out.
+    fn next_write(&mut self) {
+        if self.playing.writing {
+            return;
+        }
+        let Some(write) = self.playing.writes.pop_front() else { return };
+        self.playing.writing = true;
+        match write {
+            Write::Save(id, seconds) => self.spawn(
+                move || api::save_position(&id, seconds),
+                |s, got| {
+                    s.playing.writing = false;
+                    if let Ok(set) = got {
+                        s.replace_set(&set);
+                    }
+                    s.next_write();
+                },
+            ),
+            Write::Complete(id, generation) => self.send_completion(id, generation),
+        }
     }
 
     /// The Set played out: it leaves the queue and the next one plays at once (ADR 0001). Orbis
@@ -613,26 +647,40 @@ impl App {
 
     /// Tells Orbis `id` played out, and follows what it names next.
     fn complete(&mut self, id: String, generation: u64) {
+        self.write(Write::Complete(id, generation));
+    }
+
+    fn send_completion(&mut self, id: String, generation: u64) {
         self.spawn(
             move || {
                 let _ = api::save_position(&id, 0.0);
                 api::complete(&id)
             },
-            move |s, got| match got {
-                Ok(_) if s.playing.generation != generation => {}
-                Ok(queue) => {
-                    let active = queue.active().cloned();
-                    s.queue.items.land(Ok(queue));
-                    if active.as_ref().map(|a| &a.id) != s.playing.set.as_ref().map(|p| &p.id) {
-                        s.start(active);
-                    } else {
-                        s.presence_retry();
-                    }
-                    s.playing.activated = s.playing.set.is_some();
-                }
-                Err(why) => s.say(format!("Orbis didn't hear that the Set ended: {why}")),
+            move |s, got| {
+                s.playing.writing = false;
+                s.completed(got, generation);
+                s.next_write();
             },
         );
+    }
+
+    /// What Orbis answered a completion: the queue, and the Set it names next.
+    fn completed(&mut self, got: Result<crate::model::Queue, String>, generation: u64) {
+        let s = self;
+        match got {
+            Ok(_) if s.playing.generation != generation => {}
+            Ok(queue) => {
+                let active = queue.active().cloned();
+                s.queue.items.land(Ok(queue));
+                if active.as_ref().map(|a| &a.id) != s.playing.set.as_ref().map(|p| &p.id) {
+                    s.start(active);
+                } else {
+                    s.presence_retry();
+                }
+                s.playing.activated = s.playing.set.is_some();
+            }
+            Err(why) => s.say(format!("Orbis didn't hear that the Set ended: {why}")),
+        }
     }
 
     /// The window closes: the sound stops with it. The place saved last stands, at most
