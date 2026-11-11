@@ -1,0 +1,9 @@
+Test Case '-[OrbisUITests.HeavyRotationUITests testListeningPutsTheMostHeardSetsOnHome]' passed (284.014 seconds).
+journey exit 0
+builds at 31a60fd9 (Swift unchanged since):
+** BUILD SUCCEEDED **
+macos exit 0
+** BUILD SUCCEEDED **
+tvos exit 0
+** BUILD SUCCEEDED **
+ios exit 0
