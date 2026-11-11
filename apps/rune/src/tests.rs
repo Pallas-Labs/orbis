@@ -556,3 +556,76 @@ fn an_answer_from_before_a_sign_out_lands_nowhere() {
     assert!(rt.state.signed_out);
     assert!(rt.state.library.sets.data.is_none(), "the old account's Library didn't land: {:?}", rt.state.library.sets.data);
 }
+
+#[test]
+fn another_device_making_a_set_active_moves_an_idle_player_to_it() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("GET /sets/s-sunrise/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("GET /sets/s-ferry/tracklist", json!({ "cues": [], "state": "none" }));
+    rt.update(|s, _| {
+        s.playing = Default::default();
+        s.queue_landed();
+    });
+    let queue: crate::model::Queue = serde_json::from_value(json!({ "activeSetId": "s-ferry", "entries": [set_json("s-ferry", "Night Ferry")] })).unwrap();
+    rt.update(|s, _| s.heard_live(api::events::Event::Queue { queue }));
+    land(&mut rt);
+    assert_eq!(rt.state.playing.set.as_ref().map(|x| x.id.as_str()), Some("s-ferry"), "the idle player follows Orbis's active Set");
+}
+
+#[test]
+fn a_paused_set_another_device_replaced_asks_orbis_again_on_play() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("GET /sets/s-sunrise/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("PUT /queue/active", json!({ "queue": { "activeSetId": "s-sunrise", "entries": [set_json("s-sunrise", "Sunrise on the Pier")] } }));
+    rt.update(|s, _| {
+        s.playing = Default::default();
+        s.queue_landed();
+        s.toggle();
+        s.toggle();
+    });
+    land(&mut rt);
+    assert_eq!(rt.state.playing.status, Status::Paused);
+    let queue: crate::model::Queue = serde_json::from_value(json!({ "activeSetId": "s-ferry", "entries": [set_json("s-ferry", "Night Ferry")] })).unwrap();
+    rt.update(|s, _| s.heard_live(api::events::Event::Queue { queue }));
+    rt.update(|s, _| s.toggle());
+    land(&mut rt);
+    assert!(calls().iter().any(|c| c.starts_with("PUT /queue/active {\"setId\":\"s-sunrise\"}")), "{:?}", calls());
+}
+
+#[test]
+fn playback_reports_go_out_again_after_signing_out_mid_batch_and_back_in() {
+    let mut rt = live(Screen::Library);
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    rt.frame(6.0);
+    assert_eq!(fixture::bodies("POST /diagnostics/playback").len(), 1, "a batch is out");
+    rt.update(|s, _| s.forget_account());
+    land(&mut rt);
+    fixture::reply("POST /diagnostics/playback", json!({ "accepted": 1, "rejected": 0 }));
+    rt.update(|s, _| {
+        s.signed_out = false;
+        s.playing.demo(crate::model::Set { id: "s-x".into(), duration_seconds: Some(600.0), ..Default::default() }, 0.0, Status::Paused, None);
+    });
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    rt.frame(6.0);
+    rt.frame(1.0 / 60.0);
+    assert_eq!(fixture::bodies("POST /diagnostics/playback").len(), 2, "delivery isn't stuck on the old account's batch");
+}
+
+#[test]
+fn next_before_a_plays_answer_completes_that_set_only_after_orbis_made_it_active() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("GET /sets/s-tram/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("GET /sets/s-sunrise/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("PUT /queue/active", json!({ "queue": { "activeSetId": "s-tram", "entries": [set_json("s-tram", "Tram Lines at Dawn"), set_json("s-sunrise", "Sunrise on the Pier")] } }));
+    fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": "s-sunrise", "entries": [set_json("s-sunrise", "Sunrise on the Pier")] } }));
+    rt.update(|s, _| s.play("s-tram"));
+    rt.update(|s, _| s.next());
+    assert!(!calls().iter().any(|c| c.starts_with("POST /queue/completion")), "held while the activation is out: {:?}", calls());
+    land(&mut rt);
+    let sent = calls();
+    let active = sent.iter().position(|c| c.starts_with("PUT /queue/active")).unwrap();
+    let done = sent.iter().position(|c| c.starts_with("POST /queue/completion {\"setId\":\"s-tram\"}")).expect("the completion goes out");
+    assert!(done > active, "{sent:?}");
+}

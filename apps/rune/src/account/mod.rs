@@ -341,7 +341,8 @@ impl App {
         Server::forget();
         self.close();
         let service = std::mem::take(&mut self.service);
-        let (artwork, diagnostics) = (std::mem::take(&mut self.artwork), std::mem::take(&mut self.diagnostics));
+        let (artwork, mut diagnostics) = (std::mem::take(&mut self.artwork), std::mem::take(&mut self.diagnostics));
+        diagnostics.new_account();
         let session = self.session + 1;
         *self = App { service, artwork, diagnostics, session, signed_out: true, ..App::new() };
     }

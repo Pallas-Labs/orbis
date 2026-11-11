@@ -211,6 +211,15 @@ impl App {
 }
 
 impl State {
+    /// Another account signs in: the report stays to copy, but nothing of the last account's
+    /// waits to go out, and delivery starts over (a batch still out lands in the old session).
+    pub fn new_account(&mut self) {
+        self.waiting.clear();
+        self.lost.clear();
+        self.through = self.sequence;
+        (self.sending, self.due, self.stopped, self.wait) = (false, false, false, EVERY);
+    }
+
     /// Entries `first..=last` will never go out.
     fn lose(&mut self, first: u64, last: u64) {
         let after = first.saturating_sub(1);

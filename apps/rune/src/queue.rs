@@ -31,10 +31,21 @@ impl App {
 
     /// The queue changed: an idle player shows its active Set, and its rows ask for Artwork.
     pub fn queue_landed(&mut self) {
-        if self.playing.set.is_none()
-            && let Some(active) = self.queue.items.data.as_ref().and_then(|q| q.active().cloned())
-        {
-            self.show_set(active);
+        let active = self.queue.items.data.as_ref().and_then(|q| q.active().cloned());
+        let loaded = self.playing.set.as_ref().map(|x| x.id.clone());
+        match (active, loaded) {
+            (Some(active), None) => self.show_set(active),
+            // Orbis's active Set changed (another device): an idle player follows it, and one
+            // paused or stopped on the old Set asks Orbis again before it plays.
+            (Some(active), Some(loaded)) if active.id != loaded => {
+                if self.playing.status == crate::playing::Status::Idle {
+                    self.show_set(active);
+                } else {
+                    self.playing.unconfirm();
+                }
+            }
+            (None, Some(_)) => self.playing.unconfirm(),
+            _ => {}
         }
         // Thumbnails for the rows; the large picture only for the Set the player shows.
         let large = self.playing.set.as_ref().and_then(|x| x.artwork_large_url.clone());

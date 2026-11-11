@@ -82,6 +82,10 @@ pub struct State {
     intent: u64,
     /// Orbis has confirmed the loaded Set as the queue's active one.
     activated: bool,
+    /// The Set whose activation (`PUT /queue/active`) is still out.
+    activating: Option<String>,
+    /// A completion held until that activation answers, so Orbis hears them in order.
+    held: Option<(String, u64)>,
     /// Where the last early end of the stream left the Set, by its id.
     early_end: Option<(String, f64)>,
     /// Seeks asked for, for the playback report.
@@ -91,6 +95,11 @@ pub struct State {
 }
 
 impl State {
+    /// Orbis's queue names another Set active: the loaded one asks again before it plays.
+    pub fn unconfirm(&mut self) {
+        self.activated = false;
+    }
+
     /// Counts a play the person asked for, and returns its count.
     pub fn intend(&mut self) -> u64 {
         self.intent += 1;
@@ -114,6 +123,8 @@ impl State {
 
     /// Made-up playback for scenes: `set` at `position`, with no sound.
     pub fn demo(&mut self, set: Set, position: f64, status: Status, tracklist: Option<Tracklist>) {
+        // The demo's Set is the queue's active one, as Orbis has it.
+        self.activated = true;
         self.player = if matches!(status, Status::Playing | Status::Paused) { Player::Silent } else { Player::None };
         self.duration = set.duration_seconds;
         self.set = Some(set);
@@ -307,9 +318,13 @@ impl App {
         let id = set.id.clone();
         let intent = self.playing.intend();
         let generation = self.start(Some(set));
+        self.playing.activating = Some(id.clone());
+        let asked = id.clone();
         self.spawn(
             move || api::play(&id),
             move |s, got| match got {
+                // A completion waiting on this activation goes out now, whatever it answered.
+                _ if s.release_completion(&asked) => {}
                 // The person chose something else since: its own answer brings the queue.
                 _ if s.playing.intent != intent => {}
                 Ok(queue) => {
@@ -352,10 +367,12 @@ impl App {
         let p = &mut self.playing;
         match (&p.status, &p.player) {
             (Status::Playing, Player::Live(mpv)) => mpv.pause(true),
-            (Status::Paused, Player::Live(mpv)) => mpv.pause(false),
-            (Status::Playing | Status::Paused, _) => {}
+            (Status::Paused, Player::Live(mpv)) if p.activated => mpv.pause(false),
+            (Status::Playing, _) => {}
+            (Status::Paused, _) if p.activated => {}
             (Status::Loading, _) => return,
-            (Status::Idle | Status::Failed(_), _) => {
+            // Idle, failed, or paused on a Set Orbis no longer has active.
+            (Status::Idle | Status::Failed(_) | Status::Paused, _) => {
                 // Trying the loaded Set again resumes where the person was in it, not where it opened.
                 let here = p.set.clone().map(|mut x| {
                     x.playback_position_seconds = p.position;
@@ -572,6 +589,28 @@ impl App {
         // A Set the person starts before Orbis answers wins: an answer for an older generation
         // changes nothing, queue included. The event stream brings the queue back in step.
         let generation = self.start(next);
+        // A Set whose activation is still out isn't active on Orbis yet, and Orbis ignores the
+        // completion of a Set that isn't: hold it until the activation answers.
+        if self.playing.activating.as_deref() == Some(id.as_str()) {
+            self.playing.held = Some((id, generation));
+            return;
+        }
+        self.complete(id, generation);
+    }
+
+    /// Whether `asked`'s activation answered with a completion held for it: that completion goes
+    /// out now, and the activation's answer is out of date.
+    fn release_completion(&mut self, asked: &str) -> bool {
+        if self.playing.activating.as_deref() == Some(asked) {
+            self.playing.activating = None;
+        }
+        let Some((id, generation)) = self.playing.held.take_if(|(id, _)| id == asked) else { return false };
+        self.complete(id, generation);
+        true
+    }
+
+    /// Tells Orbis `id` played out, and follows what it names next.
+    fn complete(&mut self, id: String, generation: u64) {
         self.spawn(
             move || {
                 let _ = api::save_position(&id, 0.0);
