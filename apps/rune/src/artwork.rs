@@ -40,6 +40,19 @@ impl Artwork {
         self.images.get(url?).filter(|i| i.is_ready() && i.error().is_none())
     }
 
+    /// Another account signs in: fetches still out land in the old session and are dropped,
+    /// so they give back their slots now. The pictures stay.
+    pub fn new_session(&mut self) {
+        self.running = 0;
+        self.waiting.clear();
+    }
+
+    /// Fetches out now.
+    #[cfg(test)]
+    pub fn fetching(&self) -> usize {
+        self.running
+    }
+
     /// Whether a picture finished decoding since the last call, so the view shows it.
     pub fn poll(&mut self) -> bool {
         let before = self.decoding.len();

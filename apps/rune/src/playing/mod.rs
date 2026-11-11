@@ -652,12 +652,13 @@ impl App {
 
     fn send_completion(&mut self, id: String, generation: u64) {
         self.spawn(
-            move || {
-                let _ = api::save_position(&id, 0.0);
-                api::complete(&id)
-            },
-            move |s, got| {
+            move || (api::save_position(&id, 0.0), api::complete(&id)),
+            move |s, (reset, got)| {
                 s.playing.writing = false;
+                // The Set starts over next time, wherever the app shows it.
+                if let Ok(set) = reset {
+                    s.replace_set(&set);
+                }
                 s.completed(got, generation);
                 s.next_write();
             },

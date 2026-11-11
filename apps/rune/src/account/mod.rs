@@ -343,6 +343,8 @@ impl App {
         let service = std::mem::take(&mut self.service);
         let (artwork, mut diagnostics) = (std::mem::take(&mut self.artwork), std::mem::take(&mut self.diagnostics));
         diagnostics.new_account();
+        let mut artwork = artwork;
+        artwork.new_session();
         let session = self.session + 1;
         *self = App { service, artwork, diagnostics, session, signed_out: true, ..App::new() };
     }

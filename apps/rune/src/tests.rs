@@ -744,3 +744,31 @@ fn a_late_position_save_never_lands_after_the_completion_reset() {
     let order: Vec<String> = calls().into_iter().filter(|c| c.contains("/position") || c.contains("/queue/completion")).collect();
     assert_eq!(order, ["PUT /sets/s-sunrise/position {\"seconds\":1800.0}", "PUT /sets/s-sunrise/position {\"seconds\":0.0}", "POST /queue/completion {\"setId\":\"s-sunrise\"}"]);
 }
+
+#[test]
+fn next_partway_starts_the_set_over_next_time_it_plays() {
+    let mut rt = live(Screen::Library);
+    let mut reset = set_json("s-sunrise", "Sunrise on the Pier");
+    reset["playbackPositionSeconds"] = json!(0);
+    fixture::reply("PUT /sets/s-sunrise/position", reset);
+    fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": null, "entries": [] } }));
+    assert!(rt.state.find_set("s-sunrise").unwrap().playback_position_seconds > 0.0);
+    rt.update(|s, _| s.next());
+    land(&mut rt);
+    let library = rt.state.library.sets.data.as_ref().unwrap().iter().find(|x| x.id == "s-sunrise").unwrap();
+    assert_eq!(library.playback_position_seconds, 0.0, "the Library's copy starts over too");
+}
+
+#[test]
+fn artwork_still_loads_after_signing_out_while_fetches_were_out() {
+    let mut rt = live(Screen::Library);
+    rt.update(|s, _| {
+        s.artwork.start(std::sync::Arc::new(|| {}));
+        s.want_artwork(["https://a/1", "https://a/2", "https://a/3", "https://a/4"]);
+    });
+    assert_eq!(rt.state.artwork.fetching(), 4);
+    rt.update(|s, _| s.forget_account());
+    land(&mut rt);
+    rt.update(|s, _| s.want_artwork(["https://a/5"]));
+    assert_eq!(rt.state.artwork.fetching(), 1, "the old account's fetches hold no slots");
+}
