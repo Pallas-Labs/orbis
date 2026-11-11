@@ -54,43 +54,50 @@ pub fn stop() {
 /// Reads the stream on a thread until [`stop`], handing each event to `deliver`.
 #[cfg(not(test))]
 pub fn start(deliver: impl Fn(Event) + Send + 'static) {
+    let run = RUN.load(Ordering::SeqCst);
+    // The stream speaks as the account current now, through any later sign-in.
+    let server = super::Server::current();
+    std::thread::spawn(move || {
+        super::with_server(server, || read(run, &deliver));
+    });
+}
+
+#[cfg(not(test))]
+fn read(run: u64, deliver: &impl Fn(Event)) {
     use std::io::{BufRead, BufReader};
     use std::time::Duration;
 
-    let run = RUN.load(Ordering::SeqCst);
-    std::thread::spawn(move || {
-        let mut wait = 1;
-        while RUN.load(Ordering::SeqCst) == run {
-            // Orbis sends a heartbeat every 30 s, so 75 s of quiet means the link is gone.
-            match super::http::stream("/events?changes=1", Duration::from_secs(75)) {
-                Ok(body) => {
-                    deliver(Event::Connected(true));
-                    wait = 1;
-                    let mut data = String::new();
-                    for line in BufReader::new(body).lines() {
-                        let Ok(line) = line else { break };
-                        if RUN.load(Ordering::SeqCst) != run {
-                            return;
-                        }
-                        if let Some(rest) = line.strip_prefix("data:") {
-                            data.push_str(rest.trim_start());
-                        } else if line.is_empty() && !data.is_empty() {
-                            if let Ok(event) = serde_json::from_str::<Event>(&data) {
-                                deliver(event);
-                            }
-                            data.clear();
-                        }
+    let mut wait = 1;
+    while RUN.load(Ordering::SeqCst) == run {
+        // Orbis sends a heartbeat every 30 s, so 75 s of quiet means the link is gone.
+        match super::http::stream("/events?changes=1", Duration::from_secs(75)) {
+            Ok(body) => {
+                deliver(Event::Connected(true));
+                wait = 1;
+                let mut data = String::new();
+                for line in BufReader::new(body).lines() {
+                    let Ok(line) = line else { break };
+                    if RUN.load(Ordering::SeqCst) != run {
+                        return;
                     }
-                    deliver(Event::Connected(false));
+                    if let Some(rest) = line.strip_prefix("data:") {
+                        data.push_str(rest.trim_start());
+                    } else if line.is_empty() && !data.is_empty() {
+                        if let Ok(event) = serde_json::from_str::<Event>(&data) {
+                            deliver(event);
+                        }
+                        data.clear();
+                    }
                 }
-                Err(failure) if matches!(failure.status, Some(401 | 403)) => {
-                    deliver(Event::Connected(false));
-                    return;
-                }
-                Err(_) => {}
+                deliver(Event::Connected(false));
             }
-            std::thread::sleep(Duration::from_secs(wait));
-            wait = (wait * 2).min(30);
+            Err(failure) if matches!(failure.status, Some(401 | 403)) => {
+                deliver(Event::Connected(false));
+                return;
+            }
+            Err(_) => {}
         }
-    });
+        std::thread::sleep(Duration::from_secs(wait));
+        wait = (wait * 2).min(30);
+    }
 }

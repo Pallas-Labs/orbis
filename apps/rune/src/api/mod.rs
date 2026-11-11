@@ -7,7 +7,6 @@
 //! the app sent, so a test covers a press, the call it makes and what the person then sees. The
 //! live event stream is [`events`], one thread for a signed-in window.
 
-#[cfg(test)]
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::sync::RwLock;
@@ -54,6 +53,9 @@ impl App {
     /// Runs `work` off the UI thread, then `land`s what it returns in the app.
     pub fn spawn<T: Send + 'static>(&self, work: impl FnOnce() -> T + Send + 'static, land: impl FnOnce(&mut App, T) + Send + 'static) {
         let session = self.session;
+        // The work keeps the key that was current when it was scheduled (see `with_server`).
+        let server = Server::for_call();
+        let work = move || with_server(server, work);
         let land = move |s: &mut App, out: T| {
             if s.session == session {
                 land(s, out);
@@ -108,6 +110,20 @@ pub struct Server {
 pub const DEFAULT_URL: &str = "https://orbis.p11a.xyz/api";
 
 static SERVER: RwLock<Option<Server>> = RwLock::new(None);
+
+thread_local! {
+    /// The server a piece of work speaks to: the one current when it was scheduled.
+    static BOUND: RefCell<Option<Server>> = const { RefCell::new(None) };
+}
+
+/// Runs `work` with `server` as every call's server on this thread, so work scheduled under
+/// one account keeps speaking as it through a sign-out and a sign-in as another.
+pub fn with_server<T>(server: Option<Server>, work: impl FnOnce() -> T) -> T {
+    let before = BOUND.replace(server);
+    let out = work();
+    BOUND.set(before);
+    out
+}
 
 #[cfg(test)]
 thread_local! {
@@ -168,6 +184,11 @@ impl Server {
     /// The server calls go to now.
     pub fn current() -> Option<Server> {
         SERVER.read().unwrap_or_else(|e| e.into_inner()).clone()
+    }
+
+    /// The server this call speaks to: the one its work was bound to, else the current one.
+    pub fn for_call() -> Option<Server> {
+        BOUND.with_borrow(Clone::clone).or_else(Server::current)
     }
 }
 

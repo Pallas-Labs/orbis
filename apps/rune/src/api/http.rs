@@ -13,7 +13,7 @@ fn agent() -> &'static ureq::Agent {
 }
 
 pub(super) fn send(who: As, url: Option<&str>, method: &str, path: &str, body: Option<Value>) -> Result<Value, Failure> {
-    let server = Server::current();
+    let server = Server::for_call();
     let base = match (url, &server) {
         (Some(url), _) => url.to_owned(),
         (None, Some(server)) => server.url.clone(),
@@ -52,7 +52,7 @@ fn words(status: u16, message: Option<String>, who: As) -> String {
 /// Opens `path` as a stream with the device key, for Server-Sent Events. Its reads wait up to
 /// `quiet` for the next bytes.
 pub fn stream(path: &str, quiet: Duration) -> Result<Box<dyn std::io::Read + Send>, Failure> {
-    let Some(server) = Server::current() else { return Err(Failure::new(None, "Not signed in")) };
+    let Some(server) = Server::for_call() else { return Err(Failure::new(None, "Not signed in")) };
     let agent = ureq::AgentBuilder::new().timeout_connect(Duration::from_secs(5)).timeout_read(quiet).build();
     let call = agent.get(&format!("{}{path}", server.url)).set("Authorization", &format!("Bearer {}", server.key)).set("Accept", "text/event-stream");
     match call.call() {

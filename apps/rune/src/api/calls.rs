@@ -85,7 +85,7 @@ pub fn stream_url(id: &str) -> Result<String, String> {
     if !grant.url.starts_with(&set_path(id, "/audio?")) {
         return Err("Orbis granted audio for another address".to_owned());
     }
-    let base = Server::current().map(|s| s.url).unwrap_or_default();
+    let base = Server::for_call().map(|s| s.url).unwrap_or_default();
     Ok(format!("{base}{}", grant.url))
 }
 

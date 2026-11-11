@@ -772,3 +772,26 @@ fn artwork_still_loads_after_signing_out_while_fetches_were_out() {
     rt.update(|s, _| s.want_artwork(["https://a/5"]));
     assert_eq!(rt.state.artwork.fetching(), 1, "the old account's fetches hold no slots");
 }
+
+#[test]
+fn work_keeps_the_key_it_started_with_through_an_account_switch() {
+    let a = api::Server { url: "https://a.example".into(), key: "key-a".into() };
+    let b = api::Server { url: "https://b.example".into(), key: "key-b".into() };
+    let mut s = App { service: api::Service::Fixture, ..App::new() };
+    s.session = 7;
+    let seen = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let log = std::sync::Arc::clone(&seen);
+    let (first, then) = (a.clone(), b.clone());
+    api::with_server(Some(first), || {
+        s.spawn(
+            move || {
+                log.lock().unwrap().push(api::Server::for_call().map(|x| x.key));
+                // Signing out and in as another account while this work runs.
+                then.connect();
+                log.lock().unwrap().push(api::Server::for_call().map(|x| x.key));
+            },
+            |_, ()| {},
+        );
+    });
+    assert_eq!(*seen.lock().unwrap(), [Some("key-a".to_owned()), Some("key-a".to_owned())], "every request in the work speaks as A");
+}
