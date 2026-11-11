@@ -8,6 +8,7 @@ struct PlaylistsDestination: View {
   @Bindable var model: AppModel
   @State private var isCreating = false
   @State private var isImporting = false
+  @State private var isCreatingCollection = false
   @State private var draftName = ""
   @State private var renamingPlaylist: Playlist?
   @State private var renameDraft = ""
@@ -44,6 +45,14 @@ struct PlaylistsDestination: View {
             .accessibilityIdentifier("playlist-import")
         }
         ToolbarItem {
+          Button("New collection", systemImage: "line.3.horizontal.decrease.circle") {
+            isCreatingCollection = true
+          }
+          .tint(Color.orbis.tint)
+          .help("New collection")
+          .accessibilityIdentifier("collection-create")
+        }
+        ToolbarItem {
           Button("New playlist", systemImage: "plus") { beginCreate() }
             .tint(Color.orbis.tint)
             .accessibilityIdentifier("playlist-create")
@@ -53,6 +62,13 @@ struct PlaylistsDestination: View {
     .playlistChangeStatus(model)
     .sheet(isPresented: $isCreating) { createSheet }
     .sheet(isPresented: $isImporting) { PlaylistImportSheet(model: model) }
+    #if !os(tvOS)
+      .sheet(isPresented: $isCreatingCollection) {
+        CollectionEditor(model: model, editing: nil) { collection in
+          model.openCollection(.saved(collection.id), in: .playlists)
+        }
+      }
+    #endif
     .alert("Rename playlist", isPresented: renameBinding) {
       TextField("Name", text: $renameDraft)
       Button("Save") {
@@ -76,6 +92,9 @@ struct PlaylistsDestination: View {
     .task {
       if model.playlists == .idle {
         await model.loadPlaylists()
+      }
+      if model.collections == .idle {
+        await model.loadCollections()
       }
       // The folders show their Sets' artwork, which the Library holds.
       if case .idle = model.library {
@@ -134,10 +153,20 @@ struct PlaylistsDestination: View {
           Button {
             model.openHeavyRotation(in: .playlists)
           } label: {
-            HeavyRotationSleeve(model: model)
+            CollectionSleeve(model: model, kind: .heavyRotation)
           }
           .buttonStyle(.orbisPressable)
           .accessibilityIdentifier("rotation-folder")
+          ForEach(model.collectionItems) { collection in
+            Button {
+              model.openCollection(.saved(collection.id), in: .playlists)
+            } label: {
+              CollectionSleeve(model: model, kind: .saved(collection.id))
+            }
+            .buttonStyle(.orbisPressable)
+            .accessibilityIdentifier("collection-folder-\(collection.name)")
+            .task { await model.loadCollectionSets(collection.id) }
+          }
           ForEach(items) { playlist in
             Button {
               model.openPlaylist(playlist.id)

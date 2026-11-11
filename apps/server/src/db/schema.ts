@@ -243,6 +243,34 @@ export const listens = sqliteTable(
   ]
 );
 
+// A Collection: one Person's saved filter over their Listening Time, ranked as Heavy Rotation is.
+// A null filter column admits every Set; `creator` keeps the name the filter was saved with.
+export const collections = sqliteTable(
+  "collections",
+  {
+    createdAt: text("created_at").notNull(),
+    creator: text("creator"),
+    creatorId: text("creator_id"),
+    id: text("id").primaryKey(),
+    minimumMinutes: integer("minimum_minutes").notNull().default(0),
+    name: text("name").notNull(),
+    personId: text("person_id").notNull(),
+    range: text("range", { enum: ["month", "quarter", "year"] })
+      .notNull()
+      .default("month"),
+    source: text("source", { enum: ["youtube", "soundcloud", "apple-music"] }),
+    tag: text("tag"),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    // Names are unique whatever their case, so "Techno" and "techno" are one Collection.
+    uniqueIndex("collections_person_name").on(
+      table.personId,
+      sql`${table.name} COLLATE NOCASE`
+    ),
+  ]
+);
+
 // One Person's Listening Time with one Set on one UTC day, credited where the Playback Position
 // is saved. A day rather than a Listen, because resuming a Set the next day reopens no Listen.
 export const listeningTime = sqliteTable(
@@ -355,6 +383,7 @@ export const playlistImports = sqliteTable(
 );
 
 export const schema = {
+  collections,
   downloadJobs,
   downloadRequesters,
   libraryEntries,

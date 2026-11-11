@@ -75,19 +75,31 @@ export const listenedBetween = (
 export const windowStart = (now: Date, range: ListeningRange): string =>
   utcDay(new Date(now.getTime() - (LISTENING_RANGES[range].days - 1) * DAY_MS));
 
+/** What a Collection asks of the ranking beyond Heavy Rotation's own rule. */
+export interface RankingOptions {
+  /** With fewer Sets than this, the ranking is empty. Heavy Rotation asks for three. */
+  readonly minimumSets?: number;
+  /** The least a Set must have been heard over the range, counting only days over the floor. */
+  readonly minimumSeconds?: number;
+}
+
 /**
  * The Sets in Heavy Rotation over a range, most heard first: listening time in the range, where
  * a day under the floor does not count and a recent day weighs as the range says. Empty when
- * fewer than three Sets qualify.
+ * fewer than three Sets qualify, or fewer than `options.minimumSets`.
  */
 export const heavyRotation = (
   days: readonly ListeningDay[],
   now: Date,
-  range: ListeningRange = "month"
+  range: ListeningRange = "month",
+  options: RankingOptions = {}
 ): string[] => {
+  const { minimumSeconds = 0, minimumSets = HEAVY_ROTATION.minimumSets } =
+    options;
   const { days: windowDays, oldestWeight } = LISTENING_RANGES[range];
   const today = Date.parse(utcDay(now));
   const scores = new Map<string, number>();
+  const heard = new Map<string, number>();
   for (const entry of days) {
     const age = Math.round((today - Date.parse(entry.day)) / DAY_MS);
     if (
@@ -102,11 +114,14 @@ export const heavyRotation = (
       entry.setId,
       (scores.get(entry.setId) ?? 0) + entry.seconds * weight
     );
+    heard.set(entry.setId, (heard.get(entry.setId) ?? 0) + entry.seconds);
   }
-  if (scores.size < HEAVY_ROTATION.minimumSets) {
+  const ranked = [...scores].filter(
+    ([setId]) => (heard.get(setId) ?? 0) >= minimumSeconds
+  );
+  if (ranked.length < minimumSets) {
     return [];
   }
-  const ranked = [...scores];
   ranked.sort(([a, left], [b, right]) => right - left || a.localeCompare(b));
   return ranked.slice(0, HEAVY_ROTATION.limit).map(([setId]) => setId);
 };

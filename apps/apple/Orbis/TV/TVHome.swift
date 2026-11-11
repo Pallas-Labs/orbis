@@ -61,7 +61,7 @@
               Button {
                 model.openHeavyRotation(in: .home)
               } label: {
-                HeavyRotationSleeve(model: model, fanWidth: 200, height: 260)
+                CollectionSleeve(model: model, kind: .heavyRotation, fanWidth: 200, height: 260)
               }
               .buttonStyle(.card)
               .accessibilityLabel("See all of Heavy Rotation")
@@ -103,7 +103,7 @@
       .navigationDestination(item: openedSet(model, .home)) { id in
         TVSetPage(model: model, setId: id)
       }
-      .tvHeavyRotationPage(model, in: .home)
+      .tvCollectionPage(model, in: .home)
       .accessibilityElement(children: .contain)
       .accessibilityIdentifier("tv-home")
     }

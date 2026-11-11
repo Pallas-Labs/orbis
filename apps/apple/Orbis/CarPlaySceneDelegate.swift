@@ -21,6 +21,8 @@
       case openRotation
       case openRotationRange(ListeningRange)
       case playRotation(ListeningRange)
+      case openCollection(ListeningCollection)
+      case playCollection(String)
       case reload
     }
 
@@ -107,6 +109,7 @@
       guard model.isConfigured, model.library == .idle else { return }
       await model.loadLibrary()
       await model.loadPlaylists()
+      await model.loadCollections()
       await model.loadQueue()
     }
 
@@ -115,8 +118,13 @@
         homeSections(catalog)
       }
       fill(playlistsTab, status: catalog.playlistsStatus, empty: "No playlists yet.") {
-        // Heavy Rotation leads the Playlists, as its folder does on the phone.
-        [CPListSection(items: [rotationItem()] + catalog.playlists.map(playlistItem))]
+        // Heavy Rotation and the saved Collections lead the Playlists, as their folders do on
+        // the phone.
+        [
+          CPListSection(
+            items: [rotationItem()] + catalog.collections.map(collectionItem)
+              + catalog.playlists.map(playlistItem))
+        ]
       }
       fill(libraryTab, status: catalog.library, empty: "No sets are ready to play yet.") {
         [CPListSection(items: setItems(catalog.sets, catalog: catalog))]
@@ -224,6 +232,15 @@
       return item
     }
 
+    private func collectionItem(_ collection: ListeningCollection) -> CPListItem {
+      let item = CPListItem(
+        text: collection.name, detailText: collection.summary,
+        image: UIImage(systemName: "line.3.horizontal.decrease.circle"))
+      item.accessoryType = .disclosureIndicator
+      item.handler = handler(.openCollection(collection))
+      return item
+    }
+
     private func rotationItem() -> CPListItem {
       let item = CPListItem(
         text: HeavyRotationView.title, detailText: "What you've played most",
@@ -327,9 +344,21 @@
         case .playRotation(let range):
           await model.playHeavyRotation(range)
           showNowPlaying(ifPlaying: model.audioPlayer.currentSetId != nil)
+        case .openCollection(let collection):
+          await showCollection(
+            title: collection.name, empty: "Nothing fits yet.",
+            play: .playCollection(collection.id)
+          ) {
+            await model.loadCollectionSets(collection.id)
+            return model.members(of: .saved(collection.id))
+          }
+        case .playCollection(let id):
+          await model.playCollection(id)
+          showNowPlaying(ifPlaying: model.audioPlayer.currentSetId != nil)
         case .reload:
           await model.loadLibrary()
           await model.loadPlaylists()
+          await model.loadCollections()
         }
       }
     }
@@ -364,21 +393,34 @@
 
     /// Heavy Rotation over one range: Play All, then its playable Sets in rank order.
     private func openRotation(_ range: ListeningRange) async {
-      let template = CPListTemplate(title: range.title, sections: [])
+      await showCollection(
+        title: range.title, empty: "Not enough listening yet.", play: .playRotation(range)
+      ) {
+        await model.loadRotation(range)
+        return model.rotationSets[range] ?? .idle
+      }
+    }
+
+    /// A collection's own list: Play All, then its playable Sets in rank order.
+    private func showCollection(
+      title: String, empty: String, play: Action,
+      load: () async -> Loadable<[SavedSet]>
+    ) async {
+      let template = CPListTemplate(title: title, sections: [])
       template.showsSpinnerWhileEmpty = true
       interfaceController?.pushTemplate(template, animated: true, completion: nil)
-      await model.loadRotation(range)
+      let state = await load()
       template.showsSpinnerWhileEmpty = false
-      switch model.rotationSets[range] ?? .idle {
+      switch state {
       case .loaded(let sets):
         let playable = sets.filter(CarPlayCatalog.isPlayable)
         guard !playable.isEmpty else {
-          template.emptyViewTitleVariants = ["Not enough listening yet."]
+          template.emptyViewTitleVariants = [empty]
           return
         }
         let playAll = CPListItem(
           text: "Play All", detailText: nil, image: UIImage(systemName: "play.fill"))
-        playAll.handler = handler(.playRotation(range))
+        playAll.handler = handler(play)
         template.updateSections(
           Self.fit([
             CPListSection(items: [playAll]),

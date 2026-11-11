@@ -1,4 +1,6 @@
 import type {
+  Collection,
+  CollectionInput,
   LibraryFilters,
   Playlist,
   SavedSet,
@@ -12,6 +14,7 @@ import { albumCues, appleMusicDownloadRefused } from "./apple-music.js";
 import { releaseAudio } from "./audio-release.js";
 import { boundBatches, insertBatches } from "./db/batches.js";
 import {
+  collections,
   downloadJobs,
   downloadRequesters,
   libraryEntries,
@@ -33,7 +36,7 @@ import {
   utcDay,
   windowStart,
 } from "./heavy-rotation.js";
-import type { ListeningRange } from "./heavy-rotation.js";
+import type { ListeningRange, RankingOptions } from "./heavy-rotation.js";
 import type { PersonRecord } from "./identity.js";
 import {
   MAX_PLAYLISTS_PER_SET,
@@ -110,6 +113,31 @@ const setCapacityError = () =>
     statusCode: 400,
   });
 
+const collectionNotFound = () =>
+  new LibraryError({ message: "Collection not found.", statusCode: 404 });
+
+/** The most Collections one Person keeps, so the list reads in one page. */
+const COLLECTION_LIMIT = 200;
+
+const collectionNameTaken = () =>
+  new LibraryError({
+    message: "A collection with this name already exists.",
+    statusCode: 409,
+  });
+
+const toCollection = (row: typeof collections.$inferSelect): Collection => ({
+  createdAt: row.createdAt,
+  creator: row.creator,
+  creatorId: row.creatorId,
+  id: row.id,
+  minimumMinutes: row.minimumMinutes,
+  name: row.name,
+  range: row.range,
+  source: row.source,
+  tag: row.tag,
+  updatedAt: row.updatedAt,
+});
+
 const toLibraryError = <E>(error: E) =>
   error instanceof LibraryError ? error : databaseError();
 
@@ -178,6 +206,22 @@ export class Library extends Context.Service<
     /** The Sets on Home's Heavy Rotation shelf, most heard first; empty when it is hidden. */
     readonly heavyRotation: (
       range: ListeningRange
+    ) => Effect.Effect<SavedSet[], LibraryError>;
+    /** This Person's Collections, by name. */
+    readonly collections: Effect.Effect<Collection[], LibraryError>;
+    readonly createCollection: (
+      input: CollectionInput
+    ) => Effect.Effect<Collection, LibraryError>;
+    readonly updateCollection: (
+      id: string,
+      input: CollectionInput
+    ) => Effect.Effect<Collection, LibraryError>;
+    readonly removeCollection: (
+      id: string
+    ) => Effect.Effect<Collection, LibraryError>;
+    /** A Collection's Sets, most heard first. */
+    readonly collectionSets: (
+      id: string
     ) => Effect.Effect<SavedSet[], LibraryError>;
     readonly playlists: Effect.Effect<Playlist[], LibraryError>;
     readonly createPlaylist: (
@@ -1140,39 +1184,245 @@ export class Library extends Context.Service<
       )
     ).pipe(Effect.withSpan("Library.tags"));
 
+    /**
+     * The Sets heard most over a range, ranked by `heavyRotation`. A Collection narrows the days
+     * it ranks to the Sets its filter admits and asks the ranking for its own minimums; Heavy
+     * Rotation passes no filter.
+     */
+    const rankedSets = (
+      range: ListeningRange,
+      filter?: Pick<Collection, "creatorId" | "source" | "tag">,
+      ranking?: RankingOptions
+    ) =>
+      execute(
+        Effect.gen(function* rankedSetsEffect() {
+          const now = new Date();
+          const entryTags = sql`coalesce(${libraryEntries.tags}, ${sets.tags})`;
+          const conditions = [
+            eq(listeningTime.personId, personId),
+            gte(listeningTime.day, windowStart(now, range)),
+          ];
+          const source = filter?.source ?? null;
+          const creatorId = filter?.creatorId ?? null;
+          const tag = filter?.tag ?? null;
+          if (source !== null) {
+            conditions.push(eq(sets.source, source));
+          }
+          if (creatorId !== null) {
+            conditions.push(eq(sets.creatorId, creatorId));
+          }
+          if (tag !== null) {
+            conditions.push(
+              sql`EXISTS (SELECT 1 FROM json_each(${entryTags}) WHERE value = ${tag})`
+            );
+          }
+          // One row for each Set heard on each day of the range, kept to the Sets still in
+          // this Person's Library, so a removed Set leaves no gap. The limit only guards a
+          // pathological day count; a person hears a few Sets a day.
+          const days = yield* db
+            .select({
+              day: listeningTime.day,
+              seconds: listeningTime.seconds,
+              setId: listeningTime.setId,
+            })
+            .from(listeningTime)
+            .innerJoin(
+              libraryEntries,
+              and(
+                eq(libraryEntries.personId, listeningTime.personId),
+                eq(libraryEntries.setId, listeningTime.setId)
+              )
+            )
+            .innerJoin(sets, eq(sets.id, listeningTime.setId))
+            .where(and(...conditions))
+            .orderBy(desc(listeningTime.day))
+            .limit(LISTENING_RANGES[range].days * 200);
+          return yield* byIds(heavyRotation(days, now, range, ranking));
+        })
+      );
+
     const heavyRotationSets = Effect.fn("Library.heavyRotation")(
-      (range: ListeningRange) =>
-        execute(
-          Effect.gen(function* heavyRotationEffect() {
-            const now = new Date();
-            // One row for each Set heard on each day of the range, kept to the Sets still in
-            // this Person's Library, so a removed Set leaves no gap. The limit only guards a
-            // pathological day count; a person hears a few Sets a day.
-            const days = yield* db
-              .select({
-                day: listeningTime.day,
-                seconds: listeningTime.seconds,
-                setId: listeningTime.setId,
+      (range: ListeningRange) => rankedSets(range)
+    );
+
+    const ownCollection = Effect.fn("Library.ownCollection")(
+      function* ownCollectionEffect(id: string) {
+        const [row] = yield* db
+          .select()
+          .from(collections)
+          .where(
+            and(eq(collections.id, id), eq(collections.personId, personId))
+          )
+          .limit(1);
+        if (!row) {
+          return yield* collectionNotFound();
+        }
+        return row;
+      }
+    );
+
+    /** The columns a Collection's filter is stored as, checked and settled. */
+    const collectionValues = Effect.fn("Library.collectionValues")(
+      function* collectionValuesEffect(input: CollectionInput) {
+        const name = input.name.trim();
+        if (name === "") {
+          return yield* Effect.fail(
+            new LibraryError({
+              message: "Enter a collection name.",
+              statusCode: 400,
+            })
+          );
+        }
+        const tag = input.tag?.trim().toLowerCase() ?? "";
+        const creatorId = input.creatorId?.trim() ?? "";
+        let creator: string | null = null;
+        if (creatorId !== "") {
+          // The name is kept for display; the filter matches the id, which a rename keeps.
+          const [named] = yield* db
+            .select({ creator: sets.creator })
+            .from(sets)
+            .where(
+              and(
+                eq(sets.creatorId, creatorId),
+                sql`${sets.creator} IS NOT NULL`
+              )
+            )
+            .limit(1);
+          if (!named) {
+            return yield* Effect.fail(
+              new LibraryError({
+                message: "No Set is by that creator.",
+                statusCode: 400,
               })
-              .from(listeningTime)
-              .innerJoin(
-                libraryEntries,
-                and(
-                  eq(libraryEntries.personId, listeningTime.personId),
-                  eq(libraryEntries.setId, listeningTime.setId)
-                )
-              )
-              .where(
-                and(
-                  eq(listeningTime.personId, personId),
-                  gte(listeningTime.day, windowStart(now, range))
-                )
-              )
-              .orderBy(desc(listeningTime.day))
-              .limit(LISTENING_RANGES[range].days * 200);
-            return yield* byIds(heavyRotation(days, now, range));
+            );
+          }
+          ({ creator } = named);
+        }
+        return {
+          creator,
+          creatorId: creatorId === "" ? null : creatorId,
+          minimumMinutes: input.minimumMinutes,
+          name,
+          range: input.range,
+          source: input.source,
+          tag: tag === "" ? null : tag,
+        };
+      }
+    );
+
+    const collectionsList = Effect.suspend(() =>
+      execute(
+        db
+          .select()
+          .from(collections)
+          .where(eq(collections.personId, personId))
+          .orderBy(asc(sql`${collections.name} COLLATE NOCASE`))
+          .limit(COLLECTION_LIMIT)
+      )
+    ).pipe(
+      Effect.map((rows) => rows.map(toCollection)),
+      Effect.withSpan("Library.collections")
+    );
+
+    const createCollection = Effect.fn("Library.createCollection")(
+      (input: CollectionInput) =>
+        execute(
+          Effect.gen(function* createCollectionEffect() {
+            const values = yield* collectionValues(input);
+            const [held] = yield* db
+              .select({ total: sql<number>`count(*)` })
+              .from(collections)
+              .where(eq(collections.personId, personId));
+            if ((held?.total ?? 0) >= COLLECTION_LIMIT) {
+              return yield* new LibraryError({
+                message: `You have ${COLLECTION_LIMIT} collections. Delete one before you make another.`,
+                statusCode: 409,
+              });
+            }
+            const now = new Date().toISOString();
+            const [row] = yield* db
+              .insert(collections)
+              .values({
+                ...values,
+                createdAt: now,
+                id: crypto.randomUUID(),
+                personId,
+                updatedAt: now,
+              })
+              .onConflictDoNothing()
+              .returning();
+            if (!row) {
+              return yield* Effect.fail(collectionNameTaken());
+            }
+            return toCollection(row);
           })
         )
+    );
+
+    const updateCollection = Effect.fn("Library.updateCollection")(
+      (id: string, input: CollectionInput) =>
+        execute(
+          Effect.gen(function* updateCollectionEffect() {
+            yield* ownCollection(id);
+            const values = yield* collectionValues(input);
+            const [taken] = yield* db
+              .select({ id: collections.id })
+              .from(collections)
+              .where(
+                and(
+                  eq(collections.personId, personId),
+                  sql`${collections.name} = ${values.name} COLLATE NOCASE`,
+                  ne(collections.id, id)
+                )
+              )
+              .limit(1);
+            if (taken) {
+              return yield* Effect.fail(collectionNameTaken());
+            }
+            const [row] = yield* db
+              .update(collections)
+              .set({ ...values, updatedAt: new Date().toISOString() })
+              .where(
+                and(eq(collections.id, id), eq(collections.personId, personId))
+              )
+              .returning();
+            if (!row) {
+              return yield* Effect.fail(collectionNotFound());
+            }
+            return toCollection(row);
+          })
+        )
+    );
+
+    const removeCollection = Effect.fn("Library.removeCollection")(
+      (id: string) =>
+        execute(
+          Effect.gen(function* removeCollectionEffect() {
+            const [row] = yield* db
+              .delete(collections)
+              .where(
+                and(eq(collections.id, id), eq(collections.personId, personId))
+              )
+              .returning();
+            if (!row) {
+              return yield* Effect.fail(collectionNotFound());
+            }
+            return toCollection(row);
+          })
+        )
+    );
+
+    /** A Collection's Sets, most heard first. One Set is enough: a filter can be narrow. */
+    const collectionSets = Effect.fn("Library.collectionSets")((id: string) =>
+      execute(
+        Effect.gen(function* collectionSetsEffect() {
+          const collection = toCollection(yield* ownCollection(id));
+          return yield* rankedSets(collection.range, collection, {
+            minimumSeconds: collection.minimumMinutes * 60,
+            minimumSets: 1,
+          });
+        })
+      )
     );
 
     const playlistsList = Effect.suspend(() =>
@@ -1580,6 +1830,9 @@ export class Library extends Context.Service<
       byIds,
       cancelDownload,
       claimDownload,
+      collectionSets,
+      collections: collectionsList,
+      createCollection,
       createPlaylist,
       deletePlaylist,
       failDownload,
@@ -1596,6 +1849,7 @@ export class Library extends Context.Service<
       recordEnrichmentFailure,
       release,
       remove,
+      removeCollection,
       renamePlaylist,
       resetStuckDownloads,
       save,
@@ -1604,6 +1858,7 @@ export class Library extends Context.Service<
       setPlaylistMembers,
       setPlaylistMemberships,
       tags,
+      updateCollection,
       updateTags,
       updateTitle,
     });

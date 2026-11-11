@@ -405,7 +405,7 @@ struct PlaylistQueueRequest: Encodable {
 }
 
 /// The ranges Heavy Rotation covers. The service ranks each and weighs recent days by range.
-enum ListeningRange: String, CaseIterable, Identifiable, Sendable, Encodable {
+enum ListeningRange: String, CaseIterable, Identifiable, Sendable, Codable {
   case month
   case quarter
   case year
@@ -428,6 +428,92 @@ enum ListeningRange: String, CaseIterable, Identifiable, Sendable, Encodable {
     case .year: "What you've played most this year."
     }
   }
+}
+
+/// What a Collection admits. Nil admits every Set. `source` is the service's name for a source,
+/// as the filter stores it.
+struct CollectionFilter: Equatable, Sendable {
+  var name = ""
+  var range: ListeningRange = .month
+  var source: String?
+  var creatorId: String?
+  var tag: String?
+  var minimumMinutes = 0
+
+  /// The sources a filter can name, with the words a person reads.
+  static let sources: [(id: String, label: String)] = [
+    ("youtube", "YouTube"), ("soundcloud", "SoundCloud"), ("apple-music", "Apple Music"),
+  ]
+  /// The least listening a filter can ask for, in minutes.
+  static let minimums = [0, 30, 60, 120]
+
+  static func minimumLabel(_ minutes: Int) -> String {
+    switch minutes {
+    case 0: "Any time"
+    case ..<60: "\(minutes) min or more"
+    case 60: "1 hour or more"
+    default: "\(minutes / 60) hours or more"
+    }
+  }
+}
+
+/// One Person's saved filter over their listening, ranked as Heavy Rotation is.
+struct ListeningCollection: Identifiable, Decodable, Hashable, Sendable {
+  let id: String
+  let name: String
+  let range: ListeningRange
+  let source: String?
+  let creatorId: String?
+  /// The creator's name when the filter was saved.
+  let creator: String?
+  let tag: String?
+  let minimumMinutes: Int
+
+  var filter: CollectionFilter {
+    CollectionFilter(
+      name: name, range: range, source: source, creatorId: creatorId, tag: tag,
+      minimumMinutes: minimumMinutes)
+  }
+
+  /// The filter in a few words: the range, then whatever narrows it.
+  var summary: String {
+    var parts = [range.title]
+    if let source, let label = CollectionFilter.sources.first(where: { $0.id == source })?.label {
+      parts.append(label)
+    }
+    if let creator { parts.append(creator) }
+    if let tag { parts.append("#\(tag)") }
+    if minimumMinutes > 0 { parts.append(CollectionFilter.minimumLabel(minimumMinutes)) }
+    return parts.joined(separator: " · ")
+  }
+}
+
+struct CollectionsResponse: Decodable {
+  let collections: [ListeningCollection]
+}
+
+/// Every key is sent, a nil as null, because the service reads a whole filter on each save.
+struct CollectionRequest: Encodable {
+  let filter: CollectionFilter
+
+  private enum CodingKeys: String, CodingKey {
+    case name, range, source, creatorId, tag, minimumMinutes
+  }
+
+  func encode(to encoder: any Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(filter.name, forKey: .name)
+    try container.encode(filter.range, forKey: .range)
+    try container.encode(filter.source, forKey: .source)
+    try container.encode(filter.creatorId, forKey: .creatorId)
+    try container.encode(filter.tag, forKey: .tag)
+    try container.encode(filter.minimumMinutes, forKey: .minimumMinutes)
+  }
+}
+
+struct CollectionQueueRequest: Encodable {
+  let collectionId: String
+  let order: String?
 }
 
 /// `order` left out keeps the service's ranking.

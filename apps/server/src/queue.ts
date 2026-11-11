@@ -94,6 +94,11 @@ export class Queue extends Context.Service<
       range: ListeningRange,
       order?: "ranked" | "shuffled"
     ) => Effect.Effect<ListeningQueue, LibraryError>;
+    /** Replaces the queue with the playable Sets in one of this Person's Collections. */
+    readonly replaceWithCollection: (
+      collectionId: string,
+      order?: "ranked" | "shuffled"
+    ) => Effect.Effect<ListeningQueue, LibraryError>;
     /** Removes the finished Set, resets its position, and starts what followed it. */
     readonly complete: (
       id: string
@@ -282,6 +287,20 @@ export class Queue extends Context.Service<
         })
     );
 
+    const replaceWithCollection = Effect.fn("Queue.replaceWithCollection")(
+      (
+        collectionId: string,
+        collectionOrder: "ranked" | "shuffled" = "ranked"
+      ) =>
+        Effect.gen(function* replaceQueueFromCollection() {
+          const members = yield* library.collectionSets(collectionId);
+          return yield* replaceWithSets(
+            members,
+            collectionOrder === "shuffled"
+          );
+        })
+    );
+
     const replaceWithHeavyRotation = Effect.fn(
       "Queue.replaceWithHeavyRotation"
     )(
@@ -330,6 +349,7 @@ export class Queue extends Context.Service<
       notify,
       play,
       read,
+      replaceWithCollection,
       replaceWithHeavyRotation,
       replaceWithPlaylist,
     });
