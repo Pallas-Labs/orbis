@@ -75,12 +75,13 @@ impl App {
     /// Replaces the Listening Queue with the Playlist's playable Sets and plays the first.
     pub fn play_playlist(&mut self, id: &str, shuffled: bool) {
         let id = id.to_owned();
-        // A Set the person plays before Orbis answers wins; this answer then changes nothing.
-        let generation = self.playing.generation();
+        // Whatever the person plays after this, before Orbis answers, wins: a Set or another
+        // Playlist. This answer then changes nothing.
+        let intent = self.playing.intend();
         self.spawn(
             move || api::play_playlist(&id, shuffled),
             move |s, got| match got {
-                Ok(_) if s.playing.generation() != generation => {}
+                _ if s.playing.intent() != intent => {}
                 Ok(queue) => {
                     let first = queue.active().cloned();
                     s.queue.items.land(Ok(queue));

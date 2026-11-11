@@ -77,6 +77,11 @@ pub struct State {
     clock: Option<f64>,
     /// The place last saved.
     saved: f64,
+    /// Counts the plays the person asked for (a Set, a Playlist, Next, Play after a failure).
+    /// A play's answer acts only while its count is still the latest, so the newest choice wins.
+    intent: u64,
+    /// Orbis has confirmed the loaded Set as the queue's active one.
+    activated: bool,
     /// Where the last early end of the stream left the Set, by its id.
     early_end: Option<(String, f64)>,
     /// Seeks asked for, for the playback report.
@@ -86,6 +91,17 @@ pub struct State {
 }
 
 impl State {
+    /// Counts a play the person asked for, and returns its count.
+    pub fn intend(&mut self) -> u64 {
+        self.intent += 1;
+        self.intent
+    }
+
+    /// The latest play the person asked for.
+    pub fn intent(&self) -> u64 {
+        self.intent
+    }
+
     /// Counts each Set started: a call's answer for an older count is out of date.
     pub fn generation(&self) -> u64 {
         self.generation
@@ -185,6 +201,7 @@ impl App {
     /// Its Tracklist loads, so Now Playing has it before Play.
     pub fn show_set(&mut self, set: Set) {
         let p = &mut self.playing;
+        p.activated = true;
         p.duration = set.duration_seconds;
         p.position = set.playback_position_seconds;
         p.saved = p.position;
@@ -225,6 +242,7 @@ impl App {
     /// Plays `set`, which is already the queue's active Set.
     pub fn start_set(&mut self, set: Set) {
         self.start(Some(set));
+        self.playing.activated = true;
     }
 
     /// Records `event` in the playback report with the player's state now.
@@ -278,18 +296,25 @@ impl App {
     /// keeping the rest of the queue, and Orbis hears so while the stream starts.
     pub fn play(&mut self, id: &str) {
         let Some(set) = self.find_set(id).filter(|set| self.can("play", set)) else { return };
+        self.activate(set);
+    }
+
+    /// Makes `set` the queue's active Set here at once, starts it, and asks Orbis to do the same.
+    fn activate(&mut self, set: Set) {
         if let Some(queue) = self.queue.items.data.as_mut() {
             queue.activate(&set);
         }
+        let id = set.id.clone();
+        let intent = self.playing.intend();
         let generation = self.start(Some(set));
-        let id = id.to_owned();
         self.spawn(
             move || api::play(&id),
             move |s, got| match got {
-                // Another Set started since: its own answer brings the queue.
-                Ok(_) if s.playing.generation != generation => {}
+                // The person chose something else since: its own answer brings the queue.
+                _ if s.playing.intent != intent => {}
                 Ok(queue) => {
                     s.queue.items.land(Ok(queue));
+                    s.playing.activated = s.playing.generation == generation;
                     s.presence_retry();
                 }
                 Err(why) => s.fail(generation, why),
@@ -314,8 +339,8 @@ impl App {
             None => {
                 self.save_place();
                 self.set_status(Status::Idle);
-                let generation = self.playing.generation + 1;
-                self.playing = State { generation, ..State::default() };
+                let (generation, intent) = (self.playing.generation + 1, self.playing.intent);
+                self.playing = State { generation, intent, ..State::default() };
                 generation
             }
         }
@@ -336,9 +361,17 @@ impl App {
                     x.playback_position_seconds = p.position;
                     x
                 });
+                // Orbis never confirmed it as the active Set (its Play failed): ask again first.
+                let confirmed = p.activated;
                 let next = here.or_else(|| self.queue.items.data.as_ref().and_then(|q| q.active().cloned()));
                 if let Some(set) = next.filter(|set| self.can("play", set)) {
-                    self.start(Some(set));
+                    if confirmed || self.playing.set.is_none() {
+                        self.playing.intend();
+                        self.start(Some(set));
+                        self.playing.activated = true;
+                    } else {
+                        self.activate(set);
+                    }
                 }
                 return;
             }
@@ -380,6 +413,7 @@ impl App {
     /// Ends the Set now, as if it had played out: the next one in the queue plays.
     pub fn next(&mut self) {
         self.command("stop", Origin::App, None);
+        self.playing.intend();
         self.finish();
     }
 
@@ -389,6 +423,7 @@ impl App {
         self.save_place();
         let p = &mut self.playing;
         p.stop();
+        p.activated = false;
         let near_end = set.duration_seconds.is_some_and(|d| set.playback_position_seconds > d - 5.0);
         p.position = if near_end { 0.0 } else { set.playback_position_seconds };
         p.saved = p.position;
@@ -552,6 +587,7 @@ impl App {
                     } else {
                         s.presence_retry();
                     }
+                    s.playing.activated = s.playing.set.is_some();
                 }
                 Err(why) => s.say(format!("Orbis didn't hear that the Set ended: {why}")),
             },

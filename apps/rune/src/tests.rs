@@ -501,3 +501,35 @@ fn leaving_approve_before_its_code_arrives_lets_a_sign_in_code_go() {
     rt.update(|s, _| s.redeem_code());
     assert!(calls().iter().any(|c| c.starts_with("POST /sign-in/code")), "{:?}", calls());
 }
+
+#[test]
+fn of_two_playlists_pressed_quickly_the_second_plays_whichever_answer_comes_first() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("GET /sets/s-tram/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("GET /sets/s-ferry/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("PUT /queue/playlist", json!({ "queue": { "activeSetId": "s-tram", "entries": [set_json("s-tram", "Tram Lines at Dawn")] } }));
+    rt.update(|s, _| s.play_playlist("p-morning", false));
+    fixture::reply("PUT /queue/playlist", json!({ "queue": { "activeSetId": "s-ferry", "entries": [set_json("s-ferry", "Night Ferry")] } }));
+    rt.update(|s, _| s.play_playlist("p-road", false));
+    land(&mut rt);
+    assert_eq!(rt.state.playing.set.as_ref().map(|x| x.id.as_str()), Some("s-ferry"), "the newer Playlist wins");
+    assert_eq!(rt.state.queue.items.data.as_ref().unwrap().active_set_id.as_deref(), Some("s-ferry"));
+}
+
+#[test]
+fn trying_again_after_orbis_refused_a_play_asks_it_to_make_the_set_active_again() {
+    let mut rt = live(Screen::Playing);
+    fixture::reply("GET /sets/s-ferry/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::refuse("PUT /queue/active", "Orbis answered 503");
+    rt.update(|s, _| s.play("s-ferry"));
+    land(&mut rt);
+    assert!(matches!(rt.state.playing.status, Status::Failed(_)));
+    rt.update(|s, _| s.playing.position = 600.0);
+    fixture::reply("PUT /queue/active", json!({ "queue": { "activeSetId": "s-ferry", "entries": [set_json("s-ferry", "Night Ferry")] } }));
+    rt.update(|s, _| s.toggle());
+    land(&mut rt);
+    let asks = calls().iter().filter(|c| c.starts_with("PUT /queue/active")).count();
+    assert_eq!(asks, 2, "Orbis is asked again: {:?}", calls());
+    assert_eq!(rt.state.playing.status, Status::Playing);
+    assert!((rt.state.playing.position - 600.0).abs() < 1.0, "from where the person was: {}", rt.state.playing.position);
+}
