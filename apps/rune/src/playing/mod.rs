@@ -41,6 +41,8 @@ pub enum Origin {
     Internal,
 }
 
+/// How often a pending Tracklist is asked for again.
+const TRACKLIST_AGAIN: Duration = Duration::from_secs(10);
 /// How often a playing Set's place is saved.
 const SAVE_EVERY: f64 = 15.0;
 /// What Back and Ahead move, in seconds.
@@ -244,14 +246,7 @@ impl App {
         let id = set.id.clone();
         p.set = Some(set);
         let generation = p.generation;
-        self.spawn(
-            move || api::tracklist(&id),
-            move |s, got| {
-                if s.playing.generation == generation {
-                    s.playing.tracklist.land(got);
-                }
-            },
-        );
+        self.load_tracklist(id, generation);
     }
 
     /// Puts the Library's fresh Sets into the queue's and the open Playlist's copies, and the
@@ -270,6 +265,30 @@ impl App {
         if let Some((id, seconds)) = loaded {
             self.playing.resume_at(&id, seconds);
         }
+    }
+
+    /// Loads the Tracklist of the Set of `generation`. While Orbis is still identifying it, asks
+    /// again every 10 s, as long as that Set stays loaded.
+    fn load_tracklist(&mut self, id: String, generation: u64) {
+        let asked = id.clone();
+        self.spawn(
+            move || api::tracklist(&asked),
+            move |s, got| {
+                if s.playing.generation != generation {
+                    return;
+                }
+                let pending = matches!(&got, Ok(t) if t.state == crate::model::TracklistState::Pending);
+                // Asking again keeps the pending answer up; it isn't a reload to show.
+                s.playing.tracklist.land(got);
+                if pending {
+                    s.after(TRACKLIST_AGAIN, move |s| {
+                        if s.playing.generation == generation {
+                            s.load_tracklist(id, generation);
+                        }
+                    });
+                }
+            },
+        );
     }
 
     /// Plays `set`, which is already the queue's active Set.
@@ -480,14 +499,7 @@ impl App {
         self.report(json!({ "session": { "_0": { "phase": "startRequested", "playbackGeneration": generation, "requestID": generation } } }));
         let urls = self.playing.set.iter().flat_map(|x| [x.artwork_large_url.clone(), x.artwork_url.clone()]).flatten().collect::<Vec<_>>();
         self.want_artwork(urls.iter().map(String::as_str));
-        self.spawn(
-            move || api::tracklist(&id),
-            move |s, got| {
-                if s.playing.generation == generation {
-                    s.playing.tracklist.land(got);
-                }
-            },
-        );
+        self.load_tracklist(id, generation);
         generation
     }
 

@@ -842,3 +842,26 @@ fn a_renewal_refused_inside_the_lease_leaves_the_set_to_the_device_that_took_it(
     let kinds: Vec<String> = fixture::bodies("POST /presence/actions").iter().map(|b| b["kind"].as_str().unwrap_or_default().to_owned()).collect();
     assert_eq!(kinds, ["play", "renew"], "no play to take it back, and no more renewals");
 }
+
+#[test]
+fn a_pending_tracklist_is_asked_again_until_orbis_has_it() {
+    let mut rt = live(Screen::Playing);
+    fixture::reply("GET /sets/s-ferry/tracklist", json!({ "cues": [], "state": "pending" }));
+    fixture::reply("PUT /queue/active", json!({ "queue": { "activeSetId": "s-ferry", "entries": [set_json("s-ferry", "Night Ferry")] } }));
+    rt.update(|s, _| s.play("s-ferry"));
+    land(&mut rt);
+    fixture::reply(
+        "GET /sets/s-ferry/tracklist",
+        json!({ "cues": [{ "artist": "B", "title": "Found Cue", "startSeconds": 0, "position": 0, "appleMusicId": null, "artworkUrl": null }], "state": "ready" }),
+    );
+    rt.frame(11.0);
+    rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    let cues = rt.state.playing.tracklist.data.as_ref().map(|t| t.cues.len());
+    assert_eq!(cues, Some(1), "the found Tracklist shows: {:?}", calls());
+    let asks = calls().iter().filter(|c| *c == "GET /sets/s-ferry/tracklist").count();
+    rt.frame(30.0);
+    rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    assert_eq!(calls().iter().filter(|c| *c == "GET /sets/s-ferry/tracklist").count(), asks, "a ready Tracklist isn't asked again");
+}
