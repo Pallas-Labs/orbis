@@ -1,0 +1,2 @@
+# Views take what they draw, and a few take eight or nine things; past nine, pass a struct.
+too-many-arguments-threshold = 9

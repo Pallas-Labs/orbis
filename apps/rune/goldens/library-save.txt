@@ -1,0 +1,292 @@
+kit-root	group	kit-root	-	-	0,0,1180,780	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1180,780	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1180,780	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,240,780	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,240,780	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	11,0,226,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	11,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	11,32,190,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	209,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	11,56,226,724	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	11,56,226,724	#00000000	-	1.00
+       sidebar-header	group	sidebar-header	-	-	11,56,226,98	#00000000	-	1.00
+        nav-library	listitem	nav-library	Library	-	11,56,226,28	#eeeaf703	-	1.00
+         icon	icon	icon	-	-	19,62,16,16	#00000000	#eeeaf7ff	1.00
+         label	text	label	-	Library	41,60,175,20	#00000000	#eeeaf7ff	1.00
+         detail	text	detail	-	9	222,64,7,12	#00000000	#76737eff	1.00
+        nav-queue	listitem	nav-queue	Listening Queue	-	11,87,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,93,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Listening Queue	41,91,174,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-	4	221,95,8,12	#00000000	#76737eff	1.00
+        nav-playing	listitem	nav-playing	Now Playing	-	11,118,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,124,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Now Playing	41,122,178,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-		225,126,4,12	#00000000	#76737eff	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	11,154,226,582	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	11,154,226,126	#00000000	-	1.00
+         playlists-section	group	playlists-section	Playlists	-	11,154,226,118	#00000000	-	1.00
+          section-header	heading	section-header	Playlists	-	11,154,226,28	#00000000	-	1.00
+           section-title	group	section-title	-	-	19,161,48,18	#00000000	-	1.00
+            #0	text	-	-	Playlists	19,161,48,18	#00000000	#a3a0acff	1.00
+           spacer	group	spacer	-	-	67,170,142,0	#00000000	-	1.00
+           new-playlist	button	new-playlist	New Playlist	-	209,160,20,20	#00000000	-	1.00
+            icon	icon	icon	-	-	211,162,16,16	#00000000	#a3a0acff	1.00
+          nav-playlist-p-morning	listitem	nav-playlist-p-morning	Morning	-	11,184,226,28	#00000000	-	1.00
+           icon	icon	icon	-	-	19,190,16,16	#00000000	#a3a0acff	1.00
+           label	text	label	-	Morning	41,188,175,20	#00000000	#a3a0acff	1.00
+           detail	text	detail	-	3	222,192,7,12	#00000000	#76737eff	1.00
+          nav-playlist-p-harbour	listitem	nav-playlist-p-harbour	Harbour Nights	-	11,214,226,28	#00000000	-	1.00
+           icon	icon	icon	-	-	19,220,16,16	#00000000	#a3a0acff	1.00
+           label	text	label	-	Harbour Nights	41,218,177,20	#00000000	#a3a0acff	1.00
+           detail	text	detail	-	1	224,222,5,12	#00000000	#76737eff	1.00
+          nav-playlist-p-road	listitem	nav-playlist-p-road	Road Trip	-	11,244,226,28	#00000000	-	1.00
+           icon	icon	icon	-	-	19,250,16,16	#00000000	#a3a0acff	1.00
+           label	text	label	-	Road Trip	41,248,143,20	#00000000	#a3a0acff	1.00
+           detail	text	detail	-	by mira	190,252,39,12	#00000000	#76737eff	1.00
+       sidebar-footer	group	sidebar-footer	-	-	11,736,226,44	#00000000	-	1.00
+        nav-settings	listitem	nav-settings	Settings	-	11,744,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,750,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Settings	41,748,178,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-		225,752,4,12	#00000000	#76737eff	1.00
+    pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
+    pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	234,0,6,780	#00000000	-	0.02
+   main-column	group	main-column	-	-	240,0,940,780	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	240,0,940,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	240,8,940,772	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	240,8,932,764	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	-	-	240,8,932,48	#00000000	-	1.00
+       leading	group	leading	-	-	252,22,44,20	#00000000	-	1.00
+        screen-title	text	screen-title	-	Library	252,22,44,20	#00000000	#eeeaf7ff	1.00
+       spacer	group	spacer	-	-	304,32,796,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1108,20,52,24	#00000000	-	1.00
+        #0	group	-	-	-	1108,20,52,24	#00000000	-	1.00
+         save-link	button	save-link	Save a Link (Ctrl+N)	-	1108,20,24,24	#00000000	-	1.00
+          icon	icon	icon	-	-	1112,24,16,16	#00000000	#a3a0acff	1.00
+         reload	button	reload	Reload (Ctrl+R)	-	1136,20,24,24	#00000000	-	1.00
+          icon	icon	icon	-	-	1140,24,16,16	#00000000	#a3a0acff	1.00
+      main	group	main	-	-	240,56,932,716	#00000000	-	1.00
+       #0	group	-	-	-	240,56,932,644	#00000000	-	1.00
+        library	group	library	-	-	240,56,932,644	#00000000	-	1.00
+         #0	group	-	-	-	240,56,932,90	#00000000	-	1.00
+          search-box	group	search-box	-	-	264,68,884,36	#1b182199	-	1.00
+           #0	icon	-	-	-	276,78,16,16	#00000000	#a3a0acff	1.00
+           #1	group	-	-	-	300,72,799,28	#00000000	-	1.00
+            search	textbox	search	-	-	300,72,280,28	#00000000	-	1.00
+             value	group	value	-	-	300,72,272,28	#00000000	-	1.00
+              #0	group	-	-	-	300,86,2,0	#00000000	-	1.00
+              input	textbox	input	Search the Library		308,78,264,16	#00000000	#eeeaf7ff	1.00
+           library-count	text	library-count	-	9 Sets	1107,80,33,12	#00000000	#76737eff	1.00
+          tags	group	tags	-	-	264,114,884,24	#00000000	-	1.00
+           #0	group	-	-	-	264,114,884,24	#00000000	-	1.00
+            tag-ambient	button	tag-ambient	Tag ambient	-	264,114,59,24	#eeeaf70d	-	1.00
+             #0	text	-	-	ambient	272,120,43,12	#00000000	#a3a0acff	1.00
+            tag-morning	button	tag-morning	Tag morning	-	329,114,60,24	#eeeaf70d	-	1.00
+             #0	text	-	-	morning	337,120,44,12	#00000000	#a3a0acff	1.00
+            tag-dub	button	tag-dub	Tag dub	-	395,114,37,24	#eeeaf70d	-	1.00
+             #0	text	-	-	dub	403,120,21,12	#00000000	#a3a0acff	1.00
+         library-scroll	group	library-scroll	-	-	240,146,932,554	#00000000	-	1.00
+          sets	group	sets	-	-	240,146,932,513	#00000000	-	1.00
+           row-s-sunrise	group	row-s-sunrise	-	-	252,146,908,57	#00000000	-	1.00
+            set-s-sunrise	button	set-s-sunrise	Play Sunrise on the Pier	-	252,146,908,56	#a54dff14	-	1.00
+             #0	group	-	-	-	264,154,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,154,40,40	#5a251fff	-	1.00
+               #0	text	-	-	S	280,168,8,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,154,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,157,688,34	#00000000	-	1.00
+              #0	group	-	-	-	316,157,688,20	#00000000	-	1.00
+               #0	icon	-	-	-	316,161,12,12	#00000000	#a54dffff	1.00
+               #1	text	-	-	Sunrise on the Pier	334,157,670,20	#00000000	#a54dffff	1.00
+              #1	text	-	-	Avery Coast · morning, ambient	316,179,688,12	#00000000	#a3a0acff	1.00
+             #2	text	-	-	58:12	1016,168,32,12	#00000000	#a3a0acff	1.00
+             #3	group	-	-	-	1060,162,88,24	#00000000	-	0.00
+              next-s-sunrise	button	next-s-sunrise	Play Next	-	1072,162,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1076,166,16,16	#00000000	#a3a0acff	0.00
+              add-s-sunrise	button	add-s-sunrise	Add to Queue	-	1098,162,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1102,166,16,16	#00000000	#a3a0acff	0.00
+              more-s-sunrise	button	more-s-sunrise	More for Sunrise on the Pier	-	1124,162,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,166,16,16	#00000000	#a3a0acff	0.00
+           row-s-low-tide	group	row-s-low-tide	-	-	252,203,908,57	#00000000	-	1.00
+            set-s-low-tide	button	set-s-low-tide	Play Low Tide Dub	-	252,203,908,56	#00000000	-	1.00
+             #0	group	-	-	-	264,211,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,211,40,40	#223661ff	-	1.00
+               #0	text	-	-	L	280.5,225,7,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,211,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,214,678,34	#00000000	-	1.00
+              #0	group	-	-	-	316,214,678,20	#00000000	-	1.00
+               #0	text	-	-	Low Tide Dub	316,214,678,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Harbour Unit · dub	316,236,678,12	#00000000	#a3a0acff	1.00
+             #2	text	-	-	1:10:10	1006,225,42,12	#00000000	#a3a0acff	1.00
+             #3	group	-	-	-	1060,219,88,24	#00000000	-	0.00
+              next-s-low-tide	button	next-s-low-tide	Play Next	-	1072,219,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1076,223,16,16	#00000000	#a3a0acff	0.00
+              add-s-low-tide	button	add-s-low-tide	Add to Queue	-	1098,219,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1102,223,16,16	#00000000	#a3a0acff	0.00
+              more-s-low-tide	button	more-s-low-tide	More for Low Tide Dub	-	1124,219,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,223,16,16	#00000000	#a3a0acff	0.00
+           row-s-ferry	group	row-s-ferry	-	-	252,260,908,57	#00000000	-	1.00
+            set-s-ferry	button	set-s-ferry	Play Night Ferry	-	252,260,908,56	#00000000	-	1.00
+             #0	group	-	-	-	264,268,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,268,40,40	#4d3200ff	-	1.00
+               #0	text	-	-	N	279.5,282,9,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,268,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,271,688,34	#00000000	-	1.00
+              #0	group	-	-	-	316,271,688,20	#00000000	-	1.00
+               #0	text	-	-	Night Ferry	316,271,688,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Avery Coast	316,293,688,12	#00000000	#a3a0acff	1.00
+             #2	text	-	-	45:45	1016,282,32,12	#00000000	#a3a0acff	1.00
+             #3	group	-	-	-	1060,276,88,24	#00000000	-	0.00
+              next-s-ferry	button	next-s-ferry	Play Next	-	1072,276,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1076,280,16,16	#00000000	#a3a0acff	0.00
+              add-s-ferry	button	add-s-ferry	Add to Queue	-	1098,276,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1102,280,16,16	#00000000	#a3a0acff	0.00
+              more-s-ferry	button	more-s-ferry	More for Night Ferry	-	1124,276,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,280,16,16	#00000000	#a3a0acff	0.00
+           row-s-static	group	row-s-static	-	-	252,317,908,57	#00000000	-	1.00
+            set-s-static	button	set-s-static	Play Salt and Static	-	252,317,908,56	#00000000	-	1.00
+             #0	group	-	-	-	264,325,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,325,40,40	#582437ff	-	1.00
+               #0	text	-	-	S	280,339,8,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,325,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,328,678,34	#00000000	-	1.00
+              #0	group	-	-	-	316,328,678,20	#00000000	-	1.00
+               #0	text	-	-	Salt and Static	316,328,678,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Mira Holt · ambient	316,350,678,12	#00000000	#a3a0acff	1.00
+             #2	text	-	-	1:30:03	1006,339,42,12	#00000000	#a3a0acff	1.00
+             #3	group	-	-	-	1060,333,88,24	#00000000	-	0.00
+              next-s-static	button	next-s-static	Play Next	-	1072,333,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1076,337,16,16	#00000000	#a3a0acff	0.00
+              add-s-static	button	add-s-static	Add to Queue	-	1098,333,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1102,337,16,16	#00000000	#a3a0acff	0.00
+              more-s-static	button	more-s-static	More for Salt and Static	-	1124,333,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,337,16,16	#00000000	#a3a0acff	0.00
+           row-s-last-light	group	row-s-last-light	-	-	252,374,908,57	#00000000	-	1.00
+            set-s-last-light	button	set-s-last-light	Play Last Light Session	-	252,374,908,56	#00000000	-	1.00
+             #0	group	-	-	-	264,382,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,382,40,40	#00424dff	-	1.00
+               #0	text	-	-	L	280.5,396,7,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,382,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,385,695,34	#00000000	-	1.00
+              #0	group	-	-	-	316,385,695,20	#00000000	-	1.00
+               #0	text	-	-	Last Light Session	316,385,695,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Harbour Unit	316,407,695,12	#00000000	#a3a0acff	1.00
+             state-s-last-light	group	state-s-last-light	-	-	1023,393,85,18	#eeeaf70d	-	1.00
+              #0	text	-	-	Downloading	1031,396,69,12	#00000000	#6bb0ffff	1.00
+             #3	group	-	-	-	1120,390,28,24	#00000000	-	0.00
+              more-s-last-light	button	more-s-last-light	More for Last Light Session	-	1124,390,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,394,16,16	#00000000	#a3a0acff	0.00
+           row-s-dunes	group	row-s-dunes	-	-	252,431,908,57	#00000000	-	1.00
+            set-s-dunes	button	set-s-dunes	Play Dune Radio 41	-	252,431,908,56	#00000000	-	1.00
+             #0	group	-	-	-	264,439,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,439,40,40	#323160ff	-	1.00
+               #0	text	-	-	D	280,453,8,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,439,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,442,678,34	#00000000	-	1.00
+              #0	group	-	-	-	316,442,678,20	#00000000	-	1.00
+               #0	text	-	-	Dune Radio 41	316,442,678,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Ines Varga	316,464,678,12	#00000000	#a3a0acff	1.00
+             state-s-dunes	group	state-s-dunes	-	-	1006,450,102,18	#eeeaf70d	-	1.00
+              #0	text	-	-	Not downloaded	1014,453,86,12	#00000000	#76737eff	1.00
+             #3	group	-	-	-	1120,447,28,24	#00000000	-	0.00
+              more-s-dunes	button	more-s-dunes	More for Dune Radio 41	-	1124,447,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,451,16,16	#00000000	#a3a0acff	0.00
+           row-s-glass	group	row-s-glass	-	-	252,488,908,57	#00000000	-	1.00
+            set-s-glass	button	set-s-glass	Play Glasshouse Mix	-	252,488,908,56	#00000000	-	1.00
+             #0	group	-	-	-	264,496,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,496,40,40	#00443fff	-	1.00
+               #0	text	-	-	G	279.5,510,9,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,496,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,499,680,34	#00000000	-	1.00
+              #0	group	-	-	-	316,499,680,20	#00000000	-	1.00
+               #0	text	-	-	Glasshouse Mix	316,499,680,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Theo Brandt	316,521,680,12	#00000000	#a3a0acff	1.00
+             state-s-glass	group	state-s-glass	-	-	1008,507,100,18	#eeeaf70d	-	1.00
+              #0	text	-	-	Download failed	1016,510,84,12	#00000000	#ff847dff	1.00
+             #3	group	-	-	-	1120,504,28,24	#00000000	-	0.00
+              more-s-glass	button	more-s-glass	More for Glasshouse Mix	-	1124,504,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,508,16,16	#00000000	#a3a0acff	0.00
+           row-s-apple	group	row-s-apple	-	-	252,545,908,57	#00000000	-	1.00
+            set-s-apple	button	set-s-apple	Play Coastline Selections, Vol. 2	-	252,545,908,56	#00000000	-	1.00
+             #0	group	-	-	-	264,553,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,553,40,40	#4e274cff	-	1.00
+               #0	text	-	-	C	279.5,567,9,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,553,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,556,699,34	#00000000	-	1.00
+              #0	group	-	-	-	316,556,699,20	#00000000	-	1.00
+               #0	text	-	-	Coastline Selections, Vol. 2	316,556,699,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Mira Holt	316,578,699,12	#00000000	#a3a0acff	1.00
+             state-s-apple	group	state-s-apple	-	-	1027,564,81,18	#eeeaf70d	-	1.00
+              #0	text	-	-	Apple Music	1035,567,65,12	#00000000	#a3a0acff	1.00
+             #3	group	-	-	-	1120,561,28,24	#00000000	-	0.00
+              more-s-apple	button	more-s-apple	More for Coastline Selections, Vol. 2	-	1124,561,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,565,16,16	#00000000	#a3a0acff	0.00
+           row-s-tram	group	row-s-tram	-	-	252,602,908,57	#00000000	-	1.00
+            set-s-tram	button	set-s-tram	Play Tram Lines at Dawn	-	252,602,908,56	#00000000	-	1.00
+             #0	group	-	-	-	264,610,40,40	#00000000	-	1.00
+              #0	group	-	-	-	264,610,40,40	#473500ff	-	1.00
+               #0	text	-	-	T	280,624,8,12	#00000000	#eeeaf7b3	1.00
+              #1	group	-	-	-	264,610,40,40	#00000000	-	1.00
+             #1	group	-	-	-	316,613,688,34	#00000000	-	1.00
+              #0	group	-	-	-	316,613,688,20	#00000000	-	1.00
+               #0	text	-	-	Tram Lines at Dawn	316,613,688,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Ines Varga · morning	316,635,688,12	#00000000	#a3a0acff	1.00
+             #2	text	-	-	55:11	1016,624,32,12	#00000000	#a3a0acff	1.00
+             #3	group	-	-	-	1060,618,88,24	#00000000	-	0.00
+              next-s-tram	button	next-s-tram	Play Next	-	1072,618,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1076,622,16,16	#00000000	#a3a0acff	0.00
+              add-s-tram	button	add-s-tram	Add to Queue	-	1098,618,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1102,622,16,16	#00000000	#a3a0acff	0.00
+              more-s-tram	button	more-s-tram	More for Tram Lines at Dawn	-	1124,618,24,24	#00000000	-	0.00
+               icon	icon	icon	-	-	1128,622,16,16	#00000000	#a3a0acff	0.00
+       bar	group	bar	-	-	240,700,932,72	#00000000	-	1.00
+        bar-open	button	bar-open	Open Now Playing: Sunrise on the Pier	-	252,712,272.4,48	#00000000	-	1.00
+         #0	group	-	-	-	256,716,40,40	#00000000	-	1.00
+          #0	group	-	-	-	256,716,40,40	#5a251fff	-	1.00
+           #0	text	-	-	S	272,730,8,12	#00000000	#eeeaf7b3	1.00
+          #1	group	-	-	-	256,716,40,40	#00000000	-	1.00
+         #1	group	-	-	-	306,719,214.4,34	#00000000	-	1.00
+          #0	text	-	-	Sunrise on the Pier	306,719,214.4,20	#00000000	#eeeaf7ff	1.00
+          #1	text	-	-	Avery Coast	306,741,214.4,12	#00000000	#a3a0acff	1.00
+        #1	group	-	-	-	540.4,713,331.2,46	#00000000	-	1.00
+         #0	group	-	-	-	636,713,140,32	#00000000	-	1.00
+          bar-back	button	bar-back	Back 15 seconds	-	636,717,24,24	#00000000	-	1.00
+           icon	icon	icon	-	-	640,721,16,16	#00000000	#eeeaf7ff	1.00
+          bar-play	button	bar-play	Play	-	672,713,32,32	#a54dffff	-	1.00
+           #0	icon	-	-	-	681.6,722.6,12.8,12.8	#00000000	#ffffffff	1.00
+          bar-ahead	button	bar-ahead	Ahead 30 seconds	-	716,717,24,24	#00000000	-	1.00
+           icon	icon	icon	-	-	720,721,16,16	#00000000	#eeeaf7ff	1.00
+          bar-next	button	bar-next	Next Set	-	752,717,24,24	#00000000	-	1.00
+           icon	icon	icon	-	-	756,721,16,16	#00000000	#eeeaf7ff	1.00
+         #1	group	-	-	-	540.4,747,331.2,12	#00000000	-	1.00
+          elapsed	text	elapsed	-	23:41	540.4,747,48,12	#00000000	#a3a0acff	1.00
+          bar-seek	slider	bar-seek	Place in the Set	-	598.4,747,215.2,12	#00000000	-	1.00
+           #0	group	-	-	-	598.4,751,215.2,4	#eeeaf71f	-	1.00
+            bar-seek-fill	group	bar-seek-fill	-	-	598.4,751,87.6,4	#a54dffff	-	1.00
+             #0	group	-	-	-	680,747,12,12	#eeeaf7ff	-	0.00
+          remaining	text	remaining	-	−34:31	823.6,747,48,12	#00000000	#a3a0acff	1.00
+        #2	group	-	-	-	887.6,724,272.4,24	#00000000	-	1.00
+         bar-queue	button	bar-queue	Listening Queue	-	1136,724,24,24	#00000000	-	1.00
+          icon	icon	icon	-	-	1140,728,16,16	#00000000	#a3a0acff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	209,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	215,24,16,16	#00000000	#a3a0acff	1.00
+ dialog-scrim	group	dialog-scrim	-	-	0,0,1180,780	#0000004d	-	1.00
+ dialog-layer	group	dialog-layer	-	-	0,0,1180,780	#00000000	-	1.00
+  dialog-dialog	dialog	dialog-dialog	Save a Link	-	370,310,440,160	#14111aff	-	1.00
+   header	group	header	-	-	370,310,440,76	#00000000	-	1.00
+    #0	group	-	-	-	386,326,390,44	#00000000	-	1.00
+     #0	text	-	-	Save a Link	386,326,390,20	#00000000	#eeeaf7ff	1.00
+     #1	text	-	-	A YouTube or SoundCloud video, or an Apple Music album.	386,350,390,20	#00000000	#a3a0acff	1.00
+    close	button	close	Close	-	776,324,20,20	#00000000	-	1.00
+     icon	icon	icon	-	-	778,326,16,16	#00000000	#eeeaf7ff	1.00
+   body	group	body	-	-	370,386,440,84	#00000000	-	1.00
+    #0	group	-	-	-	370,386,440,0	#00000000	-	1.00
+    #1	group	-	-	-	370,386,440,40	#00000000	-	1.00
+     dialog-field	textbox	dialog-field	-	-	386,386,408,28	#040405ff	-	1.00
+      value	group	value	-	-	386,386,400,28	#00000000	-	1.00
+       #0	group	-	-	-	386,400,2,0	#00000000	-	1.00
+       input	textbox	input	Link	https://www.youtube.com/watch?v=lane0001	394,392,392,16	#00000000	#eeeaf7ff	1.00
+    #2	group	-	-	-	370,426,440,44	#00000000	-	1.00
+     dialog-cancel	button	dialog-cancel	Cancel	-	663,430,68,24	#00000000	-	1.00
+      label	text	label	-	Cancel	675,432,44,20	#00000000	#eeeaf7ff	1.00
+     dialog-save	button	dialog-save	Save	-	739,430,55,24	#eeeaf7ff	-	1.00
+      label	text	label	-	Save	751,432,31,20	#00000000	#040405ff	1.00

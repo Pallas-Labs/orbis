@@ -1,0 +1,24 @@
+[package]
+name = "orbis-rune"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Orbis on the desktop, in Rune: the Library, the Listening Queue and Now Playing"
+
+[dependencies]
+# Every Rune crate takes the same rev: the one the rune-app skill's template pins.
+rune = { git = "https://github.com/anomalyco/rune", rev = "268ac7cb3db94610b3a6dd7173bc2b056f85f7bd" }
+rune-kit = { git = "https://github.com/anomalyco/rune", rev = "268ac7cb3db94610b3a6dd7173bc2b056f85f7bd" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "2", features = ["json"] }
+uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# mpv ends with the app (PR_SET_PDEATHSIG).
+libc = "0.2"
+
+# Rune itself builds optimised in debug, so a debug window and every test run at full speed.
+[profile.dev.package."*"]
+debug = false
+opt-level = 2

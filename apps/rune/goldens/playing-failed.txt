@@ -1,0 +1,102 @@
+kit-root	group	kit-root	-	-	0,0,1180,780	#00000000	-	1.00
+ shell	group	shell	-	-	0,0,1180,780	#040405ff	-	1.00
+  split	group	split	-	-	0,0,1180,780	#00000000	-	1.00
+   sidebar-pane	region	sidebar-pane	Sidebar	-	0,0,240,780	#00000000	-	1.00
+    pane-content	group	pane-content	-	-	0,0,240,780	#00000000	-	1.00
+     sidebar-titlebar	group	sidebar-titlebar	-	-	11,0,226,56	#00000000	-	1.00
+      sidebar-titlebar-clear	group	sidebar-titlebar-clear	-	-	11,32,0,0	#00000000	-	1.00
+      sidebar-spacer	group	sidebar-spacer	-	-	11,32,190,0	#00000000	-	1.00
+      sidebar-toggle-slot	group	sidebar-toggle-slot	-	-	209,32,28,0	#00000000	-	1.00
+     pane-body	group	pane-body	-	-	11,56,226,724	#00000000	-	1.00
+      sidebar	group	sidebar	-	-	11,56,226,724	#00000000	-	1.00
+       sidebar-header	group	sidebar-header	-	-	11,56,226,98	#00000000	-	1.00
+        nav-library	listitem	nav-library	Library	-	11,56,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,62,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Library	41,60,175,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-	9	222,64,7,12	#00000000	#76737eff	1.00
+        nav-queue	listitem	nav-queue	Listening Queue	-	11,87,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,93,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Listening Queue	41,91,174,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-	4	221,95,8,12	#00000000	#76737eff	1.00
+        nav-playing	listitem	nav-playing	Now Playing	-	11,118,226,28	#eeeaf703	-	1.00
+         icon	icon	icon	-	-	19,124,16,16	#00000000	#eeeaf7ff	1.00
+         label	text	label	-	Now Playing	41,122,178,20	#00000000	#eeeaf7ff	1.00
+         detail	text	detail	-		225,126,4,12	#00000000	#76737eff	1.00
+       sidebar-scroll	group	sidebar-scroll	-	-	11,154,226,582	#00000000	-	1.00
+        sidebar-list	list	sidebar-list	Orbis	-	11,154,226,126	#00000000	-	1.00
+         playlists-section	group	playlists-section	Playlists	-	11,154,226,118	#00000000	-	1.00
+          section-header	heading	section-header	Playlists	-	11,154,226,28	#00000000	-	1.00
+           section-title	group	section-title	-	-	19,161,48,18	#00000000	-	1.00
+            #0	text	-	-	Playlists	19,161,48,18	#00000000	#a3a0acff	1.00
+           spacer	group	spacer	-	-	67,170,142,0	#00000000	-	1.00
+           new-playlist	button	new-playlist	New Playlist	-	209,160,20,20	#00000000	-	1.00
+            icon	icon	icon	-	-	211,162,16,16	#00000000	#a3a0acff	1.00
+          nav-playlist-p-morning	listitem	nav-playlist-p-morning	Morning	-	11,184,226,28	#00000000	-	1.00
+           icon	icon	icon	-	-	19,190,16,16	#00000000	#a3a0acff	1.00
+           label	text	label	-	Morning	41,188,175,20	#00000000	#a3a0acff	1.00
+           detail	text	detail	-	3	222,192,7,12	#00000000	#76737eff	1.00
+          nav-playlist-p-harbour	listitem	nav-playlist-p-harbour	Harbour Nights	-	11,214,226,28	#00000000	-	1.00
+           icon	icon	icon	-	-	19,220,16,16	#00000000	#a3a0acff	1.00
+           label	text	label	-	Harbour Nights	41,218,177,20	#00000000	#a3a0acff	1.00
+           detail	text	detail	-	1	224,222,5,12	#00000000	#76737eff	1.00
+          nav-playlist-p-road	listitem	nav-playlist-p-road	Road Trip	-	11,244,226,28	#00000000	-	1.00
+           icon	icon	icon	-	-	19,250,16,16	#00000000	#a3a0acff	1.00
+           label	text	label	-	Road Trip	41,248,143,20	#00000000	#a3a0acff	1.00
+           detail	text	detail	-	by mira	190,252,39,12	#00000000	#76737eff	1.00
+       sidebar-footer	group	sidebar-footer	-	-	11,736,226,44	#00000000	-	1.00
+        nav-settings	listitem	nav-settings	Settings	-	11,744,226,28	#00000000	-	1.00
+         icon	icon	icon	-	-	19,750,16,16	#00000000	#a3a0acff	1.00
+         label	text	label	-	Settings	41,748,178,20	#00000000	#a3a0acff	1.00
+         detail	text	detail	-		225,752,4,12	#00000000	#76737eff	1.00
+    pane-open-main	group	pane-open-main	-	-	0,0,0,0	#00000000	-	1.00
+    pane-open	group	pane-open	-	-	0,0,0,0	#00000000	-	1.00
+    sidebar-grip	separator	sidebar-grip	Resize sidebar	-	234,0,6,780	#00000000	-	0.02
+   main-column	group	main-column	-	-	240,0,940,780	#00000000	-	1.00
+    titlebar-strip	group	titlebar-strip	-	-	240,0,940,8	#00000000	-	1.00
+    main-row	group	main-row	-	-	240,8,940,772	#00000000	-	1.00
+     main-pane	main	main-pane	-	-	240,8,932,764	#040405ff	-	1.00
+      toolbar	toolbar	toolbar	-	-	240,8,932,48	#00000000	-	1.00
+       leading	group	leading	-	-	252,22,78,20	#00000000	-	1.00
+        screen-title	text	screen-title	-	Now Playing	252,22,78,20	#00000000	#eeeaf7ff	1.00
+       spacer	group	spacer	-	-	338,32,790,0	#00000000	-	1.00
+       trailing	group	trailing	-	-	1136,20,24,24	#00000000	-	1.00
+        #0	group	-	-	-	1136,20,24,24	#00000000	-	1.00
+         open-queue	button	open-queue	Listening Queue	-	1136,20,24,24	#00000000	-	1.00
+          icon	icon	icon	-	-	1140,24,16,16	#00000000	#a3a0acff	1.00
+      main	group	main	-	-	240,56,932,716	#00000000	-	1.00
+       #0	group	-	-	-	240,56,932,716	#00000000	-	1.00
+        playing-scroll	group	playing-scroll	-	-	240,56,932,716	#00000000	-	1.00
+         now-playing	group	now-playing	-	-	240,56,932,613	#00000000	-	1.00
+          player	group	player	-	-	272,80,300,557	#00000000	-	1.00
+           playing-art	group	playing-art	-	-	272,80,300,300	#00000000	-	1.00
+            #0	group	-	-	-	272,80,300,300	#4d3200ff	-	1.00
+             #0	text	-	-	N	381,164,82,132	#00000000	#eeeaf7b3	1.00
+            #1	group	-	-	-	272,80,300,300	#00000000	-	1.00
+           about	group	about	-	-	272,400,300,117	#00000000	-	1.00
+            set-title	text	set-title	-	Night Ferry	272,400,300,28	#00000000	#eeeaf7ff	1.00
+            set-creator	text	set-creator	-	Avery Coast	272,432,300,21	#00000000	#a3a0acff	1.00
+            set-facts	text	set-facts	-	YouTube	272,457,300,12	#00000000	#76737eff	1.00
+            set-problem	text	set-problem	-	Playing needs mpv, and this computer doesn't have it. Install mpv, then press Play again.	272,473,300,44	#00000000	#ff847dff	1.00
+           seek	slider	seek	Place in the Set	-	272,537,300,16	#00000000	-	1.00
+            #0	group	-	-	-	272,543,300,4	#eeeaf71f	-	1.00
+             seek-fill	group	seek-fill	-	-	272,543,34.1,4	#a54dffff	-	1.00
+              #0	group	-	-	-	300.1,539,12,12	#eeeaf7ff	-	0.00
+           #3	group	-	-	-	272,573,300,64	#00000000	-	1.00
+            #0	group	-	-	-	272,559,300,12	#00000000	-	1.00
+             elapsed	text	elapsed	-	5:12	272,559,25,12	#00000000	#a3a0acff	1.00
+             remaining	text	remaining	-	−40:33	533,559,39,12	#00000000	#a3a0acff	1.00
+            controls	group	controls	-	-	272,585,300,52	#00000000	-	1.00
+             back	button	back	Back 15 seconds	-	330,599,24,24	#00000000	-	1.00
+              icon	icon	icon	-	-	334,603,16,16	#00000000	#eeeaf7ff	1.00
+             play	button	play	Play	-	374,585,52,52	#a54dffff	-	1.00
+              #0	icon	-	-	-	389.6,600.6,20.8,20.8	#00000000	#ffffffff	1.00
+             ahead	button	ahead	Ahead 30 seconds	-	446,599,24,24	#00000000	-	1.00
+              icon	icon	icon	-	-	450,603,16,16	#00000000	#eeeaf7ff	1.00
+             next	button	next	Next Set	-	490,599,24,24	#00000000	-	1.00
+              icon	icon	icon	-	-	494,603,16,16	#00000000	#eeeaf7ff	1.00
+          tracklist	group	tracklist	-	-	612,80,528,46	#00000000	-	1.00
+           #0	group	-	-	-	612,80,528,26	#00000000	-	1.00
+            #0	text	-	-	Tracklist	624,80,53,20	#00000000	#eeeaf7ff	1.00
+           tracklist-note	text	tracklist-note	-	The Tracklist didn't load: Orbis answered 500	612,106,528,20	#00000000	#a3a0acff	1.00
+  sidebar-toggle	button	sidebar-toggle	Hide sidebar	-	209,18,28,28	#00000000	-	1.00
+   icon	icon	icon	-	-	215,24,16,16	#00000000	#a3a0acff	1.00

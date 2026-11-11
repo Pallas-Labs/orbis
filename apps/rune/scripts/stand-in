@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# A disposable Orbis for a live window: the repo's fixture server (scripts/fixture.ts) with four
+# made-up Sets, three with Retained Audio cut from four minutes of silence, and two of them in the
+# Listening Queue. Prints the line that points the app at it, and runs until Ctrl-C, which removes
+# its data. Needs bun, ffmpeg and a built @orbis/contracts (bun run --filter @orbis/contracts build).
+# Usage: apps/rune/scripts/stand-in [scratch folder]
+set -euo pipefail
+repo=$(cd "$(dirname "$0")/../../.." && pwd)
+dir=${1:-${XDG_CACHE_HOME:-$HOME/.cache}/agent-scratch/orbis-rune-stand-in}
+mkdir -p "$dir"
+rm -rf "$dir/data" "$dir/ready"
+[ -f "$dir/silent.m4a" ] || ffmpeg -loglevel error -y -f lavfi -i anullsrc=r=48000:cl=stereo -t 240 -c:a aac "$dir/silent.m4a"
+
+(cd "$repo" && ORBIS_COBALT_API_KEY=stand-in ORBIS_YTDLP_BIN= ORBIS_FIXTURE_DATA_DIR="$dir/data" ORBIS_FIXTURE_AUDIO_FILE="$dir/silent.m4a" \
+  ORBIS_FIXTURE_REMOVE_DATA=true exec bun scripts/fixture.ts >"$dir/ready" 2>"$dir/fixture.log") &
+server=$!
+trap 'kill $server 2>/dev/null; wait $server 2>/dev/null; rm -rf "$dir/data"' EXIT INT TERM
+for _ in $(seq 100); do [ -s "$dir/ready" ] && break; sleep 0.2; done
+read -r url key < <(python3 -I -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["address"], d["token"])' "$dir/ready")
+call() { curl -sf -H "Authorization: Bearer $key" -H 'Content-Type: application/json' "$@"; }
+
+# The fixture's stand-in YouTube knows these videos, so each saved Set gets a title and a creator.
+for video in laneMix0001 laneMix0002 laneMix0004 laneMix0003; do
+  call -X POST "$url/sets" -d "{\"url\":\"https://www.youtube.com/watch?v=$video\"}" >/dev/null
+done
+ids=$(call "$url/sets" | python3 -I -c 'import json,sys; print(" ".join(s["id"] for s in json.load(sys.stdin)["sets"][:3]))')
+for id in $ids; do call -X POST "$url/sets/$id/audio/download" >/dev/null; done
+for _ in $(seq 60); do
+  ready=$(call "$url/sets" | python3 -I -c 'import json,sys; print(sum(s["downloadState"] == "ready" for s in json.load(sys.stdin)["sets"]))')
+  [ "$ready" -ge 3 ] && break
+  sleep 1
+done
+set -- $ids
+call -X PUT "$url/queue/active" -d "{\"setId\":\"$1\"}" >/dev/null
+call -X POST "$url/queue/entries" -d "{\"setId\":\"$2\",\"placement\":\"end\"}" >/dev/null
+
+echo "Orbis stand-in at $url: 4 Sets, $ready with audio, 2 in the queue. Point the app at it:"
+echo "  ORBIS_URL=$url ORBIS_KEY=$key XDG_CONFIG_HOME=$dir/config target/debug/orbis-rune"
+wait $server

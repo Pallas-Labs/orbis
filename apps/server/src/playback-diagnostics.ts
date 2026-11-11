@@ -261,7 +261,10 @@ const logsFor = (batch: PlaybackDiagnosticsPayload, environment: string) => {
         resource: {
           attributes: [
             text("service.namespace", "orbis"),
-            text("service.name", "orbis-apple"),
+            text(
+              "service.name",
+              batch.metadata.client === "rune" ? "orbis-rune" : "orbis-apple"
+            ),
             text("service.version", batch.metadata.appVersion),
             text("app.build_id", batch.metadata.appBuild),
             text("os.name", batch.metadata.osName),
