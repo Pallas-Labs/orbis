@@ -66,6 +66,17 @@ impl App {
         self.presence.session = Some(Session { id: new_id(), set_id: set_id.to_owned(), actions: 0, owner: None, state: Local::Idle });
     }
 
+    /// Asks for Presence again for the Set playing now, when Orbis refused its play. Orbis
+    /// refuses a play while its queue names another Set (`queue-changed`), so this runs each
+    /// time the queue catches up (ADR 0019).
+    pub fn presence_retry(&mut self) {
+        let playing = self.playing.status == super::Status::Playing;
+        let refused = self.presence.session.as_ref().is_some_and(|x| x.state == Local::Idle);
+        if playing && refused {
+            self.presence_act(Kind::Play);
+        }
+    }
+
     /// Begins a session for `set_id` unless one is open for it.
     pub fn presence_ensure(&mut self, set_id: &str) {
         if self.presence.session.as_ref().is_none_or(|x| x.set_id != set_id) {

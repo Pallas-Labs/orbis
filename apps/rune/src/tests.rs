@@ -426,3 +426,36 @@ fn trying_a_failed_set_again_resumes_where_the_person_was() {
     assert_eq!(rt.state.playing.status, Status::Playing);
     assert!((rt.state.playing.position - 2_000.0).abs() < 1.0, "not back at the opening place: {}", rt.state.playing.position);
 }
+
+#[test]
+fn a_playlists_late_answer_leaves_the_set_the_person_started_since() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("PUT /queue/playlist", json!({ "queue": { "activeSetId": "s-tram", "entries": [set_json("s-tram", "Tram Lines at Dawn")] } }));
+    fixture::reply("PUT /queue/active", json!({ "queue": { "activeSetId": "s-ferry", "entries": [set_json("s-ferry", "Night Ferry")] } }));
+    fixture::reply("GET /sets/s-ferry/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("GET /sets/s-tram/tracklist", json!({ "cues": [], "state": "none" }));
+    // Play is pressed on a Playlist, then on a Set, before Orbis answers the first.
+    rt.update(|s, _| s.play_playlist("p-morning", false));
+    rt.update(|s, _| s.play("s-ferry"));
+    land(&mut rt);
+    assert_eq!(rt.state.playing.set.as_ref().map(|x| x.id.as_str()), Some("s-ferry"));
+    assert_eq!(rt.state.queue.items.data.as_ref().unwrap().active_set_id.as_deref(), Some("s-ferry"));
+}
+
+#[test]
+fn presence_refused_while_the_queue_catches_up_is_asked_again_once_it_has() {
+    let mut rt = live(Screen::Playing);
+    let accepted =
+        json!({ "outcome": "accepted", "session": { "state": "playing", "actionNumber": 1, "ownerGeneration": 3, "sessionId": "x", "setId": "s-low-tide", "leaseExpiresAt": "2027-01-15T08:00:30Z" } });
+    fixture::reply("GET /sets/s-low-tide/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("PUT /sets/s-sunrise/position", set_json("s-sunrise", "Sunrise on the Pier"));
+    fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": "s-low-tide", "entries": [set_json("s-low-tide", "Low Tide Dub")] } }));
+    // The next Set starts before Orbis has heard the last one ended, so its play is refused.
+    fixture::refuse_with("POST /presence/actions", 409, "The queue changed");
+    rt.update(|s, _| s.next());
+    fixture::reply("POST /presence/actions", accepted);
+    land(&mut rt);
+    let plays: Vec<Value> = fixture::bodies("POST /presence/actions").into_iter().filter(|b| b["kind"] == "play" && b["setId"] == "s-low-tide").collect();
+    assert_eq!(plays.len(), 2, "asked again once the completion landed: {plays:?}");
+    assert_ne!(plays[0]["actionNumber"], plays[1]["actionNumber"]);
+}

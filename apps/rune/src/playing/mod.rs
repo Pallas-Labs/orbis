@@ -84,6 +84,11 @@ pub struct State {
 }
 
 impl State {
+    /// Counts each Set started: a call's answer for an older count is out of date.
+    pub fn generation(&self) -> u64 {
+        self.generation
+    }
+
     /// The fraction of the Set played, for a progress bar.
     pub fn progress(&self) -> f32 {
         self.duration.filter(|d| *d > 0.0).map_or(0.0, |d| (self.position / d).clamp(0.0, 1.0) as f32)
@@ -279,8 +284,11 @@ impl App {
         self.spawn(
             move || api::play(&id),
             move |s, got| match got {
+                // Another Set started since: its own answer brings the queue.
+                Ok(_) if s.playing.generation != generation => {}
                 Ok(queue) => {
                     s.queue.items.land(Ok(queue));
+                    s.presence_retry();
                 }
                 Err(why) => s.fail(generation, why),
             },
@@ -522,6 +530,8 @@ impl App {
                     s.queue.items.land(Ok(queue));
                     if active.as_ref().map(|a| &a.id) != s.playing.set.as_ref().map(|p| &p.id) {
                         s.start(active);
+                    } else {
+                        s.presence_retry();
                     }
                 }
                 Err(why) => s.say(format!("Orbis didn't hear that the Set ended: {why}")),

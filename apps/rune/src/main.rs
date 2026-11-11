@@ -123,6 +123,7 @@ impl App {
                     self.queue.items.land(Ok(queue));
                     self.queue_landed();
                 }
+                self.presence_retry();
             }
             Event::Presence { presence } => {
                 let me = self.account.me_id().to_owned();
