@@ -145,6 +145,7 @@ impl App {
                 self.reload_library();
                 self.reload_queue();
                 self.reload_playlists();
+                self.reload_playlist();
             }
             Event::Connected(false) => self.live_lost = true,
             Event::Changed { topic: Topic::ListenHistory } | Event::PlaylistImport { .. } | Event::Heartbeat | Event::Connected(true) => {}

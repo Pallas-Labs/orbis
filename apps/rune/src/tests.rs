@@ -898,3 +898,33 @@ fn a_small_playlists_cover_fetches_the_large_artwork_it_draws() {
     assert!(rt.state.artwork.asked("https://art/small"), "the row's thumbnail");
     assert!(rt.state.artwork.asked("https://art/large"), "the cover's large picture");
 }
+
+#[test]
+fn download_works_for_a_set_seen_only_in_a_collaborative_playlist() {
+    let mut rt = live(Screen::Library);
+    let mut theirs = set_json("s-theirs", "Their Set");
+    theirs["downloadState"] = json!("none");
+    fixture::reply(
+        "GET /playlists/p-road",
+        json!({ "id": "p-road", "name": "Road Trip", "setCount": 1, "creator": { "id": "u-mira", "username": "mira" }, "role": "editor", "sets": [theirs.clone()] }),
+    );
+    rt.update(|s, _| s.open_playlist("p-road"));
+    land(&mut rt);
+    let mut queued = theirs;
+    queued["downloadState"] = json!("queued");
+    fixture::reply("POST /sets/s-theirs/audio/download", queued);
+    rt.update(|s, _| s.download("s-theirs"));
+    assert!(calls().iter().any(|c| c == "POST /sets/s-theirs/audio/download"), "{:?}", calls());
+    let shown = rt.state.playlists.open.data.as_ref().unwrap().sets[0].download_state;
+    assert_eq!(shown, crate::model::Download::Queued, "the row says so at once");
+}
+
+#[test]
+fn reconnecting_reloads_the_open_playlist() {
+    let mut rt = live(Screen::Playlist("p-morning".to_owned()));
+    rt.update(|s, _| {
+        s.heard_live(api::events::Event::Connected(false));
+        s.heard_live(api::events::Event::Connected(true));
+    });
+    assert!(calls().iter().any(|c| c == "GET /playlists/p-morning"), "{:?}", calls());
+}

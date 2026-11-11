@@ -96,8 +96,10 @@ impl App {
 
     /// Asks Orbis to make Retained Audio for `id`.
     pub fn download(&mut self, id: &str) {
-        let Some(set) = self.library.sets.data.iter_mut().flatten().find(|x| x.id == id) else { return };
+        // Any Set the person can see, saved or only in a Collaborative Playlist.
+        let Some(mut set) = self.find_set(id) else { return };
         set.download_state = Download::Queued;
+        self.replace_set(&set);
         let id = id.to_owned();
         self.spawn(
             move || api::download(&id),
@@ -105,6 +107,7 @@ impl App {
                 Ok(set) => {
                     s.replace_set(&set);
                     s.reload_library();
+                    s.reload_playlist();
                 }
                 Err(why) => {
                     s.reload_library();
