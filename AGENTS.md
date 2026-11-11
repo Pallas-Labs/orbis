@@ -46,6 +46,11 @@ From any worker host, run every simulator or Xcode step on a Mac host (Cortex or
 - For a UI check by hand, hold the simulator instead: `factory lease run --hold --needs simulator --device "iPhone 17 Pro"` in the background prints `{ lease, host, hubHostId, udid }`. Run each build or `simctl` step with `factory lease run --lease <lease> [--out <dir>] -- <command>`, drive the app with `device_open` on that `hubHostId` and `udid`, and end with `device_close` and `factory lease release <lease>`. `docs/agents/ui-verification.md` has the steps.
 - Cortex takes Xcode steps only. Simulators go to the MacBook, which holds 2 booted simulators at most, Parth's own included. `--host cortex` or `--host mac` pins the host. The MacBook takes tests only from 23:00 to 09:00 America/Los_Angeles, or when Parth opens it.
 
+## Feature flags and `verify`
+
+- A UI change in `apps/apple`, `apps/web` or `apps/raycast` can merge behind an off flag. Declare it in `flags.json` with `state: "off"`, run `bun run flags generate`, and read it only through its generated accessor. Never turn a flag on: the factory opens the flip PR and Parth merges it. [Feature flags](docs/development.md#feature-flags) has the steps.
+- The factory merges an Orbis PR only when the commit status `verify` on its head is `success`. `bun run ci` posts it with `local-ci`. To run it and keep the evidence, use the verify skill: `.agents/skills/verify/SKILL.md`.
+
 ## Local Effect Source
 
 The Effect source repository is available at `~/.local/share/effect-solutions/effect` for reference. Use it to explore APIs, find usage examples, and understand implementation details when the documentation is not enough.

@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Read-only: can this checkout run `bun run ci` and post `verify` on HEAD? Prints one PASS or FAIL
+# line per check and exits 1 when any check fails. It changes nothing.
+set -uo pipefail
+
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "FAIL not inside a git checkout"
+  exit 1
+}
+cd "$root" || exit 1
+failed=0
+pass() { echo "PASS $*"; }
+fail() {
+  echo "FAIL $*"
+  failed=1
+}
+
+sha="$(git rev-parse HEAD)"
+pass "checkout $root at $sha"
+
+if [ -z "$(git status --porcelain)" ]; then
+  pass "working tree clean"
+else
+  fail "working tree has changes: bun run ci refuses to run. Commit or remove them."
+fi
+
+if [ -n "$(git branch -r --contains "$sha" 2>/dev/null)" ]; then
+  pass "HEAD is on a remote branch, so a status can name it"
+else
+  fail "HEAD $sha is on no remote branch: push it first, or the status post fails"
+fi
+
+for tool in bun gh ffprobe; do
+  if command -v "$tool" >/dev/null 2>&1; then
+    pass "$tool on PATH"
+  else
+    fail "$tool not on PATH"
+  fi
+done
+
+if gh auth status >/dev/null 2>&1; then
+  pass "gh is signed in"
+else
+  fail "gh is not signed in: gh auth status"
+fi
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  factory="${FACTORY_CLI:-$HOME/.local/share/factory/bin/factory}"
+  if [ -x "${factory%% *}" ] || command -v "${factory%% *}" >/dev/null 2>&1; then
+    pass "factory CLI for the leased Mac step: $factory"
+  else
+    fail "no factory CLI at $factory: the macOS checks need a Mac lease (set FACTORY_CLI)"
+  fi
+fi
+
+exit "$failed"

@@ -48,6 +48,14 @@ export const service = {
 };
 export const read = () => [pending, started];
 
+// no-flag-read-by-string
+declare const client: {
+  readonly getBooleanValue: (key: string, fallback: boolean) => boolean;
+};
+declare const flags: { readonly roundsV2: () => boolean };
+export const byKey = () => client.getBooleanValue("rounds-v2", false); // expect: orbis/no-flag-read-by-string
+export const byAccessor = () => flags.roundsV2();
+
 // directive-needs-reason; the report lands on the directive itself.
 // expect-next: orbis/directive-needs-reason
 // oxlint-disable-next-line orbis/bounded-concurrency

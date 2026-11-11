@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Local CI. Runs what the Code quality workflow ran, then posts the `local-ci` commit status
-// on HEAD. Orbis runs no GitHub Actions (PAL-1048), so a green `local-ci` status means the
-// checks passed.
+// Local CI. Runs what the Code quality workflow ran, then posts the `local-ci` and `verify`
+// commit statuses on HEAD. Orbis runs no GitHub Actions (PAL-1048), so a green `local-ci` status
+// means the checks passed. `verify` is the status the factory's merge rule reads on every product
+// repo (factory v2, PAL-1852); for Orbis it is these same checks, so both post the same result.
 //
 // Usage:
 //   bun run ci                    # Linux checks here, macOS checks on a leased Mac
@@ -218,25 +219,31 @@ const repo = spawnSync(
   ["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"],
   { cwd: root, encoding: "utf-8" }
 ).stdout.trim();
-const posted = spawnSync(
-  "gh",
-  [
-    "api",
-    `repos/${repo}/statuses/${sha}`,
-    "-f",
-    "state=success",
-    "-f",
-    "context=local-ci",
-    "-f",
-    `description=bun run ci passed (macOS checks on ${onThisMac ? "this Mac" : (macHost ?? "a leased Mac")})`,
-    "--silent",
-  ],
-  { cwd: root, encoding: "utf-8" }
-);
-if (posted.status !== 0) {
-  console.error(
-    `\nlocal-ci: passed, but posting the status failed. Push ${sha} first.\n${posted.stderr}`
+const description = `bun run ci passed (macOS checks on ${onThisMac ? "this Mac" : (macHost ?? "a leased Mac")})`;
+const contexts = ["local-ci", "verify"];
+for (const context of contexts) {
+  const posted = spawnSync(
+    "gh",
+    [
+      "api",
+      `repos/${repo}/statuses/${sha}`,
+      "-f",
+      "state=success",
+      "-f",
+      `context=${context}`,
+      "-f",
+      `description=${description}`,
+      "--silent",
+    ],
+    { cwd: root, encoding: "utf-8" }
   );
-  process.exit(1);
+  if (posted.status !== 0) {
+    console.error(
+      `\nlocal-ci: passed, but posting the ${context} status failed. Push ${sha} first.\n${posted.stderr}`
+    );
+    process.exit(1);
+  }
 }
-console.log(`\nlocal-ci: passed. Posted local-ci=success on ${repo}@${sha}.`);
+console.log(
+  `\nlocal-ci: passed. Posted ${contexts.map((context) => `${context}=success`).join(" and ")} on ${repo}@${sha}.`
+);

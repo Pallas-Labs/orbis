@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Runs the Orbis gate on HEAD and keeps the evidence: `bun run ci` (which posts `local-ci` and
+# `verify` when every step passes), its log, and the two statuses read back from GitHub.
+#
+#   .agents/skills/verify/helpers/gate                  # run, post, read back
+#   .agents/skills/verify/helpers/gate --no-status      # run only; post and read back nothing
+#   .agents/skills/verify/helpers/gate --mac-host mac   # any other flag goes to bun run ci
+#
+# Evidence goes to $VERIFY_OUT, else ~/.cache/agent-scratch/verify-orbis/<sha7>-<epoch>/:
+# ci.log, statuses.json and summary.json. Exits with bun run ci's code.
+set -uo pipefail
+
+here="$(cd "$(dirname "$0")" && pwd)"
+root="$(git rev-parse --show-toplevel)" || exit 1
+cd "$root" || exit 1
+"$here/doctor" || {
+  echo "gate: doctor failed; nothing run." >&2
+  exit 1
+}
+
+sha="$(git rev-parse HEAD)"
+out="${VERIFY_OUT:-$HOME/.cache/agent-scratch/verify-orbis/${sha:0:7}-$(date +%s)}"
+mkdir -p "$out"
+echo "gate: evidence in $out"
+
+bun run ci "$@" 2>&1 | tee "$out/ci.log"
+code="${PIPESTATUS[0]}"
+
+posted=true
+for arg in "$@"; do
+  [ "$arg" = "--no-status" ] && posted=false
+done
+if [ "$code" -eq 0 ] && [ "$posted" = true ]; then
+  repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+  # A context can hold several statuses; the newest is its state.
+  gh api "repos/$repo/commits/$sha/statuses" --paginate \
+    --jq '[.[] | select(.context == "local-ci" or .context == "verify")] | group_by(.context) | map(max_by(.created_at) | {context, state, description, created_at})' \
+    >"$out/statuses.json"
+  cat "$out/statuses.json"
+else
+  echo "[]" >"$out/statuses.json"
+fi
+
+printf '{"sha":"%s","exit":%s,"posted":%s,"log":"%s"}\n' \
+  "$sha" "$code" "$([ "$code" -eq 0 ] && echo "$posted" || echo false)" "$out/ci.log" >"$out/summary.json"
+cat "$out/summary.json"
+exit "$code"

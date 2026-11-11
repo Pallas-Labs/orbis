@@ -69,9 +69,10 @@ The fence (PAL-1543) puts rat-stack's first five principles into the checks, so 
 
 - Hooks. `bun install` runs `prepare`, which patches TypeScript and Oxlint with `@effect/tsgo` and runs `lefthook install`. [`lefthook.yml`](../lefthook.yml) runs `bun run check` on each commit and the bounded-read ratchet on each push. [`scripts/agent-guard.mjs`](../scripts/agent-guard.mjs), a Claude Code `PreToolUse` hook in `.claude/settings.json`, refuses `--no-verify` (also quoted, escaped or abbreviated), `git commit -n`, `LEFTHOOK=0` and `core.hooksPath`. It reads the command as shell words, so only the values of message options such as `-m` and `--body`, and heredoc bodies, count as text. When a hook fails, fix the failure or report it; never skip the hook.
 - Bounded reads. [`scripts/check-bounded-reads.mjs`](../scripts/check-bounded-reads.mjs) (`bun run bounded-reads`) fails a database read in `apps/server/src` or `apps/api/src` with no row bound that [`scripts/bounded-reads.baseline.json`](../scripts/bounded-reads.baseline.json) does not list: a Drizzle `.select()` with no `.limit()` or `.get()`, or a raw `SELECT` with no `LIMIT`. Aggregate-only reads pass, and so do subqueries: a select that ends in `.as()` or is an argument of `inArray`, `notInArray`, `exists` or `notExists`. A wrapper that runs the read, such as `execute(...)`, does not exempt it. A listed read that is gone also fails until `--update-baseline` drops it, so the baseline only shrinks. Mark a read bounded another way with `// bounded-read: <why>` on its line or the line above.
-- Lint. [`lint-plugins/orbis/index.mjs`](../lint-plugins/orbis/index.mjs), copied from the factory's PAL-1542 plugin, adds `orbis/fetch-needs-timeout`, `orbis/bounded-concurrency`, `orbis/no-shared-pending-cache`, `orbis/no-module-level-mutable-state` (the last two ported from rat-stack) and `orbis/directive-needs-reason`. Every lint or Effect diagnostic override names its rule and ends with ` -- <reason>`. An `Effect.cached` or `Cache.make` override names PAL-1546, which decides between them and rat-stack's completed-value cache.
+- Lint. [`lint-plugins/orbis/index.mjs`](../lint-plugins/orbis/index.mjs), copied from the factory's PAL-1542 plugin, adds `orbis/fetch-needs-timeout`, `orbis/bounded-concurrency`, `orbis/no-shared-pending-cache`, `orbis/no-module-level-mutable-state` (the last two ported from rat-stack) and `orbis/directive-needs-reason`. `orbis/no-flag-read-by-string` is Orbis's own. Every lint or Effect diagnostic override names its rule and ends with ` -- <reason>`. An `Effect.cached` or `Cache.make` override names PAL-1546, which decides between them and rat-stack's completed-value cache.
 - Type-aware lint. Oxlint runs with type information and the `@effect/tsgo` `correctness` and `antipattern` presets, at error with `--deny-warnings`. `oxlint.config.ts` lists two ledgers that only shrink: Ultracite's type-aware rules that report today (PAL-1681), and Effect preset findings in older server files (PAL-1679).
 - Effect diagnostics. `tsconfig.base.json` sets `ignoreEffectWarningsInTscExitCode: false`, so an Effect warning fails the typecheck, and lists the unstable Effect modules Orbis uses in `allowedUnstableApis`.
+- Flags. `bun run flags:check` fails when `flags.json` is malformed or not canonical, a generated file is stale, or no code reads a declared flag. `orbis/no-flag-read-by-string` refuses a `getBooleanValue` call outside `flags.gen.ts`. See [Feature flags](#feature-flags).
 - [`scripts/fence.test.mjs`](../scripts/fence.test.mjs) (`bun run fence`) runs real Oxlint on `lint-plugins/orbis/fixtures`, plants unbounded reads and hook bypasses, and type-checks a planted Effect warning.
 
 ### Local CI
@@ -90,7 +91,7 @@ bun run ci --no-status      # run the checks, post no status
 - React Doctor on `apps/web`, failing on an error that the commit adds against `origin/main` (`--base` changes the ref).
 - At the same time, `bun run native:format` and `swift test` for `OrbisDesign` on a Mac. From Linux, it copies `apps/apple` at `HEAD` to `~/.cache/orbis-local-ci/<sha>` on the host and removes it afterward. On a Mac with no `--mac-host`, it uses the checkout itself.
 
-When every step passes, it posts the commit status `local-ci` = `success` on `HEAD`, so push the commit first. A green `local-ci` status is the "checks green" signal for review and merge. A failed run posts nothing.
+When every step passes, it posts the commit statuses `local-ci` = `success` and `verify` = `success` on `HEAD`, so push the commit first. A green `local-ci` status is the "checks green" signal for review. `verify` is the status the factory's merge rule reads on every product repo; for Orbis it is the same run. A failed run posts nothing. The verify skill, [`.agents/skills/verify`](../.agents/skills/verify/SKILL.md), runs this command for workers and reviewers and reads both statuses back.
 
 Lint also runs seven rules from the t3code oxlint plugin, vendored in [`lint-plugins/t3code`](../lint-plugins/t3code) and scoped in [`oxlint.config.ts`](../oxlint.config.ts). A suppression comment needs a reason, a test registers cases with `test.each`, and a test sets no per-test timeout (the server test script sets one ceiling).
 
@@ -102,6 +103,16 @@ bun run test
 bun run build
 bun run format:check
 ```
+
+## Feature flags
+
+A UI change in `apps/apple`, `apps/web` or `apps/raycast` can merge behind an off flag (factory v2). `flags.json` at the root declares each flag; its shape is `FlagFile` in the factory's `packages/flags`, and `flags.schema.json` is generated from it for editors. The declared `state` is the value every build compiles in.
+
+1. Add the flag to `flags.json` with `"state": "off"`, `"onAt": null` and `"removeBy": null`, then run `bun run flags generate`. It rewrites `flags.json` in canonical form and regenerates `apps/apple/Flags/Flags.gen.swift` and `apps/web/src/flags.gen.ts`.
+2. Read it through its accessor: `Flags.client.getBooleanValue(.roundsV2)` in Swift, `flags.roundsV2()` in the web app. An undeclared flag does not compile, and `bun run flags:check` fails while no code reads a declared flag.
+3. Leave `state` alone. When the issue is Live, the factory opens the flip PR that turns the flag on, and Parth merges it. A change to `apps/apple` ships an internal TestFlight build, so that merge is the release.
+
+Every build reads the declared states, internal TestFlight included. A Debug build launched with `-flags all-on` reads every flag as on (`apps/apple/Orbis/Flags.swift`). The generated Swift sits in `apps/apple/Flags/`, outside `Orbis/`, because its indentation is not this repo's swift-format style; `project.yml` adds it to the app target. `scripts/flags/flags.bundle` is the factory's `flags` CLI; [its README](../scripts/flags/README.md) says how to rebuild it.
 
 ## Gardening sensor
 
