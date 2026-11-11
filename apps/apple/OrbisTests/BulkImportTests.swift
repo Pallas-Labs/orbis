@@ -47,6 +47,7 @@ final class BulkImportTests: XCTestCase {
       Mixes from the weekend, e.g. these two: <https://youtu.be/aaaaaaaaaaa>
       (https://soundcloud.com/artist/track). Thanks!! mail me at dj@example.com
       also youtu.be/bbbbbbbbbbb and "https://youtu.be/ccccccccccc"
+      - [Mix](https://youtu.be/ddddddddddd), link:https://youtu.be/eeeeeeeeeee
       """
     XCTAssertEqual(
       verdicts(text),
@@ -55,6 +56,8 @@ final class BulkImportTests: XCTestCase {
         "import https://soundcloud.com/artist/track",
         "import https://youtu.be/bbbbbbbbbbb",
         "import https://youtu.be/ccccccccccc",
+        "import https://youtu.be/ddddddddddd",
+        "import https://youtu.be/eeeeeeeeeee",
       ])
   }
 

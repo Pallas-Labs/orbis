@@ -12,6 +12,8 @@
 //
 // Options: --name <simulator name>  --udid <simulator UUID>  --out <screenshot directory>
 // --macos runs the unit tests on the macOS destination instead of the simulator.
+// --unsigned (with --macos) builds without code signing, for a Mac with no development
+// certificate, such as Cortex.
 // --tvos runs the OrbisTV scheme on the Apple TV simulator (default name "Apple TV"), with
 // silent audio seeded so a playback check never sounds in the room.
 
@@ -46,6 +48,11 @@ const journeysOnly = process.argv.includes("--journeys");
 // bundle is iOS-only, so --macos always means the unit tests.
 const macos = process.argv.includes("--macos");
 const tvos = process.argv.includes("--tvos");
+const unsigned = process.argv.includes("--unsigned");
+if (unsigned && !macos) {
+  console.error("--unsigned applies only to --macos runs");
+  process.exit(2);
+}
 const simulator = argument("name", tvos ? "Apple TV" : "Orbis Lanes");
 const simulatorUdid = argument("udid");
 const shots = path.resolve(
@@ -265,8 +272,9 @@ try {
       // Ad-hoc signing gives the simulator build the entitlement its keychain needs, while
       // leaving the committed project device-ready. The macOS host cannot ad-hoc sign that
       // entitlement, so the macOS run uses automatic signing with the local development
-      // identity from project.yml instead.
+      // identity from project.yml instead, or no signing at all with --unsigned.
       ...(macos ? [] : ["CODE_SIGN_IDENTITY=-"]),
+      ...(unsigned ? ["CODE_SIGNING_ALLOWED=NO"] : []),
       "-derivedDataPath",
       derived,
       "-resultBundlePath",

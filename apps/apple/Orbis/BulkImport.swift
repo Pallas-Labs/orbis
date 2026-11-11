@@ -48,7 +48,12 @@ enum BulkLinks {
     // Links pasted from prose or Markdown arrive wrapped in brackets, quotes, or a full stop.
     let wrapping = CharacterSet(charactersIn: "<>()[]{}\"'`.")
     return text.components(separatedBy: separators)
-      .map { $0.trimmingCharacters(in: wrapping) }
+      .map { word in
+        // A link glued to other text, as in `[Mix](https://…)` or `link:https://…`, starts at
+        // its scheme.
+        let start = word.firstRange(of: /(?i)https?:\/\//)?.lowerBound ?? word.startIndex
+        return word[start...].trimmingCharacters(in: wrapping)
+      }
       .filter { !$0.isEmpty }
   }
 
