@@ -48,6 +48,8 @@ struct Session {
     accepted_at: f64,
     /// Plays tried again after failing in passing.
     tries: u32,
+    /// A renewal timer runs for this session: one only, through pauses and resumes.
+    renewing: bool,
 }
 
 #[derive(Debug)]
@@ -72,7 +74,7 @@ impl App {
     pub fn presence_begin(&mut self, set_id: &str) {
         self.presence_act(Kind::Stop);
         let now = self.timers.now();
-        self.presence.session = Some(Session { id: new_id(), set_id: set_id.to_owned(), actions: 0, owner: None, state: Local::Idle, accepted_at: now, tries: 0 });
+        self.presence.session = Some(Session { id: new_id(), set_id: set_id.to_owned(), actions: 0, owner: None, state: Local::Idle, accepted_at: now, tries: 0, renewing: false });
     }
 
     /// Asks for Presence again for the Set playing now, when Orbis refused its play. Orbis
@@ -105,15 +107,20 @@ impl App {
         };
         session.state = to;
         let id = session.id.clone();
+        let start_timer = kind == Kind::Play && !session.renewing;
+        session.renewing |= start_timer;
         self.presence.waiting.push_back((id.clone(), kind));
-        if kind == Kind::Play {
+        if start_timer {
             self.after(RENEW, move |s| s.renew(&id));
         }
         self.send_presence();
     }
 
     fn renew(&mut self, id: &str) {
-        let playing = self.presence.session.as_ref().is_some_and(|x| x.id == id && x.state == Local::Playing);
+        let Some(session) = self.presence.session.as_mut().filter(|x| x.id == id) else { return };
+        let playing = session.state == Local::Playing;
+        // A paused session's timer ends here; the next resume starts one again.
+        session.renewing = playing;
         if playing {
             self.presence_act(Kind::Renew);
             let id = id.to_owned();

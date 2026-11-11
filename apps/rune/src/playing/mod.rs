@@ -396,9 +396,11 @@ impl App {
                 self.save_place();
                 self.set_status(Status::Idle);
                 let (generation, intent) = (self.playing.generation + 1, self.playing.intent);
-                // Writes still waiting, or out, outlive the Set: they keep their order.
-                let (writes, writing) = (std::mem::take(&mut self.playing.writes), self.playing.writing);
-                self.playing = State { generation, intent, writes, writing, ..State::default() };
+                // Writes still waiting or out, and an activation still out with the completion
+                // it holds, outlive the Set: they keep their order.
+                let p = &mut self.playing;
+                let (writes, writing, activating, held) = (std::mem::take(&mut p.writes), p.writing, p.activating.take(), p.held.take());
+                self.playing = State { generation, intent, writes, writing, activating, held, ..State::default() };
                 generation
             }
         }
