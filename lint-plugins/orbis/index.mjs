@@ -556,7 +556,7 @@ const noFlagReadByString = {
     },
     messages: {
       byString:
-        "This reads a flag by key. Read it through its accessor in flags.gen.ts, such as `flags.roundsV2()`.",
+        "This reads a flag by key. Read it through its generated accessor in flags.gen.ts.",
     },
     type: "problem",
   },

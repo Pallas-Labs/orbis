@@ -1,7 +1,7 @@
 import Foundation
 
 /// The app's feature flags, declared in `flags.json` at the repo root. `Flags.gen.swift` holds
-/// one `Flag` case per declared flag; read one as `Flags.client.getBooleanValue(.someFlag)`.
+/// one `Flag` case per declared flag; read one as `Flags.client.getBooleanValue(.<accessor>)`.
 ///
 /// Every build reads each flag's declared state, so an internal TestFlight build shows only what
 /// Parth has turned on. A Debug build launched with `-flags all-on` reads every flag as on, which
