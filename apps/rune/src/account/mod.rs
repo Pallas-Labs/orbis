@@ -222,6 +222,8 @@ impl App {
     /// Opens Settings and loads the devices.
     pub fn open_settings(&mut self) {
         self.screen = Screen::Settings;
+        // A code from before has likely expired or been used.
+        self.account.code = Load::default();
         self.reload_me();
         self.account.devices.begin();
         self.spawn(api::devices, |s, got| drop(s.account.devices.land(got)));
@@ -284,6 +286,14 @@ impl App {
         self.spawn(api::sign_in_code, |s, got| {
             if let Some(why) = s.account.code.land(got) {
                 s.say(format!("No code: {why}"));
+            }
+            // Orbis keeps a Sign-in Code for ten minutes; then it leaves the screen.
+            if let Some(code) = s.account.code.data.as_ref().map(|c| c.code.clone()) {
+                s.after(std::time::Duration::from_secs(600), move |s| {
+                    if s.account.code.data.as_ref().is_some_and(|c| c.code == code) {
+                        s.account.code = Load::default();
+                    }
+                });
             }
         });
     }

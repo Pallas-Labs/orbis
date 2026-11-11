@@ -109,11 +109,17 @@ fn devices(s: &App, l: &Look) -> Vec<El> {
     };
     let code = match (&s.account.code.data, s.account.code.busy) {
         (_, true) => Spinner::new().size(14.0).build(&l.k),
-        (Some(c), false) => col()
-            .items_end()
-            .gap(2.0)
-            .child(text(spaced(&c.code)).key("sign-in-code-shown").font(rune::TextStyle { tracking: 2.0, ..l.heading.mono() }).color(l.fg))
-            .child(text("Works once, for a few minutes").font(l.k.ty.small).color(l.faint)),
+        (Some(c), false) => row()
+            .gap(12.0)
+            .items_center()
+            .child(
+                col()
+                    .items_end()
+                    .gap(2.0)
+                    .child(text(spaced(&c.code)).key("sign-in-code-shown").font(rune::TextStyle { tracking: 2.0, ..l.heading.mono() }).color(l.fg))
+                    .child(text("Works once, for 10 minutes").font(l.k.ty.small).color(l.faint)),
+            )
+            .child(Button::new("New Code").variant(ButtonVariant::Ghost).control_size(ControlSize::Small).on_press(|s: &mut App| s.new_sign_in_code()).build(&l.k).key("new-sign-in-code")),
         (None, false) => Button::new("Show a Code").control_size(ControlSize::Small).on_press(|s: &mut App| s.new_sign_in_code()).build(&l.k).key("new-sign-in-code"),
     };
     rows.push(setting(l, "settings-new-device", "Sign In Another Device", "Type this code on the new device's sign-in page.", code));

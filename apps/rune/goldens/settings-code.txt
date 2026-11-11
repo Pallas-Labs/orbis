@@ -111,12 +111,15 @@ kit-root	group	kit-root	-	-	0,0,1180,780	#00000000	-	1.00
              revoke-d-tv	button	revoke-d-tv	Sign Out	-	916,549,66,20	#00000000	-	1.00
               label	text	label	-	Sign Out	926,553,46,12	#00000000	#eeeaf7ff	1.00
             settings-new-device	group	settings-new-device	-	-	430,596,552,74	#00000000	-	1.00
-             #0	group	-	-	-	430,612,377,42	#00000000	-	1.00
-              #0	text	-	-	Sign In Another Device	430,612,377,20	#00000000	#eeeaf7ff	1.00
-              #1	text	-	-	Type this code on the new device's sign-in page.	430,634,377,20	#00000000	#a3a0acff	1.00
-             #1	group	-	-	-	823,616,159,34	#00000000	-	1.00
-              sign-in-code-shown	text	sign-in-code-shown	-	K7Q2 M9XH	876,616,106,20	#00000000	#eeeaf7ff	1.00
-              #1	text	-	-	Works once, for a few minutes	823,638,159,12	#00000000	#76737eff	1.00
+             #0	group	-	-	-	430,612,307,42	#00000000	-	1.00
+              #0	text	-	-	Sign In Another Device	430,612,307,20	#00000000	#eeeaf7ff	1.00
+              #1	text	-	-	Type this code on the new device's sign-in page.	430,634,307,20	#00000000	#a3a0acff	1.00
+             #1	group	-	-	-	753,616,229,34	#00000000	-	1.00
+              #0	group	-	-	-	753,616,142,34	#00000000	-	1.00
+               sign-in-code-shown	text	sign-in-code-shown	-	K7Q2 M9XH	789,616,106,20	#00000000	#eeeaf7ff	1.00
+               #1	text	-	-	Works once, for 10 minutes	753,638,142,12	#00000000	#76737eff	1.00
+              new-sign-in-code	button	new-sign-in-code	New Code	-	907,623,75,20	#00000000	-	1.00
+               label	text	label	-	New Code	917,627,55,12	#00000000	#eeeaf7ff	1.00
             settings-approve	group	settings-approve	-	-	430,670,552,74	#00000000	-	1.00
              #0	group	-	-	-	430,686,461,42	#00000000	-	1.00
               #0	text	-	-	Approve a Device	430,686,461,20	#00000000	#eeeaf7ff	1.00

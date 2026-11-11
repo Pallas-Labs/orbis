@@ -951,3 +951,27 @@ fn an_open_playlist_with_a_download_running_checks_again_until_it_ends() {
     land(&mut rt);
     assert_eq!(reads(), 2, "checked again while the download runs");
 }
+
+#[test]
+fn another_sign_in_code_can_be_made_after_the_first() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("POST /me/sign-in-codes", json!({ "code": "K7Q2M9XH", "expiresAt": "2027-01-15T08:10:00Z" }));
+    fixture::reply("GET /me/devices", json!({ "devices": [] }));
+    fixture::reply("GET /me", json!({ "id": "u-me", "username": "avery", "autoDownload": true, "social": true, "host": false }));
+    rt.update(|s, _| s.open_settings());
+    rt.update(|s, _| s.new_sign_in_code());
+    land(&mut rt);
+    still(&mut rt);
+    assert!(shows(&rt, "sign-in-code-shown"));
+    press(&mut rt, "new-sign-in-code");
+    let made = calls().iter().filter(|c| *c == "POST /me/sign-in-codes").count();
+    assert_eq!(made, 2, "a new code beside the one shown");
+    land(&mut rt);
+    rt.frame(601.0);
+    rt.frame(1.0 / 60.0);
+    assert!(rt.state.account.code.data.is_none(), "the code leaves once Orbis has expired it");
+    rt.update(|s, _| s.new_sign_in_code());
+    land(&mut rt);
+    rt.update(|s, _| s.open_settings());
+    assert!(rt.state.account.code.data.is_none(), "reopening Settings starts without the old code");
+}
