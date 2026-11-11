@@ -224,3 +224,116 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
     await rm(directory, { force: true, recursive: true });
   }
 });
+
+// Listening Time began empty when its migration was applied, so the Listens recorded before it
+// must reach Heavy Rotation. Ways the history migration could fail:
+// - It credits nothing, and Heavy Rotation stays empty for a Person with weeks of Listens.
+// - It credits a Listen past its finish, past the next Listen's start, past the moment
+//   Listening Time began, or past the Set's length.
+// - It credits a Listen after Listening Time began, which live playback already counted.
+// - It replaces the Listening Time a Set already has on a day, instead of adding to it.
+// - A Listen whose start is a guess credits time when it never finished.
+// - One Person's Listens reach another Person's Listening Time.
+const BEGAN = "2026-11-11T19:58:54.818Z";
+
+const listeningDays = (databasePath: string) => {
+  const database = new Database(databasePath, { readonly: true });
+  try {
+    return database
+      .query<
+        { day: string; person_id: string; seconds: number; set_id: string },
+        []
+      >(
+        "SELECT person_id, day, set_id, seconds FROM listening_time ORDER BY person_id, set_id, day"
+      )
+      .all()
+      .map((row) => `${row.person_id} ${row.set_id} ${row.day} ${row.seconds}`)
+      .join(", ");
+  } finally {
+    database.close();
+  }
+};
+
+test("transcript: Listens from before Listening Time fill Heavy Rotation", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "orbis-rotation-"));
+  const databasePath = path.join(directory, "library.sqlite");
+  try {
+    // Sets a to f last 600 to 605 seconds.
+    await seedSets(databasePath, ready(["a", "b", "c", "d", "e", "f"]));
+    const seed = new Database(databasePath);
+    try {
+      // The database as it stood before the history migration: Listening Time began at BEGAN.
+      seed.run(
+        "DELETE FROM __drizzle_migrations WHERE name = '20261111200000_listening_time_history'"
+      );
+      seed
+        .query(
+          "UPDATE __drizzle_migrations SET applied_at = ? WHERE name = '20261110000000_listening_time'"
+        )
+        .run(BEGAN);
+      const recordListen = seed.query(
+        "INSERT INTO listens (person_id, set_id, started_at, finished_at, start_known) VALUES (?, ?, ?, ?, ?)"
+      );
+      // a finishes after 8 minutes.
+      recordListen.run(
+        "host",
+        "a",
+        "2026-11-01T10:00:00.000Z",
+        "2026-11-01T10:08:00.000Z",
+        1
+      );
+      // b plays 4 minutes before c starts; c is left playing far past its length.
+      recordListen.run("host", "b", "2026-11-02T10:00:00.000Z", null, 1);
+      recordListen.run("host", "c", "2026-11-02T10:04:00.000Z", null, 1);
+      // Listens from before Listens were recorded: d finished, e did not.
+      recordListen.run(
+        "host",
+        "d",
+        "2026-06-01T00:00:00.000Z",
+        "2026-06-01T00:00:00.000Z",
+        0
+      );
+      recordListen.run("host", "e", "2026-06-01T00:00:00.000Z", null, 0);
+      // a plays until Listening Time begins, which then credits 300 s of it live.
+      recordListen.run("host", "a", "2026-11-11T19:55:00.000Z", null, 1);
+      // f starts after Listening Time began; live playback credits it 150 s.
+      recordListen.run("host", "f", "2026-11-11T20:30:00.000Z", null, 1);
+      // Another Person finishes b.
+      recordListen.run(
+        "someone-else",
+        "b",
+        "2026-11-02T10:00:00.000Z",
+        "2026-11-02T10:30:00.000Z",
+        1
+      );
+      const live = seed.query(
+        "INSERT INTO listening_time (person_id, day, set_id, seconds) VALUES ('host', '2026-11-11', ?, ?)"
+      );
+      live.run("a", 300);
+      live.run("f", 150);
+    } finally {
+      seed.close();
+    }
+
+    setSystemTime(new Date("2026-11-12T12:00:00Z"));
+    const app = createApp({ databasePath });
+    try {
+      const t = transcript();
+      t.step("read the shelf", await shelf(app));
+      t.step("read the past year", await shelf(app, "year"));
+      t.step("listening time", listeningDays(databasePath));
+      expect(t.text()).toMatchInlineSnapshot(`
+        "
+        read the shelf  -> 200 a c b f
+        read the past year  -> 200 a d c b f
+        listening time  -> host a 2026-11-01 480, host a 2026-11-11 535, host b 2026-11-02 240, host c 2026-11-02 602, host d 2026-06-01 603, host f 2026-11-11 150, someone-else b 2026-11-02 601
+        "
+      `);
+    } finally {
+      await app.dispose();
+    }
+  } finally {
+    setSystemTime();
+    await rm(directory, { force: true, recursive: true });
+  }
+});

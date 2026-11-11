@@ -52,7 +52,7 @@ One Person's activation of a Set through an intentional play action or automatic
 _Avoid_: Play, playback session
 
 **Listening Time**:
-The seconds of one Set one Person heard on one UTC day, credited from the short forward steps between saved Playback Positions that match the time between the saves. A seek, a skip while paused, or a second device playing the same Set is not Listening Time.
+The seconds of one Set one Person heard on one UTC day, credited from the short forward steps between saved Playback Positions that match the time between the saves. A seek, a skip while paused, or a second device playing the same Set is not Listening Time. Listening Time from before 2026-11-11T19:58Z is an estimate from Listens: each Listen counts until it finished, the next Listen started, or the Set ended, whichever came first.
 _Avoid_: Play time, watch time
 
 **Heavy Rotation**:
