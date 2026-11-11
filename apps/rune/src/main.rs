@@ -134,7 +134,11 @@ impl App {
                 let urls: Vec<String> = self.presence.listening.iter().filter_map(|p| p.set.artwork_url.clone()).collect();
                 self.want_artwork(urls.iter().map(String::as_str));
             }
-            Event::Changed { topic: Topic::Library | Topic::Set } => self.reload_library(),
+            Event::Changed { topic: Topic::Library | Topic::Set } => {
+                // A Set seen only in the open Playlist changes there, not in the Library.
+                self.reload_library();
+                self.reload_playlist();
+            }
             Event::Changed { topic: Topic::Playlist } => {
                 self.reload_playlists();
                 self.reload_playlist();

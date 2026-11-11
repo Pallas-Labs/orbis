@@ -19,7 +19,7 @@ use crate::playlists::focused;
 pub use view::view;
 
 /// How long a Library with a Download running waits before it reloads.
-const RECHECK: Duration = Duration::from_secs(10);
+pub const RECHECK: Duration = Duration::from_secs(10);
 
 #[derive(Default)]
 pub struct State {

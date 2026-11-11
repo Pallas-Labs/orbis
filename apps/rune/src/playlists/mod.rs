@@ -10,7 +10,7 @@ use rune::TextEdit;
 use crate::api;
 use crate::dialogs::Dialog;
 use crate::load::Load;
-use crate::model::{Playlist, PlaylistDetail, Role};
+use crate::model::{Download, Playlist, PlaylistDetail, Role};
 use crate::{App, Screen};
 
 pub use view::screen;
@@ -25,6 +25,8 @@ pub struct State {
     /// writes them back whole, so they run one at a time.
     changes: std::collections::VecDeque<(String, String)>,
     changing: bool,
+    /// A check of the open Playlist is due already, for a Download it holds.
+    recheck: bool,
 }
 
 impl State {
@@ -73,9 +75,27 @@ impl App {
                     let urls: Vec<String> = got.iter().flat_map(|p| p.sets.iter().filter_map(|x| x.artwork_url.clone())).chain(cover).collect();
                     s.playlists.open.land(got);
                     s.want_artwork(urls.iter().map(String::as_str));
+                    s.recheck_playlist();
                 }
             },
         );
+    }
+
+    /// While the open Playlist holds a Set whose Download runs, it loads again every 10 s, as
+    /// the Library does: a Set only in a Collaborative Playlist isn't in the Library's reloads.
+    fn recheck_playlist(&mut self) {
+        let downloading = self.playlists.open.data.iter().flat_map(|p| p.sets.iter()).any(|x| matches!(x.download_state, Download::Queued | Download::Downloading));
+        let Some(id) = self.playlists.open.data.as_ref().map(|p| p.id.clone()) else { return };
+        if !downloading || self.playlists.recheck {
+            return;
+        }
+        self.playlists.recheck = true;
+        self.after(crate::library::RECHECK, move |s| {
+            s.playlists.recheck = false;
+            if s.screen == Screen::Playlist(id) && !s.playlists.open.busy {
+                s.reload_playlist();
+            }
+        });
     }
 
     /// Replaces the Listening Queue with the Playlist's playable Sets and plays the first.

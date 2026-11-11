@@ -928,3 +928,26 @@ fn reconnecting_reloads_the_open_playlist() {
     });
     assert!(calls().iter().any(|c| c == "GET /playlists/p-morning"), "{:?}", calls());
 }
+
+#[test]
+fn a_set_change_reloads_the_open_playlist_too() {
+    let mut rt = live(Screen::Playlist("p-morning".to_owned()));
+    rt.update(|s, _| s.heard_live(api::events::Event::Changed { topic: api::events::Topic::Set }));
+    assert!(calls().iter().any(|c| c == "GET /playlists/p-morning"), "{:?}", calls());
+}
+
+#[test]
+fn an_open_playlist_with_a_download_running_checks_again_until_it_ends() {
+    let mut rt = live(Screen::Library);
+    let mut theirs = set_json("s-theirs", "Their Set");
+    theirs["downloadState"] = json!("downloading");
+    fixture::reply("GET /playlists/p-road", json!({ "id": "p-road", "name": "Road Trip", "setCount": 1, "creator": { "id": "u-mira", "username": "mira" }, "role": "editor", "sets": [theirs] }));
+    rt.update(|s, _| s.open_playlist("p-road"));
+    land(&mut rt);
+    let reads = || calls().iter().filter(|c| *c == "GET /playlists/p-road").count();
+    assert_eq!(reads(), 1);
+    rt.frame(11.0);
+    rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    assert_eq!(reads(), 2, "checked again while the download runs");
+}
