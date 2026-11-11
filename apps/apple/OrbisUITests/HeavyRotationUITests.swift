@@ -14,9 +14,9 @@ final class HeavyRotationUITests: LibraryJourney {
     addTeardownBlock {
       for set in [longest, middle, shortest] { _ = try? service.removeSet(set.id) }
     }
-    try service.listen(to: middle.id, minutes: 4)
-    try service.listen(to: longest.id, minutes: 6)
-    try service.listen(to: shortest.id, minutes: 3)
+    // Each over the two-minute floor with room for a late save, ten seconds apart, so the order
+    // is the rank.
+    try service.listen([(middle.id, 150), (longest.id, 160), (shortest.id, 140)])
     let ranked = try service.heavyRotation()
     let ours = ranked.filter { [longest.id, middle.id, shortest.id].contains($0) }
     XCTAssertEqual(

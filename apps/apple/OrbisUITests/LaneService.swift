@@ -240,11 +240,18 @@ struct LaneService {
     guard (200..<300).contains(code) else { throw URLError(.badServerResponse) }
   }
 
-  /// Listens to a Set for `minutes`, saving its Playback Position once a minute as a playing
-  /// device would.
-  func listen(to id: String, minutes: Int) throws {
-    for minute in 0...minutes {
-      try setPosition(of: id, to: minute * 60)
+  /// Plays Sets side by side, each for its `seconds`, saving every Playback Position each five
+  /// seconds as a playing device would. The service counts a step as Listening Time only when it
+  /// matches the time since the last save, so this runs in real time.
+  func listen(_ plays: [(id: String, seconds: Int)]) throws {
+    let start = Date()
+    let longest = plays.map(\.seconds).max() ?? 0
+    for position in stride(from: 0, through: longest, by: 5) {
+      let due = start.addingTimeInterval(TimeInterval(position))
+      if due > Date() { Thread.sleep(until: due) }
+      for play in plays where position <= play.seconds {
+        try setPosition(of: play.id, to: position)
+      }
     }
   }
 
