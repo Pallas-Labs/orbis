@@ -161,6 +161,7 @@ const Event = Schema.Union([
         actual: Finite,
         expected: Finite,
         premature: Schema.Boolean,
+        reason: Schema.optionalKey(Schema.Literals(["repeated"])),
       }),
     }),
   }),

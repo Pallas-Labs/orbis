@@ -195,9 +195,12 @@ final class PlaybackDiagnostics {
   }
 
   struct EndEvent: Codable, Equatable, Sendable {
+    /// Why a premature end still finished the Set.
+    enum Reason: String, Codable, Sendable { case repeated }
     let actual: Finite
     let expected: Finite
     let premature: Bool
+    var reason: Reason?
   }
 
   struct ActivationEvent: Codable, Equatable, Sendable {

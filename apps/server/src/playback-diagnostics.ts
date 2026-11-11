@@ -79,7 +79,12 @@ const eventAttributes: EventAttributes = {
     ...maybeDouble("playback.command.target", _0.target),
   ],
   discontinuity: ({ _0 }) => maybeDouble("playback.discontinuity.gap", _0.gap),
-  ended: ({ _0 }) => [bool("playback.ended.premature", _0.premature)],
+  ended: ({ _0 }) => [
+    bool("playback.ended.premature", _0.premature),
+    ...(_0.reason === undefined
+      ? []
+      : [text("playback.ended.reason", _0.reason)]),
+  ],
   error: ({ _0 }) => [errorType(_0)],
   interruption: ({ _0 }) => [text("playback.phase", _0.phase)],
   item: ({ _0 }) => [
