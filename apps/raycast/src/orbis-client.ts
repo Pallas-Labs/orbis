@@ -4,8 +4,10 @@ import {
 } from "@orbis/contracts";
 import { OrbisApi } from "@orbis/contracts/http-api";
 import {
+  environment,
   getPreferenceValues,
   LocalStorage,
+  showHUD,
   showToast,
   Toast,
 } from "@raycast/api";
@@ -239,10 +241,11 @@ export type SignInResult =
  * response decodes, so a failed sign-in leaves the previous key in place.
  */
 export const signIn = async (
-  code: string,
+  code: string | null,
   options: CallOptions = {}
 ): Promise<SignInResult> => {
-  const presented = code.trim();
+  // Vicinae submits a text field the user never touched as null.
+  const presented = (code ?? "").trim();
   if (presented === "") {
     return {
       kind: "failed",
@@ -274,33 +277,84 @@ export const startToast = async (title: string): Promise<Toast> =>
 export const startProgressToast = async (): Promise<Toast> =>
   await startToast("Saving set…");
 
+export interface Outcome {
+  readonly message: string;
+  readonly style: Toast.Style.Failure | Toast.Style.Success;
+  readonly title: string;
+}
+
+/** Vicinae runs Raycast extensions, and adds `vicinaeVersion` to `environment`. */
+const inVicinae = (): boolean => "vicinaeVersion" in environment;
+
 /**
- * Finishes a capture command on the toast it already showed: a distinct rejection before
- * any request, or the outcome of the one save. The toast stays a single object so progress
- * turns into the result instead of being replaced.
+ * Turns a command's toast into its outcome. Vicinae resends a toast only when its style or
+ * title changes, so there the title is set again after the message. Vicinae's root search
+ * shows no toast, so when the command ends there (`endsAtRoot`), Vicinae also shows the
+ * outcome as a HUD, which closes its window as Raycast does after a no-view command.
+ */
+export const settleToast = async (
+  toast: Toast,
+  outcome: Outcome,
+  { endsAtRoot }: { readonly endsAtRoot: boolean }
+): Promise<void> => {
+  toast.style = outcome.style;
+  toast.title = outcome.title;
+  toast.message = outcome.message;
+  if (!inVicinae()) {
+    return;
+  }
+  toast.title = outcome.title;
+  if (endsAtRoot) {
+    await showHUD(`${outcome.title}: ${outcome.message}`);
+  }
+};
+
+/** Ends a no-view command, which always returns to the root search. */
+export const settleCommand = async (
+  toast: Toast,
+  outcome: Outcome
+): Promise<void> => {
+  await settleToast(toast, outcome, { endsAtRoot: true });
+};
+
+/** A distinct rejection before any request, or the outcome of the one save. */
+const saveOutcome = async (candidate: string | null): Promise<Outcome> => {
+  if (candidate === null) {
+    return {
+      message: SUPPORTED_LINK_HINT,
+      style: Toast.Style.Failure,
+      title: "Unsupported link",
+    };
+  }
+  const result = await saveSourceUrl(candidate);
+  if (result.kind === "saved") {
+    return {
+      message: candidate,
+      style: Toast.Style.Success,
+      title: "Set saved",
+    };
+  }
+  if (result.kind === "duplicate") {
+    return {
+      message: candidate,
+      style: Toast.Style.Success,
+      title: "Already in your library",
+    };
+  }
+  return {
+    message: result.message,
+    style: Toast.Style.Failure,
+    title: "Couldn't save this set",
+  };
+};
+
+/**
+ * Finishes a capture command on the toast it already showed. The toast stays a single
+ * object so progress turns into the result instead of being replaced.
  */
 export const finishSave = async (
   toast: Toast,
   candidate: string | null
 ): Promise<void> => {
-  if (candidate === null) {
-    toast.style = Toast.Style.Failure;
-    toast.title = "Unsupported link";
-    toast.message = SUPPORTED_LINK_HINT;
-    return;
-  }
-  const result = await saveSourceUrl(candidate);
-  if (result.kind === "saved") {
-    toast.style = Toast.Style.Success;
-    toast.title = "Set saved";
-    toast.message = candidate;
-  } else if (result.kind === "duplicate") {
-    toast.style = Toast.Style.Success;
-    toast.title = "Already in your library";
-    toast.message = candidate;
-  } else {
-    toast.style = Toast.Style.Failure;
-    toast.title = "Couldn't save this set";
-    toast.message = result.message;
-  }
+  await settleCommand(toast, await saveOutcome(candidate));
 };
