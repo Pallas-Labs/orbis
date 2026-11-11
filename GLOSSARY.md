@@ -56,7 +56,7 @@ The seconds of one Set one Person heard on one UTC day, credited from the short 
 _Avoid_: Play time, watch time
 
 **Heavy Rotation**:
-The Home shelf of the Sets one Person heard most in the last 30 days, ranked by Listening Time. A day under two minutes of a Set does not count, recent days weigh a little more, and the shelf is hidden until three Sets qualify.
+The collection of the Sets one Person heard most over a range (30 days, 3 months, or the past year), ranked by Listening Time and opened like a Playlist. A day under two minutes of a Set does not count. Recent days weigh more over 30 days, a little more over 3 months, and the same over a year. Home's shelf shows the 30-day collection's first Sets, and the collection is empty until three Sets qualify.
 _Avoid_: Top Sets, most played
 
 **Finish**:

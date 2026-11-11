@@ -254,6 +254,16 @@ export const QueuePlaylistPayload = Schema.Struct({
   order: Schema.optionalKey(Schema.Literals(["playlist", "shuffled"])),
   playlistId: QueueSetId,
 });
+/** The ranges Heavy Rotation covers: the last 30 days, 3 months, or year, today included. */
+export const ListeningRangeSchema = Schema.Literals([
+  "month",
+  "quarter",
+  "year",
+]);
+export const QueueHeavyRotationPayload = Schema.Struct({
+  order: Schema.optionalKey(Schema.Literals(["ranked", "shuffled"])),
+  range: ListeningRangeSchema,
+});
 export const PositionPayload = Schema.Struct({
   seconds: Schema.Number.check(
     Schema.isGreaterThanOrEqualTo(0),
@@ -733,6 +743,11 @@ export const OrbisApi = PlaylistApi.add(
         payload: QueuePlaylistPayload,
         success: QueueResponse,
       }),
+      HttpApiEndpoint.put("replaceWithHeavyRotation", "/queue/heavy-rotation", {
+        error: [BadRequest, InternalError],
+        payload: QueueHeavyRotationPayload,
+        success: QueueResponse,
+      }),
       HttpApiEndpoint.post("complete", "/queue/completion", {
         error: [BadRequest, NotFound, InternalError],
         payload: QueueSetPayload,
@@ -755,7 +770,8 @@ export const OrbisApi = PlaylistApi.add(
           success: Schema.Struct({ tags: Schema.Array(Schema.String) }),
         }),
         HttpApiEndpoint.get("heavyRotation", "/heavy-rotation", {
-          error: InternalError,
+          error: [BadRequest, InternalError],
+          query: { range: Schema.optionalKey(ListeningRangeSchema) },
           success: LibraryResponseSchema,
         }),
         HttpApiEndpoint.patch("updateTags", "/sets/:id/tags", {

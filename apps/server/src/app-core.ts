@@ -21,6 +21,7 @@ import {
   PositionPayload,
   PresenceActionPayload,
   QueueEntryPayload,
+  QueueHeavyRotationPayload,
   QueuePlaylistPayload,
   QueueSetPayload,
   SetAccess,
@@ -1635,6 +1636,26 @@ export const createPortableApp = (options: {
               )
             )
           )
+          .handleRaw("replaceWithHeavyRotation", () =>
+            withFailureResponse(
+              Effect.gen(function* replaceQueueFromHeavyRotation() {
+                const input = yield* HttpServerRequest.schemaBodyJson(
+                  QueueHeavyRotationPayload
+                );
+                const queue = yield* Queue;
+                return {
+                  queue: yield* queue.replaceWithHeavyRotation(
+                    input.range,
+                    input.order
+                  ),
+                };
+              }).pipe(
+                Effect.tap(() =>
+                  announceForCaller("listen-history", seesPerson)
+                )
+              )
+            )
+          )
           .handleRaw("complete", () =>
             withFailureResponse(
               Effect.gen(function* completeQueueEntry() {
@@ -1727,11 +1748,13 @@ export const createPortableApp = (options: {
                 })
               )
             )
-            .handle("heavyRotation", () =>
+            .handle("heavyRotation", ({ query }) =>
               withFailureResponse(
                 Effect.gen(function* listHeavyRotation() {
                   const personal = yield* Library;
-                  return { sets: yield* personal.heavyRotation };
+                  return {
+                    sets: yield* personal.heavyRotation(query.range ?? "month"),
+                  };
                 })
               )
             )

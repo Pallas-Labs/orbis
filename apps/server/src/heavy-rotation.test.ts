@@ -8,11 +8,18 @@
 //   dropped.
 // - Recent days weigh nothing extra, or so much that a long Set three weeks
 //   ago loses to a short one today.
+// - 3 months or a year drops a day inside it, or keeps one past it.
+// - A year still weighs recent days more, so January loses to November at
+//   equal time.
 // - It shows a shelf for one or two Sets, or more Sets than the shelf holds.
 // - Two Sets with equal time come back in a different order on each call.
 import { expect, test } from "bun:test";
 
-import { HEAVY_ROTATION, heavyRotation } from "./heavy-rotation.js";
+import {
+  HEAVY_ROTATION,
+  heavyRotation,
+  LISTENING_RANGES,
+} from "./heavy-rotation.js";
 import type { ListeningDay } from "./heavy-rotation.js";
 
 const NOW = new Date("2026-11-10T18:00:00.000Z");
@@ -30,6 +37,9 @@ const day = (setId: string, age: number, seconds: number): ListeningDay => ({
 
 /** Three Sets heard for an hour today, to fill the shelf past its minimum. */
 const filler = ["x", "y", "z"].map((id) => day(id, 0, HOUR));
+/** The ranking without the filler. */
+const withoutFiller = (ranked: string[]) =>
+  ranked.filter((id) => !["x", "y", "z"].includes(id));
 
 test("ranks by listening time, not by how many days a Set was played", () => {
   const ranked = heavyRotation(
@@ -124,9 +134,52 @@ test("the shelf is empty until three Sets qualify", () => {
   ).toEqual(["c", "b", "a"]);
 });
 
-test("the shelf holds at most its limit, and equal time orders by id", () => {
-  const ids = Array.from({ length: HEAVY_ROTATION.limit + 2 }, (_, index) =>
-    String.fromCodePoint(106 - index)
+test("3 months and a year each hold their own days", () => {
+  const days = [
+    ...filler,
+    day("day 89", 89, HOUR),
+    day("day 90", 90, HOUR),
+    day("day 364", 364, HOUR),
+    day("day 365", 365, HOUR),
+  ];
+  expect(LISTENING_RANGES.quarter.days).toBe(90);
+  expect(LISTENING_RANGES.year.days).toBe(365);
+  expect(withoutFiller(heavyRotation(days, NOW, "month"))).toEqual([]);
+  expect(withoutFiller(heavyRotation(days, NOW, "quarter"))).toEqual([
+    "day 89",
+  ]);
+  expect(withoutFiller(heavyRotation(days, NOW, "year"))).toEqual([
+    "day 364",
+    "day 89",
+    "day 90",
+  ]);
+});
+
+test("a year weighs every day the same; 30 days and 3 months favour now", () => {
+  // Two hours in January against an hour and fifty minutes this week.
+  const days = [
+    ...filler,
+    day("january", 300, 2 * HOUR),
+    day("this week", 3, (110 / 60) * HOUR),
+    day("last month", 40, 2 * HOUR),
+  ];
+  expect(withoutFiller(heavyRotation(days, NOW, "year"))).toEqual([
+    "january",
+    "last month",
+    "this week",
+  ]);
+  // In 3 months, day 40 weighs 1 - 0.25 * 40 / 89 ≈ 0.89, under this week's ≈ 0.99.
+  expect(withoutFiller(heavyRotation(days, NOW, "quarter"))).toEqual([
+    "this week",
+    "last month",
+  ]);
+});
+
+test("the collection holds at most its limit, and equal time orders by id", () => {
+  const ids = Array.from(
+    { length: HEAVY_ROTATION.limit + 2 },
+    (_, index) =>
+      `s${String(HEAVY_ROTATION.limit + 2 - index).padStart(3, "0")}`
   );
   const ranked = heavyRotation(
     ids.map((id) => day(id, 0, HOUR)),

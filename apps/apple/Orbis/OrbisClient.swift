@@ -591,10 +591,11 @@ struct OrbisClient: Sendable {
     return try Self.decode(LibraryResponse.self, from: response).sets
   }
 
-  /// The Sets this Person played most in the last 30 days, ranked by the service. Empty when
-  /// fewer than three qualify.
-  func heavyRotation() async throws -> [SavedSet] {
-    let response = try await send(path: "heavy-rotation", method: "GET", body: nil)
+  /// The Sets this Person played most over a range, ranked by the service. Empty when fewer
+  /// than three qualify.
+  func heavyRotation(_ range: ListeningRange = .month) async throws -> [SavedSet] {
+    let response = try await send(
+      path: "heavy-rotation?range=\(range.rawValue)", method: "GET", body: nil)
     return try Self.decode(LibraryResponse.self, from: response).sets
   }
 
@@ -752,6 +753,17 @@ struct OrbisClient: Sendable {
     let body = try Self.encoder.encode(
       PlaylistQueueRequest(playlistId: playlistId, order: shuffled ? .shuffled : nil))
     let response = try await send(path: "queue/playlist", method: "PUT", body: body)
+    return try decodedQueue(response)
+  }
+
+  /// Replaces the whole queue with the playable Sets in Heavy Rotation over a range, ranked or
+  /// shuffled.
+  func playHeavyRotation(_ range: ListeningRange, shuffled: Bool = false) async throws
+    -> ListeningQueue
+  {
+    let body = try Self.encoder.encode(
+      HeavyRotationQueueRequest(range: range, order: shuffled ? "shuffled" : nil))
+    let response = try await send(path: "queue/heavy-rotation", method: "PUT", body: body)
     return try decodedQueue(response)
   }
 

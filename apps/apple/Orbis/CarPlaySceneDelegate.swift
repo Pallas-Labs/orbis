@@ -18,6 +18,9 @@
       case playCue(Cue, setId: String)
       case openPlaylist(Playlist)
       case openRail(String, [SavedSet])
+      case openRotation
+      case openRotationRange(ListeningRange)
+      case playRotation(ListeningRange)
       case reload
     }
 
@@ -112,7 +115,8 @@
         homeSections(catalog)
       }
       fill(playlistsTab, status: catalog.playlistsStatus, empty: "No playlists yet.") {
-        [CPListSection(items: catalog.playlists.map(playlistItem))]
+        // Heavy Rotation leads the Playlists, as its folder does on the phone.
+        [CPListSection(items: [rotationItem()] + catalog.playlists.map(playlistItem))]
       }
       fill(libraryTab, status: catalog.library, empty: "No sets are ready to play yet.") {
         [CPListSection(items: setItems(catalog.sets, catalog: catalog))]
@@ -171,7 +175,7 @@
       }
       let rails: [(String, [SavedSet], (SavedSet) -> String?)] = [
         ("Continue listening", home.continueRail, SetPresentation.timeLeft),
-        ("Heavy rotation", home.heavyRotation, \.creator),
+        (HeavyRotationView.title, home.heavyRotation, \.creator),
         ("Recently filed", home.recentlyFiled, \.creator),
       ]
       for (title, sets, detail) in rails where !sets.isEmpty {
@@ -217,6 +221,15 @@
         image: UIImage(systemName: Destination.playlists.symbol))
       item.accessoryType = .disclosureIndicator
       item.handler = handler(.openPlaylist(playlist))
+      return item
+    }
+
+    private func rotationItem() -> CPListItem {
+      let item = CPListItem(
+        text: HeavyRotationView.title, detailText: "What you've played most",
+        image: UIImage(systemName: "chart.bar"))
+      item.accessoryType = .disclosureIndicator
+      item.handler = handler(.openRotation)
       return item
     }
 
@@ -299,6 +312,21 @@
           template.updateSections(
             Self.fit([CPListSection(items: setItems(sets, catalog: catalog))]))
           interfaceController?.pushTemplate(template, animated: true, completion: nil)
+        case .openRotation:
+          let items = ListeningRange.allCases.map { range in
+            let item = CPListItem(text: range.title, detailText: nil)
+            item.accessoryType = .disclosureIndicator
+            item.handler = handler(.openRotationRange(range))
+            return item
+          }
+          let template = CPListTemplate(
+            title: HeavyRotationView.title, sections: [CPListSection(items: items)])
+          interfaceController?.pushTemplate(template, animated: true, completion: nil)
+        case .openRotationRange(let range):
+          await openRotation(range)
+        case .playRotation(let range):
+          await model.playHeavyRotation(range)
+          showNowPlaying(ifPlaying: model.audioPlayer.currentSetId != nil)
         case .reload:
           await model.loadLibrary()
           await model.loadPlaylists()
@@ -331,6 +359,36 @@
         template.emptyViewSubtitleVariants = [failure.message]
       case .idle, .loading:
         template.showsSpinnerWhileEmpty = false
+      }
+    }
+
+    /// Heavy Rotation over one range: Play All, then its playable Sets in rank order.
+    private func openRotation(_ range: ListeningRange) async {
+      let template = CPListTemplate(title: range.title, sections: [])
+      template.showsSpinnerWhileEmpty = true
+      interfaceController?.pushTemplate(template, animated: true, completion: nil)
+      await model.loadRotation(range)
+      template.showsSpinnerWhileEmpty = false
+      switch model.rotationSets[range] ?? .idle {
+      case .loaded(let sets):
+        let playable = sets.filter(CarPlayCatalog.isPlayable)
+        guard !playable.isEmpty else {
+          template.emptyViewTitleVariants = ["Not enough listening yet."]
+          return
+        }
+        let playAll = CPListItem(
+          text: "Play All", detailText: nil, image: UIImage(systemName: "play.fill"))
+        playAll.handler = handler(.playRotation(range))
+        template.updateSections(
+          Self.fit([
+            CPListSection(items: [playAll]),
+            CPListSection(items: setItems(playable, catalog: catalog)),
+          ]))
+      case .failed(let failure):
+        template.emptyViewTitleVariants = [failure.title]
+        template.emptyViewSubtitleVariants = [failure.message]
+      case .idle, .loading:
+        break
       }
     }
 

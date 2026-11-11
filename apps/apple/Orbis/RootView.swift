@@ -447,6 +447,7 @@ struct DestinationView: View {
         #if os(iOS)
           .playlistPage(model, in: .playlists, zoom: setZoom) { id in setPage(id) }
         #endif
+        .heavyRotationPage(model, in: .playlists, zoom: setZoom) { id in setPage(id) }
         .navigationDestination(item: openedSet) { id in setPage(id) }
     case .people:
       PeopleDestination(model: model)
@@ -564,6 +565,7 @@ struct DestinationView: View {
     #if os(iOS)
       .playlistPage(model, in: .home, zoom: setZoom) { id in setPage(id) }
     #endif
+    .heavyRotationPage(model, in: .home, zoom: setZoom) { id in setPage(id) }
     .navigationDestination(item: openedSet) { id in setPage(id) }
   }
 
@@ -796,7 +798,10 @@ struct HomeRails: View {
         rail("Continue listening", subtitle: "Pick up where you left off.") { continueCards }
       }
       if !home.heavyRotation.isEmpty {
-        rail("Heavy rotation", subtitle: "What you've played most this month.") { rotationCards }
+        rail(
+          HeavyRotationView.title, subtitle: ListeningRange.month.summary,
+          seeAll: { model.openHeavyRotation(in: .home) }
+        ) { rotationCards }
       }
       if !home.recentlyFiled.isEmpty {
         rail("Recently filed", subtitle: "The newest links in your library.") { recentCards }
@@ -1014,10 +1019,21 @@ struct HomeRails: View {
   }
 
   private func rail<Cards: View>(
-    _ name: String, subtitle: String, @ViewBuilder cards: () -> Cards
+    _ name: String, subtitle: String, seeAll: (() -> Void)? = nil,
+    @ViewBuilder cards: () -> Cards
   ) -> some View {
     VStack(alignment: .leading, spacing: 14) {
-      SectionHeading(name, subtitle: subtitle)
+      HStack(alignment: .firstTextBaseline) {
+        SectionHeading(name, subtitle: subtitle)
+        if let seeAll {
+          Button("See All", action: seeAll)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.orbis.tint)
+            .buttonStyle(.plain)
+            .accessibilityLabel("See all of \(name)")
+            .accessibilityIdentifier("rotation-see-all")
+        }
+      }
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(alignment: .top, spacing: 14) { cards() }
           .padding(.horizontal, Self.edgeInset)

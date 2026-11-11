@@ -26,14 +26,15 @@ struct HomeSelection: Equatable {
   let continueListening: [SavedSet]
   /// The newest Sets the Library's filter admits.
   let recentlyFiled: [SavedSet]
-  /// The Sets played most in the last 30 days, as the service ranked them. The service leaves
-  /// it empty until three Sets qualify, and an empty shelf is not drawn.
+  /// The Sets played most in the last 30 days, as the service ranked them, as many as a rail
+  /// shows; the collection holds the rest. The service leaves it empty until three Sets
+  /// qualify, and an empty shelf is not drawn.
   let heavyRotation: [SavedSet]
 
   init(library: [SavedSet], visible: [SavedSet], heavyRotation: [SavedSet] = []) {
     continueListening = SetPresentation.continueListening(library)
     recentlyFiled = Array(visible.prefix(Self.recentLimit))
-    self.heavyRotation = heavyRotation
+    self.heavyRotation = Array(heavyRotation.prefix(Self.recentLimit))
   }
 
   /// The one most recently left part-way, or else the newest filed.

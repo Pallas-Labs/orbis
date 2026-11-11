@@ -27,12 +27,13 @@ import { Database } from "./db/service.js";
 import { DownloadMoves, moveDownload } from "./download-state.js";
 import { asLibraryError, LibraryError } from "./errors.js";
 import {
-  HEAVY_ROTATION,
   heavyRotation,
+  LISTENING_RANGES,
   listenedBetween,
   utcDay,
   windowStart,
 } from "./heavy-rotation.js";
+import type { ListeningRange } from "./heavy-rotation.js";
 import type { PersonRecord } from "./identity.js";
 import {
   MAX_PLAYLISTS_PER_SET,
@@ -175,7 +176,9 @@ export class Library extends Context.Service<
     readonly remove: (id: string) => Effect.Effect<SavedSet, LibraryError>;
     readonly tags: Effect.Effect<string[], LibraryError>;
     /** The Sets on Home's Heavy Rotation shelf, most heard first; empty when it is hidden. */
-    readonly heavyRotation: Effect.Effect<SavedSet[], LibraryError>;
+    readonly heavyRotation: (
+      range: ListeningRange
+    ) => Effect.Effect<SavedSet[], LibraryError>;
     readonly playlists: Effect.Effect<Playlist[], LibraryError>;
     readonly createPlaylist: (
       name: string
@@ -1137,39 +1140,40 @@ export class Library extends Context.Service<
       )
     ).pipe(Effect.withSpan("Library.tags"));
 
-    const heavyRotationSets = Effect.suspend(() =>
-      execute(
-        Effect.gen(function* heavyRotationEffect() {
-          const now = new Date();
-          // One row for each Set heard on each of the last 30 days, kept to the Sets still in
-          // this Person's Library, so a removed Set leaves no gap. The limit only guards a
-          // pathological day count; a person hears a few Sets a day.
-          const days = yield* db
-            .select({
-              day: listeningTime.day,
-              seconds: listeningTime.seconds,
-              setId: listeningTime.setId,
-            })
-            .from(listeningTime)
-            .innerJoin(
-              libraryEntries,
-              and(
-                eq(libraryEntries.personId, listeningTime.personId),
-                eq(libraryEntries.setId, listeningTime.setId)
+    const heavyRotationSets = Effect.fn("Library.heavyRotation")(
+      (range: ListeningRange) =>
+        execute(
+          Effect.gen(function* heavyRotationEffect() {
+            const now = new Date();
+            // One row for each Set heard on each day of the range, kept to the Sets still in
+            // this Person's Library, so a removed Set leaves no gap. The limit only guards a
+            // pathological day count; a person hears a few Sets a day.
+            const days = yield* db
+              .select({
+                day: listeningTime.day,
+                seconds: listeningTime.seconds,
+                setId: listeningTime.setId,
+              })
+              .from(listeningTime)
+              .innerJoin(
+                libraryEntries,
+                and(
+                  eq(libraryEntries.personId, listeningTime.personId),
+                  eq(libraryEntries.setId, listeningTime.setId)
+                )
               )
-            )
-            .where(
-              and(
-                eq(listeningTime.personId, personId),
-                gte(listeningTime.day, windowStart(now))
+              .where(
+                and(
+                  eq(listeningTime.personId, personId),
+                  gte(listeningTime.day, windowStart(now, range))
+                )
               )
-            )
-            .orderBy(desc(listeningTime.day))
-            .limit(HEAVY_ROTATION.windowDays * 200);
-          return yield* byIds(heavyRotation(days, now));
-        })
-      )
-    ).pipe(Effect.withSpan("Library.heavyRotation"));
+              .orderBy(desc(listeningTime.day))
+              .limit(LISTENING_RANGES[range].days * 200);
+            return yield* byIds(heavyRotation(days, now, range));
+          })
+        )
+    );
 
     const playlistsList = Effect.suspend(() =>
       execute(

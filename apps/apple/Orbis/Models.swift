@@ -404,6 +404,38 @@ struct PlaylistQueueRequest: Encodable {
   let order: PlaylistOrder?
 }
 
+/// The ranges Heavy Rotation covers. The service ranks each and weighs recent days by range.
+enum ListeningRange: String, CaseIterable, Identifiable, Sendable, Encodable {
+  case month
+  case quarter
+  case year
+
+  var id: Self { self }
+
+  var title: String {
+    switch self {
+    case .month: "30 days"
+    case .quarter: "3 months"
+    case .year: "Past year"
+    }
+  }
+
+  /// What the collection's subtitle says it holds.
+  var summary: String {
+    switch self {
+    case .month: "What you've played most this month."
+    case .quarter: "What you've played most in the last 3 months."
+    case .year: "What you've played most this year."
+    }
+  }
+}
+
+/// `order` left out keeps the service's ranking.
+struct HeavyRotationQueueRequest: Encodable {
+  let range: ListeningRange
+  let order: String?
+}
+
 /// A Playback Position in whole seconds. The service bounds it to the Set's own length.
 struct PlaybackPositionRequest: Encodable {
   let seconds: Int

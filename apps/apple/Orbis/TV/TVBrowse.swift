@@ -322,6 +322,7 @@
       .navigationDestination(item: openedPlaylist) { id in
         TVPlaylistPage(model: model, playlistId: id).id(id)
       }
+      .tvHeavyRotationPage(model, in: .playlists)
       .accessibilityElement(children: .contain)
       .accessibilityIdentifier("tv-playlists")
     }
@@ -350,6 +351,13 @@
           .accessibilityIdentifier("playlists-empty")
         } else {
           LazyVGrid(columns: TVLayout.columns, alignment: .leading, spacing: TVLayout.gap) {
+            Button {
+              model.openHeavyRotation(in: .playlists)
+            } label: {
+              HeavyRotationSleeve(model: model, fanWidth: 260, height: 330)
+            }
+            .buttonStyle(.card)
+            .accessibilityIdentifier("tv-rotation-folder")
             ForEach(items) { playlist in
               Button {
                 model.openPlaylist(playlist.id)

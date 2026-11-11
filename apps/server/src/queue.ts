@@ -2,6 +2,7 @@ import type {
   ListeningQueue,
   PlaylistOrder,
   QueuePlacement,
+  SavedSet,
 } from "@orbis/contracts";
 import { isPlayableSet } from "@orbis/contracts";
 import { and, asc, eq } from "drizzle-orm";
@@ -12,6 +13,7 @@ import { insertBatches } from "./db/batches.js";
 import { playlistSets, playlists, queueEntries } from "./db/schema.js";
 import { Database } from "./db/service.js";
 import { asLibraryError, LibraryError } from "./errors.js";
+import type { ListeningRange } from "./heavy-rotation.js";
 import { LibraryPerson } from "./library-person.js";
 import { Library } from "./library.js";
 import { Presence } from "./presence.js";
@@ -86,6 +88,11 @@ export class Queue extends Context.Service<
       playlistId: string,
       creatorId?: string,
       order?: PlaylistOrder
+    ) => Effect.Effect<ListeningQueue, LibraryError>;
+    /** Replaces the queue with the playable Sets in Heavy Rotation over a range. */
+    readonly replaceWithHeavyRotation: (
+      range: ListeningRange,
+      order?: "ranked" | "shuffled"
     ) => Effect.Effect<ListeningQueue, LibraryError>;
     /** Removes the finished Set, resets its position, and starts what followed it. */
     readonly complete: (
@@ -213,6 +220,27 @@ export class Queue extends Context.Service<
         })
     );
 
+    /** Replaces the queue with the playable Sets among `members`, in their order or shuffled. */
+    const replaceWithSets = Effect.fn("Queue.replaceWithSets")(
+      (members: readonly SavedSet[], shuffled: boolean) =>
+        Effect.gen(function* replaceQueueWithSets() {
+          const rows = yield* execute(order());
+          const previousActive = activeIn(rows);
+          const playableIds = members
+            .filter(isPlayableSet)
+            .map((set) => set.id);
+          const ids = shuffled
+            ? yield* Random.shuffle(playableIds)
+            : playableIds;
+          const activeSetId = ids[0] ?? null;
+          yield* execute(writeQueue(ids, activeSetId));
+          if (activeSetId !== null && activeSetId !== previousActive) {
+            yield* stats.recordListen(activeSetId);
+          }
+          return yield* read.pipe(Effect.tap(notify));
+        })
+    );
+
     const replaceWithPlaylist = Effect.fn("Queue.replaceWithPlaylist")(
       (
         playlistId: string,
@@ -250,21 +278,20 @@ export class Queue extends Context.Service<
           const members = yield* library.byIds(
             memberIds.map((member) => member.setId)
           );
-          const rows = yield* execute(order());
-          const previousActive = activeIn(rows);
-          const playableIds = members
-            .filter(isPlayableSet)
-            .map((set) => set.id);
-          const ids =
-            playlistOrder === "shuffled"
-              ? yield* Random.shuffle(playableIds)
-              : playableIds;
-          const activeSetId = ids[0] ?? null;
-          yield* execute(writeQueue(ids, activeSetId));
-          if (activeSetId !== null && activeSetId !== previousActive) {
-            yield* stats.recordListen(activeSetId);
-          }
-          return yield* read.pipe(Effect.tap(notify));
+          return yield* replaceWithSets(members, playlistOrder === "shuffled");
+        })
+    );
+
+    const replaceWithHeavyRotation = Effect.fn(
+      "Queue.replaceWithHeavyRotation"
+    )(
+      (
+        range: ListeningRange,
+        rotationOrder: "ranked" | "shuffled" = "ranked"
+      ) =>
+        Effect.gen(function* replaceQueueFromHeavyRotation() {
+          const members = yield* library.heavyRotation(range);
+          return yield* replaceWithSets(members, rotationOrder === "shuffled");
         })
     );
 
@@ -303,6 +330,7 @@ export class Queue extends Context.Service<
       notify,
       play,
       read,
+      replaceWithHeavyRotation,
       replaceWithPlaylist,
     });
   });

@@ -11,6 +11,9 @@
 //   a Set this Person removed reaches the shelf.
 // - The shelf shows with fewer than three Sets, or in an order other than the
 //   ranking rule's.
+// - 3 months or the past year reads the 30-day window, or an unknown range is
+//   read as one.
+// - Playing the collection queues Sets in another order, or Sets outside it.
 //
 // The transcript prints the shelf after each step, so a change to these rules
 // shows in its snapshot diff.
@@ -20,7 +23,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { LibraryResponseSchema } from "@orbis/contracts/http-api";
+import {
+  LibraryResponseSchema,
+  ListeningQueueSchema,
+} from "@orbis/contracts/http-api";
 import { Schema } from "effect";
 
 import { createTestApp as createApp } from "./test-app.js";
@@ -29,11 +35,17 @@ import { putPosition, ready, seedSets } from "./test-library.js";
 import type { App } from "./test-library.js";
 
 const decodeShelf = Schema.decodeUnknownSync(LibraryResponseSchema);
+const decodeQueue = Schema.decodeUnknownSync(
+  Schema.Struct({ queue: ListeningQueueSchema })
+);
 
-const shelf = async (app: App) => {
+const shelf = async (app: App, range?: string) => {
   const response = await request(app, {
     method: "GET",
-    url: "/heavy-rotation",
+    url:
+      range === undefined
+        ? "/heavy-rotation"
+        : `/heavy-rotation?range=${range}`,
   });
   const { sets } = decodeShelf(response.json());
   return `${response.statusCode} ${sets.length === 0 ? "(hidden)" : sets.map((set) => set.id).join(" ")}`;
@@ -89,7 +101,7 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
   try {
     await seedSets(
       databasePath,
-      ready(["a", "b", "c", "d", "e", "f", "g", "h"])
+      ready(["a", "b", "c", "d", "e", "f", "g", "h", "i"])
     );
     const seed = new Database(databasePath);
     try {
@@ -102,6 +114,8 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
       insert.run("someone-else", TODAY, "+0 days", "f", 36_000);
       // Ten minutes of d three weeks ago, inside the window.
       insert.run("host", TODAY, "-21 days", "d", 600);
+      // An hour of i seven months ago, inside the past year only.
+      insert.run("host", TODAY, "-210 days", "i", 3600);
     } finally {
       seed.close();
     }
@@ -159,6 +173,28 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
       });
       t.step("two devices play g 30 s apart for 12.5 s", await shelf(app));
 
+      t.step("read 3 months", await shelf(app, "quarter"));
+      t.step("read the past year", await shelf(app, "year"));
+      // A refused query has no JSON body, so this step reads the status alone.
+      const unknown = await app.handler(
+        new Request("http://127.0.0.1:4310/heavy-rotation?range=week", {
+          headers: { "x-orbis-test-auth": "fixture" },
+        }),
+        "device"
+      );
+      t.step("read an unknown range", `${unknown.status}`);
+
+      const played = await request(app, {
+        method: "PUT",
+        payload: { range: "year" },
+        url: "/queue/heavy-rotation",
+      });
+      const { queue } = decodeQueue(played.json());
+      t.step(
+        "play the past year",
+        `${played.statusCode} ${queue.entries.map((set) => set.id).join(" ")}, active ${queue.activeSetId}`
+      );
+
       t.step("listening time", listeningTime(databasePath));
 
       expect(t.text()).toMatchInlineSnapshot(`
@@ -173,7 +209,11 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
         hear a minute of g, skip 30 s while playing, hear 5 s  -> 200 a d b
         pause h, skip 30 s four times, wait 10 minutes, skip again  -> 200 a d b
         two devices play g 30 s apart for 12.5 s  -> 200 a d b
-        listening time  -> host a 540, host b 240, host c 180, host d 600, host e 36000, someone-else f 36000, host g 65
+        read 3 months  -> 200 e d a b
+        read the past year  -> 200 e i d a b
+        read an unknown range  -> 400
+        play the past year  -> 200 e i d a b, active e
+        listening time  -> host a 540, host b 240, host c 180, host d 600, host e 36000, someone-else f 36000, host g 65, host i 3600
         "
       `);
     } finally {
