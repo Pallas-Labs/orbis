@@ -212,6 +212,8 @@ impl App {
     /// Its Tracklist loads, so Now Playing has it before Play.
     pub fn show_set(&mut self, set: Set) {
         let p = &mut self.playing;
+        // A new generation: the Set shown before can't land its Tracklist under this one.
+        p.stop();
         p.activated = true;
         p.duration = set.duration_seconds;
         p.position = set.playback_position_seconds;

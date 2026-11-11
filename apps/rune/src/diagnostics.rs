@@ -54,6 +54,9 @@ pub struct State {
     /// Every sequence at or below this is delivered or named lost.
     through: u64,
     sending: bool,
+    /// The last entry of the batch out now: those up to it are neither evicted nor dropped by
+    /// count; the answer settles them by sequence.
+    inflight: Option<u64>,
     /// The wait before the next batch; it doubles after a failure.
     wait: Duration,
     /// Orbis turned delivery off: 401, 403, 404, or a long Retry-After.
@@ -74,6 +77,7 @@ impl Default for State {
             lost: Vec::new(),
             through: 0,
             sending: false,
+            inflight: None,
             wait: EVERY,
             stopped: false,
             due: false,
@@ -134,10 +138,14 @@ impl App {
             return;
         }
         d.waiting.push_back(entry);
-        if d.waiting.len() > WAITING
-            && let Some(old) = d.waiting.pop_front()
-        {
-            d.lose(old.sequence, old.sequence);
+        if d.waiting.len() > WAITING {
+            // The oldest entry not in the batch out now goes.
+            let out = d.inflight.unwrap_or(0);
+            if let Some(i) = d.waiting.iter().position(|e| e.sequence > out)
+                && let Some(old) = d.waiting.remove(i)
+            {
+                d.lose(old.sequence, old.sequence);
+            }
         }
         if !d.due && !d.sending {
             d.due = true;
@@ -173,16 +181,20 @@ impl App {
             batch["lost"] = Value::Array(lost);
         }
         d.sending = true;
+        let upto = last.unwrap_or(0);
+        d.inflight = Some(upto);
         self.spawn(
             move || api::diagnostics(batch),
             move |s, got| {
                 let d = &mut s.diagnostics;
                 d.sending = false;
+                d.inflight = None;
                 match got {
                     Ok(_) => {
-                        d.waiting.drain(..count);
+                        // By sequence, not count: the queue may have changed while this was out.
+                        d.waiting.retain(|e| e.sequence > upto);
                         d.lost.drain(..named);
-                        d.through = through;
+                        d.through = d.through.max(through);
                         d.wait = EVERY;
                     }
                     Err(failure) => match failure.status {
@@ -193,7 +205,8 @@ impl App {
                         None | Some(408 | 429 | 502 | 503 | 504) => d.wait = (d.wait * 2).min(MOST),
                         Some(_) => {
                             // Refused for good: these entries are lost, and the next batch says so.
-                            let gone: Vec<u64> = d.waiting.drain(..count).map(|e| e.sequence).collect();
+                            let gone: Vec<u64> = d.waiting.iter().map(|e| e.sequence).filter(|q| *q <= upto).collect();
+                            d.waiting.retain(|e| e.sequence > upto);
                             if let (Some(first), Some(last)) = (gone.first(), gone.last()) {
                                 d.lose(*first, *last);
                             }
@@ -217,7 +230,7 @@ impl State {
         self.waiting.clear();
         self.lost.clear();
         self.through = self.sequence;
-        (self.sending, self.due, self.stopped, self.wait) = (false, false, false, EVERY);
+        (self.sending, self.due, self.stopped, self.wait, self.inflight) = (false, false, false, EVERY, None);
     }
 
     /// Entries `first..=last` will never go out.

@@ -629,3 +629,77 @@ fn next_before_a_plays_answer_completes_that_set_only_after_orbis_made_it_active
     let done = sent.iter().position(|c| c.starts_with("POST /queue/completion {\"setId\":\"s-tram\"}")).expect("the completion goes out");
     assert!(done > active, "{sent:?}");
 }
+
+#[test]
+fn a_tracklist_answer_for_the_set_shown_before_never_lands_under_the_next() {
+    let mut rt = live(Screen::Library);
+    fixture::reply(
+        "GET /sets/s-sunrise/tracklist",
+        json!({ "cues": [{ "artist": "A", "title": "Old Cue", "startSeconds": 10, "position": 0, "appleMusicId": null, "artworkUrl": null }], "state": "ready" }),
+    );
+    fixture::reply(
+        "GET /sets/s-ferry/tracklist",
+        json!({ "cues": [{ "artist": "B", "title": "New Cue", "startSeconds": 20, "position": 0, "appleMusicId": null, "artworkUrl": null }], "state": "ready" }),
+    );
+    rt.update(|s, _| {
+        s.playing = Default::default();
+        s.queue_landed();
+    });
+    let queue: crate::model::Queue = serde_json::from_value(json!({ "activeSetId": "s-ferry", "entries": [set_json("s-ferry", "Night Ferry")] })).unwrap();
+    rt.update(|s, _| s.heard_live(api::events::Event::Queue { queue }));
+    // Sunrise's answer lands while Night Ferry's is still out.
+    api::settle_one(&mut rt.state);
+    let titles = |rt: &Runtime<App>| rt.state.playing.tracklist.data.as_ref().map(|t| t.cues.iter().map(|c| c.title.clone()).collect::<Vec<_>>());
+    assert_eq!(titles(&rt), None, "Sunrise's Cues never show under Night Ferry");
+    land(&mut rt);
+    assert_eq!(titles(&rt), Some(vec!["New Cue".to_owned()]));
+}
+
+#[test]
+fn two_sets_added_to_one_playlist_quickly_both_stay() {
+    let mut rt = live(Screen::Library);
+    let detail = |ids: &[&str]| json!({ "id": "p-road", "name": "Road Trip", "setCount": ids.len(), "creator": { "id": "u-me", "username": "avery" }, "role": "creator", "sets": ids.iter().map(|id| set_json(id, id)).collect::<Vec<_>>() });
+    fixture::reply("GET /playlists/p-road", detail(&["s-a"]));
+    fixture::reply("PUT /playlists/p-road/sets", json!({ "sets": [] }));
+    answer_reloads();
+    rt.update(|s, _| {
+        s.toggle_in_playlist("s-b", "p-road");
+        s.toggle_in_playlist("s-c", "p-road");
+    });
+    assert_eq!(fixture::bodies("PUT /playlists/p-road/sets").len(), 1, "the second waits for the first");
+    // Orbis now holds what the first change wrote.
+    fixture::reply("GET /playlists/p-road", detail(&["s-a", "s-b"]));
+    land(&mut rt);
+    let puts = fixture::bodies("PUT /playlists/p-road/sets");
+    assert_eq!(puts.last().unwrap()["setIds"], json!(["s-a", "s-b", "s-c"]), "{puts:?}");
+}
+
+#[test]
+fn a_full_report_queue_evicts_around_the_batch_in_flight_and_acks_by_sequence() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("POST /diagnostics/playback", json!({ "accepted": 32, "rejected": 0 }));
+    rt.update(|s, _| {
+        for _ in 0..1024 {
+            let snapshot = s.playing.snapshot();
+            s.record_playback(json!({ "sample": {} }), snapshot);
+        }
+    });
+    rt.frame(1.0 / 60.0);
+    rt.frame(6.0);
+    let first = fixture::bodies("POST /diagnostics/playback");
+    assert_eq!(first.len(), 1);
+    let last = first[0]["throughSequence"].as_u64().unwrap();
+    // One more entry while the batch is out: the queue is full.
+    rt.update(|s, _| {
+        let snapshot = s.playing.snapshot();
+        s.record_playback(json!({ "sample": {} }), snapshot);
+    });
+    land(&mut rt);
+    rt.frame(6.0);
+    rt.frame(1.0 / 60.0);
+    let sent = fixture::bodies("POST /diagnostics/playback");
+    let next = &sent[1];
+    assert_eq!(next["lost"][0]["afterSequence"].as_u64(), Some(last), "the entry after the batch was evicted, not one in it: {}", next["lost"]);
+    assert_eq!(next["lost"][0]["throughSequence"].as_u64(), Some(last + 1));
+    assert_eq!(next["entries"][0]["sequence"].as_u64(), Some(last + 2), "nothing unsent was dropped");
+}

@@ -21,6 +21,10 @@ pub struct State {
     pub lists: Load<(Vec<Playlist>, Vec<Playlist>)>,
     /// The Playlist open now.
     pub open: Load<PlaylistDetail>,
+    /// Membership changes waiting their turn, as (Set, Playlist): each reads the members and
+    /// writes them back whole, so they run one at a time.
+    changes: std::collections::VecDeque<(String, String)>,
+    changing: bool,
 }
 
 impl State {
@@ -184,7 +188,17 @@ impl App {
     /// Puts a Set in a Playlist, or takes it out when it's there: Orbis's members are read
     /// first, so another editor's change isn't lost.
     pub fn toggle_in_playlist(&mut self, set: &str, playlist: &str) {
-        let (set, playlist) = (set.to_owned(), playlist.to_owned());
+        self.playlists.changes.push_back((set.to_owned(), playlist.to_owned()));
+        self.next_change();
+    }
+
+    /// Runs the oldest waiting membership change, when none runs now.
+    fn next_change(&mut self) {
+        if self.playlists.changing {
+            return;
+        }
+        let Some((set, playlist)) = self.playlists.changes.pop_front() else { return };
+        self.playlists.changing = true;
         let name = self.playlists.name(&playlist).unwrap_or("the Playlist").to_owned();
         self.spawn(
             move || {
@@ -198,14 +212,18 @@ impl App {
                 api::set_members(&playlist, &members)?;
                 Ok::<_, String>(added)
             },
-            move |s, got| match got {
-                Ok(added) => {
-                    s.say(if added { format!("Added to {name}") } else { format!("Removed from {name}") });
-                    s.reload_playlists();
-                    s.reload_library();
-                    s.reload_playlist();
+            move |s, got| {
+                s.playlists.changing = false;
+                match got {
+                    Ok(added) => {
+                        s.say(if added { format!("Added to {name}") } else { format!("Removed from {name}") });
+                        s.reload_playlists();
+                        s.reload_library();
+                        s.reload_playlist();
+                    }
+                    Err(why) => s.say(format!("Playlist not changed: {why}")),
                 }
-                Err(why) => s.say(format!("Playlist not changed: {why}")),
+                s.next_change();
             },
         );
     }
