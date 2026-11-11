@@ -7,7 +7,8 @@
 #   .agents/skills/verify/helpers/gate --mac-host mac   # any other flag goes to bun run ci
 #
 # Evidence goes to $VERIFY_OUT, else ~/.cache/agent-scratch/verify-orbis/<sha7>-<epoch>/:
-# ci.log, statuses.json and summary.json. Exits with bun run ci's code.
+# ci.log, statuses.json and summary.json. Exits with bun run ci's code, or 1 when the
+# readback fails or does not show both statuses at success.
 set -uo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
@@ -31,11 +32,22 @@ for arg in "$@"; do
   [ "$arg" = "--no-status" ] && posted=false
 done
 if [ "$code" -eq 0 ] && [ "$posted" = true ]; then
-  repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
-  # A context can hold several statuses; the newest is its state.
-  gh api "repos/$repo/commits/$sha/statuses" --paginate \
-    --jq '[.[] | select(.context == "local-ci" or .context == "verify")] | group_by(.context) | map(max_by(.created_at) | {context, state, description, created_at})' \
-    >"$out/statuses.json"
+  # A post that statuses.json does not show did not happen: a failed readback, or either
+  # context missing or not success, turns posted false and fails the gate.
+  posted=false
+  # A context can hold several statuses; the newest is its state. pipefail fails the
+  # readback when gh api fails, and jq -e fails it unless both contexts are at success.
+  if repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)" &&
+    gh api "repos/$repo/commits/$sha/statuses?per_page=100" --paginate |
+    jq -s '[.[][] | select(.context == "local-ci" or .context == "verify")] | group_by(.context) | map(max_by(.created_at) | {context, state, description, created_at})' \
+      >"$out/statuses.json" &&
+    jq -e '([.[] | select(.state == "success") | .context] | sort) == ["local-ci", "verify"]' \
+      "$out/statuses.json" >/dev/null; then
+    posted=true
+  else
+    echo "gate: statuses.json does not show local-ci and verify at success on $sha." >&2
+    code=1
+  fi
   cat "$out/statuses.json"
 else
   echo "[]" >"$out/statuses.json"

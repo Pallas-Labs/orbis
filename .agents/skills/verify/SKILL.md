@@ -47,7 +47,7 @@ The run takes about 10 minutes when the Mac slot is free. Run it in the backgrou
 
 - `ci.log`: the whole `bun run ci` output, both lanes, with each step's time.
 - `statuses.json`: the newest `local-ci` and `verify` status on the commit, read back from GitHub after the post.
-- `summary.json`: `{ sha, exit, posted, log }`.
+- `summary.json`: `{ sha, exit, posted, log }`. `gate` writes `"posted":false` and exits 1 when the readback fails or `statuses.json` does not show both contexts at `success`, even after `bun run ci` passed.
 
 Proof standard: the log ends `local-ci: passed. Posted local-ci=success and verify=success on ParthMmm/orbis@<sha>.`, and `statuses.json` shows both contexts at `success` for that same SHA. A post that `statuses.json` does not show did not happen. Quote the SHA, the exit code and both states in the PR or review; link the commit's status page, `https://github.com/ParthMmm/orbis/commit/<sha>`.
 
