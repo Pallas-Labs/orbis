@@ -12,6 +12,11 @@ struct OrbisApp: App {
       }
       .defaultSize(width: 1000, height: 700)
       .windowToolbarStyle(.unified)
+      .commands { BulkImportCommand() }
+      Window("Import Links", id: BulkImportWindow.id) {
+        BulkImportWindow(model: model)
+      }
+      .defaultSize(width: 640, height: 680)
       Settings {
         SettingsScreen(model: model)
           .frame(width: 480, height: 620)

@@ -345,6 +345,15 @@ struct SaveSetRequest: Encodable {
   let url: String
 }
 
+/// What the service did about a filed Set's download, as `POST /sets` reports it.
+enum AutoDownload: String, Decodable {
+  case queued, disabled, ready, inProgress, queueFull, unavailable
+}
+
+struct AutoDownloadReport: Decodable {
+  let autoDownloadResult: AutoDownload?
+}
+
 /// The two edits the reveal makes. The service caps a title at 200 characters, so a longer one
 /// is cut rather than refused.
 struct SetTitleRequest: Encodable {
