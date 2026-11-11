@@ -16,6 +16,13 @@ pub struct Timers {
     due: Vec<(f64, Later)>,
 }
 
+impl Timers {
+    /// Rune's clock at the last `poll`, in seconds.
+    pub fn now(&self) -> f64 {
+        self.now
+    }
+}
+
 impl App {
     /// Runs `then` once `wait` has passed.
     pub fn after(&mut self, wait: Duration, then: impl FnOnce(&mut App) + 'static) {

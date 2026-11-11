@@ -714,14 +714,21 @@ fn a_renewal_refused_after_the_lease_ran_out_plays_the_session_again() {
     rt.key(space());
     rt.frame(1.0 / 60.0);
     land(&mut rt);
-    // Orbis was out of reach past the lease: it paused the session, and refuses its renewal.
+    // Orbis is out of reach past the 30 s lease: renewals fail, then it has paused the session
+    // and refuses the next one.
+    fixture::refuse_with("POST /presence/actions", 503, "unavailable");
+    for _ in 0..2 {
+        rt.frame(16.0);
+        rt.frame(1.0 / 60.0);
+        land(&mut rt);
+    }
     fixture::refuse_with("POST /presence/actions", 409, "stale");
     rt.frame(16.0);
     rt.frame(1.0 / 60.0);
     land(&mut rt);
     let sent = fixture::bodies("POST /presence/actions");
     let kinds: Vec<&str> = sent.iter().map(|b| b["kind"].as_str().unwrap_or_default()).collect();
-    let renew = kinds.iter().position(|k| *k == "renew").expect("a renewal went out");
+    let renew = kinds.iter().rposition(|k| *k == "renew").expect("a renewal went out");
     assert_eq!(kinds.get(renew + 1), Some(&"play"), "the session plays again: {kinds:?}");
     assert_eq!(sent[renew + 1]["sessionId"], sent[0]["sessionId"]);
 }
@@ -813,4 +820,25 @@ fn an_idle_set_never_started_here_takes_the_place_another_device_reached() {
     rt.frame(1.0 / 60.0);
     assert_eq!(rt.state.playing.status, Status::Playing);
     assert!((rt.state.playing.position - 2_000.0).abs() < 1.0, "from the other device's place: {}", rt.state.playing.position);
+}
+
+#[test]
+fn a_renewal_refused_inside_the_lease_leaves_the_set_to_the_device_that_took_it() {
+    let mut rt = live(Screen::Library);
+    fixture::reply(
+        "POST /presence/actions",
+        json!({ "outcome": "accepted", "session": { "state": "playing", "actionNumber": 1, "ownerGeneration": 7, "sessionId": "x", "setId": "s-sunrise", "leaseExpiresAt": "2027-01-15T08:00:30Z" } }),
+    );
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    // Another device played this Set: Orbis superseded this session well inside its lease.
+    fixture::refuse_with("POST /presence/actions", 409, "stale");
+    for _ in 0..3 {
+        rt.frame(16.0);
+        rt.frame(1.0 / 60.0);
+        land(&mut rt);
+    }
+    let kinds: Vec<String> = fixture::bodies("POST /presence/actions").iter().map(|b| b["kind"].as_str().unwrap_or_default().to_owned()).collect();
+    assert_eq!(kinds, ["play", "renew"], "no play to take it back, and no more renewals");
 }

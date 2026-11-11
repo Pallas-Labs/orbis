@@ -16,6 +16,8 @@ use crate::model;
 
 /// How often a playing session renews its lease.
 const RENEW: Duration = Duration::from_secs(15);
+/// How long Orbis keeps a lease after the last action it accepted (ADR 0019).
+const LEASE: f64 = 30.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
@@ -40,6 +42,8 @@ struct Session {
     actions: u64,
     owner: Option<u64>,
     state: Local,
+    /// Rune's clock when Orbis last accepted an action of this session.
+    accepted_at: f64,
 }
 
 #[derive(Debug)]
@@ -63,7 +67,8 @@ impl App {
     /// A new Set starts: the last session stops, and a new one begins.
     pub fn presence_begin(&mut self, set_id: &str) {
         self.presence_act(Kind::Stop);
-        self.presence.session = Some(Session { id: new_id(), set_id: set_id.to_owned(), actions: 0, owner: None, state: Local::Idle });
+        let now = self.timers.now();
+        self.presence.session = Some(Session { id: new_id(), set_id: set_id.to_owned(), actions: 0, owner: None, state: Local::Idle, accepted_at: now });
     }
 
     /// Asks for Presence again for the Set playing now, when Orbis refused its play. Orbis
@@ -148,17 +153,28 @@ impl App {
                     s.presence.sending = false;
                     match got {
                         Ok(owner) => {
+                            let now = s.timers.now();
                             if let Some(session) = s.presence.session.as_mut().filter(|x| x.id == id) {
                                 session.owner = Some(owner);
+                                session.accepted_at = now;
                             }
                         }
                         Err(failure) if failure.status == Some(404) => s.presence.supported = false,
-                        // The lease ran out while Orbis was out of reach: it paused the session
-                        // and refuses renewals. Play it again while the Set still plays.
+                        // Orbis refuses a renewal the same way when the lease ran out and when another
+                        // device took the session over. Only time tells them apart: a lease lasts
+                        // 30 s from the last action Orbis accepted.
                         Err(failure) if kind == Kind::Renew && failure.status == Some(409) => {
+                            let now = s.timers.now();
                             if let Some(session) = s.presence.session.as_mut().filter(|x| x.id == id && x.state == Local::Playing) {
-                                session.state = Local::Paused;
-                                s.presence_act(Kind::Play);
+                                if now - session.accepted_at >= LEASE {
+                                    // Expired while Orbis was out of reach: it paused the session.
+                                    // Play it again while the Set still plays.
+                                    session.state = Local::Paused;
+                                    s.presence_act(Kind::Play);
+                                } else {
+                                    // Another device has it now: this one claims nothing more.
+                                    session.state = Local::Stopped;
+                                }
                             }
                         }
                         Err(_) if kind == Kind::Play => {
