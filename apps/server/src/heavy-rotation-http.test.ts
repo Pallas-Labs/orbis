@@ -225,6 +225,56 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
   }
 });
 
+// The clients' own save rhythms, as the service sees them. Ways crediting could fail:
+// - The phone saves a whole second each 5 s plus the request's round trip, so its steps are
+//   5 s and 6 s while 5.3 s pass between saves. A rule that rounds that time to 5 s and never
+//   credits more drops a second from every 6 s step, and an hour reads as 56 minutes.
+// - The browser saves each 15 s on the next quarter-second tick, so its steps are 15 s and
+//   16 s while 15.25 s pass, and the same rule drops a second from every 16 s step.
+test("transcript: a client's save rhythm credits every second it played", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "orbis-rotation-"));
+  const databasePath = path.join(directory, "library.sqlite");
+  try {
+    await seedSets(databasePath, ready(["a", "b"]));
+    setSystemTime(new Date(clock));
+    const app = createApp({ databasePath });
+    try {
+      const t = transcript();
+      // Ten minutes on the phone: the first save is where counting starts.
+      const phone = Array.from({ length: 113 }, (_, save) =>
+        Math.floor((save + 1) * 5.3)
+      );
+      await runInOrder(phone, async (seconds) => {
+        await putPositionAfter(app, "a", seconds, 5.3);
+      });
+      t.step(
+        `phone plays a from ${phone[0]} s to ${phone.at(-1)} s, a save each 5.3 s`,
+        listeningTime(databasePath)
+      );
+      // Ten minutes in the browser, which saves fractions and starts at 0 s.
+      const browser = Array.from({ length: 40 }, (_, save) => save * 15.25);
+      await runInOrder(browser, async (seconds) => {
+        await putPositionAfter(app, "b", seconds, 15.25);
+      });
+      t.step(
+        `browser plays b from ${browser[0]} s to ${browser.at(-1)} s, a save each 15.25 s`,
+        listeningTime(databasePath)
+      );
+      expect(t.text()).toMatchInlineSnapshot(`
+        "
+        phone plays a from 5 s to 598 s, a save each 5.3 s  -> host a 593
+        browser plays b from 0 s to 594.75 s, a save each 15.25 s  -> host a 593, host b 595
+        "
+      `);
+    } finally {
+      await app.dispose();
+    }
+  } finally {
+    setSystemTime();
+    await rm(directory, { force: true, recursive: true });
+  }
+});
+
 // Listening Time began empty when its migration was applied, so the Listens recorded before it
 // must reach Heavy Rotation. Ways the history migration could fail:
 // - It credits nothing, and Heavy Rotation stays empty for a Person with weeks of Listens.

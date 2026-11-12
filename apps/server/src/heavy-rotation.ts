@@ -39,6 +39,7 @@ export const HEAVY_ROTATION = {
   /**
    * How far a step may differ from the time since the last save and still count as playback.
    * It absorbs the client's timer and the network; a seek or two devices moves much further.
+   * It is also the most a step can count beyond that time.
    */
   slackSeconds: 3,
 } as const;
@@ -50,9 +51,14 @@ export const utcDay = (at: Date): string => at.toISOString().slice(0, 10);
 
 /**
  * The seconds heard between two saved Playback Positions. Only a short step forward that matches
- * the time since the last save is playback, and it never counts more than that time. A seek,
- * a skip while paused, or two devices reporting the same Set credits nothing. `elapsedSeconds` is
- * null when the last save has no time, which credits nothing.
+ * the time since the last save is playback, and it counts whole. A seek, a skip while paused, or
+ * two devices reporting the same Set credits nothing. `elapsedSeconds` is null when the last save
+ * has no time, which credits nothing.
+ *
+ * The step is the measure, not the time. Positions are whole seconds and the time is not, so a
+ * phone's saves 5.3 s apart step 5 s or 6 s; capping each step at the time rounded to a second
+ * dropped a second from every longer one, and the steps of a Set played through add up to the
+ * seconds played.
  */
 export const listenedBetween = (
   from: number,
@@ -60,15 +66,12 @@ export const listenedBetween = (
   elapsedSeconds: number | null
 ): number => {
   const step = to - from;
-  if (
-    elapsedSeconds === null ||
-    step <= 0 ||
-    step > HEAVY_ROTATION.maxStepSeconds ||
-    Math.abs(step - elapsedSeconds) > HEAVY_ROTATION.slackSeconds
-  ) {
-    return 0;
-  }
-  return Math.max(Math.min(step, Math.round(elapsedSeconds)), 0);
+  const isPlayback =
+    elapsedSeconds !== null &&
+    step > 0 &&
+    step <= HEAVY_ROTATION.maxStepSeconds &&
+    Math.abs(step - elapsedSeconds) <= HEAVY_ROTATION.slackSeconds;
+  return isPlayback ? step : 0;
 };
 
 /** The first day a range holds. */
