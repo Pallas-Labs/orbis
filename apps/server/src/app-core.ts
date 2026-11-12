@@ -148,7 +148,6 @@ import { renderShareImage } from "./share-image/render.js";
 import { renderSharePage, sharePagePolicy } from "./share-page.js";
 import { sharedSet } from "./share.js";
 import { expandShortLink } from "./short-link.js";
-import { Stats } from "./stats.js";
 import { checkStreamGrant, issueStreamGrant } from "./stream-grant-core.js";
 import type { StreamGrantVerdict } from "./stream-grant-core.js";
 import type { TitleReviserError } from "./title-reviser-error.js";
@@ -2737,14 +2736,9 @@ export const createPortableApp = (options: {
                           access.person.id,
                           libraryOptions
                         );
-                        const personalQueue = yield* Stats.forPerson(
+                        const personalQueue = yield* Queue.forPerson(
                           access.person.id
                         ).pipe(
-                          Effect.flatMap((personalStats) =>
-                            Queue.forPerson(access.person.id).pipe(
-                              Effect.provideService(Stats, personalStats)
-                            )
-                          ),
                           Effect.provideService(Database, db),
                           Effect.provideService(QueueSignals, signals),
                           Effect.provideService(Presence, presence),

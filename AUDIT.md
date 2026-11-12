@@ -47,21 +47,26 @@ Fix: a step that matches the time since the last save counts whole. The match (w
 
 Not changed: Listening Time already stored is not recomputed. The lost seconds were never recorded, so there is nothing to recompute from.
 
-### 2. A queue change, its Finish and the next Listen are separate writes — planned
+### 2. A queue change, its Finish and the next Listen were separate writes — fixed
 
-`Queue.complete` (`apps/server/src/queue.ts`) resets the position, commits the queue, runs `presence.afterCommit` and `library.release` for each Set that left the queue, and only then calls `stats.recordFinish` and `stats.recordListen`. `play` and `replaceWithSets` have the same order. A failure after the queue commit answers 500, and the retry does nothing by design (the Set is no longer active), so the Finish is lost for good and the next Set is active with no Listen. Its later Finish then finds no open Listen, or closes an older abandoned Listen of that Set.
+`Queue.complete` (`apps/server/src/queue.ts`) reset the position, committed the queue, ran `presence.afterCommit` and `library.release` for each Set that left the queue, and only then called `stats.recordFinish` and `stats.recordListen`. `play` and `replaceWithSets` had the same order. A failure after the queue commit answered 500, and the retry did nothing by design (the Set is no longer active), so the Finish was lost for good and the next Set was active with no Listen. Its later Finish then found no open Listen, or closed an older abandoned Listen of that Set.
 
-"The active entry is the Listen" is a state nobody wrote down: `queue_entries.is_active` and the open `listens` row are tied only by the order of calls at three call sites. ADR 0019 already says "Queue and Stats currently write separately; implementation must combine their related Queue, Listen, and Finish updates under one transaction".
+"The active entry is the Listen" was a state nobody wrote down: `queue_entries.is_active` and the open `listens` row were tied only by the order of calls at three call sites. ADR 0019 already says "Queue and Stats currently write separately; implementation must combine their related Queue, Listen, and Finish updates under one transaction".
 
-Evidence so far: reading only. The failing test is designed, not written:
+Evidence: `transcript: a completion that fails after the queue moved still records its Finish and the next Listen` in `queue-listen-http.test.ts`. It gives `createApp` a real audio folder where `a.ogg` is a folder with a file in it, so `MediaStore.removeFiles` fails after the queue commits. Before the fix:
 
-- `createApp({ audio: { audioDir } })` with `<audioDir>/a.ogg` made a non-empty directory, so `MediaStore.removeFiles` fails.
-- Seed `a` and `b` ready. Play `a`, add `b`, `DELETE /sets/a` (the queue keeps its reference), then `POST /queue/completion` for `a`: the queue commits, the release fails, the answer is 500.
-- Repeat the completion: 200. Expect one finished Listen of `a` and one open Listen of `b` in `listens`. Today there is neither.
+```
+complete a, its audio cannot be removed (500)  -> [b*] | a open
+complete a again (200)  -> [b*] | a open
+```
 
-Planned fix: read the queue inside the transaction that writes it, and write the Listen rows there too. One rule covers all three call sites: a Listen opens when the active Set changes to another Set, and `complete` also closes the open Listen of the Set it removes. `Stats` is used only by `Queue`, so it can become two functions that take the transaction (as `presence.queueActivated(tx, …)` does), and the `Stats.forPerson` wiring in `app-core.ts` goes. Release the removed Sets after the commit, as now.
+After: `[b*] | a finished, b open` on both lines.
 
-What did not reproduce: two completions of the same Set at once. A Bun probe and a workerd probe (100 rounds of 6 concurrent `POST /queue/completion` through Miniflare) recorded no second Finish. Do not claim a race.
+Fix: one writer, `Queue.change`. It reads the stored queue inside the transaction that writes it, asks a pure decision (`played`, `inserted`, `replaced`, `completed`) what the queue becomes, and writes the entries, the Finish and the new Listen together. One rule replaces three call sites: a Set that becomes active opens a Listen, and a completion closes the Listen of the Set it removes. Audio is released after the commit, as before. `stats.ts`, the `Stats.forPerson` wiring in `app-core.ts` and the unused `Queue.layer` and `Queue.scopedLayer` are gone.
+
+What did not reproduce, so no race is claimed: two completions of the same Set at once (a Bun probe and a workerd probe of 100 rounds of 6 concurrent `POST /queue/completion` through Miniflare recorded no second Finish), and 7 concurrent Add to Queue requests for 20 rounds on Bun (no add lost). The reads and writes of one request run without yielding, so two requests do not interleave today. The read now sits inside the transaction, so that no longer depends on it.
+
+Not changed: `library.setPlaybackPosition(id, 0)` still runs in its own transaction before the queue moves. A request that stops between the two leaves the Set active at position 0, and the retry completes it.
 
 ### 3. `GET /people/:id/listens` returns every Listen a Person ever made — planned
 
