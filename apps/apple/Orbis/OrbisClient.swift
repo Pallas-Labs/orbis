@@ -778,7 +778,7 @@ struct OrbisClient: Sendable {
     -> ListeningCollection
   {
     let body = try Self.encoder.encode(CollectionRequest(filter: filter))
-    let response = try await send(path: "collections/\(id)", method: "PUT", body: body)
+    let response = try await send(path: "collections/\(id)", method: "PATCH", body: body)
     return try Self.decode(ListeningCollection.self, from: response)
   }
 

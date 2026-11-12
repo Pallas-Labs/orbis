@@ -209,14 +209,14 @@ test("transcript: Collections filter listening, and stay their Person's own", as
       );
 
       const edited = await call(
-        "PUT",
+        "PATCH",
         `/collections/${ids.get("Long listens")}`,
         payload({ minimumMinutes: 120, name: "Long listens" })
       );
       t.step("edit Long listens to 2 h", said(edited));
       t.step("  sets", await setsOf("Long listens"));
       const renamed = await call(
-        "PUT",
+        "PATCH",
         `/collections/${ids.get("Long listens")}`,
         payload({ name: "DJ X" })
       );
@@ -241,7 +241,7 @@ test("transcript: Collections filter listening, and stay their Person's own", as
       );
       t.step("other plays DJ X", said(otherPlays));
       const otherEdits = await call(
-        "PUT",
+        "PATCH",
         `/collections/${ids.get("DJ X")}`,
         payload({ name: "Mine now" }),
         "other"

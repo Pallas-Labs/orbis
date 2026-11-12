@@ -821,7 +821,7 @@ export const OrbisApi = PlaylistApi.add(
           payload: CollectionPayload,
           success: CollectionSchema.pipe(HttpApiSchema.status(201)),
         }),
-        HttpApiEndpoint.put("updateCollection", "/collections/:id", {
+        HttpApiEndpoint.patch("updateCollection", "/collections/:id", {
           error: [BadRequest, NotFound, Conflict, InternalError],
           params: SetId,
           payload: CollectionPayload,

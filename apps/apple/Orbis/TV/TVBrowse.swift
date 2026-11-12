@@ -340,7 +340,7 @@
         }
         .accessibilityIdentifier("playlists-error")
       case .loaded(let items):
-        if items.isEmpty {
+        if items.isEmpty, model.collectionItems.isEmpty {
           TVPageState {
             ContentUnavailableView {
               Label("No playlists yet", systemImage: "rectangle.stack")

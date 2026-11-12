@@ -53,5 +53,21 @@ final class CollectionsUITests: LibraryJourney {
     let served = try service.sets(in: saved.id)
     XCTAssertEqual(served, [tagged.id], "the service holds the same filter")
     try record("collection", ["name": name, "tag": tag, "sets": served])
+
+    // A relaunch starts signed in, with no sign-in to load the Collections: Playlists must
+    // still show the saved one.
+    app.terminate()
+    let relaunched = try launch()
+    selectTab("Playlists", in: relaunched, sidebarIdentifier: "sidebar-playlists")
+    let folder = relaunched.buttons["collection-folder-\(name)"]
+    XCTAssertTrue(
+      folder.waitForExistence(timeout: 30),
+      "Playlists shows the Collection after a relaunch\n\(relaunched.debugDescription)")
+    capture("collection-after-relaunch")
+    folder.tap()
+    XCTAssertTrue(
+      relaunched.descendants(matching: .any)["rotation-member-\(tagged.id)"]
+        .waitForExistence(timeout: 30),
+      "the Collection opens after a relaunch\n\(relaunched.debugDescription)")
   }
 }

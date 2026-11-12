@@ -115,7 +115,7 @@ struct PlaylistsDestination: View {
         }
         .accessibilityIdentifier("playlists-error")
       case .loaded(let items):
-        if items.isEmpty {
+        if items.isEmpty, model.collectionItems.isEmpty {
           NoPlaylistsState {
             beginCreate()
           }
