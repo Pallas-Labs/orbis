@@ -351,5 +351,33 @@
   },
   "tags": {
     "tags": ["house"]
+  },
+  "collection": {
+    "createdAt": "2026-11-11T17:00:00.000Z",
+    "creator": "DJ X",
+    "creatorId": "dj-x",
+    "id": "7d0c1c8e-2f2e-4a52-9b0a-1f6d3b0e9a11",
+    "minimumMinutes": 60,
+    "name": "Contract collection",
+    "range": "quarter",
+    "source": "youtube",
+    "tag": null,
+    "updatedAt": "2026-11-11T17:00:00.000Z"
+  },
+  "collections": {
+    "collections": [
+      {
+        "createdAt": "2026-11-11T17:00:00.000Z",
+        "creator": "DJ X",
+        "creatorId": "dj-x",
+        "id": "7d0c1c8e-2f2e-4a52-9b0a-1f6d3b0e9a11",
+        "minimumMinutes": 60,
+        "name": "Contract collection",
+        "range": "quarter",
+        "source": "youtube",
+        "tag": null,
+        "updatedAt": "2026-11-11T17:00:00.000Z"
+      }
+    ]
   }
 }

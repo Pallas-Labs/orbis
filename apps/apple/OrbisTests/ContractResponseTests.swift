@@ -9,6 +9,8 @@ final class ContractResponseTests: XCTestCase {
 
     let appleMusicSearch: AppleMusicSearchResponse
     let audioState: AudioState
+    let collection: ListeningCollection
+    let collections: CollectionsResponse
     let library: LibraryResponse
     let me: Me
     let playlist: Playlist
@@ -28,6 +30,7 @@ final class ContractResponseTests: XCTestCase {
 
     XCTAssertEqual(samples.library.sets.first?.id, samples.savedSet.id)
     XCTAssertEqual(samples.playlists.playlists.first?.id, samples.playlist.id)
+    XCTAssertEqual(samples.collections.collections.first, samples.collection)
     XCTAssertEqual(samples.audioState.state, "none")
     XCTAssertEqual(samples.queue.queue.entries.count, 0)
     XCTAssertEqual(samples.tags.tags, samples.savedSet.tags)

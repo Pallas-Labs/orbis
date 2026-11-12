@@ -114,8 +114,19 @@ final class AppModel {
   /// The range the collection shows. It stays when the collection closes, so the collection
   /// opens on the range last chosen.
   var rotationRange: ListeningRange = .month
-  /// The destination whose stack shows the Heavy Rotation collection; nil when it is closed.
-  var rotationPlace: Destination?
+  /// The collection open on a stack, and the destination whose stack shows it; nil when none is.
+  var openedCollection: OpenedCollection?
+
+  /// The Collections this Person saved, by name.
+  var collections: Loadable<[ListeningCollection]> = .idle
+  var collectionItems: [ListeningCollection] {
+    if case .loaded(let items) = collections { items } else { [] }
+  }
+  /// Each saved Collection's Sets, read when its page shows it.
+  private(set) var collectionMembers: [String: Loadable<[SavedSet]>] = [:]
+  /// What the last Collection change refused, kept where the change was asked for.
+  var collectionFailure: OrbisFailure?
+  var isWorkingOnCollection = false
 
   /// The Tags this device last put on a Set, newest first, and the last Tag filters it applied.
   /// Kept on the device, like recent searches: they are this person's habits here, not part of
@@ -511,6 +522,7 @@ final class AppModel {
     if let link = openedLink, link.state == .awaitingSignIn { showLinkedSet(link.setId) }
     await loadLibrary()
     await loadPlaylists()
+    await loadCollections()
     await loadQueue()
   }
 
@@ -587,7 +599,10 @@ final class AppModel {
     library = .idle
     heavyRotation = []
     rotationSets = [:]
-    rotationPlace = nil
+    openedCollection = nil
+    collections = .idle
+    collectionMembers = [:]
+    collectionFailure = nil
     search = .idle
     searchResultsFor = nil
     playlists = .idle
@@ -1510,6 +1525,11 @@ final class AppModel {
     await replaceQueue { client in try await client.playHeavyRotation(range, shuffled: shuffled) }
   }
 
+  /// Replaces the queue with a saved Collection's Sets, ranked or shuffled.
+  func playCollection(_ id: String, shuffled: Bool = false) async {
+    await replaceQueue { client in try await client.playCollection(id, shuffled: shuffled) }
+  }
+
   /// Replaces the queue with what `call` answers and starts its active entry.
   private func replaceQueue(
     _ call: @escaping @Sendable (OrbisClient) async throws -> ListeningQueue
@@ -1737,14 +1757,141 @@ final class AppModel {
     library = .loaded(sets)
   }
 
-  /// Opens the Heavy Rotation collection on `place`'s stack, over whatever that stack showed.
-  func openHeavyRotation(in place: Destination) {
+  /// Opens a collection on `place`'s stack, over whatever that stack showed.
+  func openCollection(_ kind: CollectionKind, in place: Destination) {
     openedSets[place] = nil
-    rotationPlace = place
+    collectionFailure = nil
+    openedCollection = OpenedCollection(kind: kind, place: place)
   }
 
-  func closeHeavyRotation() {
-    rotationPlace = nil
+  func openHeavyRotation(in place: Destination) {
+    openCollection(.heavyRotation, in: place)
+  }
+
+  func closeCollection() {
+    openedCollection = nil
+    collectionFailure = nil
+  }
+
+  func collection(_ id: String) -> ListeningCollection? {
+    collectionItems.first { $0.id == id }
+  }
+
+  /// The Sets a collection shows, as last read.
+  func members(of kind: CollectionKind) -> Loadable<[SavedSet]> {
+    switch kind {
+    case .heavyRotation: rotationSets[rotationRange] ?? .idle
+    case .saved(let id): collectionMembers[id] ?? .idle
+    }
+  }
+
+  func loadMembers(of kind: CollectionKind) async {
+    switch kind {
+    case .heavyRotation: await loadRotation(rotationRange)
+    case .saved(let id): await loadCollectionSets(id)
+    }
+  }
+
+  func play(_ kind: CollectionKind, shuffled: Bool) async {
+    switch kind {
+    case .heavyRotation: await playHeavyRotation(rotationRange, shuffled: shuffled)
+    case .saved(let id): await playCollection(id, shuffled: shuffled)
+    }
+  }
+
+  func loadCollections() async {
+    guard let client else { return }
+    if case .loaded = collections {} else { collections = .loading }
+    do {
+      let items = try await client.collections()
+      guard self.client?.token == client.token, !Task.isCancelled else { return }
+      if collections != .loaded(items) { collections = .loaded(items) }
+    } catch {
+      guard self.client?.token == client.token else { return }
+      if error is CancellationError || error as? OrbisError == .cancelled {
+        if case .loading = collections { collections = .idle }
+        return
+      }
+      if case .loaded = collections { return }
+      collections = .failed((error as? OrbisError ?? .unreachable).failure(at: client.address))
+    }
+  }
+
+  func loadCollectionSets(_ id: String) async {
+    guard let client else { return }
+    if case .loaded = collectionMembers[id] {} else { collectionMembers[id] = .loading }
+    do {
+      let sets = try await client.collectionSets(id)
+      guard self.client?.token == client.token, !Task.isCancelled else { return }
+      collectionMembers[id] = .loaded(sets)
+    } catch {
+      guard self.client?.token == client.token else { return }
+      if error is CancellationError || error as? OrbisError == .cancelled {
+        if case .loading = collectionMembers[id] { collectionMembers[id] = .idle }
+        return
+      }
+      if case .loaded = collectionMembers[id] { return }
+      collectionMembers[id] = .failed(
+        (error as? OrbisError ?? .unreachable).failure(at: client.address))
+    }
+  }
+
+  /// Saves a new Collection, or a new filter for one, and reads its Sets again. Nil when the
+  /// service refused it; the refusal is in `collectionFailure`.
+  func saveCollection(_ filter: CollectionFilter, id: String? = nil) async -> ListeningCollection? {
+    guard let client else { return nil }
+    isWorkingOnCollection = true
+    collectionFailure = nil
+    defer { isWorkingOnCollection = false }
+    do {
+      let saved =
+        if let id {
+          try await client.updateCollection(id, to: filter)
+        } else {
+          try await client.createCollection(filter)
+        }
+      guard self.client?.token == client.token else { return nil }
+      var items = collectionItems.filter { $0.id != saved.id }
+      items.append(saved)
+      items.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+      collections = .loaded(items)
+      collectionMembers[saved.id] = nil
+      return saved
+    } catch {
+      guard self.client?.token == client.token else { return nil }
+      if error as? OrbisError == .cancelled { return nil }
+      collectionFailure = (error as? OrbisError ?? .unreachable).failure(at: client.address)
+      return nil
+    }
+  }
+
+  func deleteCollection(_ id: String) async {
+    guard let client else { return }
+    isWorkingOnCollection = true
+    collectionFailure = nil
+    defer { isWorkingOnCollection = false }
+    do {
+      try await client.removeCollection(id)
+      guard self.client?.token == client.token else { return }
+      collections = .loaded(collectionItems.filter { $0.id != id })
+      collectionMembers[id] = nil
+      if openedCollection?.kind == .saved(id) { closeCollection() }
+    } catch {
+      guard self.client?.token == client.token else { return }
+      if error as? OrbisError == .cancelled { return }
+      collectionFailure = (error as? OrbisError ?? .unreachable).failure(at: client.address)
+    }
+  }
+
+  /// The creators of the Library's Sets, by name, for a Collection's creator filter.
+  var libraryCreators: [(id: String, name: String)] {
+    guard case .loaded(let sets) = library else { return [] }
+    var names: [String: String] = [:]
+    for set in sets {
+      if let id = set.creatorId, let name = set.creator, names[id] == nil { names[id] = name }
+    }
+    return names.map { (id: $0.key, name: $0.value) }
+      .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
   }
 
   /// Reads the collection for a range. A range already read keeps its Sets on screen while it
@@ -2531,6 +2678,18 @@ enum NowPlayingPanel: String, Hashable, CaseIterable, Identifiable {
   case upNext = "Up Next"
 
   var id: Self { self }
+}
+
+/// A collection the app can open: Heavy Rotation over its chosen range, or a saved Collection.
+enum CollectionKind: Hashable, Sendable {
+  case heavyRotation
+  case saved(String)
+}
+
+/// The collection open on one destination's stack.
+struct OpenedCollection: Equatable {
+  let kind: CollectionKind
+  let place: Destination
 }
 
 enum Destination: String, CaseIterable, Identifiable, Hashable {

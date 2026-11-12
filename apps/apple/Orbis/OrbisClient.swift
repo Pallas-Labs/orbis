@@ -762,6 +762,44 @@ struct OrbisClient: Sendable {
     return try decodedQueue(response)
   }
 
+  /// This Person's Collections, by name.
+  func collections() async throws -> [ListeningCollection] {
+    let response = try await send(path: "collections", method: "GET", body: nil)
+    return try Self.decode(CollectionsResponse.self, from: response).collections
+  }
+
+  func createCollection(_ filter: CollectionFilter) async throws -> ListeningCollection {
+    let body = try Self.encoder.encode(CollectionRequest(filter: filter))
+    let response = try await send(path: "collections", method: "POST", body: body)
+    return try Self.decode(ListeningCollection.self, from: response)
+  }
+
+  func updateCollection(_ id: String, to filter: CollectionFilter) async throws
+    -> ListeningCollection
+  {
+    let body = try Self.encoder.encode(CollectionRequest(filter: filter))
+    let response = try await send(path: "collections/\(id)", method: "PATCH", body: body)
+    return try Self.decode(ListeningCollection.self, from: response)
+  }
+
+  func removeCollection(_ id: String) async throws {
+    _ = try await send(path: "collections/\(id)", method: "DELETE", body: nil)
+  }
+
+  /// A Collection's Sets, most heard first.
+  func collectionSets(_ id: String) async throws -> [SavedSet] {
+    let response = try await send(path: "collections/\(id)/sets", method: "GET", body: nil)
+    return try Self.decode(LibraryResponse.self, from: response).sets
+  }
+
+  /// Replaces the whole queue with a Collection's playable Sets, ranked or shuffled.
+  func playCollection(_ id: String, shuffled: Bool = false) async throws -> ListeningQueue {
+    let body = try Self.encoder.encode(
+      CollectionQueueRequest(collectionId: id, order: shuffled ? "shuffled" : nil))
+    let response = try await send(path: "queue/collection", method: "PUT", body: body)
+    return try decodedQueue(response)
+  }
+
   /// Replaces the whole queue with the playable Sets in Heavy Rotation over a range, ranked or
   /// shuffled.
   func playHeavyRotation(_ range: ListeningRange, shuffled: Bool = false) async throws

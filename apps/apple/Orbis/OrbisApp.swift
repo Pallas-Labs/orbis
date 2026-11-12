@@ -88,6 +88,7 @@ struct RootView: View {
         await model.loadLibrary()
         await model.loadPlaylists()
         await model.loadQueue()
+        await model.loadCollections()
       }
     }
     // Keyed to the phase, so leaving the app cancels a refresh still in flight instead of letting

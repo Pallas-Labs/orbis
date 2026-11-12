@@ -273,6 +273,28 @@ struct LaneService {
     return saves
   }
 
+  struct Collection: Decodable {
+    let id: String
+    let name: String
+  }
+
+  private struct Collections: Decodable { let collections: [Collection] }
+
+  func collections() throws -> [Collection] {
+    let response: Collections = try send("GET", "collections", nil)
+    return response.collections
+  }
+
+  /// The ids in a saved Collection, in the service's order.
+  func sets(in collectionId: String) throws -> [String] {
+    let response: Sets = try send("GET", "collections/\(collectionId)/sets", nil)
+    return response.sets.map(\.id)
+  }
+
+  func deleteCollection(_ id: String) throws {
+    _ = try status("DELETE", "collections/\(id)", nil)
+  }
+
   /// The ids on the Heavy Rotation shelf, in the service's order.
   func heavyRotation() throws -> [String] {
     let response: Sets = try send("GET", "heavy-rotation", nil)

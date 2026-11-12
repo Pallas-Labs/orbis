@@ -1636,6 +1636,23 @@ export const createPortableApp = (options: {
               )
             )
           )
+          .handle("replaceWithCollection", ({ payload }) =>
+            withFailureResponse(
+              Effect.gen(function* replaceQueueFromCollection() {
+                const queue = yield* Queue;
+                return {
+                  queue: yield* queue.replaceWithCollection(
+                    payload.collectionId,
+                    payload.order
+                  ),
+                };
+              }).pipe(
+                Effect.tap(() =>
+                  announceForCaller("listen-history", seesPerson)
+                )
+              )
+            )
+          )
           .handleRaw("replaceWithHeavyRotation", () =>
             withFailureResponse(
               Effect.gen(function* replaceQueueFromHeavyRotation() {
@@ -1755,6 +1772,46 @@ export const createPortableApp = (options: {
                   return {
                     sets: yield* personal.heavyRotation(query.range ?? "month"),
                   };
+                })
+              )
+            )
+            .handle("collections", () =>
+              withFailureResponse(
+                Effect.gen(function* listCollections() {
+                  const personal = yield* Library;
+                  return { collections: yield* personal.collections };
+                })
+              )
+            )
+            .handle("createCollection", ({ payload }) =>
+              withFailureResponse(
+                Effect.gen(function* createCollection() {
+                  const personal = yield* Library;
+                  return yield* personal.createCollection(payload);
+                })
+              )
+            )
+            .handle("updateCollection", ({ params, payload }) =>
+              withFailureResponse(
+                Effect.gen(function* updateCollection() {
+                  const personal = yield* Library;
+                  return yield* personal.updateCollection(params.id, payload);
+                })
+              )
+            )
+            .handle("removeCollection", ({ params }) =>
+              withFailureResponse(
+                Effect.gen(function* removeCollection() {
+                  const personal = yield* Library;
+                  return yield* personal.removeCollection(params.id);
+                })
+              )
+            )
+            .handle("collectionSets", ({ params }) =>
+              withFailureResponse(
+                Effect.gen(function* listCollectionSets() {
+                  const personal = yield* Library;
+                  return { sets: yield* personal.collectionSets(params.id) };
                 })
               )
             )
@@ -2142,6 +2199,9 @@ export const createPortableApp = (options: {
                       );
                       yield* tx.run(
                         sql`DELETE FROM listening_time WHERE person_id = ${params.id}`
+                      );
+                      yield* tx.run(
+                        sql`DELETE FROM collections WHERE person_id = ${params.id}`
                       );
                       yield* tx.run(
                         sql`DELETE FROM library_entries WHERE person_id = ${params.id}`

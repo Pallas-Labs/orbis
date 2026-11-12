@@ -322,7 +322,7 @@
       .navigationDestination(item: openedPlaylist) { id in
         TVPlaylistPage(model: model, playlistId: id).id(id)
       }
-      .tvHeavyRotationPage(model, in: .playlists)
+      .tvCollectionPage(model, in: .playlists)
       .accessibilityElement(children: .contain)
       .accessibilityIdentifier("tv-playlists")
     }
@@ -340,7 +340,7 @@
         }
         .accessibilityIdentifier("playlists-error")
       case .loaded(let items):
-        if items.isEmpty {
+        if items.isEmpty, model.collectionItems.isEmpty {
           TVPageState {
             ContentUnavailableView {
               Label("No playlists yet", systemImage: "rectangle.stack")
@@ -354,10 +354,21 @@
             Button {
               model.openHeavyRotation(in: .playlists)
             } label: {
-              HeavyRotationSleeve(model: model, fanWidth: 260, height: 330)
+              CollectionSleeve(model: model, kind: .heavyRotation, fanWidth: 260, height: 330)
             }
             .buttonStyle(.card)
             .accessibilityIdentifier("tv-rotation-folder")
+            ForEach(model.collectionItems) { collection in
+              Button {
+                model.openCollection(.saved(collection.id), in: .playlists)
+              } label: {
+                CollectionSleeve(
+                  model: model, kind: .saved(collection.id), fanWidth: 260, height: 330)
+              }
+              .buttonStyle(.card)
+              .accessibilityIdentifier("tv-collection-\(collection.id)")
+              .task { await model.loadCollectionSets(collection.id) }
+            }
             ForEach(items) { playlist in
               Button {
                 model.openPlaylist(playlist.id)

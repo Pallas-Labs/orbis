@@ -213,13 +213,16 @@ public struct PlaylistSleeve: View {
   /// The defaults fit a phone's grid; a television passes larger ones.
   let fanWidth: CGFloat
   let height: CGFloat
+  /// The line under the name in place of the count, for a folder whose Sets are not counted.
+  let detail: String?
 
   public init(
     name: String, count: Int, artwork: [URL?], category: OrbisColor.Category,
-    fanWidth: CGFloat = 112, height: CGFloat = 150
+    fanWidth: CGFloat = 112, height: CGFloat = 150, detail: String? = nil
   ) {
     self.name = name
     self.count = count
+    self.detail = detail
     self.artwork = Array(artwork.prefix(3))
     self.category = category
     self.fanWidth = fanWidth
@@ -238,9 +241,10 @@ public struct PlaylistSleeve: View {
         Text(name)
           .font(scale > 1 ? .title3.weight(.semibold) : .subheadline.weight(.semibold))
           .lineLimit(1)
-        Text(count == 1 ? "1 set" : "\(count) sets")
+        Text(caption)
           .font(scale > 1 ? .body : .caption)
           .foregroundStyle(.secondary)
+          .lineLimit(1)
       }
       .padding(12 * scale)
       .frame(maxWidth: .infinity, minHeight: 74 * scale, alignment: .bottomLeading)
@@ -248,8 +252,10 @@ public struct PlaylistSleeve: View {
     }
     .frame(height: height)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("\(name), \(count == 1 ? "1 set" : "\(count) sets")")
+    .accessibilityLabel("\(name), \(caption)")
   }
+
+  private var caption: String { detail ?? (count == 1 ? "1 set" : "\(count) sets") }
 
   /// The pocket the Sets are tucked into. Tinted glass, except on a television, where the folder
   /// sits inside a focus platter that is glass already and the pocket is a plain tinted surface.
