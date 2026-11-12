@@ -120,6 +120,23 @@ export const PlayerProvider = ({
   // An API without `/presence/actions` answers 404; Position reports still infer Presence.
   const presenceRoute = useRef(true);
   const lastRenew = useRef(0);
+  const written = useRef<Promise<unknown>>(Promise.resolve());
+
+  // Position saves and the completion go out one at a time, in the order the player made them.
+  // A Set that ends pauses first, which saves its last second; that save must not land after
+  // the completion, which resets the place to the start. A call resolves with its failure, so
+  // one that fails does not stop the next.
+  const write = async <Value,>(
+    send: () => Promise<ApiResult<Value>>
+  ): Promise<ApiResult<Value>> => {
+    const previous = written.current;
+    const sent = (async () => {
+      await previous;
+      return await send();
+    })();
+    written.current = sent;
+    return await sent;
+  };
 
   // Actions go out one at a time, so each carries the generation its play returned.
   const act = (kind: PresenceKind) => {
@@ -248,12 +265,10 @@ export const PlayerProvider = ({
     await queueSet(credentials, set.id, placement);
 
   const report = (event: SyntheticEvent<HTMLAudioElement>) => {
-    if (playing !== null && Number.isFinite(event.currentTarget.currentTime)) {
-      void reportPosition(
-        credentials,
-        playing.set.id,
-        event.currentTarget.currentTime
-      );
+    const seconds = event.currentTarget.currentTime;
+    if (playing !== null && Number.isFinite(seconds)) {
+      const { id } = playing.set;
+      void write(async () => await reportPosition(credentials, id, seconds));
     }
   };
 
@@ -280,8 +295,11 @@ export const PlayerProvider = ({
     if (playing === null) {
       return;
     }
-    await reportPosition(credentials, playing.set.id, 0);
-    const completed = await completeSet(credentials, playing.set.id);
+    // The completion resets the Playback Position on the server, so no save of 0 goes first.
+    const { id } = playing.set;
+    const completed = await write(
+      async () => await completeSet(credentials, id)
+    );
     if (!completed.ok) {
       setProblem(FAILURE_MESSAGES[completed.failure]);
       return;

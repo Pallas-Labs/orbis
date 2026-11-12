@@ -6,6 +6,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
@@ -299,6 +300,18 @@ try {
     });
     step("the queue reconnects after the API restarts");
 
+    // A slow save: each Playback Position the player reports for the First set, other than the
+    // start, leaves the browser 1.5 s late. The seek below reports the place near the end, and
+    // the Set ends 0.3 s after it.
+    const lateSaves = [];
+    await page.route(`**/sets/${sets["First set"]}/position`, async (route) => {
+      const { seconds } = route.request().postDataJSON();
+      if (seconds > 0) {
+        lateSaves.push(seconds);
+        await delay(1500);
+      }
+      await route.continue();
+    });
     await page.evaluate(() => {
       const element = document.querySelector("audio");
       if (element) {
@@ -314,6 +327,27 @@ try {
     const { queue: after } = await api("GET", "/queue");
     assert.equal(after.activeSetId, sets["Second set"]);
     step("when a Set ends, the next one in the queue plays");
+
+    assert.ok(
+      lateSaves.length > 0,
+      "the player reported no place near the end"
+    );
+    // Long enough for a save that was still out when the Set ended to land.
+    await delay(2000);
+    const { sets: finishedLibrary } = await api("GET", "/sets");
+    assert.equal(
+      finishedLibrary.find((set) => set.id === sets["First set"])
+        .playbackPositionSeconds,
+      0,
+      `a save that left late (${lateSaves.join(", ")} s) landed after the completion`
+    );
+    await page.unroute(`**/sets/${sets["First set"]}/position`);
+    step(
+      "a finished Set starts from the beginning, even when a save was slow",
+      {
+        lateSaves,
+      }
+    );
 
     assert.deepEqual(violations, []);
     step("no Content Security Policy violations");

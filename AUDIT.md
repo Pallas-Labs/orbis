@@ -116,9 +116,24 @@ Listening Time is by UTC day (GLOSSARY.md), and a day under two minutes of a Set
 
 `listen_count`, `finish_count`, `last_listened_at` and `playback_position_seconds` on `sets` look unread outside migrations (a grep of `apps/server/src` and `apps/api/src`; `sets.tags` is still read as a fallback). Dropping a column deletes data, so owner decides. Check the transfer scripts before trusting the grep.
 
-### 10. Web: a position save can land after the completion that reset it — left
+### 10. Web: a position save could land after the completion that reset it — fixed
 
-By reading `player.tsx`: position reports are not awaited, and `finish` sends position 0 and the completion while an earlier report may be in flight. Rune sends its writes one at a time for this reason. Low odds (a report is in flight for about 0.3 s of each 15 s). A candidate for step 3 above.
+`player.tsx` did not await a position save, and `finish` sent a save of 0 and then the completion while earlier saves could still be out. A Set that ends is not a rare case for this: Chrome fires `pause` before `ended`, so every Set that plays out on the web saves its last second (`seconds` = the length) at the moment it finishes. A save that lands after the completion leaves the finished Set at its end. The next play of that Set starts there, ends at once, and counts a Listen and a Finish nobody heard.
+
+Evidence: the `live-queue` journey (`apps/web/e2e/live-queue.mjs`) now holds each save of the First set other than 0 for 1.5 s, seeks to 0.3 s before the end and lets the Set end. Before the fix:
+
+```
+AssertionError: a save that left late (29.714658, 30 s) landed after the completion
+30 !== 0
+```
+
+The two late saves are the seek and the pause at the end. After the fix the step passes with the same two saves (`.cache/web-player/result.json`).
+
+Fix: position saves and the completion go out one at a time, in the order the player made them, as Rune's `writes` queue does. The save of 0 before the completion is gone, because `Queue.complete` resets the position itself.
+
+How likely it was without the 1.5 s hold: the late save must be slower than the two requests after it by more than one round trip. Rare on a good network; the result when it happens is a Set that skips itself.
+
+Not changed: the web player saves no place when another Set starts (the old `<audio>` element is removed with no `pause` event), so a Set left that way resumes up to 15 s early. Rune saves there. See finding 7.
 
 ### 11. `docs/development.md` asks for Node.js 24; Vanta runs 22.23.2 — left
 
