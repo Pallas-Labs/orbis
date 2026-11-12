@@ -13,9 +13,6 @@ export default defineConfig({
   extends: [core, antiSlop],
   ignorePatterns: [
     ...core.ignorePatterns,
-    // shadcn generates these; `shadcn add` overwrites any hand edits.
-    "apps/web/src/components/ui/**",
-    "apps/web/src/components/ai-elements/**",
     // Vendored upstream plugin source; fix it upstream, not here.
     "lint-plugins/t3code/**",
     // Each fixture holds the findings its rule must report; scripts/fence.test.mjs checks them.

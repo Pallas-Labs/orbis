@@ -27,6 +27,7 @@ import type { IssuedSignInCode } from "@/lib/sign-in";
 import { forgetKey } from "@/lib/stored-key";
 import { useApiCall } from "@/lib/use-api-call";
 import type { Session } from "@/routes/_app";
+import { layout } from "@/styles/layout";
 
 const DeviceRow = ({
   device,
@@ -98,7 +99,7 @@ const SignInAnotherDevice = ({ session }: { readonly session: Session }) => {
       )}
       <Problem message={problem} />
       <Button
-        className="self-start"
+        xstyle={layout.selfStart}
         disabled={busy}
         onClick={detach(request)}
         variant={code === null ? "default" : "outline"}
@@ -127,7 +128,7 @@ const Devices = ({
           longer use.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent xstyle={layout.stack4}>
         <SignInAnotherDevice session={session} />
         {devices.ok ? (
           <ul aria-label="Your devices" className="divide-y">

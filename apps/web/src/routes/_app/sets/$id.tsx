@@ -1,5 +1,6 @@
 import { isDownloadInFlight } from "@orbis/contracts";
 import { ExportIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
@@ -8,13 +9,14 @@ import { Tracklist } from "@/components/library/tracklist";
 import { useDownloadProgress } from "@/components/library/use-download-progress";
 import { usePlayer } from "@/components/player/player";
 import { RouteProblem } from "@/components/route-problem";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, buttonLook } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Icon } from "@/components/ui/icon";
 import { detach } from "@/lib/detach";
 import { listSets, requestDownload } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
@@ -37,7 +39,7 @@ const AudioAction = ({
   if (set.source === "apple-music") {
     return (
       <a
-        className={buttonVariants()}
+        {...stylex.props(buttonLook())}
         href={set.url}
         rel="noreferrer"
         target="_blank"
@@ -84,7 +86,7 @@ const ShareMenu = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="outline" />}>
-        <ExportIcon data-icon="inline-start" />
+        <Icon data-icon="inline-start" glyph={ExportIcon} />
         Share
       </DropdownMenuTrigger>
       <DropdownMenuContent>

@@ -1,17 +1,22 @@
-import { cn } from "cn";
-import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
+import type { ComponentProps } from "react";
 
-function Label({ className, ...props }: React.ComponentProps<"label">) {
-  return (
-    <label
-      data-slot="label"
-      className={cn(
-        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+import { space, text, weights } from "@/styles/tokens.stylex";
+
+const styles = stylex.create({
+  label: {
+    alignItems: "center",
+    display: "flex",
+    fontSize: text.sm,
+    fontWeight: weights.medium,
+    gap: space[2],
+    lineHeight: text.leadingNone,
+    userSelect: "none",
+  },
+});
+
+const Label = (props: Omit<ComponentProps<"label">, "className" | "style">) => (
+  <label data-slot="label" {...props} {...stylex.props(styles.label)} />
+);
 
 export { Label };

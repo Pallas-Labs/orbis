@@ -1,22 +1,24 @@
 import { Separator as SeparatorPrimitive } from "@base-ui/react/separator";
-import { cn } from "cn";
+import * as stylex from "@stylexjs/stylex";
 
-function Separator({
-  className,
+import { colors, space } from "@/styles/tokens.stylex";
+
+const styles = stylex.create({
+  base: { backgroundColor: colors.border, flexShrink: 0 },
+  horizontal: { height: space.px, width: "100%" },
+  vertical: { alignSelf: "stretch", width: space.px },
+});
+
+const Separator = ({
   orientation = "horizontal",
   ...props
-}: SeparatorPrimitive.Props) {
-  return (
-    <SeparatorPrimitive
-      data-slot="separator"
-      orientation={orientation}
-      className={cn(
-        "bg-border shrink-0 data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+}: Omit<SeparatorPrimitive.Props, "className" | "style">) => (
+  <SeparatorPrimitive
+    data-slot="separator"
+    orientation={orientation}
+    {...props}
+    {...stylex.props(styles.base, styles[orientation])}
+  />
+);
 
 export { Separator };

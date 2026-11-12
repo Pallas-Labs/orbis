@@ -1,55 +1,168 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "cn";
+import * as stylex from "@stylexjs/stylex";
 
-const buttonVariants = cva(
-  "group/button focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 inline-flex shrink-0 items-center justify-center rounded-4xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-3 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:ring-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
-        outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-input/30 dark:bg-transparent",
-        secondary:
-          "bg-secondary text-secondary-foreground aria-expanded:bg-secondary aria-expanded:text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)]",
-        ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
-        destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default:
-          "h-9 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
-        xs: "h-6 gap-1 px-2.5 text-xs has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-8 gap-1 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        lg: "h-10 gap-1.5 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
-        icon: "size-9",
-        "icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-);
+import { groupItem } from "@/components/ui/button-group";
+import type { Overrides } from "@/styles/overrides";
+import {
+  colors,
+  motion,
+  radii,
+  space,
+  text,
+  weights,
+} from "@/styles/tokens.stylex";
 
-function Button({
-  className,
-  variant = "default",
-  size = "default",
-  ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
-  return (
-    <ButtonPrimitive
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  );
+const styles = stylex.create({
+  base: {
+    alignItems: "center",
+    backgroundClip: "padding-box",
+    borderColor: { ":focus-visible": colors.ring, default: "transparent" },
+    borderRadius: radii.xl4,
+    borderStyle: "solid",
+    borderWidth: space.px,
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px ${colors.focusHalo}`,
+      default: null,
+    },
+    display: "inline-flex",
+    flexShrink: 0,
+    fontSize: text.sm,
+    fontWeight: weights.medium,
+    justifyContent: "center",
+    lineHeight: text.smLeading,
+    opacity: { ":disabled": 0.5, default: null },
+    outlineStyle: "none",
+    pointerEvents: { ":disabled": "none", default: null },
+    transitionDuration: motion.normal,
+    transitionProperty: "all",
+    transitionTimingFunction: motion.ease,
+    translate: { ":active:not([aria-haspopup])": "0 1px", default: null },
+    userSelect: "none",
+    whiteSpace: "nowrap",
+  },
+});
+
+const variants = stylex.create({
+  default: {
+    backgroundColor: {
+      ":hover": `color-mix(in oklab, ${colors.primary} 80%, transparent)`,
+      default: colors.primary,
+    },
+    color: colors.primaryForeground,
+  },
+  destructive: {
+    backgroundColor: {
+      ":hover": colors.destructiveFillHover,
+      default: colors.destructiveFill,
+    },
+    borderColor: {
+      ":focus-visible": `color-mix(in oklab, ${colors.destructive} 40%, transparent)`,
+      default: "transparent",
+    },
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px ${colors.invalidRing}`,
+      default: null,
+    },
+    color: colors.destructive,
+  },
+  ghost: {
+    backgroundColor: {
+      ":hover": colors.ghostHover,
+      ":is([aria-expanded=true])": colors.muted,
+      default: null,
+    },
+    color: {
+      ":hover": colors.foreground,
+      ":is([aria-expanded=true])": colors.foreground,
+      default: null,
+    },
+  },
+  outline: {
+    backgroundColor: {
+      ":hover": colors.outlineHover,
+      ":is([aria-expanded=true])": colors.muted,
+      default: colors.outlineFill,
+    },
+    borderColor: { ":focus-visible": colors.ring, default: colors.border },
+    color: {
+      ":hover": colors.foreground,
+      ":is([aria-expanded=true])": colors.foreground,
+      default: null,
+    },
+  },
+  secondary: {
+    backgroundColor: {
+      ":hover": `color-mix(in oklch, ${colors.secondary}, ${colors.foreground} 5%)`,
+      default: colors.secondary,
+    },
+    color: colors.secondaryForeground,
+  },
+});
+
+const sizes = stylex.create({
+  default: {
+    gap: space[1.5],
+    height: space[9],
+    paddingInline: space[3],
+    paddingInlineStart: {
+      ":has([data-icon=inline-start])": space[2.5],
+      default: null,
+    },
+  },
+  icon: { height: space[9], width: space[9] },
+  "icon-sm": { height: space[8], width: space[8] },
+  sm: {
+    gap: space[1],
+    height: space[8],
+    paddingInline: space[3],
+    paddingInlineStart: {
+      ":has([data-icon=inline-start])": space[2],
+      default: null,
+    },
+  },
+});
+
+type ButtonVariant = keyof typeof variants;
+type ButtonSize = keyof typeof sizes;
+
+interface ButtonLook {
+  readonly variant?: ButtonVariant | undefined;
+  readonly size?: ButtonSize | undefined;
 }
 
-export { Button, buttonVariants };
+/** A button's styles, for a link drawn as a button: `<Link {...stylex.props(buttonLook())}>`. */
+const buttonLook = ({
+  size = "default",
+  variant = "default",
+}: ButtonLook = {}) => [styles.base, variants[variant], sizes[size]] as const;
+
+/** What a caller may change about a button: where it sits, not how it looks. */
+type ButtonPlacement = Overrides<
+  "alignSelf" | "insetBlockStart" | "insetInlineEnd" | "position"
+>;
+
+const Button = ({
+  grouped = false,
+  size,
+  variant,
+  xstyle,
+  ...props
+}: Omit<ButtonPrimitive.Props, "className" | "style"> &
+  ButtonLook & {
+    /** The button is a member of a `ButtonGroup`, joined to its neighbours. */
+    readonly grouped?: boolean;
+    readonly xstyle?: ButtonPlacement;
+  }) => (
+  <ButtonPrimitive
+    data-slot="button"
+    {...props}
+    {...stylex.props(
+      buttonLook({ size, variant }),
+      grouped && groupItem,
+      xstyle
+    )}
+  />
+);
+
+export { Button, buttonLook };
+export type { ButtonLook };

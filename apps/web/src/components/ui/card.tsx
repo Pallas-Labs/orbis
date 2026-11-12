@@ -1,99 +1,140 @@
-import { cn } from "cn";
-import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
+import type { ComponentProps } from "react";
 
-function Card({
-  className,
-  size = "default",
+import type { Overrides } from "@/styles/overrides";
+import {
+  colors,
+  fonts,
+  radii,
+  shadows,
+  space,
+  text,
+  weights,
+  widths,
+} from "@/styles/tokens.stylex";
+
+const styles = stylex.create({
+  action: {
+    alignSelf: "start",
+    gridColumnStart: 2,
+    gridRowEnd: "span 2",
+    gridRowStart: 1,
+    justifySelf: "end",
+  },
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radii.xl4,
+    boxShadow: `0 0 0 1px ${colors.surfaceRing}, ${shadows.md}`,
+    color: colors.cardForeground,
+    display: "flex",
+    flexDirection: "column",
+    fontSize: text.sm,
+    gap: space[6],
+    lineHeight: text.smLeading,
+    overflow: "hidden",
+    paddingBlock: space[6],
+  },
+  content: { paddingInline: space[6] },
+  description: {
+    color: colors.mutedForeground,
+    fontSize: text.sm,
+    lineHeight: text.smLeading,
+  },
+  header: {
+    alignItems: "start",
+    borderStartEndRadius: radii.xl4,
+    borderStartStartRadius: radii.xl4,
+    display: "grid",
+    gap: space[1.5],
+    gridAutoRows: "min-content",
+    gridTemplateColumns: {
+      ":has([data-slot=card-action])": "1fr auto",
+      default: null,
+    },
+    gridTemplateRows: {
+      ":has([data-slot=card-description])": "auto auto",
+      default: null,
+    },
+    paddingInline: space[6],
+  },
+  title: {
+    fontFamily: fonts.sans,
+    fontSize: text.base,
+    fontWeight: weights.medium,
+    lineHeight: text.baseLeading,
+  },
+});
+
+const tones = stylex.create({
+  destructive: { color: colors.destructive },
+});
+
+/** Widths a card may take. */
+export const cardSize = stylex.create({
+  narrow: { maxWidth: widths.sm, width: "100%" },
+});
+
+type Div = Omit<ComponentProps<"div">, "className" | "style">;
+
+/** A card's width; its look stays the card's. */
+type CardSize = Overrides<"maxWidth" | "width">;
+/** How a card part lays out what it holds. */
+type CardLayout = Overrides<"display" | "flexDirection" | "gap">;
+
+const Card = ({ xstyle, ...props }: Div & { readonly xstyle?: CardSize }) => (
+  <div data-slot="card" {...props} {...stylex.props(styles.card, xstyle)} />
+);
+
+const CardHeader = (props: Div) => (
+  <div data-slot="card-header" {...props} {...stylex.props(styles.header)} />
+);
+
+const CardTitle = (props: Div) => (
+  <div data-slot="card-title" {...props} {...stylex.props(styles.title)} />
+);
+
+/** `tone="destructive"` draws the description as an error. */
+const CardDescription = ({
+  tone,
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
-  return (
-    <div
-      data-slot="card"
-      data-size={size}
-      className={cn(
-        "group/card bg-card text-card-foreground ring-foreground/5 dark:ring-foreground/10 flex flex-col gap-(--card-spacing) overflow-hidden rounded-4xl py-(--card-spacing) text-sm shadow-md ring-1 [--card-spacing:--spacing(6)] has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(4)] *:[img:first-child]:rounded-t-4xl *:[img:last-child]:rounded-b-4xl",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+}: Div & { readonly tone?: "destructive" }) => (
+  <div
+    data-slot="card-description"
+    {...props}
+    {...stylex.props(
+      styles.description,
+      tone === "destructive" && tones.destructive
+    )}
+  />
+);
 
-function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-header"
-      className={cn(
-        "group/card-header @container/card-header grid auto-rows-min items-start gap-1.5 rounded-t-4xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+const CardAction = ({
+  xstyle,
+  ...props
+}: Div & { readonly xstyle?: CardLayout }) => (
+  <div
+    data-slot="card-action"
+    {...props}
+    {...stylex.props(styles.action, xstyle)}
+  />
+);
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-title"
-      className={cn("font-heading text-base font-medium", className)}
-      {...props}
-    />
-  );
-}
-
-function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-description"
-      className={cn("text-muted-foreground text-sm", className)}
-      {...props}
-    />
-  );
-}
-
-function CardAction({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-action"
-      className={cn(
-        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-content"
-      className={cn("px-(--card-spacing)", className)}
-      {...props}
-    />
-  );
-}
-
-function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-footer"
-      className={cn(
-        "flex items-center rounded-b-4xl px-(--card-spacing) [.border-t]:pt-(--card-spacing)",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+const CardContent = ({
+  xstyle,
+  ...props
+}: Div & { readonly xstyle?: CardLayout }) => (
+  <div
+    data-slot="card-content"
+    {...props}
+    {...stylex.props(styles.content, xstyle)}
+  />
+);
 
 export {
   Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
   CardAction,
-  CardDescription,
   CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 };

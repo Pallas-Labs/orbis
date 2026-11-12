@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -11,7 +12,7 @@ import { useDownloadProgress } from "@/components/library/use-download-progress"
 import { useLiveEvents } from "@/components/live-events";
 import { usePlayer } from "@/components/player/player";
 import { RouteProblem } from "@/components/route-problem";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, buttonLook } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -302,7 +303,10 @@ const NotVisible = () => (
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Link className={buttonVariants({ variant: "outline" })} to="/people">
+        <Link
+          {...stylex.props(buttonLook({ variant: "outline" }))}
+          to="/people"
+        >
           Back to People
         </Link>
       </CardContent>

@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Icon } from "@/components/ui/icon";
 import { detach } from "@/lib/detach";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
@@ -182,7 +183,7 @@ export const Members = ({
                 size="icon"
                 variant="ghost"
               >
-                <ArrowUpIcon />
+                <Icon glyph={ArrowUpIcon} />
               </Button>
               <Button
                 aria-label={`Move ${set.title} down`}
@@ -193,7 +194,7 @@ export const Members = ({
                 size="icon"
                 variant="ghost"
               >
-                <ArrowDownIcon />
+                <Icon glyph={ArrowDownIcon} />
               </Button>
               <Button
                 aria-label={`Remove ${set.title} from ${playlist.name}`}

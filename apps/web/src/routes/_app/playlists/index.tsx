@@ -23,6 +23,7 @@ import {
   listSharedPlaylists,
 } from "@/lib/playlists";
 import type { Playlist, SharedPlaylist } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
 
 const setCount = (count: number) => `${count} ${count === 1 ? "Set" : "Sets"}`;
 
@@ -118,7 +119,7 @@ const Playlists = ({
           A Playlist is a named, ordered selection of Sets.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6">
+      <CardContent xstyle={layout.stack6}>
         <CreatePlaylistForm credentials={credentials} />
         {owned.length === 0 ? (
           <p className="text-muted-foreground text-sm">

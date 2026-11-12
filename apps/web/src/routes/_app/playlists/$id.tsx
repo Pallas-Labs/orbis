@@ -59,6 +59,7 @@ import type {
   PlaylistDetail,
   VisiblePerson,
 } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
 
 const RenameDialog = ({
   credentials,
@@ -223,13 +224,13 @@ const PlaylistPage = ({
               : `${count} · Shared by ${playlist.creator.username}. You can add, remove, and reorder Sets.`}
           </CardDescription>
           {creator ? (
-            <CardAction className="flex gap-2">
+            <CardAction xstyle={layout.row2}>
               <RenameDialog credentials={credentials} playlist={playlist} />
               <DeleteDialog credentials={credentials} playlist={playlist} />
             </CardAction>
           ) : null}
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent xstyle={layout.stack4}>
           <Button
             disabled={
               pending ||

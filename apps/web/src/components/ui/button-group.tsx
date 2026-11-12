@@ -1,87 +1,75 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "cn";
+import * as stylex from "@stylexjs/stylex";
+import type { ComponentProps } from "react";
 
-import { Separator } from "@/components/ui/separator";
+import {
+  colors,
+  layers,
+  radii,
+  space,
+  text,
+  weights,
+} from "@/styles/tokens.stylex";
 
-const buttonGroupVariants = cva(
-  "has-[>[data-variant=outline]]:*:data-[slot=input-group]:border-border has-[>[data-variant=outline]]:*:data-[slot=select-trigger]:border-border has-[>[data-variant=outline]]:[&>[data-slot=input-group]:has(:focus-visible)]:border-ring has-[>[data-variant=outline]]:[&>[data-slot=select-trigger]:focus-visible]:border-ring has-[>[data-variant=outline]]:[&>input]:border-border has-[>[data-variant=outline]]:[&>input:focus-visible]:border-ring flex w-fit items-stretch *:focus-visible:relative *:focus-visible:z-10 has-[>[data-slot=button-group]]:gap-2 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-4xl [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1",
-  {
-    variants: {
-      orientation: {
-        horizontal:
-          "*:data-slot:rounded-r-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-4xl! [&>[data-slot]~[data-slot]]:rounded-l-none [&>[data-slot]~[data-slot]]:border-l-0",
-        vertical:
-          "flex-col *:data-slot:rounded-b-none [&>[data-slot]:not(:has(~[data-slot]))]:rounded-b-4xl! [&>[data-slot]~[data-slot]]:rounded-t-none [&>[data-slot]~[data-slot]]:border-t-0",
-      },
-    },
-    defaultVariants: {
-      orientation: "horizontal",
-    },
-  }
+const styles = stylex.create({
+  group: { alignItems: "stretch", display: "flex", width: "fit-content" },
+  text: {
+    alignItems: "center",
+    backgroundColor: "transparent",
+    borderColor: colors.border,
+    borderRadius: radii.xl4,
+    borderStyle: "solid",
+    borderWidth: space.px,
+    display: "flex",
+    fontSize: text.sm,
+    fontWeight: weights.medium,
+    gap: space[2],
+    lineHeight: text.smLeading,
+    paddingInline: space[2.5],
+  },
+});
+
+/**
+ * Joins the members of a group into one pill: only the first keeps its start corners and
+ * border, only the last its end corners. StyleX cannot style a group's children from the group,
+ * so each member carries this style.
+ */
+const grouping = stylex.create({
+  item: {
+    borderEndEndRadius: { ":last-child": radii.xl4, default: 0 },
+    borderEndStartRadius: { ":not(:first-child)": 0, default: null },
+    borderInlineStartWidth: { ":not(:first-child)": 0, default: null },
+    borderStartEndRadius: { ":last-child": radii.xl4, default: 0 },
+    borderStartStartRadius: { ":not(:first-child)": 0, default: null },
+    position: { ":focus-visible": "relative", default: null },
+    zIndex: { ":focus-visible": layers.raised, default: null },
+  },
+});
+const groupItem = grouping.item;
+
+const ButtonGroup = (
+  props: Omit<ComponentProps<"div">, "className" | "style">
+) => (
+  <div
+    data-orientation="horizontal"
+    data-slot="button-group"
+    role="group"
+    {...props}
+    {...stylex.props(styles.group)}
+  />
 );
 
-function ButtonGroup({
-  className,
-  orientation,
-  ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof buttonGroupVariants>) {
-  return (
-    <div
-      role="group"
-      data-slot="button-group"
-      data-orientation={orientation}
-      className={cn(buttonGroupVariants({ orientation }), className)}
-      {...props}
-    />
-  );
-}
-
-function ButtonGroupText({
-  className,
+/** A group member that is not a button, such as a time or a slider. */
+const ButtonGroupText = ({
   render,
   ...props
-}: useRender.ComponentProps<"div">) {
-  return useRender({
+}: Omit<useRender.ComponentProps<"div">, "className" | "style">) =>
+  useRender({
     defaultTagName: "div",
-    props: mergeProps<"div">(
-      {
-        className: cn(
-          "bg-muted flex items-center gap-2 rounded-4xl border px-2.5 text-sm font-medium [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
-          className
-        ),
-      },
-      props
-    ),
+    props: mergeProps<"div">(stylex.props(styles.text, groupItem), props),
     render,
-    state: {
-      slot: "button-group-text",
-    },
+    state: { slot: "button-group-text" },
   });
-}
 
-function ButtonGroupSeparator({
-  className,
-  orientation = "vertical",
-  ...props
-}: React.ComponentProps<typeof Separator>) {
-  return (
-    <Separator
-      data-slot="button-group-separator"
-      orientation={orientation}
-      className={cn(
-        "bg-input relative self-stretch data-horizontal:mx-px data-horizontal:w-auto data-vertical:my-px data-vertical:h-auto",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-export {
-  ButtonGroup,
-  ButtonGroupSeparator,
-  ButtonGroupText,
-  buttonGroupVariants,
-};
+export { ButtonGroup, ButtonGroupText, groupItem };

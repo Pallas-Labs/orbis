@@ -37,6 +37,7 @@ import type { IssuedSignInCode } from "@/lib/sign-in";
 import { useApiCall } from "@/lib/use-api-call";
 import { useCopy } from "@/lib/use-copy";
 import type { Session } from "@/routes/_app";
+import { layout } from "@/styles/layout";
 
 const Section = ({
   children,
@@ -56,7 +57,7 @@ const Section = ({
       </CardTitle>
       <CardDescription>{description}</CardDescription>
     </CardHeader>
-    <CardContent className="flex flex-col gap-4">{children}</CardContent>
+    <CardContent xstyle={layout.stack4}>{children}</CardContent>
   </Card>
 );
 
@@ -129,7 +130,7 @@ const Passcode = ({
         <>
           <p>Joining is closed.</p>
           <Button
-            className="self-start"
+            xstyle={layout.selfStart}
             disabled={busy}
             onClick={detach(
               async () => await change(async () => await newPasscode(session))
@@ -335,7 +336,7 @@ const Keys = ({
             />
           </div>
         </div>
-        <Button className="self-start" disabled={busy} type="submit">
+        <Button xstyle={layout.selfStart} disabled={busy} type="submit">
           Create key
         </Button>
       </form>

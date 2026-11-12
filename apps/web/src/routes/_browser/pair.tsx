@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
   Link,
   createFileRoute,
@@ -8,8 +9,9 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { Problem } from "@/components/problem";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, buttonLook } from "@/components/ui/button";
 import {
+  cardSize,
   Card,
   CardContent,
   CardDescription,
@@ -24,6 +26,7 @@ import { takeFragment } from "@/lib/fragment";
 import { fetchMe, problemFor } from "@/lib/orbis";
 import type { ApiResult, Credentials, Person } from "@/lib/orbis";
 import { forgetKey, readKey } from "@/lib/stored-key";
+import { layout } from "@/styles/layout";
 
 const PLATFORMS: Readonly<
   Record<
@@ -123,7 +126,7 @@ const PairCard = ({
   readonly title: string;
 }) => (
   <main className="flex min-h-svh items-center justify-center p-6">
-    <Card className="w-full max-w-sm">
+    <Card xstyle={cardSize.narrow}>
       <CardHeader>
         <CardTitle>
           <h1>{title}</h1>
@@ -132,7 +135,7 @@ const PairCard = ({
           <CardDescription>{description}</CardDescription>
         )}
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">{children}</CardContent>
+      <CardContent xstyle={layout.stack4}>{children}</CardContent>
     </Card>
   </main>
 );
@@ -237,7 +240,7 @@ const Pair = ({ loaded }: { readonly loaded: Pairing }) => {
           title={`${PLATFORMS[pairing.request.platform].name} is signed in.`}
         >
           <Link
-            className={buttonVariants({ variant: "outline" })}
+            {...stylex.props(buttonLook({ variant: "outline" }))}
             to="/devices"
           >
             Open Devices
@@ -262,7 +265,7 @@ const Pair = ({ loaded }: { readonly loaded: Pairing }) => {
           <p className="text-muted-foreground text-sm">
             Or open this link on a device where you use Orbis.
           </p>
-          <Link className={buttonVariants()} to="/sign-in">
+          <Link {...stylex.props(buttonLook())} to="/sign-in">
             Sign in
           </Link>
         </PairCard>

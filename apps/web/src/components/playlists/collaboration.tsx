@@ -22,6 +22,7 @@ import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
 import { setCollaborative, setEditors } from "@/lib/playlists";
 import type { Collaboration, VisiblePerson } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
 
 export const CollaborationCard = ({
   collaboration,
@@ -79,7 +80,7 @@ export const CollaborationCard = ({
           delete this Playlist and choose its editors.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent xstyle={layout.stack4}>
         <Label>
           <Switch
             checked={collaboration.collaborative}

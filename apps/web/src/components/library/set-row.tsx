@@ -31,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { detach } from "@/lib/detach";
@@ -267,7 +268,7 @@ export const SetRow = ({
             />
           }
         >
-          <DotsThreeIcon />
+          <Icon glyph={DotsThreeIcon} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {set.downloadState === "ready" ? (

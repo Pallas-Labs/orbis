@@ -1,5 +1,6 @@
 import { codeFromText } from "@orbis/contracts";
 import type { CodeFormat } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { OTPInputContext } from "input-otp";
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -22,17 +23,21 @@ const slotGroups = (format: CodeFormat) =>
     return Array.from({ length: size }, (_, offset) => start + offset);
   });
 
+const groupStyles = stylex.create({
+  group: { flexGrow: 1, minWidth: 0 },
+});
+
 const Slots = ({
-  className,
   format,
+  size,
 }: {
-  readonly className?: string;
   readonly format: CodeFormat;
+  readonly size: "field" | "shown";
 }) =>
   slotGroups(format).map((indexes) => (
-    <InputOTPGroup className="min-w-0 flex-1" key={indexes[0]}>
+    <InputOTPGroup key={indexes[0]} xstyle={groupStyles.group}>
       {indexes.map((index) => (
-        <InputOTPSlot className={className} index={index} key={index} />
+        <InputOTPSlot index={index} key={index} size={size} />
       ))}
     </InputOTPGroup>
   ));
@@ -81,7 +86,6 @@ export const CodeField = ({
     <InputOTP
       aria-label={label}
       autoCapitalize="characters"
-      containerClassName="w-full gap-2"
       id={id}
       inputMode={/^\d+$/u.test(format.alphabet) ? "numeric" : "text"}
       maxLength={format.length}
@@ -95,7 +99,7 @@ export const CodeField = ({
       pattern={`^[${format.alphabet}${format.alphabet.toLowerCase()}]*$`}
       value={code}
     >
-      <Slots className="h-10 w-auto min-w-0 flex-1 text-base" format={format} />
+      <Slots format={format} size="field" />
     </InputOTP>
   );
 };
@@ -137,10 +141,7 @@ export const ShownCode = ({
           }}
         >
           <div aria-hidden="true" className="flex items-center gap-2">
-            <Slots
-              className="size-11 min-w-0 shrink text-2xl"
-              format={format}
-            />
+            <Slots format={format} size="shown" />
           </div>
         </OTPInputContext.Provider>
       </div>

@@ -1,27 +1,75 @@
-"use client";
-
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { CheckIcon } from "@phosphor-icons/react";
-import { cn } from "cn";
+import * as stylex from "@stylexjs/stylex";
 
-function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
-  return (
-    <CheckboxPrimitive.Root
-      data-slot="checkbox"
-      className={cn(
-        "peer bg-input/90 focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground group-has-[:focus-visible]/field-label:data-checked:border-primary dark:data-checked:bg-primary relative flex size-4 shrink-0 items-center justify-center rounded-[5px] border border-transparent transition-shadow outline-none group-has-disabled/field:opacity-50 group-has-[:focus-visible]/field-label:ring-0 group-has-[:focus-visible]/field-label:not-data-checked:border-transparent after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:ring-3 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-3",
-        className
-      )}
-      {...props}
+import { Icon } from "@/components/ui/icon";
+import { colors, motion, radii, space } from "@/styles/tokens.stylex";
+
+const styles = stylex.create({
+  checked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+    color: colors.primaryForeground,
+  },
+  disabled: { cursor: "not-allowed", opacity: 0.5 },
+  indicator: {
+    color: "currentcolor",
+    display: "grid",
+    placeContent: "center",
+    transitionProperty: "none",
+  },
+  root: {
+    "::after": {
+      content: '""',
+      insetBlock: `calc(-1 * ${space[2]})`,
+      insetInline: `calc(-1 * ${space[3]})`,
+      position: "absolute",
+    },
+    alignItems: "center",
+    backgroundColor: colors.controlOff,
+    borderColor: { ":focus-visible": colors.ring, default: "transparent" },
+    borderRadius: radii.checkbox,
+    borderStyle: "solid",
+    borderWidth: space.px,
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px ${colors.focusHalo}`,
+      default: null,
+    },
+    display: "flex",
+    flexShrink: 0,
+    height: space[4],
+    justifyContent: "center",
+    outlineStyle: "none",
+    position: "relative",
+    transitionDuration: motion.normal,
+    transitionProperty: "box-shadow",
+    transitionTimingFunction: motion.ease,
+    width: space[4],
+  },
+});
+
+/** Base UI hands each part its state, so a checked or disabled box styles itself. */
+const Checkbox = (
+  props: Omit<CheckboxPrimitive.Root.Props, "className" | "style">
+) => (
+  <CheckboxPrimitive.Root
+    className={(state) =>
+      stylex.props(
+        styles.root,
+        state.checked && styles.checked,
+        state.disabled && styles.disabled
+      ).className ?? ""
+    }
+    data-slot="checkbox"
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator
+      data-slot="checkbox-indicator"
+      {...stylex.props(styles.indicator)}
     >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
-      >
-        <CheckIcon />
-      </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
-  );
-}
+      <Icon glyph={CheckIcon} size={3.5} />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+);
 
 export { Checkbox };

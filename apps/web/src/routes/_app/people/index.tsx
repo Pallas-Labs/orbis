@@ -1,9 +1,10 @@
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useId, useState } from "react";
 
 import { useLiveEvents } from "@/components/live-events";
 import { RouteProblem } from "@/components/route-problem";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonLook } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -18,6 +19,7 @@ import type { ApiResult, Credentials } from "@/lib/orbis";
 import { listPeopleFilters, setFilter, setSocial } from "@/lib/people";
 import type { PersonFilters } from "@/lib/people";
 import type { Session } from "@/routes/_app";
+import { layout } from "@/styles/layout";
 
 /** Runs one change, shows its failure, and reloads the page's data on success. */
 const useChange = () => {
@@ -129,7 +131,7 @@ const PersonRow = ({
         </div>
         {person.see ? (
           <Link
-            className={buttonVariants({ size: "sm", variant: "outline" })}
+            {...stylex.props(buttonLook({ size: "sm", variant: "outline" }))}
             params={{ id: person.id }}
             to="/people/$id"
           >
@@ -208,7 +210,7 @@ const People = ({
             whether they see you.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-6">
+        <CardContent xstyle={layout.stack6}>
           <SocialSwitch session={session} />
           {renderPeople()}
         </CardContent>

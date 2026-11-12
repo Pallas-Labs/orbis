@@ -1,4 +1,5 @@
 import type { PresenceAction } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { createContext, use, useRef, useState } from "react";
 import type { ReactNode, SyntheticEvent } from "react";
 
@@ -29,8 +30,13 @@ import {
   sendPresence,
   streamUrl,
 } from "@/lib/player";
+import { widths } from "@/styles/tokens.stylex";
 
 // Report the Playback Position this often while playing, plus on pause and seek.
+const playerStyles = stylex.create({
+  audio: { maxWidth: widths.xl, width: "100%" },
+});
+
 const REPORT_EVERY_MS = 15_000;
 // Renew the 30-second Presence lease this often while audio plays (ADR 0019).
 const RENEW_EVERY_MS = 15_000;
@@ -363,7 +369,7 @@ export const PlayerProvider = ({
               {playing.set.creator ?? "Unknown creator"}
             </p>
           </div>
-          <AudioPlayer className="w-full max-w-xl" key={playing.attempt}>
+          <AudioPlayer key={playing.attempt} xstyle={playerStyles.audio}>
             <AudioPlayerElement
               autoPlay
               ref={audioRef}

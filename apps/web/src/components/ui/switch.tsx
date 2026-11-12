@@ -1,29 +1,89 @@
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
-import { cn } from "cn";
+import * as stylex from "@stylexjs/stylex";
 
-function Switch({
-  className,
+import { colors, motion, radii, shadows, space } from "@/styles/tokens.stylex";
+
+const styles = stylex.create({
+  checked: { backgroundColor: colors.primary, borderColor: colors.primary },
+  disabled: { cursor: "not-allowed", opacity: 0.5 },
+  root: {
+    "::after": {
+      content: '""',
+      insetBlock: `calc(-1 * ${space[2]})`,
+      insetInline: `calc(-1 * ${space[3]})`,
+      position: "absolute",
+    },
+    alignItems: "center",
+    backgroundColor: colors.controlOff,
+    borderColor: { ":focus-visible": colors.ring, default: "transparent" },
+    borderRadius: radii.full,
+    borderStyle: "solid",
+    borderWidth: space[0.5],
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px ${colors.focusHalo}`,
+      default: null,
+    },
+    display: "inline-flex",
+    flexShrink: 0,
+    height: space[5],
+    outlineStyle: "none",
+    position: "relative",
+    transitionDuration: motion.normal,
+    transitionProperty: "all",
+    transitionTimingFunction: motion.ease,
+    width: space[11],
+  },
+  rootSmall: { height: space[4], width: space[7] },
+  thumb: {
+    backgroundClip: "padding-box",
+    backgroundColor: colors.thumbOff,
+    borderRadius: radii.full,
+    boxShadow: shadows.sm,
+    display: "block",
+    height: space[4],
+    pointerEvents: "none",
+    transitionDuration: motion.normal,
+    transitionProperty: "transform, translate, scale, rotate",
+    transitionTimingFunction: motion.ease,
+    width: space[6],
+  },
+  thumbChecked: {
+    backgroundColor: colors.thumbOn,
+    translate: `calc(100% - ${space[2]}) 0`,
+  },
+  thumbSmall: { height: space[3], width: space[4] },
+});
+
+const Switch = ({
   size = "default",
   ...props
-}: SwitchPrimitive.Root.Props & {
-  size?: "sm" | "default";
-}) {
-  return (
-    <SwitchPrimitive.Root
-      data-slot="switch"
-      data-size={size}
-      className={cn(
-        "peer group/switch focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary group-has-[:focus-visible]/field-label:data-checked:border-primary data-unchecked:bg-input/90 relative inline-flex shrink-0 items-center rounded-full border-2 transition-all outline-none group-has-[:focus-visible]/field-label:ring-0 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:ring-3 aria-invalid:ring-3 data-disabled:cursor-not-allowed data-disabled:opacity-50 data-unchecked:border-transparent group-has-[:focus-visible]/field-label:data-unchecked:border-transparent data-[size=default]:h-5 data-[size=default]:w-11 data-[size=sm]:h-4 data-[size=sm]:w-7",
-        className
-      )}
-      {...props}
-    >
-      <SwitchPrimitive.Thumb
-        data-slot="switch-thumb"
-        className="bg-background dark:data-checked:bg-primary-foreground dark:data-unchecked:bg-foreground pointer-events-none block rounded-full shadow-sm ring-0 transition-transform not-dark:bg-clip-padding group-data-[size=default]/switch:h-4 group-data-[size=default]/switch:w-6 group-data-[size=sm]/switch:h-3 group-data-[size=sm]/switch:w-4 data-checked:translate-x-[calc(100%-8px)] data-unchecked:translate-x-0"
-      />
-    </SwitchPrimitive.Root>
-  );
-}
+}: Omit<SwitchPrimitive.Root.Props, "className" | "style"> & {
+  readonly size?: "default" | "sm";
+}) => (
+  <SwitchPrimitive.Root
+    className={(state) =>
+      stylex.props(
+        styles.root,
+        size === "sm" && styles.rootSmall,
+        state.checked && styles.checked,
+        state.disabled && styles.disabled
+      ).className ?? ""
+    }
+    data-size={size}
+    data-slot="switch"
+    {...props}
+  >
+    <SwitchPrimitive.Thumb
+      className={(state) =>
+        stylex.props(
+          styles.thumb,
+          size === "sm" && styles.thumbSmall,
+          state.checked && styles.thumbChecked
+        ).className ?? ""
+      }
+      data-slot="switch-thumb"
+    />
+  </SwitchPrimitive.Root>
+);
 
 export { Switch };
