@@ -127,6 +127,11 @@ struct LaneService {
     try seed("late-tracklist/\(id)")
   }
 
+  /// Settles the Set's Tracklist as none found, as Versos leaves a Set it has no source for.
+  func seedNoTracklist(_ id: String) throws {
+    try seed("no-tracklist/\(id)")
+  }
+
   /// Leaves the Set's Tracklist pending with its Cues, as it is while Versos scans.
   func holdTracklistRun(_ id: String) throws {
     try seed("running-tracklist/\(id)")
@@ -226,12 +231,12 @@ struct LaneService {
     guard (200..<300).contains(code) else { throw URLError(.badServerResponse) }
   }
 
-  /// Waits until the service has named the Set's creator and settled its first Tracklist read,
-  /// so a seeded Tracklist is not overwritten by that read. Answers the Set as it then reads.
-  func settled(_ id: String) throws -> Set? {
+  /// Waits until the service has read the Set's creator from the provider. Answers the Set as
+  /// it then reads.
+  func named(_ id: String) throws -> Set? {
     let deadline = Date().addingTimeInterval(20)
     repeat {
-      if let set = try set(id: id), set.creator != nil, set.tracklistState != "pending" {
+      if let set = try set(id: id), set.creator != nil {
         return set
       }
       usleep(200_000)

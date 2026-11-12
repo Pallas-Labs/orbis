@@ -368,6 +368,13 @@ const routeDiagnostics = async (route, request, response) => {
 };
 
 const seedTracklist = (action, setId) => {
+  if (action === "no-tracklist") {
+    // Versos looked and found nothing. The lane has no yt-dlp, so a new Set never gets there.
+    db.query(
+      "UPDATE sets SET tracklist_state = 'none', tracklist_run_id = NULL, tracklist_run_started_at = NULL WHERE id = ?"
+    ).run(setId);
+    return true;
+  }
   if (action === "running-tracklist") {
     // A run that holds its lease, as one does while Versos scans, so a refresh starts
     // nothing and the Set stays pending with its Cues.
@@ -421,7 +428,7 @@ const handle = async (request, response) => {
     return;
   }
   const match =
-    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist|running-tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
+    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist|running-tracklist|no-tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
       route
     );
   if (!match?.groups) {

@@ -41,8 +41,8 @@ final class SetPageV2UITests: LibraryJourney {
       try? service.removeSet(set.id)
       try? service.removeSet(other.id)
     }
-    XCTAssertEqual(try service.settled(set.id)?.creator, "Kai Moreno")
-    XCTAssertEqual(try service.settled(other.id)?.creator, "Kai Moreno")
+    XCTAssertEqual(try service.named(set.id)?.creator, "Kai Moreno")
+    XCTAssertEqual(try service.named(other.id)?.creator, "Kai Moreno")
     // A title that repeats the creator, as many uploads do.
     try service.rename(set.id, to: "Kai Moreno - Sunrise Session")
     try service.seedTracklist(set.id)
@@ -85,7 +85,9 @@ final class SetPageV2UITests: LibraryJourney {
     }
     // The controls end in the lower part of the screen, where a thumb reaches them.
     XCTAssertGreaterThan(controls[0].frame.midY, window.height * 0.6, "controls in thumb reach")
-    XCTAssertFalse(app.descendants(matching: .any)["tracklist"].isHittable)
+    // The Tracklist starts below the controls, so the first screen ends with them.
+    XCTAssertGreaterThan(
+      app.descendants(matching: .any)["tracklist"].frame.minY, controls[0].frame.maxY)
     capture("set-page-v2-01-first-screen")
 
     // Below, in order: the Tracklist, more from the creator, the Tags, the facts.
@@ -122,9 +124,9 @@ final class SetPageV2UITests: LibraryJourney {
     let set = try service.saveReadySet(
       title: "", url: "https://www.youtube.com/watch?v=laneSetPg03")
     addTeardownBlock { try? service.removeSet(set.id) }
-    let settled = try service.settled(set.id)
-    XCTAssertEqual(settled?.creator, "Lone Creator")
-    XCTAssertEqual(settled?.tracklistState, "none", "the fixture video has no description")
+    XCTAssertEqual(try service.named(set.id)?.creator, "Lone Creator")
+    try service.seedNoTracklist(set.id)
+    XCTAssertEqual(try service.set(id: set.id)?.tracklistState, "none")
 
     let app = try launchWithFlagsOn()
     openSet(set.id, in: app)
