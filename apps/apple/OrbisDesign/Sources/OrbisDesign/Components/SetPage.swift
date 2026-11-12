@@ -103,9 +103,10 @@ public struct SetPage: View {
     } action: { _, inset in
       topInset = inset
     }
-    // The height between the bars, which the first screen fills.
+    // The height between the bars, which the first screen fills. The container is already
+    // the part the bars leave visible.
     .onScrollGeometryChange(for: CGFloat.self) { geometry in
-      geometry.containerSize.height - geometry.contentInsets.top - geometry.contentInsets.bottom
+      geometry.containerSize.height
     } action: { _, height in
       visibleHeight = height
     }

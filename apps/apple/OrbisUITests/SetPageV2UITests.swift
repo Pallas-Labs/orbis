@@ -85,9 +85,11 @@ final class SetPageV2UITests: LibraryJourney {
     }
     // The controls end in the lower part of the screen, where a thumb reaches them.
     XCTAssertGreaterThan(controls[0].frame.midY, window.height * 0.6, "controls in thumb reach")
-    // The Tracklist starts below the controls, so the first screen ends with them.
+    // The first screen ends with the controls: the Tracklist starts below the tab bar.
+    let tabBar = app.tabBars.firstMatch.frame
     XCTAssertGreaterThan(
-      app.descendants(matching: .any)["tracklist"].frame.minY, controls[0].frame.maxY)
+      app.descendants(matching: .any)["tracklist"].frame.minY, min(tabBar.minY, window.maxY) - 1,
+      "the Tracklist must wait below the first screen")
     capture("set-page-v2-01-first-screen")
 
     // Below, in order: the Tracklist, more from the creator, the Tags, the facts.
