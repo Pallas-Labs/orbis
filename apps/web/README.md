@@ -36,6 +36,10 @@ bun run deploy     # alchemy deploy --stage prod
 
 Alchemy builds with Vite, uploads the web Worker with its static assets and the API Worker with its SQLite Group, and attaches `orbis.p11a.xyz`. Deploy state lives on Cloudflare (`Cloudflare.state()`), so any machine with the profile deploys the same stack. `bun alchemy deploy --stage prod --dry-run` shows the plan without applying it.
 
+## Stages
+
+Only the `prod` stage claims `orbis.p11a.xyz` and the `/api/*` route (`infra/stage.ts`). A hostname has one Worker, so any other stage that named it would take it from production. Every other stage, such as `pr-12` or a personal stage, gets its own two Workers on workers.dev, and its page calls its own API Worker, which starts with an empty Group.
+
 ## Destroy
 
 ```sh

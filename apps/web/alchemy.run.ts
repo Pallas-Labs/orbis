@@ -1,11 +1,12 @@
 import * as Cloudflare from "@alchemy.run/cloudflare";
 import * as Alchemy from "alchemy";
+import * as Output from "alchemy/Output";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 
-const ORBIS_API_URL = "https://orbis.p11a.xyz/api";
+import { stagePlan } from "./infra/stage.ts";
 
 const SECRETS = [
   "APPLE_MUSIC_KEY_ID",
@@ -42,10 +43,8 @@ export default Alchemy.Stack(
         kept.push(name);
       }
     }
-    const web = yield* Cloudflare.Website.Vite("Web", {
-      domain: "orbis.p11a.xyz",
-      env: { ORBIS_API_URL, ORBIS_AUDIO_URL: Config.String("AUDIO_NODE_URL") },
-    });
+    // Only prod claims the hostname and the zone route; see infra/stage.ts.
+    const plan = stagePlan(yield* Alchemy.Stage);
     const api = yield* Cloudflare.Worker("Api", {
       compatibility: { date: "2026-07-30", flags: ["nodejs_compat"] },
       env: {
@@ -66,7 +65,14 @@ export default Alchemy.Stack(
         enabled: true,
         logs: { enabled: true, invocationLogs: true, persist: true },
       },
-      routes: [{ pattern: "orbis.p11a.xyz/api/*", zoneName: "p11a.xyz" }],
+      routes: [...plan.routes],
+    });
+    const web = yield* Cloudflare.Website.Vite("Web", {
+      ...plan.web,
+      env: {
+        ORBIS_API_URL: plan.apiUrl ?? Output.interpolate`${api.url}/api`,
+        ORBIS_AUDIO_URL: Config.String("AUDIO_NODE_URL"),
+      },
     });
     // An unset secret keeps the value already on Cloudflare, so a deploy needs
     // only the secrets it changes.
