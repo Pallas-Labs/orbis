@@ -68,11 +68,11 @@ What did not reproduce, so no race is claimed: two completions of the same Set a
 
 Not changed: `library.setPlaybackPosition(id, 0)` still runs in its own transaction before the queue moves. A request that stops between the two leaves the Set active at position 0, and the retry completes it.
 
-### 3. `GET /people/:id/listens` returns every Listen a Person ever made — planned
+### 3. `GET /people/:id/listens` returned every Listen a Person ever made — fixed
 
-`friendListens` in `app-core.ts` has no row bound (it is in `scripts/bounded-reads.baseline.json`) and each Listen carries a whole Set. The Apple app uses the first 12 distinct Sets (`PeopleModel.swift`); the web page lists them all.
+`friendListens` in `app-core.ts` had no row bound (it was in `scripts/bounded-reads.baseline.json`) and each Listen carries a whole Set. The Apple app uses the first 12 distinct Sets (`PeopleModel.swift`); the web page lists them all.
 
-Measured through `createApp` (median of 7, not committed; `scripts/bench-friend-listens.ts` measures the same route):
+Measured through `createApp` before the fix (median of 7, not committed):
 
 | Listens | Answer | Time   |
 | ------- | ------ | ------ |
@@ -82,7 +82,9 @@ Measured through `createApp` (median of 7, not committed; `scripts/bench-friend-
 
 The old Host database on Vanta held 36 Listens after 10 days, so about 650 after six months for one Person, more with a queue that plays on.
 
-Planned fix: the newest 200 Listens. The shape of the answer does not change. Test: seed 250 Listens, expect 200, newest first.
+Fix: the newest 200 Listens (`LISTEN_HISTORY_LIMIT`). The shape of the answer does not change, and the read left the bounded-reads baseline (56 to 55). Test: `transcript: a friend's Listen History is the newest 200 Listens` in `friend-listens-http.test.ts`; before the fix its second line read `200 250 Listens, 04:09 to 00:00`. After, `bun scripts/bench-friend-listens.ts` answers 119 KB in 4.5 ms for 1,000 Listens, the same as for 200.
+
+Not changed: the web profile shows no "older Listens" control, so Listens past the newest 200 are not reachable from a client. They stay in the database. A page cursor is an API addition; owner decides.
 
 ### 4. The Listening Queue only grows — left
 
