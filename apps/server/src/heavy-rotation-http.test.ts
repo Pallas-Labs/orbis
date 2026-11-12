@@ -231,11 +231,13 @@ test("transcript: listening fills the shelf, skims and seeks do not", async () =
 //   credits more drops a second from every 6 s step, and an hour reads as 56 minutes.
 // - The browser saves each 15 s on the next quarter-second tick, so its steps are 15 s and
 //   16 s while 15.25 s pass, and the same rule drops a second from every 16 s step.
+// - A rule that counts a matching step whole, with no cap, credits 4 s for each second to a
+//   client that saves each second with 4 s steps.
 test("transcript: a client's save rhythm credits every second it played", async () => {
   const directory = await mkdtemp(path.join(tmpdir(), "orbis-rotation-"));
   const databasePath = path.join(directory, "library.sqlite");
   try {
-    await seedSets(databasePath, ready(["a", "b"]));
+    await seedSets(databasePath, ready(["a", "b", "c"]));
     setSystemTime(new Date(clock));
     const app = createApp({ databasePath });
     try {
@@ -260,10 +262,20 @@ test("transcript: a client's save rhythm credits every second it played", async 
         `browser plays b from ${browser[0]} s to ${browser.at(-1)} s, a save each 15.25 s`,
         listeningTime(databasePath)
       );
+      // A client that steps 4 s for each second played, inside the slack of a matching step.
+      const fast = Array.from({ length: 151 }, (_, save) => save * 4);
+      await runInOrder(fast, async (seconds) => {
+        await putPositionAfter(app, "c", seconds, 1);
+      });
+      t.step(
+        `a client steps c from 0 s to ${fast.at(-1)} s, a save each 1 s`,
+        listeningTime(databasePath)
+      );
       expect(t.text()).toMatchInlineSnapshot(`
         "
         phone plays a from 5 s to 598 s, a save each 5.3 s  -> host a 593
         browser plays b from 0 s to 594.75 s, a save each 15.25 s  -> host a 593, host b 595
+        a client steps c from 0 s to 600 s, a save each 1 s  -> host a 593, host b 595, host c 300
         "
       `);
     } finally {

@@ -58,7 +58,8 @@ export const utcDay = (at: Date): string => at.toISOString().slice(0, 10);
  * The step is the measure, not the time. Positions are whole seconds and the time is not, so a
  * phone's saves 5.3 s apart step 5 s or 6 s; capping each step at the time rounded to a second
  * dropped a second from every longer one, and the steps of a Set played through add up to the
- * seconds played.
+ * seconds played. A step never counts more than one second past the time rounded up, so a client
+ * that saves faster than its steps cannot count more than it played.
  */
 export const listenedBetween = (
   from: number,
@@ -66,12 +67,15 @@ export const listenedBetween = (
   elapsedSeconds: number | null
 ): number => {
   const step = to - from;
-  const isPlayback =
-    elapsedSeconds !== null &&
-    step > 0 &&
-    step <= HEAVY_ROTATION.maxStepSeconds &&
-    Math.abs(step - elapsedSeconds) <= HEAVY_ROTATION.slackSeconds;
-  return isPlayback ? step : 0;
+  if (
+    elapsedSeconds === null ||
+    step <= 0 ||
+    step > HEAVY_ROTATION.maxStepSeconds ||
+    Math.abs(step - elapsedSeconds) > HEAVY_ROTATION.slackSeconds
+  ) {
+    return 0;
+  }
+  return Math.min(step, Math.ceil(elapsedSeconds) + 1);
 };
 
 /** The first day a range holds. */
