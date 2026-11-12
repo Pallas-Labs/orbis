@@ -51,6 +51,19 @@ This removes both Workers, the custom domain, the `/api/*` route, and the Group 
 ## Develop
 
 ```sh
+cd apps/web
+bun run dev:stack
+```
+
+`dev:stack` runs `alchemy dev`: the page on its Vite server and the API Worker with its Group, both on this machine. It needs no Cloudflare login and no env. State stays in `apps/web/.alchemy/`, each run makes its own stream secret, and a loopback address stands in for the audio node, so only audio requests fail (`infra/dev.ts`). The stage is `dev_<user>_<worktree directory>`.
+
+When both are ready it prints their addresses, such as `{ api: 'http://localhost:1337', url: 'http://localhost:1338' }`, and writes them to `.alchemy/state/OrbisWeb/<stage>/__stack_output__.json`. A busy port moves to the next free one, so several worktrees can run at once; read the address, do not assume it.
+
+The Group starts empty, so the page shows the sign-in form and nothing seeds a Person. For signed-in pages, use the browser journeys (`bun run test`), which seed their own API.
+
+To run the page alone against another API:
+
+```sh
 ORBIS_API_URL=https://<funnel-host>:10000/api bun run dev
 ```
 
