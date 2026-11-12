@@ -32,18 +32,19 @@ final class SetPageV2UITests: LibraryJourney {
   func testFirstScreenHoldsTheControlsAndTheRestFollowsOnScroll() throws {
     try skipUnlessPhone()
     let service = try LaneService()
-    // The fixture names both videos' creator Kai Moreno, so the page has more from them.
+    // The fixture names both videos' creator Kai Moreno, so the page has more from them. Each is
+    // saved untitled, because a title given at save keeps the service from reading the creator.
     let set = try service.saveReadySet(
-      title: "Kai Moreno - Sunrise Session", url: "https://www.youtube.com/watch?v=laneSetPg01",
-      tags: ["house", "sunrise"])
-    let other = try service.saveSet(
-      title: "Night Drive", url: "https://www.youtube.com/watch?v=laneSetPg02")
+      title: "", url: "https://www.youtube.com/watch?v=laneSetPg01", tags: ["house", "sunrise"])
+    let other = try service.saveSet(title: "", url: "https://www.youtube.com/watch?v=laneSetPg02")
     addTeardownBlock {
       try? service.removeSet(set.id)
       try? service.removeSet(other.id)
     }
     XCTAssertEqual(try service.settled(set.id)?.creator, "Kai Moreno")
     XCTAssertEqual(try service.settled(other.id)?.creator, "Kai Moreno")
+    // A title that repeats the creator, as many uploads do.
+    try service.rename(set.id, to: "Kai Moreno - Sunrise Session")
     try service.seedTracklist(set.id)
     // A position part-way in, so Play from Beginning is offered beside Resume.
     try service.setPosition(of: set.id, to: 600)
@@ -72,7 +73,8 @@ final class SetPageV2UITests: LibraryJourney {
       app.buttons["detail-play-toggle"],
       app.buttons["detail-play-from-beginning"],
       app.buttons["detail-queue-actions"],
-      app.buttons["airplay"],
+      // The route picker is a system view, so it is not reported as a button.
+      app.descendants(matching: .any)["airplay"],
     ]
     for control in controls {
       XCTAssertTrue(
@@ -118,7 +120,7 @@ final class SetPageV2UITests: LibraryJourney {
     try skipUnlessPhone()
     let service = try LaneService()
     let set = try service.saveReadySet(
-      title: "Solo Hour", url: "https://www.youtube.com/watch?v=laneSetPg03")
+      title: "", url: "https://www.youtube.com/watch?v=laneSetPg03")
     addTeardownBlock { try? service.removeSet(set.id) }
     let settled = try service.settled(set.id)
     XCTAssertEqual(settled?.creator, "Lone Creator")

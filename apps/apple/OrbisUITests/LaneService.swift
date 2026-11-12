@@ -220,6 +220,12 @@ struct LaneService {
     try library().first { $0.id == id }
   }
 
+  /// Renames a Set as a person does, which keeps the title over the provider's.
+  func rename(_ id: String, to title: String) throws {
+    let code = try status("PATCH", "sets/\(id)/title", ["title": title])
+    guard (200..<300).contains(code) else { throw URLError(.badServerResponse) }
+  }
+
   /// Waits until the service has named the Set's creator and settled its first Tracklist read,
   /// so a seeded Tracklist is not overwritten by that read. Answers the Set as it then reads.
   func settled(_ id: String) throws -> Set? {
