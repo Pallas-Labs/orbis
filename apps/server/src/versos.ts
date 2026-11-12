@@ -28,6 +28,8 @@ export type TracklistPoll =
   | { readonly state: "ready"; readonly cues: readonly Cue[] };
 
 export interface VersosService {
+  /** False when no Versos is set up, so every request would fail with `not-configured`. */
+  readonly configured: boolean;
   readonly request: (
     input: TracklistRequest
   ) => Effect.Effect<{ readonly requestId: string }, VersosError>;
@@ -49,6 +51,7 @@ const PollResponse = Schema.Union([
 ]);
 
 const unconfigured: VersosService = {
+  configured: false,
   poll: () => Effect.fail(new VersosError({ reason: "not-configured" })),
   request: () => Effect.fail(new VersosError({ reason: "not-configured" })),
 };
@@ -60,8 +63,10 @@ export class Versos extends Context.Service<Versos, VersosService>()(
     return Layer.succeed(Versos, unconfigured);
   }
 
-  static layerOf(service: VersosService): Layer.Layer<Versos> {
-    return Layer.succeed(Versos, service);
+  static layerOf(
+    service: Pick<VersosService, "poll" | "request">
+  ): Layer.Layer<Versos> {
+    return Layer.succeed(Versos, { ...service, configured: true });
   }
 
   static layer(options: {

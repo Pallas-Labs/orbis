@@ -21,6 +21,18 @@ const pollSchedule = Schedule.exponential("250 millis").pipe(
   ),
   Schedule.upTo({ times: 8 })
 );
+/**
+ * How long a run's claim holds. `tracklist_state` alone does not say where a Tracklist stands:
+ * `pending` covers three states, which the run columns tell apart.
+ *
+ * - Waiting: pending with no run. Nothing asked Versos yet, or a run ended with no answer (a
+ *   restart stopped it, or Versos is not set up).
+ * - Running: a run id younger than this lease. Only its holder writes the result.
+ * - Lost: a run id older than this lease. Its worker died before it wrote a result.
+ *
+ * `claimTracklist` takes a waiting or lost Tracklist and refuses a running one. Reading a pending
+ * Tracklist claims it (`resumeTracklist` in `app-core.ts`), so waiting and lost end by themselves.
+ */
 const RUN_LEASE_MS = 5 * 60_000;
 
 export interface TracklistClaim {

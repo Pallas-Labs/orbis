@@ -685,6 +685,35 @@ export const createPortableApp = (options: {
             );
           })
       );
+      /** Whether the Set's details are read. A Tracklist run needs them: Versos scans the description. */
+      const detailsFilled = Effect.fn("SaveSet.detailsFilled")(
+        function* readDetailsState(id: string) {
+          const [set] = yield* db
+            .select({ detailsState: setRows.detailsState })
+            .from(setRows)
+            .where(eq(setRows.id, id))
+            .limit(1);
+          return set?.detailsState === "filled";
+        }
+      );
+      // A pending Tracklist with no run finding it is stalled: a restart stopped its run, or the
+      // worker that claimed it died. Every client shows a pending Tracklist as being found and
+      // offers no retry, so a read starts the run again. The claim keeps it to one run, and a
+      // run that fails leaves the Tracklist failed, which a read does not restart.
+      const resumeTracklist = Effect.fn("SaveSet.resumeTracklist")(
+        function* resumeStalledTracklist(set: SavedSet) {
+          if (
+            set.tracklistState === "pending" &&
+            // An Apple Music Tracklist is the album's songs, never a Versos answer.
+            set.source !== "apple-music" &&
+            versos.configured &&
+            !runningTracklists.has(set.id) &&
+            (yield* detailsFilled(set.id))
+          ) {
+            yield* startTracklist(set.id);
+          }
+        }
+      );
       const reviseTitle = Effect.fn("SaveSet.reviseTitle")((
         set: SavedSet,
         enriched: EnrichedMetadata
@@ -1096,7 +1125,7 @@ export const createPortableApp = (options: {
             withFailureResponse(
               Effect.gen(function* getSetTracklist() {
                 const personal = yield* Library;
-                yield* personal.find(params.id);
+                yield* resumeTracklist(yield* personal.find(params.id));
                 return yield* readTracklist(params.id).pipe(
                   Effect.provideService(Database, db)
                 );
@@ -1118,11 +1147,7 @@ export const createPortableApp = (options: {
                 // A pending Tracklist resumes a stalled run; a running one starts nothing new.
                 // Any other state is a refresh: the source is read again and Versos scans it.
                 if (saved.tracklistState === "pending") {
-                  const [set] = yield* db
-                    .select({ detailsState: setRows.detailsState })
-                    .from(setRows)
-                    .where(eq(setRows.id, params.id));
-                  yield* set?.detailsState === "filled"
+                  yield* (yield* detailsFilled(params.id))
                     ? startTracklist(params.id, "retry")
                     : fillDetails(saved);
                 } else {

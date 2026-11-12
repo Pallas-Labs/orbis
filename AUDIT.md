@@ -137,7 +137,34 @@ Not changed: the web player saves no place when another Set starts (the old `<au
 
 ### 11. `docs/development.md` asks for Node.js 24; Vanta runs 22.23.2 — left
 
-`bun run check` passed on 22.23.2. Either the doc or the machine is out of date.
+`bun run check` passed on 22.23.2. Either the doc or the machine is out of date. DataGhost, where the audit continued, runs 24.22.1.
+
+### 12. A Tracklist whose run was lost stayed "Finding tracklist…" for good — fixed
+
+`sets.tracklist_state` has four values, and `pending` held three states that only `tracklist_run_id` and `tracklist_run_started_at` told apart: waiting (no run), running (a run inside its 5-minute lease) and lost (a run past its lease). Nobody wrote that down. A restart during a run leaves the Tracklist waiting; a worker that dies with its claim (a Durable Object reset by a deploy) leaves it lost. The service could resume both, but only through `POST /sets/:id/tracklist/retry`, and no client sends that for a pending Tracklist: the web page hides Refresh while pending (`tracklist.tsx`), the Apple app shows only "Finding tracklist…" (`SetDetailScreen.swift`), and Rune has no retry call. All three poll `GET /sets/:id/tracklist` instead. So the Tracklist stayed pending until someone ran the backfill script by hand.
+
+Evidence: `transcript: a pending Tracklist whose run was lost is found again when someone reads it` in `tracklists-http.test.ts`. Before the fix, after a restart and after a dead worker's claim passed its lease:
+
+```
+restart, read the Tracklist twice  -> pending | pending, no run, 0 Cues, 1 Versos requests
+that claim is past its lease, read twice  -> pending | pending, a run, 0 Cues, 1 Versos requests
+```
+
+After: `ready | ready, no run, 2 Cues`, with one more Versos request each. A live claim of another worker still starts nothing.
+
+Fix: reading a pending Tracklist claims it and starts the run (`resumeTracklist` in `app-core.ts`). The existing claim keeps it to one run. It starts nothing for an Apple Music Set, before the Set's details are read, or when Versos is not set up (`VersosService.configured`, so a poll does not log a warning each time). A run that fails leaves the Tracklist failed, which a read does not restart, so there is no loop. The three states are written above `RUN_LEASE_MS` in `tracklists.ts`.
+
+Decision made without the owner: a `GET` now starts background work. The other choice was a Retry control for a pending Tracklist in three clients, two of which cannot be tested here. Undo: remove the `resumeTracklist` call in the `tracklist` handler.
+
+Not changed: a Set whose details read was lost (`details_state` pending with nothing reading it, or failed) still shows a pending Tracklist for good, by the same reading of the clients. A read cannot resume it as cheaply: nothing stops two details reads of one Set at once, and each is a yt-dlp call. Left as finding 13.
+
+### 13. A Set whose details read failed or was lost shows a pending Tracklist for good — left
+
+By reading `fillDetails` and `retryTracklist` in `app-core.ts`. A details read that fails sets `details_state` to `failed` and leaves `tracklist_state` at `pending`; a restart during the read leaves both pending. The retry route would read the details again, but no client offers a retry for a pending Tracklist (finding 12). Fix options: set the Tracklist to `failed` when the details fail, so the clients show "Try again"; or resume a lost details read on a Tracklist read, behind a guard against two reads at once. Not done: the first changes what three clients show for a state, and the second adds a yt-dlp call to a poll.
+
+### 14. A release that cannot delete its files leaves them on disk for good — left
+
+Seen in the test for finding 2. `releaseAudio` commits the release in the database (`download_state` none, jobs and Cues deleted) and then removes the files. When the removal fails, the request answers 500, and nothing tries again: the Set no longer counts as holding audio. Cost: disk on the audio node. A node inventory sweep that deletes files no Set claims would cover it; not built here.
 
 ## Rejected
 
