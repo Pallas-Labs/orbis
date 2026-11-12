@@ -399,6 +399,10 @@ try {
       await chosen.promise;
       await route.continue();
     });
+    // The First set's source just changed, so its duration is NaN until its metadata loads.
+    await page.waitForFunction(() =>
+      Number.isFinite(document.querySelector("audio")?.duration)
+    );
     await page.evaluate(() => {
       const element = document.querySelector("audio");
       if (element) {
@@ -426,6 +430,15 @@ try {
     );
     await page.unroute("**/queue/completion");
     step("a Set chosen while a completion is out keeps playing");
+
+    // That completion arrived for a Set that was no longer active, so the server kept its place;
+    // the player's save of 0 must have reset it, or its next play ends at once.
+    await waitUntil(async () => {
+      const { sets: library } = await api("GET", "/sets");
+      const first = library.find((set) => set.id === sets["First set"]);
+      return first.playbackPositionSeconds === 0;
+    }, "a Set that ended while another Set was chosen kept its last second");
+    step("a Set that ended while another Set was chosen starts again from 0");
 
     assert.deepEqual(violations, []);
     step("no Content Security Policy violations");

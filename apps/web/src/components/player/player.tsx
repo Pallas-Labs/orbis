@@ -308,9 +308,11 @@ export const PlayerProvider = ({
     if (playing === null) {
       return;
     }
-    // The completion resets the Playback Position on the server, so no save of 0 goes first.
+    // The save of 0 goes after the pause's save of the last second. The completion resets the
+    // place only of the active Set, so a Set that is no longer active needs this save.
     const { id } = playing.set;
     const intent = playIntent.current;
+    void write(async () => await reportPosition(credentials, id, 0));
     const completed = await write(
       async () => await completeSet(credentials, id)
     );
