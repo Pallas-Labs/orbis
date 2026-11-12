@@ -890,10 +890,21 @@ export class Library extends Context.Service<
         )
     );
 
+    // Versos scans the description the details read brings, so a Tracklist that waited for it
+    // fails with it: the clients then offer Try again, which reads the details again. A
+    // Tracklist with a run or an answer keeps its state.
     const recordDetailsFailure = Effect.fn("Library.recordDetailsFailure")(
       (id: string) =>
         execute(
-          db.update(sets).set({ detailsState: "failed" }).where(eq(sets.id, id))
+          db
+            .update(sets)
+            .set({
+              detailsState: "failed",
+              tracklistState: sql`CASE
+                WHEN ${sets.tracklistState} = 'pending' AND ${sets.tracklistRunId} IS NULL
+                THEN 'failed' ELSE ${sets.tracklistState} END`,
+            })
+            .where(eq(sets.id, id))
         ).pipe(Effect.asVoid)
     );
 

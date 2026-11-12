@@ -156,11 +156,17 @@ Fix: reading a pending Tracklist claims it and starts the run (`resumeTracklist`
 
 Decision made without the owner: a `GET` now starts background work. The other choice was a Retry control for a pending Tracklist in three clients, two of which cannot be tested here. Undo: remove the `resumeTracklist` call in the `tracklist` handler.
 
-Not changed: a Set whose details read was lost (`details_state` pending with nothing reading it, or failed) still shows a pending Tracklist for good, by the same reading of the clients. A read cannot resume it as cheaply: nothing stops two details reads of one Set at once, and each is a yt-dlp call. Left as finding 13.
+Not changed here: a Tracklist that waits on details that failed or were lost. See finding 13.
 
-### 13. A Set whose details read failed or was lost shows a pending Tracklist for good — left
+### 13. A Set whose details read failed showed a pending Tracklist for good — fixed; a lost read is left
 
-By reading `fillDetails` and `retryTracklist` in `app-core.ts`. A details read that fails sets `details_state` to `failed` and leaves `tracklist_state` at `pending`; a restart during the read leaves both pending. The retry route would read the details again, but no client offers a retry for a pending Tracklist (finding 12). Fix options: set the Tracklist to `failed` when the details fail, so the clients show "Try again"; or resume a lost details read on a Tracklist read, behind a guard against two reads at once. Not done: the first changes what three clients show for a state, and the second adds a yt-dlp call to a poll.
+A Tracklist run starts only after the Set's details are read, because Versos scans the description. A details read that failed set `details_state` to `failed` and left `tracklist_state` at `pending`, which every client shows as "Finding tracklist…" with no retry (finding 12). The details read fails whenever yt-dlp cannot reach the source, such as while the audio node is away.
+
+Evidence: `transcript: a Set whose details read failed shows a failed Tracklist, and a retry finds it` in `tracklists-http.test.ts`. Before the fix its first line read `pending, 0 Cues | details failed, 1 reads`.
+
+Fix: `recordDetailsFailure` (`library.ts`) moves a pending Tracklist with no run to `failed` in the same write. The clients then show "Tracklist unavailable" with Try again, and that retry already reads the details again.
+
+Left: a details read lost to a restart (`details_state` pending with nothing reading it) still shows a pending Tracklist for good. Resuming it on a read needs a guard against two details reads of one Set, and each read is a yt-dlp call, which YouTube already refuses at times ("Sign in to confirm you're not a bot" in the test logs). The window is the few seconds of one yt-dlp call. `bun run --filter @orbis/server backfill:details` repairs it by hand.
 
 ### 14. A release that cannot delete its files leaves them on disk for good — left
 

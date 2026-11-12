@@ -9,6 +9,7 @@ import type { WideEvent } from "evlog";
 
 import { backfillTracklists } from "./backfill-tracklists.js";
 import { layer as databaseLayer } from "./db/database.js";
+import { MetadataError } from "./metadata-error.js";
 import { Metadata } from "./metadata.js";
 import { createTestApp as createApp } from "./test-app.js";
 import { request, transcript } from "./test-http.js";
@@ -1215,5 +1216,86 @@ test("transcript: a pending Tracklist whose run was lost is found again when som
     `);
   } finally {
     await stopped.dispose();
+  }
+});
+
+// Versos scans a Set's description, so a Tracklist run starts only once the details are read.
+//
+// Ways it could fail:
+// - The details read fails and the Tracklist stays pending, which every client shows as
+//   "Finding tracklist…" with no retry.
+// - Try again after that does not read the details again.
+test("transcript: a Set whose details read failed shows a failed Tracklist, and a retry finds it", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "orbis-tracklists-"));
+  const databasePath = path.join(directory, "library.sqlite");
+  let down = true;
+  let detailsReads = 0;
+  const app = createApp({
+    databasePath,
+    logging: { silent: true },
+    metadata: Metadata.layerOf({
+      details: () => {
+        detailsReads += 1;
+        return down
+          ? Effect.fail(
+              new MetadataError({
+                message: "yt-dlp could not read the source.",
+                reason: "provider-unavailable",
+              })
+            )
+          : Effect.succeed(DETAILS);
+      },
+      enrich: () => Effect.die("title supplied by caller"),
+    }),
+    versos: Versos.layerOf({
+      poll: () => Effect.succeed({ cues: CUES, state: "ready" }),
+      request: () => Effect.succeed({ requestId: "job-1" }),
+    }),
+  });
+  const detailsState = (id: string) => {
+    const db = new Sqlite(databasePath);
+    try {
+      return db
+        .query<{ details_state: string }, [string]>(
+          "SELECT details_state FROM sets WHERE id = ?"
+        )
+        .get(id)?.details_state;
+    } finally {
+      db.close();
+    }
+  };
+  try {
+    const t = transcript();
+    const line = async (id: string) => {
+      const answer = await read(app, id);
+      return `${answer.json().state}, ${answer.json().cues.length} Cues | details ${detailsState(id)}, ${detailsReads} reads`;
+    };
+    const saved = await save(app);
+    const id = String(saved.json().id);
+    await eventually(() =>
+      Promise.resolve(detailsState(id) === "failed" ? true : null)
+    );
+    t.step("save a Set while its source cannot be read", await line(id));
+
+    down = false;
+    const retried = await request(app, {
+      method: "POST",
+      url: `/sets/${id}/tracklist/retry`,
+    });
+    await waitForState(app, id, "ready");
+    t.step(
+      `the source answers again, Try again (${retried.statusCode})`,
+      await line(id)
+    );
+
+    expect(t.text()).toMatchInlineSnapshot(`
+      "
+      save a Set while its source cannot be read  -> failed, 0 Cues | details failed, 1 reads
+      the source answers again, Try again (200)  -> ready, 2 Cues | details filled, 2 reads
+      "
+    `);
+  } finally {
+    await app.dispose();
+    await rm(directory, { force: true, recursive: true });
   }
 });
