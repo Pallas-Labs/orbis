@@ -1,33 +1,10 @@
 import { decode } from "jpeg-js";
 
+import { readCapped } from "../capped-read.js";
 import type { Bitmap } from "./raster.js";
 
 const MAX_BYTES = 4 * 1024 * 1024;
 const TIMEOUT_MS = 3000;
-
-const readCapped = async (response: Response): Promise<Uint8Array | null> => {
-  if (!response.body) {
-    return null;
-  }
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  // `for await` reads one chunk at a time and cancels the stream when the loop
-  // exits early, so the bound needs no suppressed read and no explicit cancel.
-  for await (const value of response.body) {
-    total += value.length;
-    if (total > MAX_BYTES) {
-      return null;
-    }
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return bytes;
-};
 
 const isJpeg = (bytes: Uint8Array) =>
   bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
@@ -45,7 +22,9 @@ const load = async (
     await response.body?.cancel();
     return null;
   }
-  const bytes = await readCapped(response);
+  const bytes = response.body
+    ? await readCapped(response.body, MAX_BYTES)
+    : null;
   if (!bytes || !isJpeg(bytes)) {
     return null;
   }

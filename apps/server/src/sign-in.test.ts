@@ -22,6 +22,8 @@
 // - A different spelling of the route path, a burst of concurrent guesses,
 //   or a fresh IPv6 address for each guess skips the limit.
 // - Guesses spread over many addresses meet no limit at all.
+// - A request with no key makes the Group read a body of any size, so one
+//   request can exhaust its memory.
 // - The Host can still choose the passcode.
 //
 // The transcript test beside the Sign-in Code tests prints one code's life as
@@ -704,6 +706,58 @@ test("guesses spread over many addresses meet one limit for the whole Group", as
         call(app, "GET", "/me", { client: "10.9.9.9", key: FRIEND_DAILY })
       )
     ).toBe(200);
+  } finally {
+    await app.dispose();
+    await cleanup();
+  }
+});
+
+test("a sign-in route refuses a large body before it reads all of it", async () => {
+  const { cleanup, open } = await setup();
+  const app = open();
+  const padding = new Uint8Array(1024 * 1024).fill(0x20);
+  const guess = new TextEncoder().encode(
+    JSON.stringify({ code: "GUESS", label: "New phone" })
+  );
+  const send = async (body: BodyInit) => {
+    const response = await app.handler(
+      new Request("http://vanta.example.ts.net/sign-in/code", {
+        body,
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }),
+      "device",
+      "100.64.0.9"
+    );
+    return response.status;
+  };
+  try {
+    // A small guess still reaches the handler.
+    expect(await send(guess)).toBe(404);
+    // 1 MiB of JSON whitespace before the same guess, with a length.
+    expect(await send(new Blob([padding, guess]))).toBe(413);
+    // The same bytes as a stream, with no length to refuse up front.
+    let sent = 0;
+    const chunks = [
+      ...Array.from({ length: 16 }, (_, index) =>
+        padding.subarray(index * 65_536, (index + 1) * 65_536)
+      ),
+      guess,
+    ];
+    const stream = new ReadableStream<Uint8Array>({
+      pull: (controller) => {
+        const chunk = chunks.shift();
+        if (chunk === undefined) {
+          controller.close();
+          return;
+        }
+        sent += chunk.length;
+        controller.enqueue(chunk);
+      },
+    });
+    expect(await send(stream)).toBe(413);
+    // Reading stopped soon after the limit, not at the end of the stream.
+    expect(sent).toBeLessThan(padding.length / 4);
   } finally {
     await app.dispose();
     await cleanup();

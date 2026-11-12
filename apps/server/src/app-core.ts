@@ -83,6 +83,7 @@ import { makeApprovalRequests } from "./approval-requests.js";
 import { makeAttemptLimiter } from "./attempt-limiter.js";
 import { Audio } from "./audio-service.js";
 import type { AudioFile } from "./audio-service.js";
+import { readCapped } from "./capped-read.js";
 import { ClientAddress } from "./client-address.js";
 import { insertBatches } from "./db/batches.js";
 import type { DatabaseStartupError } from "./db/database.js";
@@ -273,6 +274,32 @@ const PRESENCE_WINDOW_MS = 30_000;
 const TOO_MANY_ATTEMPTS = "Too many invalid keys.";
 const tooManyAttempts = () =>
   Response.json({ message: TOO_MANY_ATTEMPTS }, { status: 429 });
+/** Sign-in payloads are a few short strings, so 16 KiB leaves ample room. */
+const OPEN_ROUTE_BODY_LIMIT = 16 * 1024;
+const bodyTooLarge = () =>
+  Response.json({ message: "The request body is too large." }, { status: 413 });
+/**
+ * The request with its body read into memory, or null once the body passes
+ * `OPEN_ROUTE_BODY_LIMIT`. A route open to anyone stops reading there, so one
+ * request cannot fill the Group's memory.
+ */
+const boundedBody = async (request: Request): Promise<Request | null> => {
+  if (Number(request.headers.get("content-length")) > OPEN_ROUTE_BODY_LIMIT) {
+    return null;
+  }
+  if (request.body === null) {
+    return request;
+  }
+  const body = await readCapped(request.body, OPEN_ROUTE_BODY_LIMIT);
+  if (body === null) {
+    return null;
+  }
+  return new Request(request.url, {
+    body,
+    headers: request.headers,
+    method: request.method,
+  });
+};
 const tooManyAttemptsFailure = () =>
   new LibraryError({ message: TOO_MANY_ATTEMPTS, statusCode: 429 });
 /**
@@ -2789,8 +2816,12 @@ export const createPortableApp = (options: {
     if (counting === "counted" && attempts.signInAttempt(client)) {
       return tooManyAttempts();
     }
+    const bounded = await boundedBody(request);
+    if (bounded === null) {
+      return bodyTooLarge();
+    }
     return await app.handler(
-      request,
+      bounded,
       // SAFETY: the sign-in handlers read no caller-bound service.
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the SAFETY comment above.
       Context.make(ClientAddress, client) as Context.Context<
