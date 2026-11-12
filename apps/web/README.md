@@ -1,8 +1,14 @@
 # Orbis web client (Cloudflare)
 
-The web client at `https://orbis.p11a.xyz`, built with TanStack Start and shadcn (preset `b3loz15fu`) and deployed to Cloudflare Workers with Alchemy 2 ([ADR 0015](../../docs/adr/0015-web-on-cloudflare-workers.md)).
+The web client at `https://orbis.p11a.xyz`, built with TanStack Start, styled with StyleX ([ADR 0024](../../docs/adr/0024-web-styles-with-stylex.md)), and deployed to Cloudflare Workers with Alchemy 2 ([ADR 0015](../../docs/adr/0015-web-on-cloudflare-workers.md)).
 
 The [API Worker and Group](../api/README.md) own the application API and production data after the 2026-10-03 cutover. The page calls `https://orbis.p11a.xyz/api`, configured in `alchemy.run.ts` (`ORBIS_API_URL`), with the Person's own key. Audio stays on Vanta and plays through stream grants. The web Worker never sees a key. [#195](https://github.com/ParthMmm/orbis/issues/195) tracks the remaining production acceptance checks.
+
+## Styles
+
+Components style themselves with StyleX. Every colour, length, type size, radius, shadow, layer and timing value is a token in `src/styles/tokens.stylex.ts`; `src/styles/theme.ts` holds the dark colours. `src/styles/layout.ts` and `src/styles/type.ts` hold the layouts and text styles that pages repeat. A kit component in `src/components/ui` takes no `className`: where a caller may move it, it takes a typed `xstyle` prop. The lint rule `orbis/stylex-tokens` rejects a raw value that a token covers.
+
+`scripts/visual-diff.mjs` screenshots every page at phone and desktop width, in light and dark, for two or more builds and compares them pixel by pixel: `node scripts/visual-diff.mjs --out <dir> before=<dist> after=<dist>`.
 
 ## How a browser signs in
 

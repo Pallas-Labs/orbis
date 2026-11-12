@@ -27,6 +27,7 @@ import { fetchMe, problemFor } from "@/lib/orbis";
 import type { ApiResult, Credentials, Person } from "@/lib/orbis";
 import { forgetKey, readKey } from "@/lib/stored-key";
 import { layout } from "@/styles/layout";
+import { type } from "@/styles/type";
 
 const PLATFORMS: Readonly<
   Record<
@@ -125,7 +126,7 @@ const PairCard = ({
   readonly description?: string;
   readonly title: string;
 }) => (
-  <main className="flex min-h-svh items-center justify-center p-6">
+  <main {...stylex.props(layout.centered)}>
     <Card xstyle={cardSize.narrow}>
       <CardHeader>
         <CardTitle>
@@ -173,15 +174,15 @@ const Approve = ({
   };
   return (
     <PairCard description={request.label} title={`Sign in ${platform.name}?`}>
-      <p className="text-muted-foreground text-sm tabular-nums">
+      <p {...stylex.props(type.muted, type.sm, type.tabular)}>
         Asked {ageText(request.requestedAt)} · code {request.code.slice(0, 3)}{" "}
         {request.code.slice(3)}
       </p>
-      <p className="text-sm">
+      <p {...stylex.props(type.sm)}>
         Only sign in a {platform.noun} that is in front of you.
       </p>
       <Problem message={problem} />
-      <div className="flex flex-col gap-2">
+      <div {...stylex.props(layout.stack2)}>
         <Button disabled={busy} onClick={detach(approve)}>
           {busy ? "Signing in…" : `Sign In as ${person.username}`}
         </Button>
@@ -261,8 +262,8 @@ const Pair = ({ loaded }: { readonly loaded: Pairing }) => {
     case "signed-out": {
       return (
         <PairCard title="Sign in a device">
-          <p className="text-sm">Sign in to approve this device.</p>
-          <p className="text-muted-foreground text-sm">
+          <p {...stylex.props(type.sm)}>Sign in to approve this device.</p>
+          <p {...stylex.props(type.muted, type.sm)}>
             Or open this link on a device where you use Orbis.
           </p>
           <Link {...stylex.props(buttonLook())} to="/sign-in">

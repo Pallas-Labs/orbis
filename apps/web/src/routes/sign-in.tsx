@@ -1,4 +1,5 @@
 import { SIGN_IN_CODE } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, getRouteApi, redirect } from "@tanstack/react-router";
 import { Schema } from "effect";
 
@@ -29,7 +30,7 @@ const SignIn = () => {
   const { apiUrl } = signInRoute.useRouteContext();
   const { notice } = signInRoute.useSearch();
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
+    <main {...stylex.props(layout.centered)}>
       <Card xstyle={cardSize.narrow}>
         <CardHeader>
           <CardTitle>
@@ -57,7 +58,7 @@ const SignIn = () => {
             title="Sign in with a Sign-in Code"
           >
             {(submitWhenReady) => (
-              <div className="flex flex-col gap-2">
+              <div {...stylex.props(layout.stack2)}>
                 <Label htmlFor="sign-in-code">Sign-in Code</Label>
                 <CodeField
                   format={SIGN_IN_CODE}

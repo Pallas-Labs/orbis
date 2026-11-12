@@ -6,6 +6,7 @@ import type { ComponentProps } from "react";
 import { buttonLook } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { fade, zoom } from "@/components/ui/surface";
+import { layout } from "@/styles/layout";
 import {
   colors,
   filters,
@@ -77,17 +78,6 @@ const styles = stylex.create({
       default: `calc(100% - ${space[8]})`,
     },
   },
-  srOnly: {
-    borderWidth: 0,
-    clip: "rect(0, 0, 0, 0)",
-    height: space.px,
-    margin: `calc(-1 * ${space.px})`,
-    overflow: "hidden",
-    padding: 0,
-    position: "absolute",
-    whiteSpace: "nowrap",
-    width: space.px,
-  },
   title: {
     fontFamily: fonts.sans,
     fontSize: text.base,
@@ -132,7 +122,7 @@ const DialogContent = ({
         )}
       >
         <Icon glyph={XIcon} />
-        <span {...stylex.props(styles.srOnly)}>Close</span>
+        <span {...stylex.props(layout.srOnly)}>Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Popup>
   </DialogPrimitive.Portal>

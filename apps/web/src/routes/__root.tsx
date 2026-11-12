@@ -6,10 +6,27 @@ import type { ReactNode } from "react";
 import { apiUrl } from "@/lib/api-url";
 import { schemes } from "@/styles/theme";
 import type { ColorScheme } from "@/styles/theme";
+import { colors, fonts, space, widths } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
 
 import interLatin from "../fonts/inter-latin.woff2?url";
 
 import appCss from "../styles.css?url";
+
+// The page's base: its colours and font, which every element inherits.
+const documentStyles = stylex.create({
+  body: { backgroundColor: colors.background, color: colors.foreground },
+  html: { fontFamily: fonts.sans },
+});
+
+const notFoundStyles = stylex.create({
+  main: {
+    marginInline: "auto",
+    maxWidth: widths.md,
+    padding: space[6],
+    paddingTop: space[16],
+  },
+});
 
 // Only the Worker holds the API address, so the page asks it once per load.
 const getApiUrl = createServerFn({ method: "GET" }).handler(() => apiUrl());
@@ -25,11 +42,11 @@ const loadApiUrl = async (): Promise<string> => {
 const scheme: ColorScheme = "light";
 
 const RootDocument = ({ children }: { readonly children: ReactNode }) => (
-  <html lang="en" {...stylex.props(schemes[scheme])}>
+  <html lang="en" {...stylex.props(schemes[scheme], documentStyles.html)}>
     <head>
       <HeadContent />
     </head>
-    <body>
+    <body {...stylex.props(documentStyles.body)}>
       {children}
       <Scripts />
     </body>
@@ -68,8 +85,8 @@ export const Route = createRootRoute({
       : [],
   }),
   notFoundComponent: () => (
-    <main className="mx-auto max-w-md p-6 pt-16">
-      <h1 className="font-medium">Page not found</h1>
+    <main {...stylex.props(notFoundStyles.main)}>
+      <h1 {...stylex.props(type.medium)}>Page not found</h1>
     </main>
   ),
   shellComponent: RootDocument,

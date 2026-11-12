@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
   createFileRoute,
   useNavigate,
@@ -28,6 +29,17 @@ import { forgetKey } from "@/lib/stored-key";
 import { useApiCall } from "@/lib/use-api-call";
 import type { Session } from "@/routes/_app";
 import { layout } from "@/styles/layout";
+import { space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  row: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[4],
+    paddingBlock: space[4],
+  },
+});
 
 const DeviceRow = ({
   device,
@@ -47,15 +59,15 @@ const DeviceRow = ({
     await router.invalidate();
   };
   return (
-    <li className="flex items-center gap-4 py-4">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <h2 className="truncate font-medium">{device.label}</h2>
+    <li {...stylex.props(styles.row, layout.divided)}>
+      <div {...stylex.props(layout.stack1, layout.fill)}>
+        <div {...stylex.props(layout.rowCenter2)}>
+          <h2 {...stylex.props(type.truncate, type.medium)}>{device.label}</h2>
           {device.current ? (
             <Badge variant="secondary">This device</Badge>
           ) : null}
         </div>
-        <p className="text-muted-foreground text-sm">
+        <p {...stylex.props(type.muted, type.sm)}>
           Added {formatDate(device.addedAt)} · {lastUsedText(device.lastUsedAt)}
         </p>
       </div>
@@ -87,11 +99,11 @@ const SignInAnotherDevice = ({ session }: { readonly session: Session }) => {
     }
   };
   return (
-    <div className="flex flex-col gap-4">
+    <div {...stylex.props(layout.stack4)}>
       {code === null ? null : (
         <>
           <SignInCode issued={code} label="Your Sign-in Code" />
-          <p className="text-muted-foreground text-sm">
+          <p {...stylex.props(type.muted, type.sm)}>
             On the new device, open Orbis, choose Sign in with a Sign-in Code,
             and type this code.
           </p>
@@ -117,11 +129,11 @@ const Devices = ({
   readonly devices: ApiResult<{ readonly devices: readonly Device[] }>;
   readonly session: Session;
 }) => (
-  <main className="mx-auto w-full max-w-3xl p-6">
+  <main {...stylex.props(layout.main)}>
     <Card>
       <CardHeader>
         <CardTitle>
-          <h1 className="text-2xl">Devices</h1>
+          <h1 {...stylex.props(type.xl2)}>Devices</h1>
         </CardTitle>
         <CardDescription>
           Each device signs in with its own key. Revoke a device you lost or no
@@ -131,7 +143,7 @@ const Devices = ({
       <CardContent xstyle={layout.stack4}>
         <SignInAnotherDevice session={session} />
         {devices.ok ? (
-          <ul aria-label="Your devices" className="divide-y">
+          <ul aria-label="Your devices">
             {devices.value.devices.map((device) => (
               <DeviceRow device={device} key={device.id} session={session} />
             ))}

@@ -3,6 +3,7 @@ import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useId, useState } from "react";
 
 import { useLiveEvents } from "@/components/live-events";
+import { Problem } from "@/components/problem";
 import { RouteProblem } from "@/components/route-problem";
 import { buttonLook } from "@/components/ui/button";
 import {
@@ -20,6 +21,20 @@ import { listPeopleFilters, setFilter, setSocial } from "@/lib/people";
 import type { PersonFilters } from "@/lib/people";
 import type { Session } from "@/routes/_app";
 import { layout } from "@/styles/layout";
+import { space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  between: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[4],
+    justifyContent: "space-between",
+  },
+  filters: { display: "flex", flexWrap: "wrap", gap: space[6] },
+  row: { paddingBlock: space[4] },
+  top: { alignItems: "flex-start", display: "flex", gap: space[4] },
+});
 
 /** Runs one change, shows its failure, and reloads the page's data on success. */
 const useChange = () => {
@@ -41,24 +56,17 @@ const useChange = () => {
   return { change, pending, problem };
 };
 
-const Problem = ({ problem }: { readonly problem: string | null }) =>
-  problem === null ? null : (
-    <p className="text-destructive text-sm" role="alert">
-      {problem}
-    </p>
-  );
-
 const SocialSwitch = ({ session }: { readonly session: Session }) => {
   const labelId = useId();
   const { change, pending, problem } = useChange();
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <span className="font-medium" id={labelId}>
+    <div {...stylex.props(layout.stack2)}>
+      <div {...stylex.props(styles.between)}>
+        <div {...stylex.props(layout.stack1)}>
+          <span {...stylex.props(type.medium)} id={labelId}>
             Social
           </span>
-          <span className="text-muted-foreground text-sm">
+          <span {...stylex.props(type.muted, type.sm)}>
             When Social is off, nobody sees your Library, Playlists, or what you
             listen to, and you see nobody’s.
           </span>
@@ -72,7 +80,7 @@ const SocialSwitch = ({ session }: { readonly session: Session }) => {
           })}
         />
       </div>
-      <Problem problem={problem} />
+      <Problem message={problem} />
     </div>
   );
 };
@@ -90,7 +98,7 @@ const FilterSwitch = ({
   readonly name: string;
   readonly onChange: (checked: boolean) => void;
 }) => (
-  <span className="flex items-center gap-2 text-sm">
+  <span {...stylex.props(layout.rowCenter2, type.sm)}>
     <Switch
       aria-label={name}
       checked={checked}
@@ -113,18 +121,20 @@ const PersonRow = ({
   const { change, pending, problem } = useChange();
   const listening = presence.find((entry) => entry.personId === person.id);
   return (
-    <li className="flex flex-col gap-3 py-4">
-      <div className="flex items-start gap-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h2 className="truncate font-medium">{person.username}</h2>
+    <li {...stylex.props(layout.stack3, styles.row, layout.divided)}>
+      <div {...stylex.props(styles.top)}>
+        <div {...stylex.props(layout.stack1, layout.fill)}>
+          <h2 {...stylex.props(type.truncate, type.medium)}>
+            {person.username}
+          </h2>
           {person.see ? (
-            <p className="text-muted-foreground text-sm" role="status">
+            <p {...stylex.props(type.muted, type.sm)} role="status">
               {listening === undefined
                 ? "Not listening right now"
                 : `${person.username} is listening to ${listening.set.title}`}
             </p>
           ) : (
-            <p className="text-muted-foreground text-sm">
+            <p {...stylex.props(type.muted, type.sm)}>
               Hidden from your People. Turn See on to see their Library.
             </p>
           )}
@@ -139,7 +149,7 @@ const PersonRow = ({
           </Link>
         ) : null}
       </div>
-      <div className="flex flex-wrap gap-6">
+      <div {...stylex.props(styles.filters)}>
         <FilterSwitch
           checked={person.see}
           disabled={pending}
@@ -163,7 +173,7 @@ const PersonRow = ({
           })}
         />
       </div>
-      <Problem problem={problem} />
+      <Problem message={problem} />
     </li>
   );
 };
@@ -178,20 +188,20 @@ const People = ({
   const renderPeople = () => {
     if (!session.person.social) {
       return (
-        <p className="text-muted-foreground text-sm">
+        <p {...stylex.props(type.muted, type.sm)}>
           Turn Social on to see the People who turned it on too.
         </p>
       );
     }
     if (people.length === 0) {
       return (
-        <p className="text-muted-foreground text-sm">
+        <p {...stylex.props(type.muted, type.sm)}>
           Nobody else has Social on yet.
         </p>
       );
     }
     return (
-      <ul aria-label="People" className="divide-y">
+      <ul aria-label="People">
         {people.map((person) => (
           <PersonRow credentials={session} key={person.id} person={person} />
         ))}
@@ -199,11 +209,11 @@ const People = ({
     );
   };
   return (
-    <main className="mx-auto w-full max-w-3xl p-6">
+    <main {...stylex.props(layout.main)}>
       <Card>
         <CardHeader>
           <CardTitle>
-            <h1 className="text-2xl">People</h1>
+            <h1 {...stylex.props(type.xl2)}>People</h1>
           </CardTitle>
           <CardDescription>
             See decides whether a Person is in your People. Appear decides

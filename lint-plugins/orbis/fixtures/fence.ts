@@ -73,7 +73,25 @@ export const looks = stylex.create({
     borderRadius: 12, // expect: orbis/stylex-tokens
     borderWidth: 2, // expect: orbis/stylex-tokens
     boxShadow: `0 0 0 3px color-mix(in oklab, ${colors.ring} 30%, transparent)`,
+    // expect-next: orbis/stylex-tokens
     color: { ":hover": "#fff", default: colors.primary }, // expect: orbis/stylex-tokens
+    textDecorationLine: {
+      ":hover": { "@media (hover: hover)": "underline", default: null },
+      default: null,
+    },
+    textDecorationStyle: {
+      "@media (hover: hover)": { ":hover": "wavy", default: null },
+      default: null,
+    },
+    textUnderlineOffset: {
+      ":hover:not(:disabled)": "auto", // expect: orbis/stylex-tokens
+      default: null,
+    },
+    textUnderlinePosition: {
+      // expect-next: orbis/stylex-tokens
+      ":hover": { "@media (hover: hover)": "under", default: "auto" },
+      default: null,
+    },
     fontWeight: 500, // expect: orbis/stylex-tokens
     height: "100%",
     margin: "auto",

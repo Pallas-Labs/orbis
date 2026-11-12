@@ -21,6 +21,7 @@ import { fetchMe, problemFor } from "@/lib/orbis";
 import { joinGroup } from "@/lib/sign-in";
 import { forgetKey, readKey } from "@/lib/stored-key";
 import { layout } from "@/styles/layout";
+import { type } from "@/styles/type";
 
 const SITE = "https://orbis.p11a.xyz";
 const TITLE = "Join the Orbis Group";
@@ -77,7 +78,7 @@ const JoinCard = ({
   readonly children: ReactNode;
   readonly description: string;
 }) => (
-  <main className="flex min-h-svh items-center justify-center p-6">
+  <main {...stylex.props(layout.centered)}>
     <Card xstyle={cardSize.narrow}>
       <CardHeader>
         <CardTitle>
@@ -153,9 +154,9 @@ const Join = () => {
   }
   return (
     <JoinCard description="Your friend invited you to their Orbis Group.">
-      <section className="flex flex-col gap-1" aria-label="Install Orbis">
-        <h2 className="font-medium">Install Orbis first</h2>
-        <p className="text-muted-foreground text-sm">
+      <section {...stylex.props(layout.stack1)} aria-label="Install Orbis">
+        <h2 {...stylex.props(type.medium)}>Install Orbis first</h2>
+        <p {...stylex.props(type.muted, type.sm)}>
           Open the TestFlight email from Apple on this iPhone and install Orbis,
           then come back and tap your link again.
         </p>

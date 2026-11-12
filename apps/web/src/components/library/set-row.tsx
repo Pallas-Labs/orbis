@@ -1,11 +1,13 @@
 import { isDownloadInFlight } from "@orbis/contracts";
 import { DotsThreeIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 
 import { AddToPlaylistDialog } from "@/components/library/add-to-playlist-dialog";
 import { usePlayer } from "@/components/player/player";
+import { Problem } from "@/components/problem";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -47,6 +49,36 @@ import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
 import type { Playlist } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
+import { colors, radii, space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  artwork: {
+    borderRadius: radii.md,
+    flexShrink: 0,
+    height: space[16],
+    width: space[16],
+  },
+  artworkImage: { objectFit: "cover" },
+  artworkPlaceholder: { backgroundColor: colors.muted },
+  badges: { display: "flex", flexWrap: "wrap", gap: space[1] },
+  row: {
+    alignItems: "flex-start",
+    borderBottomColor: colors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: space.px,
+    display: "flex",
+    gap: space[4],
+    paddingBlock: space[4],
+  },
+  title: {
+    textDecorationLine: {
+      ":hover": { "@media (hover: hover)": "underline", default: null },
+      default: null,
+    },
+  },
+});
 
 type Dialogs = "rename" | "tags" | "playlists" | "remove";
 
@@ -165,19 +197,15 @@ const TextDialog = ({
       open
     >
       <DialogContent>
-        <form className="flex flex-col gap-4" onSubmit={detach(save)}>
+        <form {...stylex.props(layout.stack4)} onSubmit={detach(save)}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-2">
+          <div {...stylex.props(layout.stack2)}>
             <Label htmlFor="set-dialog-value">{label}</Label>
             <Input defaultValue={value} id="set-dialog-value" name="value" />
           </div>
-          {problem === null ? null : (
-            <p className="text-destructive text-sm" role="alert">
-              {problem}
-            </p>
-          )}
+          <Problem message={problem} />
           <DialogFooter>
             <Button disabled={pending} type="submit">
               Save
@@ -223,28 +251,28 @@ export const SetRow = ({
   const downloadable = canDownload(set);
   const inFlight = isDownloadInFlight(set.downloadState);
   return (
-    <li className="flex items-start gap-4 border-b py-4">
+    <li {...stylex.props(styles.row)}>
       {set.artworkUrl === null ? (
-        <div className="bg-muted size-16 shrink-0 rounded-md" />
+        <div {...stylex.props(styles.artwork, styles.artworkPlaceholder)} />
       ) : (
         <img
           alt=""
-          className="size-16 shrink-0 rounded-md object-cover"
+          {...stylex.props(styles.artwork, styles.artworkImage)}
           src={set.artworkUrl}
         />
       )}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <h2 className="truncate font-medium">
+      <div {...stylex.props(layout.stack1, layout.fill)}>
+        <h2 {...stylex.props(type.truncate, type.medium)}>
           <Link
-            className="hover:underline"
+            {...stylex.props(styles.title, layout.focusOutline)}
             params={{ id: set.id }}
             to="/sets/$id"
           >
             {set.title}
           </Link>
         </h2>
-        <p className="text-muted-foreground text-sm">{setDetails(set)}</p>
-        <div className="flex flex-wrap gap-1">
+        <p {...stylex.props(type.sm, type.muted)}>{setDetails(set)}</p>
+        <div {...stylex.props(styles.badges)}>
           <DownloadBadge progress={progress} set={set} />
           {set.tags.map((tag) => (
             <Badge key={tag} variant="outline">
@@ -252,11 +280,7 @@ export const SetRow = ({
             </Badge>
           ))}
         </div>
-        {problem === null ? null : (
-          <p className="text-destructive text-sm" role="alert">
-            {problem}
-          </p>
-        )}
+        <Problem message={problem} />
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger

@@ -9,7 +9,8 @@
 // - no-flag-read-by-string: code reads a feature flag through its generated accessor in
 //   `flags.gen.ts`, never by key through `getBooleanValue` (factory v2 flags, PAL-1852).
 // - stylex-tokens: a StyleX style takes colours, lengths, type, radii, shadows, layers and timing
-//   from the design tokens, never a raw value (PAL-2190).
+//   from the design tokens, never a raw value (PAL-2190). A `:hover` style sits inside
+//   `@media (hover: hover)`, as Tailwind's did, so a tap on a phone leaves no hover behind.
 //
 // A site that the rule cannot see is bounded takes `// oxlint-disable-next-line orbis/<rule> -- <reason>`.
 // The rules read syntax only; `scripts/fence.test.mjs` runs real Oxlint on `lint-plugins/orbis/fixtures`.
@@ -781,6 +782,51 @@ const stylexTokens = {
         }
       }
     };
+    // A condition that names `:hover` must hold its value under `@media (hover: hover)`, with
+    // no other value, unless an outer `@media (hover: hover)` already gates it:
+    // `":hover": { "@media (hover: hover)": X, default: null }`.
+    const hoverMedia = "@media (hover: hover)";
+    const checkHover = (node, gated) => {
+      const value = unwrap(node);
+      if (functionTypes.has(value.type)) {
+        checkHover(value.body, gated);
+        return;
+      }
+      if (value.type !== "ObjectExpression") {
+        return;
+      }
+      for (const property of value.properties) {
+        if (property.type !== "Property") {
+          continue;
+        }
+        const key = keyName(property) ?? "";
+        const inner = unwrap(property.value);
+        if (key.includes(":hover") && !gated) {
+          const ungated =
+            inner.type !== "ObjectExpression" ||
+            !inner.properties.some(
+              (branch) =>
+                branch.type === "Property" && keyName(branch) === hoverMedia
+            ) ||
+            inner.properties.some(
+              (branch) =>
+                branch.type === "Property" &&
+                keyName(branch) !== hoverMedia &&
+                !(
+                  unwrap(branch.value).type === "Literal" &&
+                  unwrap(branch.value).value === null
+                )
+            );
+          if (ungated) {
+            context.report({ messageId: "hover", node: property.key });
+          }
+        }
+        checkHover(
+          property.value,
+          gated || key.includes(":hover") || key === hoverMedia
+        );
+      }
+    };
     const checkStyle = (style) => {
       const body = unwrap(style);
       if (functionTypes.has(body.type)) {
@@ -820,6 +866,7 @@ const stylexTokens = {
         for (const namespace of styles.properties) {
           if (namespace.type === "Property") {
             checkStyle(namespace.value);
+            checkHover(namespace.value, false);
           }
         }
       },
@@ -831,6 +878,8 @@ const stylexTokens = {
         "A StyleX style reads colours, lengths, type, radii, shadows, layers and timing from the design tokens.",
     },
     messages: {
+      hover:
+        "Put a `:hover` style inside `@media (hover: hover)`, so a tap on a touch screen leaves no hover behind.",
       raw: "`{{text}}` is a raw {{kind}} value. Use a token from src/styles/tokens.stylex.ts, or add one there.",
     },
     type: "problem",

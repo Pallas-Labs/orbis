@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/input-otp";
 import { detach } from "@/lib/detach";
 import { useCopy } from "@/lib/use-copy";
+import { layout } from "@/styles/layout";
+import { type } from "@/styles/type";
 
 /** Each group's slot indexes, such as `[[0, 1, 2, 3], [4, 5, 6, 7]]` for `[4, 4]`. */
 const slotGroups = (format: CodeFormat) =>
@@ -25,6 +27,10 @@ const slotGroups = (format: CodeFormat) =>
 
 const groupStyles = stylex.create({
   group: { flexGrow: 1, minWidth: 0 },
+});
+
+const styles = stylex.create({
+  shown: { alignItems: "center" },
 });
 
 const Slots = ({
@@ -125,9 +131,9 @@ export const ShownCode = ({
     .map((indexes) => indexes.map((index) => characters[index]).join(" "))
     .join(", ");
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div {...stylex.props(layout.stack3, styles.shown)}>
       <div aria-label={label} role="status">
-        <span className="sr-only">{spoken}</span>
+        <span {...stylex.props(layout.srOnly)}>{spoken}</span>
         <OTPInputContext.Provider
           value={{
             isFocused: false,
@@ -140,7 +146,7 @@ export const ShownCode = ({
             })),
           }}
         >
-          <div aria-hidden="true" className="flex items-center gap-2">
+          <div aria-hidden="true" {...stylex.props(layout.rowCenter2)}>
             <Slots format={format} size="shown" />
           </div>
         </OTPInputContext.Provider>
@@ -149,7 +155,7 @@ export const ShownCode = ({
         {copy === "copied" ? "Copied" : copyLabel}
       </Button>
       {copy === "failed" ? (
-        <p className="text-destructive text-sm" role="alert">
+        <p {...stylex.props(type.error, type.sm)} role="alert">
           Could not copy the code. Type it instead.
         </p>
       ) : null}

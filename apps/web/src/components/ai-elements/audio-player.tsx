@@ -70,8 +70,7 @@ export const AudioPlayer = ({
   </MediaController>
 );
 
-// Orbis plays remote audio only, so the AI SDK speech-result variant is removed
-// here; re-adding this component from the registry would bring it back.
+// Orbis plays remote audio only, so the AI SDK speech-result variant is removed.
 export type AudioPlayerElementProps = ComponentProps<"audio"> & {
   src: string;
 };

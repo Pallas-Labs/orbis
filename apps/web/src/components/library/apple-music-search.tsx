@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
@@ -14,6 +15,35 @@ import { saveSet, searchAppleMusic } from "@/lib/library";
 import type { AppleMusicAlbum } from "@/lib/library";
 import { FAILURE_MESSAGES, problemFor } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
+import { layout } from "@/styles/layout";
+import { colors, radii, space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  artwork: {
+    borderRadius: radii.md,
+    flexShrink: 0,
+    height: space[12],
+    width: space[12],
+  },
+  artworkImage: { objectFit: "cover" },
+  artworkPlaceholder: { backgroundColor: colors.muted },
+  row: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[3],
+    paddingBlock: space[2],
+  },
+  shrink: { flexShrink: 0 },
+  text: {
+    display: "flex",
+    flexBasis: "0%",
+    flexDirection: "column",
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+});
 
 /** "Seth Troxler · 2015 · 18 songs · 1h 19m", with only the parts Apple gave. */
 const albumDetails = (album: AppleMusicAlbum): string =>
@@ -43,24 +73,26 @@ const AlbumRow = ({
   readonly onSave: () => void;
   readonly saving: boolean;
 }) => (
-  <li className="flex items-center gap-3 py-2">
+  <li {...stylex.props(styles.row, layout.divided)}>
     {album.artworkUrl === null ? (
-      <div className="bg-muted size-12 shrink-0 rounded-md" />
+      <div {...stylex.props(styles.artwork, styles.artworkPlaceholder)} />
     ) : (
       <img
         alt=""
-        className="size-12 shrink-0 rounded-md object-cover"
+        {...stylex.props(styles.artwork, styles.artworkImage)}
         src={album.artworkUrl}
       />
     )}
-    <div className="flex min-w-0 flex-1 flex-col">
-      <span className="truncate font-medium">{album.title}</span>
-      <span className="text-muted-foreground truncate text-sm">
+    <div {...stylex.props(styles.text)}>
+      <span {...stylex.props(type.truncate, type.medium)}>{album.title}</span>
+      <span {...stylex.props(type.truncate, type.sm, type.muted)}>
         {albumDetails(album)}
       </span>
     </div>
     {album.inLibrary ? (
-      <span className="text-muted-foreground shrink-0 text-sm">In Library</span>
+      <span {...stylex.props(type.sm, type.muted, styles.shrink)}>
+        In Library
+      </span>
     ) : (
       <Button
         aria-label={`Add ${album.title}`}
@@ -148,17 +180,17 @@ export const AppleMusicSearch = ({
   return (
     <section
       aria-labelledby="apple-music-heading"
-      className="flex flex-col gap-2"
+      {...stylex.props(layout.stack2)}
     >
       <form
-        className="flex flex-col gap-2"
+        {...stylex.props(layout.stack2)}
         onSubmit={detach(search)}
         role="search"
       >
         <Label htmlFor="apple-music-search" id="apple-music-heading">
           Find on Apple Music
         </Label>
-        <div className="flex gap-2">
+        <div {...stylex.props(layout.row2)}>
           <Input
             autoComplete="off"
             id="apple-music-search"
@@ -171,19 +203,19 @@ export const AppleMusicSearch = ({
             Find
           </Button>
         </div>
-        <p className="text-muted-foreground text-sm">
+        <p {...stylex.props(type.sm, type.muted)}>
           Searches Apple Music in the US. DJ mixes come first. Add one to save
           it as a Set.
         </p>
       </form>
       {pending ? (
-        <p className="text-muted-foreground text-sm" role="status">
+        <p {...stylex.props(type.sm, type.muted)} role="status">
           Searching Apple Music…
         </p>
       ) : null}
       <Problem message={problem} />
       {albums === null || albums.length === 0 ? null : (
-        <div className="flex items-center gap-3">
+        <div {...stylex.props(layout.rowCenter3)}>
           <Switch
             aria-label="All Albums"
             checked={allAlbums}
@@ -193,10 +225,10 @@ export const AppleMusicSearch = ({
         </div>
       )}
       {empty === null ? null : (
-        <p className="text-muted-foreground text-sm">{empty}</p>
+        <p {...stylex.props(type.sm, type.muted)}>{empty}</p>
       )}
       {shown === null || shown.length === 0 ? null : (
-        <ul aria-label="Apple Music albums" className="divide-y">
+        <ul aria-label="Apple Music albums">
           {shown.map((album) => (
             <AlbumRow
               album={album}

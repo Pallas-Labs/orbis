@@ -45,14 +45,20 @@ const styles = stylex.create({
 const variants = stylex.create({
   default: {
     backgroundColor: {
-      ":hover": `color-mix(in oklab, ${colors.primary} 80%, transparent)`,
+      ":hover": {
+        "@media (hover: hover)": `color-mix(in oklab, ${colors.primary} 80%, transparent)`,
+        default: null,
+      },
       default: colors.primary,
     },
     color: colors.primaryForeground,
   },
   destructive: {
     backgroundColor: {
-      ":hover": colors.destructiveFillHover,
+      ":hover": {
+        "@media (hover: hover)": colors.destructiveFillHover,
+        default: null,
+      },
       default: colors.destructiveFill,
     },
     borderColor: {
@@ -67,32 +73,35 @@ const variants = stylex.create({
   },
   ghost: {
     backgroundColor: {
-      ":hover": colors.ghostHover,
+      ":hover": { "@media (hover: hover)": colors.ghostHover, default: null },
       ":is([aria-expanded=true])": colors.muted,
       default: null,
     },
     color: {
-      ":hover": colors.foreground,
+      ":hover": { "@media (hover: hover)": colors.foreground, default: null },
       ":is([aria-expanded=true])": colors.foreground,
       default: null,
     },
   },
   outline: {
     backgroundColor: {
-      ":hover": colors.outlineHover,
+      ":hover": { "@media (hover: hover)": colors.outlineHover, default: null },
       ":is([aria-expanded=true])": colors.muted,
       default: colors.outlineFill,
     },
     borderColor: { ":focus-visible": colors.ring, default: colors.border },
     color: {
-      ":hover": colors.foreground,
+      ":hover": { "@media (hover: hover)": colors.foreground, default: null },
       ":is([aria-expanded=true])": colors.foreground,
       default: null,
     },
   },
   secondary: {
     backgroundColor: {
-      ":hover": `color-mix(in oklch, ${colors.secondary}, ${colors.foreground} 5%)`,
+      ":hover": {
+        "@media (hover: hover)": `color-mix(in oklch, ${colors.secondary}, ${colors.foreground} 5%)`,
+        default: null,
+      },
       default: colors.secondary,
     },
     color: colors.secondaryForeground,

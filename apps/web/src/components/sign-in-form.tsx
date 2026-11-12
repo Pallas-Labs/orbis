@@ -1,4 +1,5 @@
 import { GROUP_PASSCODE } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
 import type { SubmitEvent, ReactNode } from "react";
@@ -13,6 +14,8 @@ import { formField } from "@/lib/form";
 import type { ApiResult } from "@/lib/orbis";
 import { storeKey } from "@/lib/stored-key";
 import { useApiCall } from "@/lib/use-api-call";
+import { layout } from "@/styles/layout";
+import { type } from "@/styles/type";
 
 /**
  * One way in: its fields, its own problem line, and one submit button. `check`
@@ -65,13 +68,13 @@ export const SignInForm = ({
   return (
     <form
       aria-label={title}
-      className="flex flex-col gap-4"
+      {...stylex.props(layout.stack4)}
       onSubmit={detach(submit)}
       ref={formRef}
     >
-      <div className="flex flex-col gap-1">
-        <h2 className="font-medium">{title}</h2>
-        <p className="text-muted-foreground text-sm">{description}</p>
+      <div {...stylex.props(layout.stack1)}>
+        <h2 {...stylex.props(type.medium)}>{title}</h2>
+        <p {...stylex.props(type.muted, type.sm)}>{description}</p>
       </div>
       {children(submitWhenReady)}
       <Problem message={problem} />
@@ -100,7 +103,7 @@ export const JoinFields = ({
   readonly passcode?: string | undefined;
 }) => (
   <>
-    <div className="flex flex-col gap-2">
+    <div {...stylex.props(layout.stack2)}>
       <Label htmlFor="username">Username</Label>
       <Input
         autoCapitalize="none"
@@ -111,7 +114,7 @@ export const JoinFields = ({
         spellCheck={false}
       />
     </div>
-    <div className="flex flex-col gap-2">
+    <div {...stylex.props(layout.stack2)}>
       <Label htmlFor="passcode">Group Passcode</Label>
       <CodeField
         format={GROUP_PASSCODE}

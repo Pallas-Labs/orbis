@@ -1,7 +1,9 @@
 import { ArrowDownIcon, ArrowUpIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { Problem } from "@/components/problem";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -19,6 +21,26 @@ import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
 import { replaceMembers } from "@/lib/playlists";
 import type { PlaylistDetail } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
+import { space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  candidates: { maxHeight: space[80], overflowY: "auto" },
+  header: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[4],
+    justifyContent: "space-between",
+  },
+  position: { textAlign: "right", width: space[6] },
+  row: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[3],
+    paddingBlock: space[3],
+  },
+});
 
 const pickerHint = (emptyLibrary: boolean, candidates: number) => {
   if (emptyLibrary) {
@@ -69,18 +91,18 @@ const AddSetsDialog = ({
         {candidates.length === 0 ? null : (
           <ul
             aria-label="Sets in your Library"
-            className="flex max-h-80 flex-col gap-3 overflow-y-auto"
+            {...stylex.props(layout.stack3, styles.candidates)}
           >
             {candidates.map((set) => (
               <li key={set.id}>
-                <label className="flex items-center gap-3 text-sm">
+                <label {...stylex.props(layout.rowCenter3, type.sm)}>
                   <Checkbox
                     checked={chosen.includes(set.id)}
                     onCheckedChange={(checked) => {
                       toggle(set.id, checked);
                     }}
                   />
-                  <span className="truncate">{set.title}</span>
+                  <span {...stylex.props(type.truncate)}>{set.title}</span>
                 </label>
               </li>
             ))}
@@ -141,9 +163,9 @@ export const Members = ({
   };
   const members = new Set(ids);
   return (
-    <section aria-labelledby="members-heading" className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-medium" id="members-heading">
+    <section aria-labelledby="members-heading" {...stylex.props(layout.stack4)}>
+      <div {...stylex.props(styles.header)}>
+        <h2 {...stylex.props(type.lg, type.medium)} id="members-heading">
           Sets
         </h2>
         <Button
@@ -155,23 +177,26 @@ export const Members = ({
           Add Sets…
         </Button>
       </div>
-      {problem === null ? null : (
-        <p className="text-destructive text-sm" role="alert">
-          {problem}
-        </p>
-      )}
+      <Problem message={problem} />
       {playlist.sets.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
+        <p {...stylex.props(type.muted, type.sm)}>
           This Playlist has no Sets yet.
         </p>
       ) : (
-        <ol aria-label="Sets in this Playlist" className="divide-y">
+        <ol aria-label="Sets in this Playlist">
           {playlist.sets.map((set, index) => (
-            <li className="flex items-center gap-3 py-3" key={set.id}>
-              <span className="text-muted-foreground w-6 text-right text-sm tabular-nums">
+            <li {...stylex.props(styles.row, layout.divided)} key={set.id}>
+              <span
+                {...stylex.props(
+                  type.muted,
+                  styles.position,
+                  type.sm,
+                  type.tabular
+                )}
+              >
                 {index + 1}
               </span>
-              <span className="min-w-0 flex-1 truncate font-medium">
+              <span {...stylex.props(layout.fill, type.truncate, type.medium)}>
                 {set.title}
               </span>
               <Button

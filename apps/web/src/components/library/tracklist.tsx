@@ -1,4 +1,54 @@
+import * as stylex from "@stylexjs/stylex";
+
 import { Button } from "@/components/ui/button";
+import { layout } from "@/styles/layout";
+import { colors, radii, space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  artwork: {
+    borderRadius: radii.sm,
+    flexShrink: 0,
+    height: space[11],
+    width: space[11],
+  },
+  artworkImage: { objectFit: "cover" },
+  artworkPlaceholder: { backgroundColor: colors.muted },
+  cue: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[3],
+    minHeight: space[11],
+    paddingBlock: space[1],
+    paddingInline: space[2],
+  },
+  cueButton: {
+    backgroundColor: {
+      ":hover": { "@media (hover: hover)": colors.accent, default: null },
+      default: null,
+    },
+    borderRadius: radii.md,
+    boxShadow: {
+      ":focus-visible": `0 0 0 2px ${colors.ring}`,
+      default: null,
+    },
+    outlineStyle: { ":focus-visible": "none", default: null },
+    textAlign: "start",
+    width: "100%",
+  },
+  current: {
+    backgroundColor: colors.accent,
+    color: colors.accentForeground,
+  },
+  heading: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[3],
+    justifyContent: "space-between",
+  },
+  line: { display: "block" },
+  time: { flexShrink: 0, textAlign: "end", width: space[12] },
+});
 
 export interface Cue {
   readonly position: number;
@@ -51,8 +101,8 @@ export const Tracklist = ({
       return <p role="status">Finding tracklist…</p>;
     }
     return (
-      <section aria-label="Tracklist" className="flex items-center gap-3">
-        <p className="text-muted-foreground text-sm">
+      <section aria-label="Tracklist" {...stylex.props(layout.rowCenter3)}>
+        <p {...stylex.props(type.sm, type.muted)}>
           {state === "failed"
             ? "Tracklist unavailable."
             : "No tracklist found."}
@@ -74,16 +124,16 @@ export const Tracklist = ({
   return (
     <section
       aria-labelledby="tracklist-heading"
-      className="flex flex-col gap-4"
+      {...stylex.props(layout.stack4)}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-medium" id="tracklist-heading">
+      <div {...stylex.props(styles.heading)}>
+        <h2 {...stylex.props(type.lg, type.medium)} id="tracklist-heading">
           Tracklist
         </h2>
         {refresh}
       </div>
       {state === "pending" ? <p role="status">Finding tracklist…</p> : null}
-      <ol aria-label="Tracklist" className="flex flex-col gap-1">
+      <ol aria-label="Tracklist" {...stylex.props(layout.stack1)}>
         {cues.map((cue) => {
           const active = cue.position === currentPosition;
           const { artworkUrl, startSeconds } = cue;
@@ -91,24 +141,42 @@ export const Tracklist = ({
             artworkUrl !== null && artworkUrl !== "" ? (
               <img
                 alt=""
-                className="size-11 shrink-0 rounded-sm object-cover"
+                {...stylex.props(styles.artwork, styles.artworkImage)}
                 src={artworkUrl}
               />
             ) : (
               <span
                 aria-hidden
-                className="bg-muted size-11 shrink-0 rounded-sm"
+                {...stylex.props(styles.artwork, styles.artworkPlaceholder)}
               />
             );
           const details = (
             <>
-              <span className="text-muted-foreground w-12 shrink-0 text-end text-sm tabular-nums">
+              <span
+                {...stylex.props(
+                  type.sm,
+                  type.muted,
+                  type.tabular,
+                  styles.time
+                )}
+              >
                 {startSeconds === null ? "--:--" : timeLabel(startSeconds)}
               </span>
               {artwork}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">{cue.title}</span>
-                <span className="text-muted-foreground block truncate text-sm">
+              <span {...stylex.props(layout.fill)}>
+                <span
+                  {...stylex.props(styles.line, type.truncate, type.medium)}
+                >
+                  {cue.title}
+                </span>
+                <span
+                  {...stylex.props(
+                    styles.line,
+                    type.truncate,
+                    type.sm,
+                    type.muted
+                  )}
+                >
                   {cue.artist}
                 </span>
               </span>
@@ -117,14 +185,16 @@ export const Tracklist = ({
           return (
             <li key={cue.position}>
               {startSeconds === null || onSeek === undefined ? (
-                <div className="flex min-h-11 items-center gap-3 px-2 py-1">
-                  {details}
-                </div>
+                <div {...stylex.props(styles.cue)}>{details}</div>
               ) : (
                 <button
                   aria-current={active ? "true" : undefined}
                   aria-label={`${cue.title}, ${cue.artist}, starts at ${timeLabel(startSeconds)}`}
-                  className="hover:bg-accent aria-[current=true]:bg-accent aria-[current=true]:text-accent-foreground focus-visible:ring-ring flex min-h-11 w-full items-center gap-3 rounded-md px-2 py-1 text-start focus-visible:ring-2 focus-visible:outline-none"
+                  {...stylex.props(
+                    styles.cue,
+                    styles.cueButton,
+                    active && styles.current
+                  )}
                   onClick={() => {
                     onSeek(startSeconds);
                   }}
