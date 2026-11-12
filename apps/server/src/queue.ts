@@ -5,20 +5,20 @@ import type {
   SavedSet,
 } from "@orbis/contracts";
 import { isPlayableSet } from "@orbis/contracts";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import type { Stream } from "effect";
-import { Context, Effect, Layer, Random } from "effect";
+import { Context, Effect, Random } from "effect";
 
 import { insertBatches } from "./db/batches.js";
-import { playlistSets, playlists, queueEntries } from "./db/schema.js";
+import { listens, playlistSets, playlists, queueEntries } from "./db/schema.js";
 import { Database } from "./db/service.js";
+import type { DatabaseClient } from "./db/service.js";
 import { asLibraryError, LibraryError } from "./errors.js";
 import type { ListeningRange } from "./heavy-rotation.js";
 import { LibraryPerson } from "./library-person.js";
 import { Library } from "./library.js";
 import { Presence } from "./presence.js";
 import { QueueSignals } from "./queue-signals.js";
-import { Stats } from "./stats.js";
 
 const execute = asLibraryError("Could not complete the library request.");
 
@@ -33,8 +33,34 @@ interface QueueRow {
   readonly setId: string;
 }
 
+/** A Person's queue in order, read through the service's client or the transaction that writes it. */
+const queueRows = (db: DatabaseClient, personId: string) =>
+  db
+    .select({
+      isActive: queueEntries.isActive,
+      setId: queueEntries.setId,
+    })
+    .from(queueEntries)
+    .where(eq(queueEntries.personId, personId))
+    .orderBy(asc(queueEntries.position));
+
 const activeIn = (rows: readonly QueueRow[]) =>
   rows.find((row) => row.isActive)?.setId ?? null;
+
+/**
+ * What a queue becomes. A decision that returns `null` instead leaves the queue and its Listens
+ * as they are.
+ *
+ * The active entry is the open Listen: a Set that becomes active opens one, and a Set that played
+ * to its end closes its own. `Queue.change` writes the entries and those Listens in one
+ * transaction, so no queue is stored without the Listen it stands for.
+ */
+interface QueueChange {
+  readonly activeSetId: string | null;
+  /** The Set that played to its end. Only a completion names one. */
+  readonly finished?: string;
+  readonly ids: readonly string[];
+}
 
 /**
  * Where a Set goes when it joins a queue behind the active entry.
@@ -61,6 +87,69 @@ const placedBefore = (
   const at = before === null ? -1 : ids.indexOf(before);
   return at === -1 ? [...ids, id] : [...ids.slice(0, at), id, ...ids.slice(at)];
 };
+
+/**
+ * Playing a Set. A Set already in the queue takes the active place without moving: the queue
+ * behind it is the order the person made. A Set that is not in the queue takes the active place
+ * where the listening had reached, so nothing is dropped and the Set that was playing becomes
+ * what plays next.
+ */
+const played =
+  (id: string) =>
+  (rows: readonly QueueRow[]): QueueChange => {
+    const ids = rows.map((row) => row.setId);
+    return {
+      activeSetId: id,
+      ids: ids.includes(id) ? ids : placedBefore(ids, id, activeIn(rows)),
+    };
+  };
+
+/**
+ * Play Next or Add to Queue. Moving the Set that is playing now would leave the open Listen
+ * beside a queue it no longer matches, so a queued action on the active Set changes nothing.
+ */
+const inserted =
+  (id: string, placement: QueuePlacement) =>
+  (rows: readonly QueueRow[]): QueueChange | null => {
+    const activeSetId = activeIn(rows);
+    if (activeSetId === id) {
+      return null;
+    }
+    const rest = rows.map((row) => row.setId).filter((setId) => setId !== id);
+    return {
+      activeSetId,
+      ids:
+        placement === "end"
+          ? [...rest, id]
+          : placedAfter(rest, id, activeSetId),
+    };
+  };
+
+/** A whole new queue that starts its first Set. An empty one stops playback. */
+const replaced = (ids: readonly string[]) => (): QueueChange => ({
+  activeSetId: ids[0] ?? null,
+  ids,
+});
+
+/**
+ * The active Set played to its end: it leaves the queue and what followed it starts. A Set that
+ * is not the active one was already finished, or the person started something else while it
+ * played. Either way the signal changes nothing, which is what makes a retried one safe.
+ */
+const completed =
+  (id: string) =>
+  (rows: readonly QueueRow[]): QueueChange | null => {
+    const at = rows.findIndex((row) => row.isActive && row.setId === id);
+    if (at === -1) {
+      return null;
+    }
+    const ids = rows.map((row) => row.setId);
+    return {
+      activeSetId: ids[at + 1] ?? null,
+      finished: id,
+      ids: ids.filter((setId) => setId !== id),
+    };
+  };
 
 /**
  * One Person's Listening Queue, and the Listen it keeps open.
@@ -108,60 +197,103 @@ export class Queue extends Context.Service<
   static readonly make = Effect.gen(function* buildQueue() {
     const db = yield* Database;
     const library = yield* Library;
-    const stats = yield* Stats;
     const presence = yield* Presence;
     const personId = yield* LibraryPerson;
     const signals = yield* QueueSignals;
     const notify = signals.publish(personId);
 
-    const order = () =>
-      db
-        .select({
-          isActive: queueEntries.isActive,
-          setId: queueEntries.setId,
-        })
-        .from(queueEntries)
-        .where(eq(queueEntries.personId, personId))
-        .orderBy(asc(queueEntries.position));
-
     const read = Effect.gen(function* readQueue() {
-      const rows = yield* execute(order());
+      const rows = yield* execute(queueRows(db, personId));
       return {
         activeSetId: activeIn(rows),
         entries: yield* library.byIds(rows.map((row) => row.setId)),
       } satisfies ListeningQueue;
     }).pipe(Effect.withSpan("Queue.read"));
 
+    /** Closes this Person's newest open Listen of a Set. */
+    const finishListen = Effect.fn("Queue.finishListen")(
+      function* finishLatestListen(
+        tx: DatabaseClient,
+        setId: string,
+        at: string
+      ) {
+        const [latest] = yield* tx
+          .select({ id: listens.id })
+          .from(listens)
+          .where(
+            and(
+              eq(listens.personId, personId),
+              eq(listens.setId, setId),
+              isNull(listens.finishedAt)
+            )
+          )
+          .orderBy(desc(listens.id))
+          .limit(1);
+        if (latest) {
+          yield* tx
+            .update(listens)
+            .set({ finishedAt: at })
+            .where(eq(listens.id, latest.id));
+        }
+      }
+    );
+
+    // The one writer of the queue and of the Listens it stands for. The decision reads the stored
+    // queue inside the transaction that writes it, so the entries, the Finish and the new Listen
+    // commit together or not at all.
+    //
     // Every change states the whole queue. One person's queue is small, the write is one
     // transaction, and positions stay consecutive instead of drifting into gaps that need
     // renumbering later.
-    const writeQueue = Effect.fn("Queue.writeQueue")(function* replaceEntries(
-      ids: readonly string[],
-      activeSetId: string | null
+    const change = Effect.fn("Queue.change")(function* changeQueue(
+      decide: (rows: readonly QueueRow[]) => QueueChange | null
     ) {
-      const previous = yield* order();
-      yield* db.transaction((tx) =>
-        Effect.gen(function* writeQueueTransaction() {
-          yield* presence.queueActivated(tx, personId, activeSetId);
-          yield* tx
-            .delete(queueEntries)
-            .where(eq(queueEntries.personId, personId));
-          const rows = ids.map((setId, position) => ({
-            isActive: setId === activeSetId,
-            personId,
-            position,
-            setId,
-          }));
-          for (const batch of insertBatches(queueEntries, rows)) {
-            yield* tx.insert(queueEntries).values(batch);
-          }
-        })
+      const left = yield* execute(
+        db.transaction((tx) =>
+          Effect.gen(function* changeQueueTransaction() {
+            const rows = yield* queueRows(tx, personId);
+            const next = decide(rows);
+            if (next === null) {
+              return null;
+            }
+            const at = new Date().toISOString();
+            yield* presence.queueActivated(tx, personId, next.activeSetId);
+            yield* tx
+              .delete(queueEntries)
+              .where(eq(queueEntries.personId, personId));
+            const entries = next.ids.map((setId, position) => ({
+              isActive: setId === next.activeSetId,
+              personId,
+              position,
+              setId,
+            }));
+            for (const batch of insertBatches(queueEntries, entries)) {
+              yield* tx.insert(queueEntries).values(batch);
+            }
+            if (next.finished !== undefined) {
+              yield* finishListen(tx, next.finished, at);
+            }
+            if (
+              next.activeSetId !== null &&
+              next.activeSetId !== activeIn(rows)
+            ) {
+              yield* tx
+                .insert(listens)
+                .values({ personId, setId: next.activeSetId, startedAt: at });
+            }
+            return rows
+              .map((row) => row.setId)
+              .filter((setId) => !next.ids.includes(setId));
+          })
+        )
       );
+      if (left === null) {
+        return;
+      }
       yield* presence.afterCommit;
-      yield* Effect.forEach(
-        previous.filter((row) => !ids.includes(row.setId)),
-        (row) => library.release(row.setId)
-      );
+      // A Set that left the queue may have been kept only by it. Its audio goes after the
+      // commit: a release that fails leaves the queue and its Listens whole.
+      yield* Effect.forEach((setId: string) => library.release(setId))(left);
     });
 
     // The one check that keeps an unplayable Set out of the queue. A Playlist is filtered
@@ -184,20 +316,7 @@ export class Queue extends Context.Service<
     const play = Effect.fn("Queue.play")((id: string) =>
       Effect.gen(function* playSet() {
         yield* playable(id);
-        const rows = yield* execute(order());
-        const activeSetId = activeIn(rows);
-        const ids = rows.map((row) => row.setId);
-        // A Set already in the queue takes the active place without moving: the queue behind it
-        // is the order the person made. A Set that is not in the queue takes the active place
-        // where the listening had reached, so nothing is dropped and the Set that was playing
-        // becomes what plays next.
-        const next = ids.includes(id)
-          ? ids
-          : placedBefore(ids, id, activeSetId);
-        yield* execute(writeQueue(next, id));
-        if (activeSetId !== id) {
-          yield* stats.recordListen(id);
-        }
+        yield* change(played(id));
         return yield* read.pipe(Effect.tap(notify));
       })
     );
@@ -206,21 +325,7 @@ export class Queue extends Context.Service<
       (id: string, placement: QueuePlacement) =>
         Effect.gen(function* insertEntry() {
           yield* playable(id);
-          const rows = yield* execute(order());
-          const activeSetId = activeIn(rows);
-          // Moving the Set that is playing now would leave the open Listen beside a queue it no
-          // longer matches, so a queued action on the active Set changes nothing.
-          if (activeSetId === id) {
-            return yield* read.pipe(Effect.tap(notify));
-          }
-          const rest = rows
-            .map((row) => row.setId)
-            .filter((setId) => setId !== id);
-          const next =
-            placement === "end"
-              ? [...rest, id]
-              : placedAfter(rest, id, activeSetId);
-          yield* execute(writeQueue(next, activeSetId));
+          yield* change(inserted(id, placement));
           return yield* read.pipe(Effect.tap(notify));
         })
     );
@@ -229,19 +334,13 @@ export class Queue extends Context.Service<
     const replaceWithSets = Effect.fn("Queue.replaceWithSets")(
       (members: readonly SavedSet[], shuffled: boolean) =>
         Effect.gen(function* replaceQueueWithSets() {
-          const rows = yield* execute(order());
-          const previousActive = activeIn(rows);
           const playableIds = members
             .filter(isPlayableSet)
             .map((set) => set.id);
           const ids = shuffled
             ? yield* Random.shuffle(playableIds)
             : playableIds;
-          const activeSetId = ids[0] ?? null;
-          yield* execute(writeQueue(ids, activeSetId));
-          if (activeSetId !== null && activeSetId !== previousActive) {
-            yield* stats.recordListen(activeSetId);
-          }
+          yield* change(replaced(ids));
           return yield* read.pipe(Effect.tap(notify));
         })
     );
@@ -316,27 +415,11 @@ export class Queue extends Context.Service<
 
     const complete = Effect.fn("Queue.complete")((id: string) =>
       Effect.gen(function* completeSet() {
-        const rows = yield* execute(order());
-        const at = rows.findIndex((row) => row.isActive && row.setId === id);
-        // A Set that is not the active one was already finished, or the person started
-        // something else while it played. Either way this signal adds nothing.
-        if (at === -1) {
-          return yield* read.pipe(Effect.tap(notify));
-        }
-        const ids = rows.map((row) => row.setId);
-        const nextActive = ids[at + 1] ?? null;
-        yield* library.setPlaybackPosition(id, 0);
-        yield* execute(
-          writeQueue(
-            ids.filter((setId) => setId !== id),
-            nextActive
-          )
-        );
-        yield* stats.recordFinish(id);
-        // The Set that takes over was not being listened to until now, so it opens its own
-        // Listen. An empty queue opens nothing, and playback stops.
-        if (nextActive !== null) {
-          yield* stats.recordListen(nextActive);
+        // The position resets before the queue moves, and only for the active Set. A request
+        // that stops between the two is retried against a Set that is still active.
+        if (completed(id)(yield* execute(queueRows(db, personId))) !== null) {
+          yield* library.setPlaybackPosition(id, 0);
+          yield* change(completed(id));
         }
         return yield* read.pipe(Effect.tap(notify));
       })
@@ -354,12 +437,6 @@ export class Queue extends Context.Service<
       replaceWithPlaylist,
     });
   });
-
-  static readonly scopedLayer = Layer.effect(Queue, Queue.make);
-
-  static readonly layer = Queue.scopedLayer.pipe(
-    Layer.provide(Layer.succeed(LibraryPerson, "host"))
-  );
 
   /** Builds one Person's Queue for a request, which provides it with `Effect.provideService`. */
   static forPerson(personId: string) {

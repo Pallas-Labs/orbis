@@ -6,6 +6,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { chromium } from "playwright";
 
@@ -299,6 +300,28 @@ try {
     });
     step("the queue reconnects after the API restarts");
 
+    // A slow save: each Playback Position the player reports for the First set, other than the
+    // start, leaves the browser 1.5 s late. The seek below reports the place near the end, and
+    // the Set ends 0.3 s after it.
+    const lateSaves = [];
+    await page.route(`**/sets/${sets["First set"]}/position`, async (route) => {
+      const { seconds } = route.request().postDataJSON();
+      if (seconds > 0) {
+        lateSaves.push(seconds);
+        await delay(1500);
+      }
+      await route.continue();
+    });
+    // A dropped request: the first completion the player sends gets no answer.
+    let droppedCompletions = 0;
+    await page.route("**/queue/completion", async (route) => {
+      if (droppedCompletions === 0) {
+        droppedCompletions += 1;
+        await route.abort("failed");
+        return;
+      }
+      await route.continue();
+    });
     await page.evaluate(() => {
       const element = document.querySelector("audio");
       if (element) {
@@ -307,13 +330,115 @@ try {
       }
     });
     await audio.getByText("Second set").waitFor({ timeout: 15_000 });
+    assert.equal(droppedCompletions, 1);
+    await page.unroute("**/queue/completion");
     await waitUntil(async () => {
       const state = await audioState();
       return state?.src.includes(`/sets/${sets["Second set"]}/audio`);
     }, "the next Set did not start");
     const { queue: after } = await api("GET", "/queue");
     assert.equal(after.activeSetId, sets["Second set"]);
-    step("when a Set ends, the next one in the queue plays");
+    step(
+      "when a Set ends, the next one in the queue plays, though the first completion was dropped"
+    );
+
+    assert.ok(
+      lateSaves.length > 0,
+      "the player reported no place near the end"
+    );
+    // Long enough for a save that was still out when the Set ended to land.
+    await delay(2000);
+    const { sets: finishedLibrary } = await api("GET", "/sets");
+    assert.equal(
+      finishedLibrary.find((set) => set.id === sets["First set"])
+        .playbackPositionSeconds,
+      0,
+      `a save that left late (${lateSaves.join(", ")} s) landed after the completion`
+    );
+    await page.unroute(`**/sets/${sets["First set"]}/position`);
+    step(
+      "a finished Set starts from the beginning, even when a save was slow",
+      {
+        lateSaves,
+      }
+    );
+
+    // The Second set plays from its start. Playing another Set removes its `<audio>` element
+    // with no pause, so the place it had reached is saved when the other Set starts.
+    await waitUntil(async () => {
+      const state = await audioState();
+      return state !== null && !state.paused && state.currentTime >= 3;
+    }, "the Second set did not play for 3 s");
+    await page.getByRole("link", { exact: true, name: "Library" }).click();
+    await page.getByRole("button", { name: "Actions for First set" }).click();
+    await page.getByRole("menuitem", { exact: true, name: "Play" }).click();
+    await waitUntil(async () => {
+      const state = await audioState();
+      return state?.src.includes(`/sets/${sets["First set"]}/audio`);
+    }, "the First set did not start again");
+    await waitUntil(async () => {
+      const { sets: library } = await api("GET", "/sets");
+      const second = library.find((set) => set.id === sets["Second set"]);
+      return second.playbackPositionSeconds >= 3;
+    }, "playing another Set did not save the place of the Set that was playing");
+    step("playing another Set saves the place of the Set that was playing");
+
+    // The First set ends and its first completion is dropped again. While the player waits to
+    // send it again, the person plays the Second set. The second completion is held until that
+    // Set plays, so its answer arrives after the person's choice.
+    let completions = 0;
+    const dropped = Promise.withResolvers();
+    const chosen = Promise.withResolvers();
+    await page.route("**/queue/completion", async (route) => {
+      completions += 1;
+      if (completions === 1) {
+        await route.abort("failed");
+        dropped.resolve();
+        return;
+      }
+      await chosen.promise;
+      await route.continue();
+    });
+    // The First set's source just changed, so its duration is NaN until its metadata loads.
+    await page.waitForFunction(() =>
+      Number.isFinite(document.querySelector("audio")?.duration)
+    );
+    await page.evaluate(() => {
+      const element = document.querySelector("audio");
+      if (element) {
+        element.currentTime = Math.max(0, element.duration - 0.3);
+      }
+    });
+    await dropped.promise;
+    await page.getByRole("button", { name: "Actions for Second set" }).click();
+    await page.getByRole("menuitem", { exact: true, name: "Play" }).click();
+    await waitUntil(async () => {
+      const state = await audioState();
+      return state?.src.includes(`/sets/${sets["Second set"]}/audio`);
+    }, "the Set the person chose did not start");
+    const grantsForChoice = grants;
+    const answered = page.waitForResponse((response) =>
+      response.url().endsWith("/queue/completion")
+    );
+    chosen.resolve();
+    await answered;
+    await delay(500);
+    assert.equal(
+      grants,
+      grantsForChoice,
+      "a late completion started the Set the person chose a second time"
+    );
+    await page.unroute("**/queue/completion");
+    step("a Set chosen while a completion is out keeps playing");
+
+    // That completion arrived for a Set that was no longer active, so the server kept its place;
+    // the player's save of 0 must have reset it, or its next play ends at once.
+    await waitUntil(async () => {
+      const { sets: library } = await api("GET", "/sets");
+      const first = library.find((set) => set.id === sets["First set"]);
+      return first.playbackPositionSeconds === 0;
+    }, "a Set that ended while another Set was chosen kept its last second");
+    step("a Set that ended while another Set was chosen starts again from 0");
 
     assert.deepEqual(violations, []);
     step("no Content Security Policy violations");

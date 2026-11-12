@@ -120,6 +120,23 @@ export const PlayerProvider = ({
   // An API without `/presence/actions` answers 404; Position reports still infer Presence.
   const presenceRoute = useRef(true);
   const lastRenew = useRef(0);
+  const written = useRef<Promise<unknown>>(Promise.resolve());
+
+  // Position saves and the completion go out one at a time, in the order the player made them.
+  // A Set that ends pauses first, which saves its last second; that save must not land after
+  // the completion, which resets the place to the start. A call resolves with its failure, so
+  // one that fails does not stop the next.
+  const write = async <Value,>(
+    send: () => Promise<ApiResult<Value>>
+  ): Promise<ApiResult<Value>> => {
+    const previous = written.current;
+    const sent = (async () => {
+      await previous;
+      return await send();
+    })();
+    written.current = sent;
+    return await sent;
+  };
 
   // Actions go out one at a time, so each carries the generation its play returned.
   const act = (kind: PresenceKind) => {
@@ -208,6 +225,19 @@ export const PlayerProvider = ({
       setPlaying(null);
       return played;
     }
+    // Another Set takes the player, and the `<audio>` element of the one playing goes with no
+    // pause event. Its place is saved here, or it would resume up to 15 s early.
+    const audio = audioRef.current;
+    if (
+      playing !== null &&
+      playing.set.id !== active.id &&
+      audio !== null &&
+      !audio.paused
+    ) {
+      const { id } = playing.set;
+      const seconds = audio.currentTime;
+      void write(async () => await reportPosition(credentials, id, seconds));
+    }
     return await start(active, (playing?.attempt ?? 0) + 1, startAt, intent);
   };
 
@@ -248,12 +278,10 @@ export const PlayerProvider = ({
     await queueSet(credentials, set.id, placement);
 
   const report = (event: SyntheticEvent<HTMLAudioElement>) => {
-    if (playing !== null && Number.isFinite(event.currentTarget.currentTime)) {
-      void reportPosition(
-        credentials,
-        playing.set.id,
-        event.currentTarget.currentTime
-      );
+    const seconds = event.currentTarget.currentTime;
+    if (playing !== null && Number.isFinite(seconds)) {
+      const { id } = playing.set;
+      void write(async () => await reportPosition(credentials, id, seconds));
     }
   };
 
@@ -280,8 +308,18 @@ export const PlayerProvider = ({
     if (playing === null) {
       return;
     }
-    await reportPosition(credentials, playing.set.id, 0);
-    const completed = await completeSet(credentials, playing.set.id);
+    // The save of 0 goes after the pause's save of the last second. The completion resets the
+    // place only of the active Set, so a Set that is no longer active needs this save.
+    const { id } = playing.set;
+    const intent = playIntent.current;
+    void write(async () => await reportPosition(credentials, id, 0));
+    const completed = await write(
+      async () => await completeSet(credentials, id)
+    );
+    // A Set the person chose while the completion was out keeps the player.
+    if (intent !== playIntent.current) {
+      return;
+    }
     if (!completed.ok) {
       setProblem(FAILURE_MESSAGES[completed.failure]);
       return;

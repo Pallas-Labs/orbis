@@ -44,7 +44,7 @@ export interface SetSeed {
 /**
  * Sets are written straight into the database because the queue admits only Sets with Retained
  * Audio, and Retained Audio comes from a Download that needs Cobalt and ffmpeg. The subject here
- * is what the Queue and Stats do with a Set, not how the Set came to have audio.
+ * is what the Queue does with a Set and its Listens, not how the Set came to have audio.
  */
 export const seedSets = async (
   databasePath: string,

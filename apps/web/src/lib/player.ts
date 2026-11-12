@@ -1,4 +1,5 @@
 import type { PresenceAction } from "@orbis/contracts";
+import { Duration, Effect } from "effect";
 
 import { callOrbis } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
@@ -28,10 +29,41 @@ export const queueSet = async (
     client.queue.insert({ payload: { placement, setId } })
   );
 
-export const completeSet = async (credentials: Credentials, setId: string) =>
+/** How long the player waits before it sends a completion that got no answer again. */
+const COMPLETION_WAITS_MS: readonly number[] = [1000, 2000, 4000];
+
+const completeOnce = async (credentials: Credentials, setId: string) =>
   await callOrbis(credentials, (client) =>
     client.queue.complete({ payload: { setId } })
   );
+
+const completeAfter = async (
+  credentials: Credentials,
+  setId: string,
+  waits: readonly number[]
+): Promise<Awaited<ReturnType<typeof completeOnce>>> => {
+  const completed = await completeOnce(credentials, setId);
+  const [wait, ...later] = waits;
+  const lost =
+    !completed.ok &&
+    (completed.failure === "unreachable" ||
+      completed.failure === "limited" ||
+      (completed.status ?? 0) >= 500);
+  if (!lost || wait === undefined) {
+    return completed;
+  }
+  await Effect.runPromise(Effect.sleep(Duration.millis(wait)));
+  return await completeAfter(credentials, setId, later);
+};
+
+/**
+ * Tells Orbis a Set played out. Orbis counts a completion once, by whether the Set is still the
+ * active one, so a completion is safe to repeat: one that gets no answer, a 429 or a 5xx is sent
+ * again up to three times before the player gives up. Without that, one dropped request at the
+ * end of a Set stops the queue.
+ */
+export const completeSet = async (credentials: Credentials, setId: string) =>
+  await completeAfter(credentials, setId, COMPLETION_WAITS_MS);
 
 export const sendPresence = async (
   credentials: Credentials,
