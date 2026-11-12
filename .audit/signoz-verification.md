@@ -6,10 +6,10 @@ Playback diagnostics now upload automatically while signed in. AppModel owns a c
 
 Implementation commits run from `eeb98c4` through `53a1620`. Parent integration `3145cb4` bounds timestamps to OTLP's unsigned nanosecond range and formats the Swift slice. `bc07f86` replaces the adapted replay with actual Swift HTTP output and adds the numeric receipt to the existing OpenAPI sample check.
 
-Durable evidence on Vanta is `/home/parth/.cache/orbis-playback-evidence/2026-10-18/signoz`. The Mac checkout is `/Users/parthmangrola/.cache/agent-scratch/orbis-playback-after-t3-9f35`. Its owned iOS 27 simulator is `09C1B8C9-E33F-4E63-B3F0-AF92DD1E9517`. Xcode runs serially through the existing `serial-bin/xcodebuild` wrapper. Swift style uses Xcode's formatter. The final Linux checks use pinned Bun 1.4.1; the implementation owner's earlier Linux checks used 1.4.0.
+Durable evidence on Vanta is `~/.cache/orbis-playback-evidence/2026-10-18/signoz`. The Mac checkout is `~/.cache/agent-scratch/orbis-playback-after-t3-9f35`. Its owned iOS 27 simulator is `09C1B8C9-E33F-4E63-B3F0-AF92DD1E9517`. Xcode runs serially through the existing `serial-bin/xcodebuild` wrapper. Swift style uses Xcode's formatter. The final Linux checks use pinned Bun 1.4.1; the implementation owner's earlier Linux checks used 1.4.0.
 
 ```sh
-PATH=/home/parth/.local/share/mise/installs/bun/1.4.1/bin:$PATH bun run check
+PATH=~/.local/share/mise/installs/bun/1.4.1/bin:$PATH bun run check
 PATH="$PWD/serial-bin:$PATH" node scripts/native-lanes.mjs --udid 09C1B8C9-E33F-4E63-B3F0-AF92DD1E9517 --only OrbisTests/PlaybackDiagnosticsSenderTests --only OrbisTests/PlaybackDiagnosticsTests --out "$PWD/evidence/signoz-focused/attachments"
 PATH="$PWD/serial-bin:$PATH" node scripts/native-lanes.mjs --udid 09C1B8C9-E33F-4E63-B3F0-AF92DD1E9517 --unit --out "$PWD/evidence/signoz-all/attachments"
 ```

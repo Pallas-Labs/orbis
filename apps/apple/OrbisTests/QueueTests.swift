@@ -82,7 +82,7 @@ final class QueueTests: XCTestCase {
     responder: @Sendable @escaping (URLRequest) -> (Int, String)
   ) throws -> AppModel {
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(responder: { request in
         log?.record(request)

@@ -17,7 +17,7 @@ const decodeIdOnly = Schema.decodeUnknownSync(
 
 const decodeGroupPasscode = Schema.decodeUnknownSync(GroupPasscodeSchema);
 
-const TAILNET_HOST = "vanta.example.ts.net";
+const TAILNET_HOST = "orbis.example.test";
 
 const withTrustStore = async (
   devices: readonly { id: string; label: string; token: string }[]

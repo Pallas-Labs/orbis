@@ -143,7 +143,7 @@ The maintenance cost is real and belongs in the decision. YouTube extractors bre
 
 ## Evidence hygiene
 
-The operator's YouTube cookies are a credential. They were copied to `/home/parth/.config/orbis/youtube-cookies.txt` with mode `0600`, were never printed, and were never committed. Every downloaded media file was deleted after it was measured, leaving only logs and result files under `/tmp/orbis-ytdlp-trial`. The cookie file can be deleted now: the trial shows it is not needed for these fixtures.
+The operator's YouTube cookies are a credential. They were copied to `~/.config/orbis/youtube-cookies.txt` with mode `0600`, were never printed, and were never committed. Every downloaded media file was deleted after it was measured, leaving only logs and result files under `/tmp/orbis-ytdlp-trial`. The cookie file can be deleted now: the trial shows it is not needed for these fixtures.
 
 ## Reproduction
 

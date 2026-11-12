@@ -82,12 +82,12 @@ Assert the expected state by name — the heading text, the predicate, the frame
 
 ## Pairing a simulator to the real service
 
-The simulator shares the Mac's network stack, so a Tailscale address resolves and connects with no extra setup: MagicDNS resolved `vanta.example.ts.net` and `Test connection` succeeded on the first try. `~/.orbis/config.json` holds the pair this Mac already uses. At the time of these notes the iOS app could not read it, so the address and token were typed on the connection screen. A Debug simulator build now reads the file.
+The simulator shares the Mac's network stack, so a Tailscale address resolves and connects with no extra setup: MagicDNS resolved `<funnel-host>` and `Test connection` succeeded on the first try. `~/.orbis/config.json` holds the pair this Mac already uses. At the time of these notes the iOS app could not read it, so the address and token were typed on the connection screen. A Debug simulator build now reads the file.
 
 Read the address and token from that file rather than printing them:
 
 ```sh
-agent-device fill @e8 "https://vanta.example.ts.net:8444" --session orbis-ios --settle
+agent-device fill @e8 "https://<funnel-host>:8444" --session orbis-ios --settle
 agent-device fill @e53 "$(python3 -c "import json,os;print(json.load(open(os.path.expanduser('~/.orbis/config.json')))['deviceToken'])")" --session orbis-ios --settle
 ```
 

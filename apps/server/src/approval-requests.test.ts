@@ -55,8 +55,8 @@ import {
 
 const FRIEND_DAILY = "approval-friend-daily";
 const NODE = "approval-node";
-const TV = "100.64.1.1";
-const PHONE = "100.64.2.1";
+const TV = "192.0.2.11";
+const PHONE = "192.0.2.21";
 const TWO_MINUTES = 2 * 60 * 1000;
 const WAIT_MS = 1000;
 
@@ -126,7 +126,7 @@ const send = async (
       options.key === undefined
         ? {}
         : { authorization: `Bearer ${options.key}` },
-    host: "vanta.example.ts.net",
+    host: "orbis.example.test",
     method: "POST",
     payload: options.payload,
     url,
@@ -187,7 +187,7 @@ test("starting returns a 6-digit code, a secret, and a 2-minute expiry, none of 
 
     const live = await Promise.all(
       Array.from({ length: 19 }, (_, index) =>
-        started(app, `100.64.3.${Math.floor(index / 3)}`)
+        started(app, `198.51.100.${Math.floor(index / 3)}`)
       )
     );
     const all = [first, ...live];
@@ -243,7 +243,7 @@ test("transcript: a TV is approved, signs in once, and its request expires after
     );
     if (result.status === "approved") {
       const me = await app.handler(
-        new Request("http://vanta.example.ts.net/me", {
+        new Request("http://orbis.example.test/me", {
           headers: { authorization: `Bearer ${result.key}` },
         }),
         "device",
@@ -352,7 +352,7 @@ test("a wait holds until its wait time and answers pending, and an open wait ans
       scope: "daily",
     });
     const me = await app.handler(
-      new Request("http://vanta.example.ts.net/me", {
+      new Request("http://orbis.example.test/me", {
         headers: { authorization: `Bearer ${result.key}` },
       }),
       "device",
@@ -409,7 +409,7 @@ test.each([
       expect(await statusOf(node)).toBe(403);
       expect(await statusOf(find(app, pairing.code))).toBe(200);
       const other = await app.handler(
-        new Request("http://vanta.example.ts.net/me"),
+        new Request("http://orbis.example.test/me"),
         "device",
         PHONE
       );
@@ -438,16 +438,16 @@ test("wrong codes and secrets count as failed sign-in attempts, and the waiting 
     // Over the limit, a right code is refused before the lookup.
     expect(await statusOf(find(app, pairing.code))).toBe(429);
     expect(await statusOf(approve(app, pairing.code))).toBe(429);
-    expect(await statusOf(find(app, pairing.code, "100.64.2.2"))).toBe(200);
+    expect(await statusOf(find(app, pairing.code, "192.0.2.22"))).toBe(200);
 
     const secrets: number[] = [];
     await runTimesInOrder(21, async (attempt) => {
-      secrets.push(await statusOf(wait(app, `guess-${attempt}`, "100.64.4.1")));
+      secrets.push(await statusOf(wait(app, `guess-${attempt}`, "192.0.2.41")));
     });
     expect(secrets.slice(0, 20)).toEqual(Array.from({ length: 20 }, () => 404));
     expect(secrets[20]).toBe(429);
     // The device waiting on its own request is not locked out.
-    const own = await wait(app, pairing.secret, "100.64.4.1");
+    const own = await wait(app, pairing.secret, "192.0.2.41");
     expect(decodeWait(own.body)).toEqual({ status: "pending" });
   } finally {
     await cleanup();
@@ -486,9 +486,9 @@ test("one client holds 3 live requests and the Group holds 20", async () => {
     });
 
     await runTimesInOrder(17, async (index) => {
-      expect(await statusOf(start(app, `100.64.5.${index}`))).toBe(201);
+      expect(await statusOf(start(app, `203.0.113.${index}`))).toBe(201);
     });
-    expect(await statusOf(start(app, "100.64.6.1"))).toBe(429);
+    expect(await statusOf(start(app, "192.0.2.61"))).toBe(429);
 
     clock.now += TWO_MINUTES;
     expect(await statusOf(start(app, "2001:db8:1:2::4"))).toBe(201);

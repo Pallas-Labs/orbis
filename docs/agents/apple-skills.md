@@ -36,7 +36,7 @@ It is the complementary pass to `bun run native:lanes`, not a replacement, and i
 
 ## Execution boundary
 
-**XcodeBuildMCP CLI `2.7.0` is installed on PATH** at `/Users/parthmangrola/.local/share/mise/installs/node/24.15.0/bin/xcodebuildmcp`, via `npm install -g xcodebuildmcp@latest`. The Homebrew channel was blocked by tap trust and was left alone; `brew trust` was not run. Reinstall through npm after a Node upgrade.
+**XcodeBuildMCP CLI `2.7.0` is installed on PATH** at `~/.local/share/mise/installs/node/24.15.0/bin/xcodebuildmcp`, via `npm install -g xcodebuildmcp@latest`. The Homebrew channel was blocked by tap trust and was left alone; `brew trust` was not run. Reinstall through npm after a Node upgrade.
 
 **No MCP connection was added.** Per this repository's Executor-only MCP policy, route any future Xcode MCP use through Executor rather than adding a direct server entry to a client config.
 

@@ -45,7 +45,7 @@ test("People see a friend's full Library only while both sides allow it", async 
     request(app, {
       accessMode: "device",
       headers: { authorization: `Bearer ${tokens[who]}` },
-      host: "vanta.example.ts.net",
+      host: "orbis.example.test",
       method,
       payload,
       url,
@@ -75,7 +75,7 @@ test("People see a friend's full Library only while both sides allow it", async 
     const members = await request(app, {
       accessMode: "device",
       headers: { authorization: `Bearer ${tokens.b}` },
-      host: "vanta.example.ts.net",
+      host: "orbis.example.test",
       method: "PUT",
       payload: { setIds: [second.json().id, first.json().id] },
       url: `/playlists/${playlistId}/sets`,
@@ -227,7 +227,7 @@ test("A Person lists their See and Appear filters for everyone they could see", 
     request(app, {
       accessMode: "device",
       headers: { authorization: `Bearer ${tokens[who]}` },
-      host: "vanta.example.ts.net",
+      host: "orbis.example.test",
       method,
       payload,
       url,

@@ -24,10 +24,10 @@ final class OrbisClientTests: XCTestCase {
   /// The bearer token rides on every request, so an address carries it only over TLS. The
   /// loopback exception is the temporary lane service, which the server itself trusts.
   func testAnAddressCarriesTheTokenOnlyOverTLSOrLoopback() throws {
-    for input in ["https://vanta.example.ts.net", "http://127.0.0.1:4310", "http://localhost:4310"] {
+    for input in ["https://orbis.example.test", "http://127.0.0.1:4310", "http://localhost:4310"] {
       XCTAssertTrue(OrbisClient.accepts(try XCTUnwrap(URL(string: input))), input)
     }
-    for input in ["http://vanta.example.ts.net", "ftp://vanta.example.ts.net"] {
+    for input in ["http://orbis.example.test", "ftp://orbis.example.test"] {
       XCTAssertFalse(OrbisClient.accepts(try XCTUnwrap(URL(string: input))), input)
     }
   }
@@ -96,7 +96,7 @@ final class OrbisClientTests: XCTestCase {
     let newer = Self.savedSet(title: "Night session", tags: []).replacingOccurrences(
       of: "\"source\":\"youtube\"", with: "\"source\":\"bandcamp\"")
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(status: 200, body: "{\"sets\": [" + newer + "]}"))
     let sets = try await client.library()
@@ -107,7 +107,7 @@ final class OrbisClientTests: XCTestCase {
   func testAWebPageIsItsOwnFailure() async throws {
     for status in [200, 403] {
       let client = OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(
           status: status, body: "<!doctype html><html lang=\"en\"><head>")
@@ -134,7 +134,7 @@ final class OrbisClientTests: XCTestCase {
     ]
     for (status, body, expected) in cases {
       let client = OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(status: status, body: body)
       )
@@ -161,7 +161,7 @@ final class OrbisClientTests: XCTestCase {
       "lastListenedAt":null}
       """
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(status: 200, body: #"{"sets":["# + older + "]}"))
     let sets = try await client.library()
@@ -174,7 +174,7 @@ final class OrbisClientTests: XCTestCase {
     let session = StubProtocol.session(
       status: 200, body: Self.savedSet(title: "Named at last", tags: []))
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: session
     )
@@ -203,7 +203,7 @@ final class OrbisClientTests: XCTestCase {
   func testLibraryAsksForOnePlaylistByItsIdentifier() async throws {
     let session = StubProtocol.session(status: 200, body: #"{"sets":[]}"#)
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: session
     )
@@ -213,7 +213,7 @@ final class OrbisClientTests: XCTestCase {
 
   func testACancelledRequestIsNotReportedAsUnreachable() async throws {
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(failure: URLError(.cancelled))
     )

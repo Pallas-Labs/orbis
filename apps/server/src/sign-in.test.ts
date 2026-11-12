@@ -109,12 +109,12 @@ const call = (
 ) =>
   request(app, {
     accessMode: "device",
-    clientAddress: options.client ?? "100.64.0.1",
+    clientAddress: options.client ?? "192.0.2.1",
     headers:
       options.key === undefined
         ? {}
         : { authorization: `Bearer ${options.key}` },
-    host: "vanta.example.ts.net",
+    host: "orbis.example.test",
     method,
     payload: options.payload,
     url,
@@ -503,11 +503,11 @@ test("wrong codes and passcodes count toward the failed-key limit", async () => 
     await runTimesInOrder(21, async (attempt) => {
       const guess =
         attempt % 2 === 0
-          ? await redeem(app, `GUESS${attempt}`, { client: "100.64.0.3" })
+          ? await redeem(app, `GUESS${attempt}`, { client: "192.0.2.3" })
           : await join(
               app,
               { passcode: `guess-${attempt}`, username: `guess${attempt}` },
-              "100.64.0.3"
+              "192.0.2.3"
             );
       guesses.push(guess.statusCode);
     });
@@ -517,35 +517,35 @@ test("wrong codes and passcodes count toward the failed-key limit", async () => 
     expect(guesses[20]).toBe(429);
     // Once over the limit, the client is refused before the code is spent.
     expect(
-      await statusOf(redeem(app, issued.code, { client: "100.64.0.3" }))
+      await statusOf(redeem(app, issued.code, { client: "192.0.2.3" }))
     ).toBe(429);
     expect(
-      await statusOf(join(app, { passcode, username: "blocked" }, "100.64.0.3"))
+      await statusOf(join(app, { passcode, username: "blocked" }, "192.0.2.3"))
     ).toBe(429);
 
     // A key on the request does not skip the limit.
     await runTimesInOrder(21, async (attempt) => {
       await redeem(app, `KEYED${attempt}`, {
-        client: "100.64.0.4",
+        client: "192.0.2.4",
         key: FRIEND_DAILY,
       });
     });
     expect(
       await statusOf(
-        redeem(app, issued.code, { client: "100.64.0.4", key: FRIEND_DAILY })
+        redeem(app, issued.code, { client: "192.0.2.4", key: FRIEND_DAILY })
       )
     ).toBe(429);
 
     // Bad keys and code guesses share one count per client.
     await runTimesInOrder(20, async () => {
-      await call(app, "GET", "/me", { client: "100.64.0.5", key: "bad" });
+      await call(app, "GET", "/me", { client: "192.0.2.5", key: "bad" });
     });
-    expect(await statusOf(redeem(app, "GUESS", { client: "100.64.0.5" }))).toBe(
+    expect(await statusOf(redeem(app, "GUESS", { client: "192.0.2.5" }))).toBe(
       429
     );
 
     expect(
-      await statusOf(redeem(app, issued.code, { client: "100.64.0.6" }))
+      await statusOf(redeem(app, issued.code, { client: "192.0.2.6" }))
     ).toBe(200);
   } finally {
     await app.dispose();
@@ -563,7 +563,7 @@ test("each generated passcode is new, and the Host cannot choose one", async () 
     });
     expect(seen.size).toBe(20);
     const chosen = await app.handler(
-      new Request("http://vanta.example.ts.net/admin/passcode", {
+      new Request("http://orbis.example.test/admin/passcode", {
         body: JSON.stringify({ passcode: "orbit-rings" }),
         headers: {
           authorization: `Bearer ${HOST_DAILY}`,
@@ -572,7 +572,7 @@ test("each generated passcode is new, and the Host cannot choose one", async () 
         method: "PUT",
       }),
       "device",
-      "100.64.0.1"
+      "192.0.2.1"
     );
     expect(chosen.ok).toBe(false);
     expect(
@@ -618,7 +618,7 @@ test("another spelling of the sign-in path still counts toward the limit", async
         "POST",
         spellings[attempt % spellings.length] ?? "/sign-in/code",
         {
-          client: "100.64.0.7",
+          client: "192.0.2.7",
           payload: { code: `GUESS${attempt}`, label: "New phone" },
         }
       );
@@ -643,7 +643,7 @@ test("a burst of concurrent guesses cannot slip under the limit", async () => {
           join(
             app,
             { passcode: `guess-${attempt}`, username: `burst${attempt}` },
-            "100.64.0.8"
+            "192.0.2.8"
           )
         )
       )
@@ -651,7 +651,7 @@ test("a burst of concurrent guesses cannot slip under the limit", async () => {
     expect(burst.filter((status) => status === 403)).toHaveLength(20);
     expect(burst.filter((status) => status === 429)).toHaveLength(20);
     expect(
-      await statusOf(join(app, { passcode, username: "late" }, "100.64.0.8"))
+      await statusOf(join(app, { passcode, username: "late" }, "192.0.2.8"))
     ).toBe(429);
   } finally {
     await app.dispose();

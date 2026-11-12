@@ -18,7 +18,7 @@ type Payload =
 const asB = (method: string, url: string, payload?: Payload) => ({
   accessMode: "device" as const,
   headers: { authorization: `Bearer ${token}` },
-  host: "vanta.example.ts.net",
+  host: "orbis.example.test",
   method,
   payload,
   url,

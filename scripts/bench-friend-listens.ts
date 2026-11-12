@@ -20,7 +20,7 @@ const get = async (app: ReturnType<typeof createApp>, url: string) =>
   await request(app, {
     accessMode: "device",
     headers: { authorization: "Bearer a-token" },
-    host: "vanta.example.ts.net",
+    host: "orbis.example.test",
     method: "GET",
     url,
   });

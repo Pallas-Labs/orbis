@@ -57,7 +57,7 @@ final class OrbisLinkTests: XCTestCase {
     log: RequestLog, library: [String], share: Int = 200
   ) async throws -> AppModel {
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")), token: "token",
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")), token: "token",
       session: StubProtocol.session(
         responder: Self.responder(log: log, library: { library }, share: { share })))
     let model = AppModel(client: client, settings: MemoryClientSettings())
@@ -174,7 +174,7 @@ final class OrbisLinkTests: XCTestCase {
     let share = ShareStatus(503)
     let log = RequestLog()
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")), token: "token",
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")), token: "token",
       session: StubProtocol.session(
         responder: Self.responder(log: log, library: { [] }, share: { share.value })))
     let model = AppModel(client: client, settings: MemoryClientSettings())

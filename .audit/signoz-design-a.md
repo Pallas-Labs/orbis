@@ -12,7 +12,7 @@ Recommend **cursor-based reads from the existing ring, with one immutable batch 
 
 I applied architect and poteto-mode sequentially using the current model substitution. No independent panel ran because you prohibited children. This is a source-grounded design at `3a39151`; no files, builds, tests, SSH, or posts were involved.
 
-The current ownership fits this shape. [AudioPlayer.swift](/home/parth/.t3/worktrees/orbis/t3-9f35e2c6/apps/apple/Orbis/AudioPlayer.swift:174) captures typed events synchronously. [PlaybackDiagnostics.swift](/home/parth/.t3/worktrees/orbis/t3-9f35e2c6/apps/apple/Orbis/PlaybackDiagnostics.swift:289) owns the 256-entry ring and preferentially evicts samples. AppModel owns authentication and player lifetime; OrbisSession shares that model across windows and CarPlay. Production requests enter the Cloudflare Group, which calls the shared authenticated `createPortableApp` handler. A Bun-only route would miss production.
+The current ownership fits this shape. [AudioPlayer.swift](~/.t3/worktrees/orbis/t3-9f35e2c6/apps/apple/Orbis/AudioPlayer.swift:174) captures typed events synchronously. [PlaybackDiagnostics.swift](~/.t3/worktrees/orbis/t3-9f35e2c6/apps/apple/Orbis/PlaybackDiagnostics.swift:289) owns the 256-entry ring and preferentially evicts samples. AppModel owns authentication and player lifetime; OrbisSession shares that model across windows and CarPlay. Production requests enter the Cloudflare Group, which calls the shared authenticated `createPortableApp` handler. A Bun-only route would miss production.
 
 The two viable whole shapes are:
 
@@ -155,7 +155,7 @@ type ExportPlaybackDiagnostics = (
 ) => Promise<DiagnosticsReceipt>;
 ```
 
-Add `POST /diagnostics/playback` to [http-api.ts](/home/parth/.t3/worktrees/orbis/t3-9f35e2c6/packages/contracts/src/http-api.ts) with `SetAccess`. Register it in [app-core.ts](/home/parth/.t3/worktrees/orbis/t3-9f35e2c6/apps/server/src/app-core.ts:330), and require a device caller with a non-null key ID. Inject the exporter through `createPortableApp` and the Bun `createApp` options.
+Add `POST /diagnostics/playback` to [http-api.ts](~/.t3/worktrees/orbis/t3-9f35e2c6/packages/contracts/src/http-api.ts) with `SetAccess`. Register it in [app-core.ts](~/.t3/worktrees/orbis/t3-9f35e2c6/apps/server/src/app-core.ts:330), and require a device caller with a non-null key ID. Inject the exporter through `createPortableApp` and the Bun `createApp` options.
 
 The route authenticates, admits bounded work, reads and validates the bounded body, then awaits one export attempt. Proposed server bounds are two active diagnostics requests per app instance, no waiting queue, a five-second route deadline, and a small instance-wide request-rate bucket. Excess work returns 429. This bounds stalled exports without an unbounded per-device map.
 
@@ -165,7 +165,7 @@ Export one searchable OTLP log per entry, plus a loss-summary record when needed
 
 POST OTLP JSON to `https://otlp.parthm.me/v1/logs`, using decimal-string nanosecond timestamps and numeric enums. Parse partial success and never retry it. Only transport failures and OTLP statuses 429, 502, 503, and 504 become retryable relay failures. Keep retries exclusively in the Apple sender. These rules follow the [OTLP specification](https://opentelemetry.io/docs/specs/otlp/).
 
-Wire the exporter in [group.ts](/home/parth/.t3/worktrees/orbis/t3-9f35e2c6/apps/api/src/group.ts), add environment types in `apps/api/src/index.ts`, and update [alchemy.run.ts](/home/parth/.t3/worktrees/orbis/t3-9f35e2c6/apps/web/alchemy.run.ts). Add Worker secrets `SIGNOZ_OTLP_ACCESS_CLIENT_ID` and `SIGNOZ_OTLP_ACCESS_CLIENT_SECRET` through the existing secret/inherit mechanism. Set the collector endpoint as server configuration. Send the credentials only as Cloudflare Access headers, disable redirects, and keep them out of Website/Vite bindings. No Vanta infrastructure change is required.
+Wire the exporter in [group.ts](~/.t3/worktrees/orbis/t3-9f35e2c6/apps/api/src/group.ts), add environment types in `apps/api/src/index.ts`, and update [alchemy.run.ts](~/.t3/worktrees/orbis/t3-9f35e2c6/apps/web/alchemy.run.ts). Add Worker secrets `SIGNOZ_OTLP_ACCESS_CLIENT_ID` and `SIGNOZ_OTLP_ACCESS_CLIENT_SECRET` through the existing secret/inherit mechanism. Set the collector endpoint as server configuration. Send the credentials only as Cloudflare Access headers, disable redirects, and keep them out of Website/Vite bindings. No Vanta infrastructure change is required.
 
 Write these failure cases before implementation:
 

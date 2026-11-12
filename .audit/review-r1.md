@@ -78,6 +78,6 @@ This is the strongest candidate for "Play does not work", and the current diff d
 - `playback.tsv` has no rows for these items: the implementation decisions (pause on every seek, an unfinished seek causing a failure, the settle report on replacement, the local resume at the start of `playSet`, moving `finishedPlaying` to attach before the refresh), the starvation probe result, the change to the underrun gate from "waiting" to "not playing", and adding the AAC comparison. Add them before the final report cites them.
 - The native fixes are not compiled. Every native behavior claim is unverified until the Cortex run.
 - The four attachments in `repro-streaming-attachments` come from the old test version. They have no `bufferEmpty`, `likelyToKeepUp`, or ranges keys. They are baseline evidence only.
-- The baseline rows for start-at-12 and delayed B cite `/Users/parthmangrola/...` paths on the Mac. I could not read them from Vanta, so I did not verify those claims myself.
+- The baseline rows for start-at-12 and delayed B cite `~/...` paths on the Mac. I could not read them from Vanta, so I did not verify those claims myself.
 - The 1–2 s jumps are still unexplained. The diff adds only diagnostics for them. The final report must not call them fixed, and must not call the range fix their cause (see finding 7).
 - The test counts differ. I confirmed 13 of 13 in `audio.test.ts`. The "17 server HTTP tests pass" claim covers a set I did not run again.

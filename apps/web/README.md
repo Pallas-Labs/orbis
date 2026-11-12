@@ -47,7 +47,7 @@ This removes both Workers, the custom domain, the `/api/*` route, and the Group 
 ## Develop
 
 ```sh
-ORBIS_API_URL=https://vanta.example.ts.net:10000/api bun run dev
+ORBIS_API_URL=https://<funnel-host>:10000/api bun run dev
 ```
 
 The API allows browser requests from `http://localhost` and `http://127.0.0.1` only when the server runs with development origins enabled. Against the Funnel, test the deployed page.

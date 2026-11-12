@@ -17,7 +17,7 @@ The player logs numeric command generations, seek targets and actual landing, bu
 
 ## Evidence
 
-Evidence root on Vanta is `/home/parth/.cache/orbis-playback-evidence/2026-10-18`. The starting source revision is `91d3b90`. The final manifest records the source patch digest, native commands, simulator and artifacts.
+Evidence root on Vanta is `~/.cache/orbis-playback-evidence/2026-10-18`. The starting source revision is `91d3b90`. The final manifest records the source patch digest, native commands, simulator and artifacts.
 
 | Check | Observed result |
 | --- | --- |
@@ -61,4 +61,4 @@ The user subsequently requested automatic delivery to SigNoz. The [delivery veri
 
 At the user's simplify/deslop request, three parallel reviews covered reuse, quality and efficiency across the branch. Source `d809367` consolidates unchanged UI time helpers, reuses the existing settings store and strict decoder, removes a duplicate access-log lookup and uses typed buffer reasons with unchanged console labels. It removes 35 lines across six source/test files. Encoder caches and loop rewrites were skipped as low return.
 
-All 140 native tests, eight playback/recovery UI journeys, 18 affected HTTP tests, server typecheck, lint, formatting and a tvOS build passed. All 125 Swift inputs match the native and UI pre/post manifests, and the built/installed UI libraries match. Evidence, source hashes, the exact patch and all three review results are in `/home/parth/.cache/orbis-playback-evidence/2026-10-18/simplify`. Earlier manifests identify their earlier revisions. No deployment or new physical acceptance is claimed.
+All 140 native tests, eight playback/recovery UI journeys, 18 affected HTTP tests, server typecheck, lint, formatting and a tvOS build passed. All 125 Swift inputs match the native and UI pre/post manifests, and the built/installed UI libraries match. Evidence, source hashes, the exact patch and all three review results are in `~/.cache/orbis-playback-evidence/2026-10-18/simplify`. Earlier manifests identify their earlier revisions. No deployment or new physical acceptance is claimed.

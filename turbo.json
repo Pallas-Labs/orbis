@@ -35,6 +35,9 @@
     "//#bounded-reads": {
       "outputs": []
     },
+    "//#hosts": {
+      "cache": false
+    },
     "//#fence": {
       "outputs": []
     },

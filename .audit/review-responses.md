@@ -12,7 +12,7 @@ Round 1 is `.audit/review-r1.md`. These are implementation decisions, not runtim
 
 The first AAC probe did not reach starvation within its observation window. It is inconclusive. Both formats now use identical slower pacing for a fair recovery comparison. The repeatable native command accepts multiple --only selections and runs with a private serial Xcode wrapper because unrestricted whole-bundle discovery stalled in this shared Mac environment.
 
-Evidence copied to /home/parth/.cache/orbis-playback-evidence/2026-10-18. Latest before and after native runs are still pending when this response is written. No claim here says that spontaneous audible jumps or repeats have been eliminated.
+Evidence copied to ~/.cache/orbis-playback-evidence/2026-10-18. Latest before and after native runs are still pending when this response is written. No claim here says that spontaneous audible jumps or repeats have been eliminated.
 
 Final small corrections preserve queue-operation errors across later writes, make the mini player show Pause while loading, and leave outgoing-position policy at the existing periodic reports. Explicit warm Set activation still reasserts the server's active Set without recreating its player. The private playback command now carries an exact seek target so a pending retry can adopt a scrub without cancelling recovery.
 

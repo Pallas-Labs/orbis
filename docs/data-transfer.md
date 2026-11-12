@@ -44,7 +44,7 @@ Build the contracts, then run the verification driver with the source data direc
 
 ```sh
 bun run --cwd packages/contracts build
-bun apps/api/e2e/transfer-verify.ts /home/parth/Developer/orbis-service-data
+bun apps/api/e2e/transfer-verify.ts ~/Developer/orbis-service-data
 ```
 
 The driver opens the source SQLite database read-only and uses `VACUUM INTO` to take a consistent private snapshot. It copies legacy trust data, migrates only the copy, and mints scratch node and Host keys in the private copy. It imports into a local workerd Group, compares every table, exports the Group, and restores the export to another private SQLite file. A test-only `createPortableApp` instance then compares the Host's HTTP Library, Playlists, Queue, positions, titles, and Tracklists across the source copy, the Group, and the restored copy. The driver also checks a private fixture with a nonempty ordered Playlist, named Cues, edited Unicode titles, and a constraint failure during import.

@@ -38,7 +38,7 @@ Set `ORBIS_YTDLP_BIN` to the absolute path of the binary. Orbis never resolves i
 
 ```sh
 which yt-dlp
-# Example: /home/parth/.local/bin/yt-dlp on Vanta, /Users/parthmangrola/.local/bin/yt-dlp on the Mac
+# Example: ~/.local/bin/yt-dlp on Vanta and on the Mac
 export ORBIS_YTDLP_BIN=/absolute/path/to/yt-dlp
 ```
 

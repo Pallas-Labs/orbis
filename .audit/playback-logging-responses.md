@@ -4,7 +4,7 @@ Claude Opus 5.5 round 1 found no high issue or privacy defect and requested two 
 
 ## Retention
 
-Both medium requests are accepted. A focused regression probe was written before modifying retention. It failed with `Routine samples must not evict the incident`. Its realistic eight-range/access-metric report exported 128 of 256 entries in 233,991 UTF-8 bytes before correction. The artifact and failure log are under `/home/parth/.cache/orbis-playback-evidence/2026-10-18/logging/retention-before/`; the result bundle is retained separately.
+Both medium requests are accepted. A focused regression probe was written before modifying retention. It failed with `Routine samples must not evict the incident`. Its realistic eight-range/access-metric report exported 128 of 256 entries in 233,991 UTF-8 bytes before correction. The artifact and failure log are under `~/.cache/orbis-playback-evidence/2026-10-18/logging/retention-before/`; the result bundle is retained separately.
 
 The recorder now evicts the oldest periodic sample before command or incident entries. Compact JSON replaces pretty printing. If export still exceeds the byte cap, it omits routine samples and binary-searches the largest newest suffix of the remaining records that fits. This deliberately prioritizes causal records over periodic context under byte pressure. The current snapshot is always included for normal report limits. Documentation now says up to 256 entries, without a guaranteed time window.
 

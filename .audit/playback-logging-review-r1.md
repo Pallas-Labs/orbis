@@ -1,6 +1,6 @@
 **Reviewer model:** Opus 5.5 (`claude-opus-5-5`). This was a read-only review. I made no edits and ran no builds, tests, SSH or PR actions.
 
-**Source pin:** The working tree matches `/home/parth/.cache/orbis-playback-evidence/2026-10-18/logging/source-manifest.sha256`. I checked the hashes of AudioPlayer, PlaybackDiagnostics, AppModel, SettingsView, the 3 native test files and PlaybackReportUITests.
+**Source pin:** The working tree matches `~/.cache/orbis-playback-evidence/2026-10-18/logging/source-manifest.sha256`. I checked the hashes of AudioPlayer, PlaybackDiagnostics, AppModel, SettingsView, the 3 native test files and PlaybackReportUITests.
 
 ## Source verdict
 

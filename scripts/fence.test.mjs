@@ -5,16 +5,26 @@
 //   `expect:` lines no longer match what real Oxlint reports.
 // - The bounded-read scanner misses a read, flags a bounded one, or the baseline stops
 //   shrinking: planted sources and baselines give the wrong findings.
+// - The host check misses a tailnet address, a `.ts.net` name or a home path, flags a stand-in
+//   such as `example.test`, or keeps an allow entry that no longer allows anything.
 // - The agent guard lets `--no-verify` or another hook bypass through, or refuses quoted text.
 // - A tsconfig keeps Effect warnings out of the tsc exit code: a planted warning passes tsc.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, test } from "node:test";
 
 import { decide, refusal } from "./agent-guard.mjs";
 import { newFindings, scanSource, staleReads } from "./check-bounded-reads.mjs";
+import { run as checkHosts } from "./check-host-addresses.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const bin = (name) => path.join(root, "node_modules/.bin", name);
@@ -132,6 +142,78 @@ describe("bounded reads", () => {
     assert.deepEqual(staleReads(findings, baseline), [
       rawRead("SELECT b FROM t"),
     ]);
+  });
+});
+
+// Each planted value is built from parts so this file names none of them.
+const planted = {
+  "home-path": ["/", "home", "/", "someone", "/.cache/x"].join(""),
+  "tailnet-host": ["vanta", "tail0000", "ts", "net"].join("."),
+  "tailnet-ip": ["100", "77", "1", "2"].join("."),
+};
+
+/// A git repo holding `files` (path to text), checked by the host check. Returns the exit code
+/// and what it printed.
+const checkRepo = (files) => {
+  const repo = mkdtempSync(path.join(tmpdir(), "orbis-hosts-"));
+  try {
+    for (const [file, text] of Object.entries(files)) {
+      const target = path.join(repo, file);
+      mkdirSync(path.dirname(target), { recursive: true });
+      writeFileSync(target, text);
+    }
+    execFileSync("git", ["init", "-q"], { cwd: repo });
+    execFileSync("git", ["add", "."], { cwd: repo });
+    const said = [];
+    const code = checkHosts(repo, (line) => {
+      said.push(line);
+    });
+    return { code, said: said.join("\n") };
+  } finally {
+    rmSync(repo, { force: true, recursive: true });
+  }
+};
+
+describe("host addresses", () => {
+  test("refuses each kind of host detail in a tracked file", () => {
+    for (const [rule, value] of Object.entries(planted)) {
+      const { code, said } = checkRepo({ "docs/x.md": `see ${value} here\n` });
+      assert.equal(code, 1, rule);
+      assert.match(said, new RegExp(`docs/x\\.md:1 ${rule}: `, "u"));
+    }
+    const upper = planted["tailnet-host"].toUpperCase();
+    assert.match(checkRepo({ "a.md": upper }).said, /tailnet-host/u);
+  });
+
+  test("passes stand-ins and addresses outside the tailnet range", () => {
+    const { code, said } = checkRepo({
+      "a.ts": [
+        "https://orbis.example.test:8444",
+        "192.0.2.11 198.51.100.4 203.0.113.9 100.63.0.1 100.128.0.1 10.100.64.1 1.100.64.1.2",
+        "~/.cache/x <vanta-tailnet-ip> <funnel-host> an address on `ts.net`",
+      ].join("\n"),
+    });
+    assert.equal(code, 0, said);
+  });
+
+  test("an allow entry with a reason passes its match, and fails once the match is gone", () => {
+    const ip = planted["tailnet-ip"];
+    const allow = JSON.stringify([
+      { match: ip, path: "a.md", reason: "fixture" },
+    ]);
+    const allowFile = "scripts/host-addresses.allow.json";
+    assert.equal(checkRepo({ "a.md": ip, [allowFile]: allow }).code, 0);
+    const gone = checkRepo({ "a.md": "nothing", [allowFile]: allow });
+    assert.equal(gone.code, 1);
+    assert.match(gone.said, /which is gone/u);
+    assert.throws(
+      () =>
+        checkRepo({
+          "a.md": ip,
+          [allowFile]: JSON.stringify([{ match: ip, path: "a.md" }]),
+        }),
+      /needs path, match and reason/u
+    );
   });
 });
 

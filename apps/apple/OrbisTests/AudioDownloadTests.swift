@@ -75,7 +75,7 @@ final class AudioDownloadTests: XCTestCase {
 
   private func client() throws -> OrbisClient {
     OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(responder: { request in
         switch (request.httpMethod, request.url?.path()) {
@@ -118,7 +118,7 @@ final class AudioDownloadTests: XCTestCase {
 
   func testFailedDownloadSurfacesPageFailure() async throws {
     let failing = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(status: 500, body: "{}")
     )
@@ -139,7 +139,7 @@ final class AudioDownloadTests: XCTestCase {
       _ responder: @Sendable @escaping (URLRequest) -> (Int, String)
     ) throws -> AppModel {
       let client = OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(responder: responder)
       )
@@ -197,11 +197,11 @@ final class AudioDownloadTests: XCTestCase {
     // Set's file: this pins the exact URL play() hands the asset, with and
     // without a trailing slash on the service address.
     for base in [
-      "https://vanta.example.ts.net:8444", "https://vanta.example.ts.net:8444/",
+      "https://orbis.example.test:8444", "https://orbis.example.test:8444/",
     ] {
       XCTAssertEqual(
         AudioPlayer.fileURL(setID: "1", baseURL: try XCTUnwrap(URL(string: base))).absoluteString,
-        "https://vanta.example.ts.net:8444/sets/1/audio"
+        "https://orbis.example.test:8444/sets/1/audio"
       )
     }
   }
@@ -266,7 +266,7 @@ final class AudioDownloadTests: XCTestCase {
   func testADownloadThatFinishesElsewhereStillLandsInTheLibrary() async throws {
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(responder: { request in
           switch (request.httpMethod, request.url?.path()) {
@@ -310,7 +310,7 @@ final class AudioDownloadTests: XCTestCase {
     let library = "{\"sets\":[" + sets.joined(separator: ",") + "]}"
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(responder: { request in
           log.record(request)
@@ -358,7 +358,7 @@ final class AudioDownloadTests: XCTestCase {
     let log = TimedRequestLog(clock: clock)
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(responder: { request in
           switch (request.httpMethod, request.url?.path()) {
@@ -419,7 +419,7 @@ final class AudioDownloadTests: XCTestCase {
       let log = TimedRequestLog(clock: clock)
       let model = AppModel(
         client: OrbisClient(
-          address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+          address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
           token: "token",
           session: StubProtocol.session(responder: { request in
             log.record(request)
@@ -471,7 +471,7 @@ final class AudioDownloadTests: XCTestCase {
     let log = TimedRequestLog(clock: clock)
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(responder: { request in
           log.record(request)

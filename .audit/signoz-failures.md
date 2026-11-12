@@ -25,7 +25,7 @@ Written before production changes at dd1468f. One writer owns this worktree. No 
 
 ## Fixture provenance and verification
 
-`apps/server/src/fixtures/playback-upload.json` initially wraps entries from `/home/parth/.cache/orbis-playback-evidence/2026-10-18/logging/native-final/shots/playback-report.json`. Its Date strings were converted to numeric milliseconds. This is a prior clipboard report adapted to the accepted envelope, not evidence of a new sender upload. The replay test exists before implementation so the parent can replace only its fixture with actual native output.
+`apps/server/src/fixtures/playback-upload.json` initially wraps entries from `~/.cache/orbis-playback-evidence/2026-10-18/logging/native-final/shots/playback-report.json`. Its Date strings were converted to numeric milliseconds. This is a prior clipboard report adapted to the accepted envelope, not evidence of a new sender upload. The replay test exists before implementation so the parent can replace only its fixture with actual native output.
 
 The parent owns native runtime checks and authenticated relay-to-live-SigNoz verification. Linux checks retain results in `.cache/signoz`. The canonical `.audit/playback.tsv` stays untouched.
 
