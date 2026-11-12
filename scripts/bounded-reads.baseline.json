@@ -22,7 +22,8 @@
   "apps/server/src/app-core.ts": {
     "drizzle-select": [
       "db.select({ editorId: playlistEditors.editorId }).from(playlistEditors).where(eq(playlistEditors.playlistId, id))",
-      "db.select({ createdAt: playlists.createdAt, creatorId: playlists.creatorId, id: playlists.id, name: playlists.name, setCount: sql<number>`( SELECT COUNT(*) FROM ${playlistSets} WHERE ${playlistSets.playlistId} = ${playlists.id} )`, }).from(playlistEditors).innerJoin( playlists, eq(playlists.id, playlistEditors.playlistId) ).where( and( eq(playlistEditors.editorId, caller.person.id), eq(playlists.creatorId, playlistEditors.creatorId), eq(playlists.collaborative, true) ) ).orderBy(asc(sql`${playlists.name} COLLATE NOCASE`))"
+      "db.select({ createdAt: playlists.createdAt, creatorId: playlists.creatorId, id: playlists.id, name: playlists.name, setCount: sql<number>`( SELECT COUNT(*) FROM ${playlistSets} WHERE ${playlistSets.playlistId} = ${playlists.id} )`, }).from(playlistEditors).innerJoin( playlists, eq(playlists.id, playlistEditors.playlistId) ).where( and( eq(playlistEditors.editorId, caller.person.id), eq(playlists.creatorId, playlistEditors.creatorId), eq(playlists.collaborative, true) ) ).orderBy(asc(sql`${playlists.name} COLLATE NOCASE`))",
+      "db.select({ finishedAt: listens.finishedAt, id: listens.id, setId: listens.setId, startedAt: listens.startedAt, }).from(listens).where(eq(listens.personId, target.id)).orderBy(desc(listens.startedAt), desc(listens.id))"
     ],
     "raw-select": [
       "SELECT set_id AS id FROM library_entries WHERE person_id = ${params.id} UNION SELECT set_id AS id FROM queue_entries WHERE person_id = ${params.id} UNION SELECT set_id AS id FROM playlist_sets INNER JOIN playlists ON playlists.id = playlist_sets.playlist_id WHERE creator_id = ${params.id}"

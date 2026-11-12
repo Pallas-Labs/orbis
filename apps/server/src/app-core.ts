@@ -270,11 +270,6 @@ const meBody = (person: PersonRecord) => ({
 });
 
 const PRESENCE_WINDOW_MS = 30_000;
-/**
- * A profile shows a Person's newest Listens. Each one carries a whole Set, so the answer has a
- * bound: 200 Listens are about 120 KB.
- */
-const LISTEN_HISTORY_LIMIT = 200;
 const TOO_MANY_ATTEMPTS = "Too many invalid keys.";
 const tooManyAttempts = () =>
   Response.json({ message: TOO_MANY_ATTEMPTS }, { status: 429 });
@@ -2068,8 +2063,7 @@ export const createPortableApp = (options: {
                   })
                   .from(listens)
                   .where(eq(listens.personId, target.id))
-                  .orderBy(desc(listens.startedAt), desc(listens.id))
-                  .limit(LISTEN_HISTORY_LIMIT);
+                  .orderBy(desc(listens.startedAt), desc(listens.id));
                 const history = yield* Effect.gen(
                   function* hydrateFriendListens() {
                     const personal = yield* Library;
