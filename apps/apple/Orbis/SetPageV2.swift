@@ -50,22 +50,24 @@ struct SetPageV2<Controls: View>: View {
   @ViewBuilder private var moreFromCreator: some View {
     let others = Self.others(of: set, in: model.library)
     if let creator = set.creator, !others.isEmpty {
-      MoreFromCreator(creator: creator, seeAll: { model.showCreator(of: set) }) {
-        ForEach(others.prefix(Self.moreLimit)) { other in
-          Button {
-            model.openSet(other.id)
-          } label: {
-            SetCard(
-              title: SetPage.displayTitle(other.title, creator: other.creator),
-              detail: other.durationSeconds.flatMap { $0 > 0 ? SetPresentation.length($0) : nil },
-              artwork: SetPresentation.row(other).artwork,
-              progress: SetPresentation.progress(of: other)
-            )
+      MoreFromCreator(
+        creator: creator, seeAll: { model.showCreator(of: set) },
+        cards: {
+          ForEach(others.prefix(Self.moreLimit)) { other in
+            Button {
+              model.openSet(other.id)
+            } label: {
+              SetCard(
+                title: SetPage.displayTitle(other.title, creator: other.creator),
+                detail: other.durationSeconds.flatMap { $0 > 0 ? SetPresentation.length($0) : nil },
+                artwork: SetPresentation.row(other).artwork,
+                progress: SetPresentation.progress(of: other)
+              )
+            }
+            .buttonStyle(.orbisPressable)
+            .accessibilityIdentifier("more-from-creator-card-\(other.id)")
           }
-          .buttonStyle(.orbisPressable)
-          .accessibilityIdentifier("more-from-creator-card-\(other.id)")
-        }
-      }
+        })
     }
   }
 

@@ -93,13 +93,21 @@ public struct SetPage: View {
       }
       .coordinateSpace(.named(Self.content))
     }
-    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-    .onScrollGeometryChange(for: [CGFloat].self) { geometry in
-      [geometry.contentInsets.top, geometry.containerSize.height - geometry.contentInsets.top
-        - geometry.contentInsets.bottom]
-    } action: { _, values in
-      topInset = values[0]
-      visibleHeight = values[1]
+    .onGeometryChange(for: CGFloat.self) { proxy in
+      proxy.size.width
+    } action: { newWidth in
+      width = newWidth
+    }
+    .onScrollGeometryChange(for: CGFloat.self) { geometry in
+      geometry.contentInsets.top
+    } action: { _, inset in
+      topInset = inset
+    }
+    // The height between the bars, which the first screen fills.
+    .onScrollGeometryChange(for: CGFloat.self) { geometry in
+      geometry.containerSize.height - geometry.contentInsets.top - geometry.contentInsets.bottom
+    } action: { _, height in
+      visibleHeight = height
     }
     // The bar names the Set only once the title has scrolled under it, as an album does.
     .onScrollGeometryChange(for: Bool.self) { geometry in
