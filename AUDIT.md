@@ -180,6 +180,18 @@ Evidence: the `live-queue` journey plays the Second set for 3 s and then plays t
 
 Fix: `activate` in `player.tsx` saves the place of the Set that is playing before another Set takes the player. The save goes through the same ordered queue as finding 10.
 
+### 16. Web: one dropped completion stopped the queue — fixed
+
+The service counts a completion once, by whether the Set is still the active one, so that a client can send it again (`queue.ts`: "what makes a retried signal from the other device do nothing"). No client does. On the web, `finish` sent one completion; a request that got no answer showed "Orbis could not be reached" and nothing played next. "Retry audio" then played the finished Set again from where the player had first resumed it.
+
+Evidence: the `live-queue` journey drops the first `POST /queue/completion` when the First set ends. Before the fix the next step timed out: `waiting for getByRole('region', { name: 'Audio player' }).getByText('Second set')`. After, the Second set plays.
+
+Fix: `completeSet` (`apps/web/src/lib/player.ts`) sends a completion again after 1 s, 2 s and 4 s when it got no answer, a 429 or a 5xx, then gives up as before. A 4xx is not sent again.
+
+Decision made without the owner: three more tries over 7 s. Undo: empty `COMPLETION_WAITS_MS`.
+
+Left: the Apple app (finding 6) and Rune have the same gap. Rune plays the next Set at once and says "Orbis didn't hear that the Set ended" (`completed` in `apps/rune/src/playing/mod.rs`), so the service keeps the finished Set active, with no Finish and no Listen for the next one, until the person plays something. Not changed here: the Rune fix needs a retry timer in its write queue and a press test, and the Apple one needs a Mac.
+
 ## Rejected
 
 - Queue and Listen counts drift under ordinary use. A 400-step random run of play, Play Next, Add to Queue and completion over HTTP matched a model at every step (queue order, active Set, `listenCount`, `finishCount`). Not committed.

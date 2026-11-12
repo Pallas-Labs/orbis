@@ -312,6 +312,16 @@ try {
       }
       await route.continue();
     });
+    // A dropped request: the first completion the player sends gets no answer.
+    let droppedCompletions = 0;
+    await page.route("**/queue/completion", async (route) => {
+      if (droppedCompletions === 0) {
+        droppedCompletions += 1;
+        await route.abort("failed");
+        return;
+      }
+      await route.continue();
+    });
     await page.evaluate(() => {
       const element = document.querySelector("audio");
       if (element) {
@@ -320,13 +330,17 @@ try {
       }
     });
     await audio.getByText("Second set").waitFor({ timeout: 15_000 });
+    assert.equal(droppedCompletions, 1);
+    await page.unroute("**/queue/completion");
     await waitUntil(async () => {
       const state = await audioState();
       return state?.src.includes(`/sets/${sets["Second set"]}/audio`);
     }, "the next Set did not start");
     const { queue: after } = await api("GET", "/queue");
     assert.equal(after.activeSetId, sets["Second set"]);
-    step("when a Set ends, the next one in the queue plays");
+    step(
+      "when a Set ends, the next one in the queue plays, though the first completion was dropped"
+    );
 
     assert.ok(
       lateSaves.length > 0,
