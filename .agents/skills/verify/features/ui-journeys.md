@@ -1,6 +1,6 @@
 # Apple UI journeys
 
-The XCUITest journeys drive the real Orbis app on a leased simulator against a temporary service and export screenshots. They do not gate `verify` yet (factory v2 spec §4.5, "later"); run them when a change alters the Apple UI.
+The XCUITest journeys drive the real Orbis app on a leased simulator against a temporary service and export screenshots. They do not gate `verify` yet (factory v2 spec §4.5, "later"); run the classes `factory journeys` names from `simulator-scope.json`, and none when it says `No simulator needed`. Simulators are `iPhone 17 Pro` or `iPhone Duo`, never an iPad (PAL-2063).
 
 ## Sub-features
 

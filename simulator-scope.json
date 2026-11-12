@@ -1,0 +1,171 @@
+{
+  "ignore": [
+    "**/*.md",
+    "docs/**",
+    "apps/apple/Orbis/BulkImport*.swift",
+    "apps/apple/Orbis/CarPlay*.swift",
+    "apps/apple/Orbis/Orbis-macOS.entitlements",
+    "apps/apple/OrbisShare/**"
+  ],
+  "rules": [
+    {
+      "paths": ["apps/apple/OrbisUITests/*UITests.swift"],
+      "platform": "ios",
+      "tests": ["OrbisUITests/{stem}"]
+    },
+    {
+      "paths": ["apps/apple/OrbisUITests/LaneService.swift"],
+      "platform": "ios",
+      "tests": ["OrbisUITests"]
+    },
+    {
+      "paths": ["apps/apple/OrbisUITests/LaneService.swift"],
+      "platform": "tvos",
+      "tests": ["OrbisTVUITests"]
+    },
+    {
+      "paths": ["apps/apple/OrbisUITests/*Journey.swift"],
+      "platform": "ios",
+      "tests": ["OrbisUITests"]
+    },
+    {
+      "paths": [
+        "apps/apple/OrbisTVUITests/**",
+        "apps/apple/Orbis/TV/**",
+        "apps/apple/Orbis/Orbis-tvOS.entitlements"
+      ],
+      "platform": "tvos",
+      "tests": ["OrbisTVUITests"]
+    },
+    {
+      "paths": [
+        "apps/apple/Orbis/AudioPlayer.swift",
+        "apps/apple/Orbis/AVPlayerEngine.swift",
+        "apps/apple/Orbis/MusicKitEngine.swift",
+        "apps/apple/Orbis/PlaybackEngine.swift",
+        "apps/apple/Orbis/Transport.swift",
+        "apps/apple/Orbis/PositionReporting.swift",
+        "apps/apple/Orbis/NowPlaying*.swift",
+        "apps/apple/Orbis/QueueScreen.swift",
+        "apps/apple/Orbis/ZoomTransition.swift"
+      ],
+      "platform": "ios",
+      "tests": [
+        "OrbisUITests/PlaybackUITests",
+        "OrbisUITests/PlaybackRecoveryUITests",
+        "OrbisUITests/LayoutUITests"
+      ]
+    },
+    {
+      "paths": [
+        "apps/apple/Orbis/PlaybackDiagnostics*.swift",
+        "apps/apple/Orbis/OrbisClient+PlaybackDiagnostics.swift"
+      ],
+      "platform": "ios",
+      "tests": ["OrbisUITests/PlaybackReportUITests"]
+    },
+    {
+      "paths": ["apps/apple/Orbis/AppleMusic*.swift"],
+      "platform": "ios",
+      "tests": [
+        "OrbisUITests/AppleMusicUITests",
+        "OrbisUITests/AppleMusicSearchUITests"
+      ]
+    },
+    {
+      "paths": ["apps/apple/Orbis/Approval*.swift"],
+      "platform": "ios",
+      "tests": ["OrbisUITests/ApprovalUITests"]
+    },
+    {
+      "paths": ["apps/apple/Orbis/HeavyRotation*.swift"],
+      "platform": "ios",
+      "tests": ["OrbisUITests/HeavyRotationUITests"]
+    },
+    {
+      "paths": [
+        "apps/apple/Orbis/OrbisLink.swift",
+        "apps/apple/Orbis/ShareCapture.swift",
+        "apps/apple/Orbis/OrbisSharedIdentity.swift"
+      ],
+      "platform": "ios",
+      "tests": ["OrbisUITests/OrbisLinkUITests"]
+    },
+    {
+      "paths": ["apps/apple/Orbis/People*.swift"],
+      "platform": "ios",
+      "tests": ["OrbisUITests/PeopleUITests"]
+    },
+    {
+      "paths": [
+        "apps/apple/Orbis/PlaylistImport*.swift",
+        "apps/apple/Orbis/PlaylistLink.swift"
+      ],
+      "platform": "ios",
+      "tests": ["OrbisUITests/PlaylistImportUITests"]
+    },
+    {
+      "paths": [
+        "apps/apple/Orbis/PlaylistChoices.swift",
+        "apps/apple/Orbis/AddToPlaylistSheet.swift"
+      ],
+      "platform": "ios",
+      "tests": ["OrbisUITests/PlaylistMembershipUITests"]
+    },
+    {
+      "paths": ["apps/apple/Orbis/PlaylistViews.swift"],
+      "platform": "ios",
+      "tests": [
+        "OrbisUITests/PlaylistEditingUITests",
+        "OrbisUITests/PlaylistMembershipUITests"
+      ]
+    },
+    {
+      "paths": [
+        "apps/apple/Orbis/SetDetailScreen.swift",
+        "apps/apple/Orbis/SetPresentation.swift",
+        "apps/apple/Orbis/SetManagementSection.swift"
+      ],
+      "platform": "ios",
+      "tests": ["OrbisUITests/SetPageUITests"]
+    },
+    {
+      "paths": ["apps/apple/Orbis/FilingSheet.swift"],
+      "platform": "ios",
+      "tests": ["OrbisUITests/TagsUITests"]
+    },
+    {
+      "paths": [
+        "apps/apple/Orbis/SignInView.swift",
+        "apps/apple/Orbis/OrbisSession.swift",
+        "apps/apple/Orbis/Splash.swift"
+      ],
+      "platform": "ios",
+      "tests": ["OrbisUITests/SignInUITests"]
+    },
+    {
+      "paths": [
+        "apps/apple/Orbis/LibraryView.swift",
+        "apps/apple/Orbis/GroupLibrary.swift"
+      ],
+      "platform": "ios",
+      "tests": [
+        "OrbisUITests/SearchUITests",
+        "OrbisUITests/FilterUITests",
+        "OrbisUITests/LayoutUITests"
+      ]
+    },
+    {
+      "fallback": true,
+      "paths": ["apps/apple/OrbisTests/**"],
+      "platform": "ios",
+      "tests": ["OrbisTests"]
+    },
+    {
+      "fallback": true,
+      "paths": ["apps/apple/**", "flags.json"],
+      "platform": "ios",
+      "tests": ["OrbisUITests"]
+    }
+  ]
+}
