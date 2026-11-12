@@ -6,9 +6,9 @@
       "issue": "PAL-2060",
       "owner": "Parth",
       "purpose": "The iPhone Set page with full-bleed artwork, controls in thumb reach, and More from the creator.",
-      "state": "off",
-      "onAt": null,
-      "removeBy": null
+      "state": "on",
+      "onAt": "2026-11-12",
+      "removeBy": "2026-11-19"
     }
   ],
   "retired": []

@@ -13,7 +13,7 @@ export const anonymous: FlagViewer = { internal: false };
 
 /** Each flag's declared state on this commit: the compiled default. */
 export const declared: Readonly<Record<FlagKey, FlagState>> = {
-  "set-page-v2": "off",
+  "set-page-v2": "on",
 };
 
 export const evaluate = (state: FlagState, viewer: FlagViewer): boolean =>

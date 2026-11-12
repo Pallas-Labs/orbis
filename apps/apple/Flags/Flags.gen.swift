@@ -35,7 +35,7 @@ public enum Flag: CaseIterable, Sendable {
     /// The declared state on this commit: the compiled default.
     public var declared: FlagState {
         switch self {
-        case .setPageV2: .off
+        case .setPageV2: .on
         }
     }
 }
