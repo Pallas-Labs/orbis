@@ -349,6 +349,26 @@ try {
       }
     );
 
+    // The Second set plays from its start. Playing another Set removes its `<audio>` element
+    // with no pause, so the place it had reached is saved when the other Set starts.
+    await waitUntil(async () => {
+      const state = await audioState();
+      return state !== null && !state.paused && state.currentTime >= 3;
+    }, "the Second set did not play for 3 s");
+    await page.getByRole("link", { exact: true, name: "Library" }).click();
+    await page.getByRole("button", { name: "Actions for First set" }).click();
+    await page.getByRole("menuitem", { exact: true, name: "Play" }).click();
+    await waitUntil(async () => {
+      const state = await audioState();
+      return state?.src.includes(`/sets/${sets["First set"]}/audio`);
+    }, "the First set did not start again");
+    await waitUntil(async () => {
+      const { sets: library } = await api("GET", "/sets");
+      const second = library.find((set) => set.id === sets["Second set"]);
+      return second.playbackPositionSeconds >= 3;
+    }, "playing another Set did not save the place of the Set that was playing");
+    step("playing another Set saves the place of the Set that was playing");
+
     assert.deepEqual(violations, []);
     step("no Content Security Policy violations");
   } finally {

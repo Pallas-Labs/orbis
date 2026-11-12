@@ -133,7 +133,7 @@ Fix: position saves and the completion go out one at a time, in the order the pl
 
 How likely it was without the 1.5 s hold: the late save must be slower than the two requests after it by more than one round trip. Rare on a good network; the result when it happens is a Set that skips itself.
 
-Not changed: the web player saves no place when another Set starts (the old `<audio>` element is removed with no `pause` event), so a Set left that way resumes up to 15 s early. Rune saves there. See finding 7.
+Found while here and fixed next: finding 15.
 
 ### 11. `docs/development.md` asks for Node.js 24; Vanta runs 22.23.2 — left
 
@@ -171,6 +171,14 @@ Left: a details read lost to a restart (`details_state` pending with nothing rea
 ### 14. A release that cannot delete its files leaves them on disk for good — left
 
 Seen in the test for finding 2. `releaseAudio` commits the release in the database (`download_state` none, jobs and Cues deleted) and then removes the files. When the removal fails, the request answers 500, and nothing tries again: the Set no longer counts as holding audio. Cost: disk on the audio node. A node inventory sweep that deletes files no Set claims would cover it; not built here.
+
+### 15. Web: playing another Set lost the place of the Set that was playing — fixed
+
+The web player saves a place every 15 s, on pause and on seek. Playing another Set removes the `<audio>` element of the one playing with no `pause` event, so that Set kept its last periodic save: it resumed up to 15 s early, and the seconds since that save earned no Listening Time. Rune saves at this point ("when another Set starts").
+
+Evidence: the `live-queue` journey plays the Second set for 3 s and then plays the First set from the Library. Before the fix the step failed with `playing another Set did not save the place of the Set that was playing` (the saved place was 0). After, it passes.
+
+Fix: `activate` in `player.tsx` saves the place of the Set that is playing before another Set takes the player. The save goes through the same ordered queue as finding 10.
 
 ## Rejected
 

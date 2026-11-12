@@ -225,6 +225,19 @@ export const PlayerProvider = ({
       setPlaying(null);
       return played;
     }
+    // Another Set takes the player, and the `<audio>` element of the one playing goes with no
+    // pause event. Its place is saved here, or it would resume up to 15 s early.
+    const audio = audioRef.current;
+    if (
+      playing !== null &&
+      playing.set.id !== active.id &&
+      audio !== null &&
+      !audio.paused
+    ) {
+      const { id } = playing.set;
+      const seconds = audio.currentTime;
+      void write(async () => await reportPosition(credentials, id, seconds));
+    }
     return await start(active, (playing?.attempt ?? 0) + 1, startAt, intent);
   };
 
