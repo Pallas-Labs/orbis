@@ -721,13 +721,13 @@ test("a sign-in route refuses a large body before it reads all of it", async () 
   );
   const send = async (body: BodyInit) => {
     const response = await app.handler(
-      new Request("http://vanta.example.ts.net/sign-in/code", {
+      new Request("http://orbis.example.test/sign-in/code", {
         body,
         headers: { "content-type": "application/json" },
         method: "POST",
       }),
       "device",
-      "100.64.0.9"
+      "192.0.2.9"
     );
     return response.status;
   };
