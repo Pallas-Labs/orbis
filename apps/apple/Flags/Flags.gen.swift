@@ -23,13 +23,20 @@ public func evaluateFlag(_ state: FlagState, _ viewer: FlagViewer) -> Bool {
 
 /// One case per declared flag. An undeclared flag does not compile.
 public enum Flag: CaseIterable, Sendable {
+    /// The iPhone Set page with full-bleed artwork, controls in thumb reach, and More from the creator. (PAL-2060, release).
+    case setPageV2
+
     public var key: String {
-        switch self {}
+        switch self {
+        case .setPageV2: "set-page-v2"
+        }
     }
 
     /// The declared state on this commit: the compiled default.
     public var declared: FlagState {
-        switch self {}
+        switch self {
+        case .setPageV2: .off
+        }
     }
 }
 
@@ -52,5 +59,9 @@ public struct FlagClient: Sendable {
 
     public init(provider: any FlagProvider = DeclaredFlagProvider()) {
         self.provider = provider
+    }
+
+    public func getBooleanValue(_ flag: Flag, viewer: FlagViewer = .anonymous) -> Bool {
+        evaluateFlag(provider.state(forKey: flag.key) ?? flag.declared, viewer)
     }
 }

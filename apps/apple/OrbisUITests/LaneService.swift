@@ -53,6 +53,8 @@ struct LaneService {
     let tags: [String]
     let playbackPositionSeconds: Int
     let finishCount: Int
+    let creator: String?
+    let tracklistState: String?
   }
 
   struct AudioState: Codable {
@@ -93,8 +95,8 @@ struct LaneService {
     try send("POST", "sets", ["title": title, "url": url, "tags": tags])
   }
 
-  func saveReadySet(title: String, url: String) throws -> Set {
-    let saved = try saveSet(title: title, url: url)
+  func saveReadySet(title: String, url: String, tags: [String] = []) throws -> Set {
+    let saved = try saveSet(title: title, url: url, tags: tags)
     try seed("ready-audio/\(saved.id)")
     return saved
   }
@@ -216,6 +218,19 @@ struct LaneService {
 
   func set(id: String) throws -> Set? {
     try library().first { $0.id == id }
+  }
+
+  /// Waits until the service has named the Set's creator and settled its first Tracklist read,
+  /// so a seeded Tracklist is not overwritten by that read. Answers the Set as it then reads.
+  func settled(_ id: String) throws -> Set? {
+    let deadline = Date().addingTimeInterval(20)
+    repeat {
+      if let set = try set(id: id), set.creator != nil, set.tracklistState != "pending" {
+        return set
+      }
+      usleep(200_000)
+    } while Date() < deadline
+    return try set(id: id)
   }
 
   func position(of id: String, becomesAtLeast minimum: Int) throws -> Int {
