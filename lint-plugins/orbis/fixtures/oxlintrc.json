@@ -6,6 +6,7 @@
     "orbis/fetch-needs-timeout": "error",
     "orbis/no-flag-read-by-string": "error",
     "orbis/no-module-level-mutable-state": "error",
-    "orbis/no-shared-pending-cache": "error"
+    "orbis/no-shared-pending-cache": "error",
+    "orbis/stylex-tokens": "error"
   }
 }

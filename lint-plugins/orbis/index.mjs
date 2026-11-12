@@ -8,6 +8,8 @@
 // - directive-needs-reason: every lint or Effect diagnostic override names its rule and a `-- reason`.
 // - no-flag-read-by-string: code reads a feature flag through its generated accessor in
 //   `flags.gen.ts`, never by key through `getBooleanValue` (factory v2 flags, PAL-1852).
+// - stylex-tokens: a StyleX style takes colours, lengths, type, radii, shadows, layers and timing
+//   from the design tokens, never a raw value (PAL-2190).
 //
 // A site that the rule cannot see is bounded takes `// oxlint-disable-next-line orbis/<rule> -- <reason>`.
 // The rules read syntax only; `scripts/fence.test.mjs` runs real Oxlint on `lint-plugins/orbis/fixtures`.
@@ -562,6 +564,279 @@ const noFlagReadByString = {
   },
 };
 
+// --- stylex-tokens --------------------------------------------------------------------------
+
+// A StyleX style takes its colours, lengths, type, radii, shadows, layers and timing from the
+// design tokens (`tokens.stylex.ts`), so a theme changes every use and a wrong value is a wrong
+// name, which TypeScript refuses. A literal of that kind inside `stylex.create` is reported;
+// keywords such as `auto`, `100%` and `transparent`, and template literals built on a token, pass.
+const tokenKinds = {
+  color: new Set([
+    "accentColor",
+    "backgroundColor",
+    "borderBlockColor",
+    "borderBottomColor",
+    "borderColor",
+    "borderInlineColor",
+    "borderInlineEndColor",
+    "borderInlineStartColor",
+    "borderLeftColor",
+    "borderRightColor",
+    "borderTopColor",
+    "caretColor",
+    "color",
+    "fill",
+    "outlineColor",
+    "stroke",
+    "textDecorationColor",
+  ]),
+  font: new Set([
+    "fontFamily",
+    "fontSize",
+    "fontWeight",
+    "letterSpacing",
+    "lineHeight",
+  ]),
+  layer: new Set(["zIndex"]),
+  length: new Set([
+    "blockSize",
+    "borderBlockEndWidth",
+    "borderBlockStartWidth",
+    "borderBlockWidth",
+    "borderBottomWidth",
+    "borderInlineEndWidth",
+    "borderInlineStartWidth",
+    "borderInlineWidth",
+    "borderLeftWidth",
+    "borderRightWidth",
+    "borderTopWidth",
+    "borderWidth",
+    "bottom",
+    "columnGap",
+    "flexBasis",
+    "gap",
+    "height",
+    "inlineSize",
+    "inset",
+    "insetBlock",
+    "insetBlockEnd",
+    "insetBlockStart",
+    "insetInline",
+    "insetInlineEnd",
+    "insetInlineStart",
+    "left",
+    "margin",
+    "marginBlock",
+    "marginBlockEnd",
+    "marginBlockStart",
+    "marginBottom",
+    "marginInline",
+    "marginInlineEnd",
+    "marginInlineStart",
+    "marginLeft",
+    "marginRight",
+    "marginTop",
+    "maxBlockSize",
+    "maxHeight",
+    "maxInlineSize",
+    "maxWidth",
+    "minBlockSize",
+    "minHeight",
+    "minInlineSize",
+    "minWidth",
+    "outlineOffset",
+    "outlineWidth",
+    "padding",
+    "paddingBlock",
+    "paddingBlockEnd",
+    "paddingBlockStart",
+    "paddingBottom",
+    "paddingInline",
+    "paddingInlineEnd",
+    "paddingInlineStart",
+    "paddingLeft",
+    "paddingRight",
+    "paddingTop",
+    "right",
+    "rowGap",
+    "top",
+    "width",
+  ]),
+  radius: new Set([
+    "borderBottomLeftRadius",
+    "borderBottomRightRadius",
+    "borderEndEndRadius",
+    "borderEndStartRadius",
+    "borderRadius",
+    "borderStartEndRadius",
+    "borderStartStartRadius",
+    "borderTopLeftRadius",
+    "borderTopRightRadius",
+  ]),
+  shadow: new Set(["boxShadow"]),
+  timing: new Set([
+    "animationDelay",
+    "animationDuration",
+    "animationTimingFunction",
+    "transitionDelay",
+    "transitionDuration",
+    "transitionTimingFunction",
+  ]),
+};
+const kinds = new Map(
+  Object.entries(tokenKinds).flatMap(([kind, keys]) =>
+    [...keys].map((key) => [key, kind])
+  )
+);
+const kindOf = (key) => kinds.get(key);
+
+// Values no token stands for: keywords, percentages, viewport units, a zero, and a variable that
+// Base UI sets at run time. Any other `var()` would let a raw value skip its token.
+const keyword =
+  /^(?:var\(--(?:anchor-width|available-height|transform-origin)\)|-?0(?:px|s|ms)?|-?\d+(?:\.\d+)?(?:%|vw|vh|svh|dvh|lvh)|auto|none|normal|inherit|initial|unset|revert|transparent|currentcolor|canvas|canvastext|fit-content|min-content|max-content|stretch|ease|linear|ease-in|ease-out|ease-in-out)$/iu;
+// A raw colour or rem length inside a template literal that also uses a token.
+const rawInTemplate =
+  /#[\da-f]{3,8}\b|\b(?:oklch|oklab|rgba?|hsla?|lab|lch|hwb)\(|\d(?:\.\d+)?rem\b/iu;
+
+const isStylexCreate = (node, context) => {
+  const callee = unwrap(node.callee);
+  // `stylex.create` through any name for the namespace, or `create` imported by name.
+  const binding =
+    callee.type === "MemberExpression"
+      ? propertyName(callee) === "create" &&
+        callee.object.type === "Identifier" &&
+        callee.object.name
+      : callee.type === "Identifier" && callee.name === "create" && callee.name;
+  if (!binding) {
+    return false;
+  }
+  const variable = variableOf(binding, context.sourceCode.getScope(node));
+  const definition = variable?.defs[0];
+  return (
+    definition?.type === "ImportBinding" &&
+    definition.parent.source.value === "@stylexjs/stylex"
+  );
+};
+
+const keyName = (property) => {
+  if (property.computed) {
+    return null;
+  }
+  if (property.key.type === "Identifier") {
+    return property.key.name;
+  }
+  return property.key.type === "Literal" ? String(property.key.value) : null;
+};
+
+const stylexTokens = {
+  create(context) {
+    const checkValue = (kind, node) => {
+      const value = unwrap(node);
+      if (value.type === "ObjectExpression") {
+        // `{ default: ..., ":hover": ... }` conditions.
+        for (const property of value.properties) {
+          if (property.type === "Property") {
+            checkValue(kind, property.value);
+          }
+        }
+        return;
+      }
+      if (value.type === "ConditionalExpression") {
+        checkValue(kind, value.consequent);
+        checkValue(kind, value.alternate);
+        return;
+      }
+      if (value.type === "Literal") {
+        if (value.value === null) {
+          return;
+        }
+        const text = String(value.value).trim();
+        if (
+          (kind === "layer" && /^-?[01]$/u.test(text)) ||
+          keyword.test(text)
+        ) {
+          return;
+        }
+        context.report({ data: { kind, text }, messageId: "raw", node: value });
+        return;
+      }
+      if (value.type === "TemplateLiteral") {
+        const text = value.quasis.map((quasi) => quasi.value.cooked).join("…");
+        if (value.expressions.length === 0) {
+          if (!keyword.test(text.trim())) {
+            context.report({
+              data: { kind, text },
+              messageId: "raw",
+              node: value,
+            });
+          }
+          return;
+        }
+        if (rawInTemplate.test(text)) {
+          context.report({
+            data: { kind, text },
+            messageId: "raw",
+            node: value,
+          });
+        }
+      }
+    };
+    const checkStyle = (style) => {
+      const body = unwrap(style);
+      if (functionTypes.has(body.type)) {
+        // A dynamic style: `(x) => ({ ... })`.
+        checkStyle(body.body);
+        return;
+      }
+      if (body.type !== "ObjectExpression") {
+        return;
+      }
+      for (const property of body.properties) {
+        if (property.type !== "Property") {
+          continue;
+        }
+        const key = keyName(property);
+        const kind = key === null ? undefined : kindOf(key);
+        if (kind !== undefined) {
+          checkValue(kind, property.value);
+        } else if (key?.startsWith(":") || key?.startsWith("@")) {
+          // A legacy nested condition holds a whole style.
+          checkStyle(property.value);
+        }
+      }
+    };
+    return {
+      CallExpression(node) {
+        const styles =
+          node.arguments[0] === undefined
+            ? undefined
+            : unwrap(node.arguments[0]);
+        if (
+          styles?.type !== "ObjectExpression" ||
+          !isStylexCreate(node, context)
+        ) {
+          return;
+        }
+        for (const namespace of styles.properties) {
+          if (namespace.type === "Property") {
+            checkStyle(namespace.value);
+          }
+        }
+      },
+    };
+  },
+  meta: {
+    docs: {
+      description:
+        "A StyleX style reads colours, lengths, type, radii, shadows, layers and timing from the design tokens.",
+    },
+    messages: {
+      raw: "`{{text}}` is a raw {{kind}} value. Use a token from src/styles/tokens.stylex.ts, or add one there.",
+    },
+    type: "problem",
+  },
+};
+
 export default {
   meta: { name: "orbis" },
   rules: {
@@ -571,5 +846,6 @@ export default {
     "no-flag-read-by-string": noFlagReadByString,
     "no-module-level-mutable-state": noModuleLevelMutableState,
     "no-shared-pending-cache": noSharedPendingCache,
+    "stylex-tokens": stylexTokens,
   },
 };

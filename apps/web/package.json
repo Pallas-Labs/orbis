@@ -15,6 +15,7 @@
     "@base-ui/react": "1.8.0",
     "@orbis/contracts": "workspace:*",
     "@phosphor-icons/react": "2.1.10",
+    "@stylexjs/stylex": "0.19.1",
     "@tanstack/react-router": "1.170.41",
     "@tanstack/react-start": "1.168.60",
     "ai": "^7.0.116",
@@ -32,6 +33,7 @@
     "@effect/platform-bun": "4.1.2",
     "@effect/platform-node": "4.1.2",
     "@fontsource-variable/inter": "5.3.0",
+    "@stylexjs/unplugin": "0.19.1",
     "@tailwindcss/vite": "4.3.3",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
@@ -39,6 +41,7 @@
     "alchemy": "2.0.0-beta.85",
     "effect": "4.1.2",
     "tailwindcss": "4.3.3",
+    "unplugin": "2.3.11",
     "vite": "8.3.1"
   }
 }

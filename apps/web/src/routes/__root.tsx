@@ -1,8 +1,11 @@
+import * as stylex from "@stylexjs/stylex";
 import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import type { ReactNode } from "react";
 
 import { apiUrl } from "@/lib/api-url";
+import { schemes } from "@/styles/theme";
+import type { ColorScheme } from "@/styles/theme";
 
 import interLatin from "../fonts/inter-latin.woff2?url";
 
@@ -17,8 +20,12 @@ const loadApiUrl = async (): Promise<string> => {
   return knownApiUrl;
 };
 
+// Every page draws light, as before StyleX: nothing let a Person choose dark, though Tailwind
+// shipped its colours. The dark theme ships too, ready for a switch.
+const scheme: ColorScheme = "light";
+
 const RootDocument = ({ children }: { readonly children: ReactNode }) => (
-  <html lang="en">
+  <html lang="en" {...stylex.props(schemes[scheme])}>
     <head>
       <HeadContent />
     </head>
@@ -43,12 +50,22 @@ export const Route = createRootRoute({
         type: "font/woff2",
       },
       { href: appCss, rel: "stylesheet" },
+      // In development StyleX serves its CSS from a virtual module; a build appends it to appCss.
+      ...(import.meta.env.DEV
+        ? [{ href: "/virtual:stylex.css", rel: "stylesheet" }]
+        : []),
     ],
     meta: [
       { charSet: "utf-8" },
       { content: "width=device-width, initial-scale=1", name: "viewport" },
       { title: "Orbis" },
     ],
+    // StyleX compiles a module's styles when Vite first serves it, after the page has fetched
+    // its CSS. Its runtime fetches the CSS again each time a module compiles. Vite injects it
+    // only into an index.html, which TanStack Start does not have.
+    scripts: import.meta.env.DEV
+      ? [{ src: "/@id/virtual:stylex:runtime", type: "module" }]
+      : [],
   }),
   notFoundComponent: () => (
     <main className="mx-auto max-w-md p-6 pt-16">
