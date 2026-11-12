@@ -1,0 +1,19 @@
+# Errors StyleX's types and lint caught during the port (Tailwind would have let them through)
+
+1. TS2322 `routes/_app/people/index.tsx:97`: `<Switch size="sm">`. The ported Switch had only the default size. With Tailwind, `data-[size=sm]:h-4` classes would have stayed in the string; dropping the size from the component would have left a full-size switch with no error.
+2. TS2305 `buttonVariants` gone from 5 routes: a Link styled as a button now takes `buttonLook()`, a typed style array, not a class string.
+3. TS2322 x17 `className` passed to a UI component (Card, CardContent, CardDescription, Button, InputOTPGroup, AudioPlayer): the components take only `xstyle` with the properties each one allows.
+4. Babel parse error (build): duplicate `ComponentProps` import after a scripted edit in `audio-player.tsx`.
+5. TS2344 x6: `StyleXStyles<{ width?: unknown }>` is not a valid override type; StyleX wants CSS value types. Replaced by `Overrides<"width">` picked from StyleX's `CSSProperties`.
+6. `@stylexjs/no-unused` autofix (`oxlint --fix`) deleted `cardSize.narrow` in `card.tsx`, a style three routes use, because the style object was exported from an `export { ... }` list at the end of the file. The typecheck then failed in `sign-in.tsx`, `join.tsx` and `pair.tsx` (`no-unsafe-assignment` of an error type). Lesson: export a shared style with `export const`, and read every `--fix` diff.
+7. `@stylexjs/sort-keys` and the repo's `eslint/sort-keys` demand different key orders for the same object, so both cannot be on: 131 + 14 conflicting reports on the first run.
+8. A live Tailwind bug the port exposed (seen in the screenshot diff): `buttonVariants({ variant: "outline" })` on a `<Link>` (People "Open bob's Library", Person "Back to People", Pair "Cancel") produced both `border-transparent` and `border-border`. `<Button>` ran the classes through `tailwind-merge`, the links did not, so the stylesheet order picked `border-transparent` and these links drew no outline: a white pill on a white card. Nothing reported it. In StyleX the later style in `stylex.props(...)` always wins, so the outline variant's border shows, as the code says.
+
+## Traps StyleX set (not caught)
+
+- T1. `radii.inherit` held the keyword `inherit` in a `defineVars` token. A custom property set to `inherit` inherits the parent's custom property, so `border-radius: var(--x)` became `0px` and the frosted menu layer lost its rounded corners. Neither tsc nor the StyleX lint rules flag it; the screenshot diff did (library-menu, 90–147 px at the corners). Fix: write CSS-wide keywords literally.
+- T2. Dev mode drew unstyled pages. StyleX compiles a module's styles when Vite first serves it, after the page has fetched `/virtual:stylex.css`, and the plugin injects its refresh runtime only into an `index.html`, which TanStack Start does not have. Fix: the root route loads `/@id/virtual:stylex:runtime` in dev. A build was never affected.
+- T3. Tailwind 4 puts every `hover:` inside `@media (hover: hover)`; a plain StyleX `":hover"` does not, so a tapped button on a phone keeps its hover colour. Screenshots cannot show it. Fix: nest the value, `":hover": { "@media (hover: hover)": X, default: null }`, and `orbis/stylex-tokens` now rejects a bare `:hover`.
+- T4. The shadcn base rule `* { border-color: var(--border); outline-color: ring/50 }` has no StyleX form (StyleX cannot style every element, and plain CSS cannot name a hashed StyleX variable). Every border in the port sets its colour; links with no focus style needed `layout.focusOutline` to keep the soft focus outline.
+- T5. `@stylexjs/valid-shorthands` rejects `flex: "1 1 0%"` (a multi-value shorthand), so `flex-1` is three longhands. Caught by lint, not a Tailwind bug.
+- T6. Two journeys found elements by Tailwind class (`p.text-muted-foreground`, `.sr-only`). StyleX class names are hashes, so they now match by text.

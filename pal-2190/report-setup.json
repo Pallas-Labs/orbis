@@ -1,0 +1,562 @@
+{
+  "sign-in/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "sign-in/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "sign-in/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "sign-in/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "join/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "join/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "join/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "join/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "not-found/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "not-found/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "not-found/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "not-found/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "pair-signed-out/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "pair-signed-out/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "pair-signed-out/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "pair-signed-out/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "pair-unknown/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "pair-unknown/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "pair-unknown/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "pair-unknown/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library-menu/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library-menu/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library-menu/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library-menu/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library-dialog/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library-dialog/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library-dialog/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library-dialog/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library-alert/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library-alert/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library-alert/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library-alert/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library-empty/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library-empty/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "library-empty/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "library-empty/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "set/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "set/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "set/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "set/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "set-waiting/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "set-waiting/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "set-waiting/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "set-waiting/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "playlists/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "playlists/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "playlists/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "playlists/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "playlist/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "playlist/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "playlist/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "playlist/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "people/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "people/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "people/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "people/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "person/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "person/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "person/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "person/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "devices/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "devices/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "devices/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "devices/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "admin/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "admin/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "admin/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "admin/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "queue/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "queue/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "queue/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "queue/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "player/phone-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "player/phone-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  },
+  "player/desktop-light": {
+    "setup": {
+      "differing": 0,
+      "themes": []
+    }
+  },
+  "player/desktop-dark": {
+    "setup": {
+      "differing": 0,
+      "themes": [
+        "xzc0jeu"
+      ]
+    }
+  }
+}
