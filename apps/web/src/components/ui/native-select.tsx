@@ -1,64 +1,68 @@
 import { CaretDownIcon } from "@phosphor-icons/react";
-import { cn } from "cn";
-import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
+import type { ComponentProps } from "react";
 
-type NativeSelectProps = Omit<React.ComponentProps<"select">, "size"> & {
-  size?: "sm" | "default";
-};
+import { Icon } from "@/components/ui/icon";
+import { field } from "@/components/ui/input";
+import { colors, radii, space, text } from "@/styles/tokens.stylex";
 
-function NativeSelect({
-  className,
-  size = "default",
-  ...props
-}: NativeSelectProps) {
-  return (
-    <div
-      className={cn(
-        "group/native-select relative w-fit has-[select:disabled]:opacity-50",
-        className
-      )}
-      data-slot="native-select-wrapper"
-      data-size={size}
-    >
-      <select
-        data-slot="native-select"
-        data-size={size}
-        className="bg-input/50 selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 h-9 w-full min-w-0 appearance-none rounded-3xl border border-transparent py-1 pr-8 pl-3 text-sm transition-[color,box-shadow,background-color] outline-none select-none focus-visible:ring-3 disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:ring-3 data-[size=sm]:h-8"
-        {...props}
-      />
-      <CaretDownIcon
-        className="text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 select-none"
-        aria-hidden="true"
-        data-slot="native-select-icon"
-      />
-    </div>
-  );
-}
+const styles = stylex.create({
+  caret: {
+    color: colors.mutedForeground,
+    insetBlockStart: "50%",
+    insetInlineEnd: space[2.5],
+    position: "absolute",
+    translate: "0 -50%",
+    userSelect: "none",
+  },
+  option: { backgroundColor: colors.canvas, color: colors.canvasText },
+  select: {
+    "::selection": {
+      backgroundColor: colors.primary,
+      color: colors.primaryForeground,
+    },
+    appearance: "none",
+    borderRadius: radii.xl3,
+    fontSize: text.sm,
+    height: space[9],
+    lineHeight: text.smLeading,
+    paddingBlock: space[1],
+    paddingInlineEnd: space[8],
+    paddingInlineStart: space[3],
+    userSelect: "none",
+  },
+  wrapper: {
+    opacity: { ":has(select:disabled)": 0.5, default: null },
+    position: "relative",
+    width: "fit-content",
+  },
+});
 
-function NativeSelectOption({
-  className,
-  ...props
-}: React.ComponentProps<"option">) {
-  return (
-    <option
-      data-slot="native-select-option"
-      className={cn("bg-[Canvas] text-[CanvasText]", className)}
+const NativeSelect = (
+  props: Omit<ComponentProps<"select">, "className" | "size" | "style">
+) => (
+  <div data-slot="native-select-wrapper" {...stylex.props(styles.wrapper)}>
+    <select
+      data-slot="native-select"
       {...props}
+      {...stylex.props(field.base, styles.select)}
     />
-  );
-}
-
-function NativeSelectOptGroup({
-  className,
-  ...props
-}: React.ComponentProps<"optgroup">) {
-  return (
-    <optgroup
-      data-slot="native-select-optgroup"
-      className={cn("bg-[Canvas] text-[CanvasText]", className)}
-      {...props}
+    <Icon
+      data-slot="native-select-icon"
+      glyph={CaretDownIcon}
+      xstyle={styles.caret}
     />
-  );
-}
+  </div>
+);
 
-export { NativeSelect, NativeSelectOptGroup, NativeSelectOption };
+const NativeSelectOption = (
+  props: Omit<ComponentProps<"option">, "className" | "style">
+) => (
+  <option
+    data-slot="native-select-option"
+    {...props}
+    {...stylex.props(styles.option)}
+  />
+);
+
+export { NativeSelect, NativeSelectOption };

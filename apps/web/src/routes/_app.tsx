@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
   Link,
   Outlet,
@@ -15,6 +16,46 @@ import { NAV_ITEMS } from "@/lib/nav";
 import { FAILURE_MESSAGES, fetchMe } from "@/lib/orbis";
 import type { Credentials, Person } from "@/lib/orbis";
 import { forgetKey, readKey } from "@/lib/stored-key";
+import { layout } from "@/styles/layout";
+import { colors, space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  account: {
+    alignItems: "center",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: space[3],
+    marginLeft: "auto",
+    minWidth: 0,
+  },
+  header: {
+    alignItems: "center",
+    borderBottomColor: colors.border,
+    borderBottomStyle: "solid",
+    borderBottomWidth: space.px,
+    columnGap: space[6],
+    display: "flex",
+    flexWrap: "wrap",
+    paddingBlock: space[3],
+    paddingInline: space[6],
+    rowGap: space[3],
+  },
+  nav: {
+    columnGap: space[4],
+    display: "flex",
+    flexWrap: "wrap",
+    order: { "@media (min-width: 40rem)": 0, default: 3 },
+    rowGap: space[2],
+    width: { "@media (min-width: 40rem)": "auto", default: "100%" },
+  },
+  shell: { display: "flex", flexDirection: "column", minHeight: "100svh" },
+});
+
+const activeNavProps = {
+  "aria-current": "page",
+  ...stylex.props(type.medium),
+} as const;
 
 /** The signed-in Person, and what every call from their pages carries. */
 export interface Session extends Credentials {
@@ -28,22 +69,19 @@ const AppShell = ({ session }: { readonly session: Session }) => {
     await navigate({ to: "/sign-in" });
   };
   return (
-    <div className="flex min-h-svh flex-col">
-      <header className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b px-6 py-3">
-        <Link className="font-medium" to="/">
+    <div {...stylex.props(styles.shell)}>
+      <header {...stylex.props(styles.header)}>
+        <Link {...stylex.props(type.medium, layout.focusOutline)} to="/">
           Orbis
         </Link>
-        <nav
-          aria-label="Main"
-          className="order-3 flex w-full flex-wrap gap-x-4 gap-y-2 text-sm sm:order-none sm:w-auto"
-        >
+        <nav aria-label="Main" {...stylex.props(styles.nav, type.sm)}>
           {NAV_ITEMS.filter(
             (item) => session.person.host || !item.hostOnly
           ).map((item) => (
             <Link
               activeOptions={{ exact: true }}
-              activeProps={{ "aria-current": "page", className: "font-medium" }}
-              className="text-muted-foreground"
+              activeProps={activeNavProps}
+              {...stylex.props(type.muted, layout.focusOutline)}
               key={item.to}
               to={item.to}
             >
@@ -51,8 +89,8 @@ const AppShell = ({ session }: { readonly session: Session }) => {
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 text-sm">
-          <span className="text-muted-foreground">
+        <div {...stylex.props(styles.account, type.sm)}>
+          <span {...stylex.props(type.muted)}>
             Signed in as {session.person.username}
           </span>
           <Button onClick={detach(signOut)} size="sm" variant="outline">

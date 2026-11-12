@@ -132,7 +132,7 @@ Every build reads the declared states, internal TestFlight included. A Debug bui
 | `format.swift-format` | the `native:format` command's diagnostics; macOS only, so Vanta reports it skipped |
 | `gate` | with `--with-gate`, the time and exit code of each `bun run check` task run alone with `--force` |
 
-The source probes read comments, code, and syntax by language, so prose, strings, and examples do not count. They skip `.audit`, `docs/plans`, `docs/audits`, `docs/research`, the shadcn components that `oxlint.config.ts` also ignores, and garden's default exclusions: dependencies, fixtures, generated files, and lock files. `scripts/garden-launcher.test.mjs` keeps the swift-format command and the gate steps equal to `native:format` and `check` in `package.json`.
+The source probes read comments, code, and syntax by language, so prose, strings, and examples do not count. They skip `.audit`, `docs/plans`, `docs/audits`, `docs/research`, and garden's default exclusions: dependencies, fixtures, generated files, and lock files. `scripts/garden-launcher.test.mjs` keeps the swift-format command and the gate steps equal to `native:format` and `check` in `package.json`.
 
 ## Verification lanes
 

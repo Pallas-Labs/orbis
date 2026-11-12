@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
   Link,
   createFileRoute,
@@ -10,6 +11,7 @@ import type { SubmitEvent } from "react";
 import { usePlayer } from "@/components/player/player";
 import { CollaborationCard } from "@/components/playlists/collaboration";
 import { Members } from "@/components/playlists/members";
+import { Problem } from "@/components/problem";
 import { RouteProblem } from "@/components/route-problem";
 import {
   AlertDialog,
@@ -59,6 +61,8 @@ import type {
   PlaylistDetail,
   VisiblePerson,
 } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
+import { type } from "@/styles/type";
 
 const RenameDialog = ({
   credentials,
@@ -99,11 +103,11 @@ const RenameDialog = ({
         Rename…
       </DialogTrigger>
       <DialogContent>
-        <form className="flex flex-col gap-4" onSubmit={detach(rename)}>
+        <form {...stylex.props(layout.stack4)} onSubmit={detach(rename)}>
           <DialogHeader>
             <DialogTitle>Rename {playlist.name}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-2">
+          <div {...stylex.props(layout.stack2)}>
             <Label htmlFor="rename-playlist">Playlist name</Label>
             <Input
               autoComplete="off"
@@ -113,11 +117,7 @@ const RenameDialog = ({
               name="name"
             />
           </div>
-          {problem === null ? null : (
-            <p className="text-destructive text-sm" role="alert">
-              {problem}
-            </p>
-          )}
+          <Problem message={problem} />
           <DialogFooter>
             <Button disabled={pending} type="submit">
               Save
@@ -163,11 +163,7 @@ const DeleteDialog = ({
             every Library.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {problem === null ? null : (
-          <p className="text-destructive text-sm" role="alert">
-            {problem}
-          </p>
-        )}
+        <Problem message={problem} />
         <AlertDialogFooter>
           <AlertDialogCancel>Keep</AlertDialogCancel>
           <AlertDialogAction
@@ -208,14 +204,17 @@ const PlaylistPage = ({
   const creator = playlist.role === "creator";
   const count = `${playlist.sets.length} ${playlist.sets.length === 1 ? "Set" : "Sets"}`;
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <Link className="text-muted-foreground text-sm" to="/playlists">
+    <main {...stylex.props(layout.stack6, layout.main)}>
+      <Link
+        {...stylex.props(type.muted, type.sm, layout.focusOutline)}
+        to="/playlists"
+      >
         ← Playlists
       </Link>
       <Card>
         <CardHeader>
           <CardTitle>
-            <h1 className="text-2xl">{playlist.name}</h1>
+            <h1 {...stylex.props(type.xl2)}>{playlist.name}</h1>
           </CardTitle>
           <CardDescription>
             {creator
@@ -223,13 +222,13 @@ const PlaylistPage = ({
               : `${count} · Shared by ${playlist.creator.username}. You can add, remove, and reorder Sets.`}
           </CardDescription>
           {creator ? (
-            <CardAction className="flex gap-2">
+            <CardAction xstyle={layout.row2}>
               <RenameDialog credentials={credentials} playlist={playlist} />
               <DeleteDialog credentials={credentials} playlist={playlist} />
             </CardAction>
           ) : null}
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent xstyle={layout.stack4}>
           <Button
             disabled={
               pending ||
@@ -239,11 +238,7 @@ const PlaylistPage = ({
           >
             Play Playlist
           </Button>
-          {problem === null ? null : (
-            <p className="text-destructive text-sm" role="alert">
-              {problem}
-            </p>
-          )}
+          <Problem message={problem} />
           <Members
             credentials={credentials}
             library={library}

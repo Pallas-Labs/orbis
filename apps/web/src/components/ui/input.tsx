@@ -1,19 +1,57 @@
 import { Input as InputPrimitive } from "@base-ui/react/input";
-import { cn } from "cn";
-import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
-  return (
-    <InputPrimitive
-      type={type}
-      data-slot="input"
-      className={cn(
-        "bg-input/50 file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 h-9 w-full min-w-0 rounded-3xl border border-transparent px-3 py-1 text-base transition-[color,box-shadow,background-color] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-3 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:ring-3 md:text-sm",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+import { colors, motion, radii, space, text } from "@/styles/tokens.stylex";
 
-export { Input };
+/** A text field's look, shared with the select and the code boxes. */
+const field = stylex.create({
+  base: {
+    backgroundColor: colors.fieldFill,
+    borderColor: {
+      ":focus-visible": colors.ring,
+      ":is([aria-invalid=true])": colors.invalidBorder,
+      default: "transparent",
+    },
+    borderStyle: "solid",
+    borderWidth: space.px,
+    boxShadow: {
+      ":focus-visible": `0 0 0 3px ${colors.focusHalo}`,
+      ":is([aria-invalid=true])": `0 0 0 3px ${colors.invalidRing}`,
+      default: null,
+    },
+    cursor: { ":disabled": "not-allowed", default: null },
+    minWidth: 0,
+    outlineStyle: "none",
+    pointerEvents: { ":disabled": "none", default: null },
+    transitionDuration: motion.normal,
+    transitionProperty: "color, box-shadow, background-color",
+    transitionTimingFunction: motion.ease,
+    width: "100%",
+  },
+});
+
+const styles = stylex.create({
+  input: {
+    "::placeholder": { color: colors.mutedForeground },
+    borderRadius: radii.xl3,
+    fontSize: { "@media (min-width: 48rem)": text.sm, default: text.base },
+    height: space[9],
+    lineHeight: {
+      "@media (min-width: 48rem)": text.smLeading,
+      default: text.baseLeading,
+    },
+    opacity: { ":disabled": 0.5, default: null },
+    paddingBlock: space[1],
+    paddingInline: space[3],
+  },
+});
+
+const Input = (props: Omit<InputPrimitive.Props, "className" | "style">) => (
+  <InputPrimitive
+    data-slot="input"
+    {...props}
+    {...stylex.props(field.base, styles.input)}
+  />
+);
+
+export { field, Input };

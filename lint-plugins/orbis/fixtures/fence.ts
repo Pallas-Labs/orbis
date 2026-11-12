@@ -1,5 +1,8 @@
 // Each line that ends in `expect: <rule>`, and each line after `expect-next: <rule>`, must be
 // reported with that rule, and no other line may be reported. scripts/fence.test.mjs lints this file with oxlintrc.json beside it.
+import * as stylex from "@stylexjs/stylex";
+import { create } from "@stylexjs/stylex";
+import * as sx from "@stylexjs/stylex";
 import { Cache, Effect, Layer } from "effect";
 
 declare const ids: readonly string[];
@@ -60,3 +63,50 @@ export const byAccessor = () => flags.fixtureOnlyFlag();
 // expect-next: orbis/directive-needs-reason
 // oxlint-disable-next-line orbis/bounded-concurrency
 export const noReason = () => Promise.all(ids.map(load));
+
+// stylex-tokens
+declare const colors: { readonly ring: string; readonly primary: string };
+declare const space: { readonly 4: string };
+export const looks = stylex.create({
+  box: {
+    backgroundColor: "oklch(0.5 0.1 30)", // expect: orbis/stylex-tokens
+    borderRadius: 12, // expect: orbis/stylex-tokens
+    borderWidth: 2, // expect: orbis/stylex-tokens
+    boxShadow: `0 0 0 3px color-mix(in oklab, ${colors.ring} 30%, transparent)`,
+    // expect-next: orbis/stylex-tokens
+    color: { ":hover": "#fff", default: colors.primary }, // expect: orbis/stylex-tokens
+    textDecorationLine: {
+      ":hover": { "@media (hover: hover)": "underline", default: null },
+      default: null,
+    },
+    textDecorationStyle: {
+      "@media (hover: hover)": { ":hover": "wavy", default: null },
+      default: null,
+    },
+    textUnderlineOffset: {
+      ":hover:not(:disabled)": "auto", // expect: orbis/stylex-tokens
+      default: null,
+    },
+    textUnderlinePosition: {
+      // expect-next: orbis/stylex-tokens
+      ":hover": { "@media (hover: hover)": "under", default: "auto" },
+      default: null,
+    },
+    fontWeight: 500, // expect: orbis/stylex-tokens
+    height: "100%",
+    margin: "auto",
+    maxHeight: "var(--available-height)",
+    maxWidth: `calc(100% - 2rem)`, // expect: orbis/stylex-tokens
+    opacity: 0.5,
+    outlineColor: "transparent",
+    outlineOffset: "var(--gap)", // expect: orbis/stylex-tokens
+    padding: space[4],
+    zIndex: -1,
+  },
+  dynamic: (inset: string) => ({
+    gap: "0.5rem", // expect: orbis/stylex-tokens
+    insetInlineStart: inset,
+  }),
+});
+export const named = create({ row: { width: "12rem" } }); // expect: orbis/stylex-tokens
+export const renamed = sx.create({ row: { width: "12rem" } }); // expect: orbis/stylex-tokens

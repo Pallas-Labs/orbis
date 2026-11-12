@@ -20,9 +20,7 @@
       ".audit/**",
       "docs/plans/**",
       "docs/audits/**",
-      "docs/research/**",
-      "apps/web/src/components/ui/**",
-      "apps/web/src/components/ai-elements/**"
+      "docs/research/**"
     ],
     "markersNeedDelimiter": true,
     "rules": [

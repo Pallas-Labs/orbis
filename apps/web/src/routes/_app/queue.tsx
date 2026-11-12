@@ -1,11 +1,21 @@
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useLiveEvents } from "@/components/live-events";
 import { usePlayer } from "@/components/player/player";
+import { Problem } from "@/components/problem";
 import { Button } from "@/components/ui/button";
 import { detach } from "@/lib/detach";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
+import { layout } from "@/styles/layout";
+import { space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  entry: { alignItems: "center", display: "flex", gap: space[4] },
+  title: { flexBasis: "0%", flexGrow: 1, flexShrink: 1 },
+});
 
 const Queue = () => {
   const { queue, reconnecting } = useLiveEvents();
@@ -15,16 +25,16 @@ const Queue = () => {
   const upcoming =
     queue?.entries.filter((set) => set.id !== queue.activeSetId) ?? [];
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-medium">Listening Queue</h1>
+    <main {...stylex.props(layout.stack6, layout.main)}>
+      <h1 {...stylex.props(type.title)}>Listening Queue</h1>
       {reconnecting ? (
-        <p className="text-muted-foreground text-sm" role="status">
+        <p {...stylex.props(type.muted, type.sm)} role="status">
           Reconnecting…
         </p>
       ) : null}
-      <section aria-label="Listening queue" className="flex flex-col gap-4">
+      <section aria-label="Listening queue" {...stylex.props(layout.stack4)}>
         {queue === null ? (
-          <p className="text-muted-foreground">Loading…</p>
+          <p {...stylex.props(type.muted)}>Loading…</p>
         ) : (
           <>
             <p>
@@ -33,12 +43,14 @@ const Queue = () => {
                 : `Now: ${active.title}`}
             </p>
             {queue.entries.length === 0 ? (
-              <p className="text-muted-foreground">Your queue is empty.</p>
+              <p {...stylex.props(type.muted)}>Your queue is empty.</p>
             ) : (
-              <ol className="flex flex-col gap-2">
+              <ol {...stylex.props(layout.stack2)}>
                 {upcoming.map((set) => (
-                  <li className="flex items-center gap-4" key={set.id}>
-                    <span className="flex-1 truncate">{set.title}</span>
+                  <li {...stylex.props(styles.entry)} key={set.id}>
+                    <span {...stylex.props(styles.title, type.truncate)}>
+                      {set.title}
+                    </span>
                     <Button
                       aria-label={`Play ${set.title}`}
                       onClick={detach(async () => {
@@ -59,11 +71,7 @@ const Queue = () => {
           </>
         )}
       </section>
-      {problem === null ? null : (
-        <p className="text-destructive text-sm" role="alert">
-          {problem}
-        </p>
-      )}
+      <Problem message={problem} />
     </main>
   );
 };

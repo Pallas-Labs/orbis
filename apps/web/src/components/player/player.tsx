@@ -1,4 +1,5 @@
 import type { PresenceAction } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { createContext, use, useRef, useState } from "react";
 import type { ReactNode, SyntheticEvent } from "react";
 
@@ -29,6 +30,34 @@ import {
   sendPresence,
   streamUrl,
 } from "@/lib/player";
+import { layout } from "@/styles/layout";
+import { colors, space, widths } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  audio: { maxWidth: widths.xl, width: "100%" },
+  bar: {
+    alignItems: "center",
+    backgroundColor: colors.background,
+    borderTopColor: colors.border,
+    borderTopStyle: "solid",
+    borderTopWidth: space.px,
+    bottom: 0,
+    display: "flex",
+    flexWrap: "wrap",
+    gap: space[4],
+    paddingBlock: space[3],
+    paddingInline: space[6],
+    position: "sticky",
+  },
+  page: {
+    display: "flex",
+    flexBasis: "0%",
+    flexDirection: "column",
+    flexGrow: 1,
+    flexShrink: 1,
+  },
+});
 
 // Report the Playback Position this often while playing, plus on pause and seek.
 const REPORT_EVERY_MS = 15_000;
@@ -351,19 +380,18 @@ export const PlayerProvider = ({
       }}
     >
       {/* The page fills the shell, so the player bar rests at the bottom. */}
-      <div className="flex flex-1 flex-col">{children}</div>
+      <div {...stylex.props(styles.page)}>{children}</div>
       {playing === null ? null : (
-        <section
-          aria-label="Audio player"
-          className="bg-background sticky bottom-0 flex flex-wrap items-center gap-4 border-t px-6 py-3"
-        >
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-medium">{playing.set.title}</p>
-            <p className="text-muted-foreground truncate text-sm">
+        <section aria-label="Audio player" {...stylex.props(styles.bar)}>
+          <div {...stylex.props(layout.fill)}>
+            <p {...stylex.props(type.truncate, type.medium)}>
+              {playing.set.title}
+            </p>
+            <p {...stylex.props(type.truncate, type.sm, type.muted)}>
               {playing.set.creator ?? "Unknown creator"}
             </p>
           </div>
-          <AudioPlayer className="w-full max-w-xl" key={playing.attempt}>
+          <AudioPlayer key={playing.attempt} xstyle={styles.audio}>
             <AudioPlayerElement
               autoPlay
               ref={audioRef}
@@ -394,8 +422,8 @@ export const PlayerProvider = ({
             </AudioPlayerControlBar>
           </AudioPlayer>
           {problem === null ? null : (
-            <div className="flex items-center gap-2">
-              <p className="text-destructive text-sm" role="alert">
+            <div {...stylex.props(layout.rowCenter2)}>
+              <p {...stylex.props(type.sm, type.error)} role="alert">
                 {problem}
               </p>
               <Button onClick={detach(retry)} size="sm" variant="outline">

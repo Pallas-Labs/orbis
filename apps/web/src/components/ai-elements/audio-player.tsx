@@ -1,5 +1,6 @@
 "use client";
 
+import * as stylex from "@stylexjs/stylex";
 import {
   MediaControlBar,
   MediaController,
@@ -12,64 +13,69 @@ import {
   MediaTimeRange,
   MediaVolumeRange,
 } from "media-chrome/react";
-import type { ComponentProps, CSSProperties } from "react";
+import type { ComponentProps } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
-import { cn } from "@/lib/utils";
+import type { Overrides } from "@/styles/overrides";
+import { colors, fonts, radii, space } from "@/styles/tokens.stylex";
+
+// media-chrome draws its controls in shadow DOM and reads its look from these properties.
+const styles = stylex.create({
+  player: {
+    "--media-background-color": "transparent",
+    "--media-button-icon-height": space[4],
+    "--media-button-icon-width": space[4],
+    "--media-control-background": "transparent",
+    "--media-control-hover-background": colors.accent,
+    "--media-control-padding": "0",
+    "--media-font": fonts.sans,
+    "--media-font-size": "10px",
+    "--media-icon-color": "currentColor",
+    "--media-preview-time-background": colors.background,
+    "--media-preview-time-border-radius": radii.md,
+    "--media-preview-time-text-shadow": "none",
+    "--media-primary-color": colors.primary,
+    "--media-range-bar-color": colors.primary,
+    "--media-range-track-background": colors.secondary,
+    "--media-secondary-color": colors.secondary,
+    "--media-text-color": colors.foreground,
+    "--media-tooltip-arrow-display": "none",
+    "--media-tooltip-background": colors.background,
+    "--media-tooltip-border-radius": radii.md,
+  },
+  time: { fontVariantNumeric: "tabular-nums" },
+});
 
 export type AudioPlayerProps = Omit<
   ComponentProps<typeof MediaController>,
-  "audio"
->;
+  "audio" | "className" | "style"
+> & {
+  /** How wide the player grows. */
+  readonly xstyle?: Overrides<"maxWidth" | "width">;
+};
 
 export const AudioPlayer = ({
   children,
-  style,
+  xstyle,
   ...props
 }: AudioPlayerProps) => (
   <MediaController
     audio
     data-slot="audio-player"
-    style={
-      {
-        "--media-background-color": "transparent",
-        "--media-button-icon-height": "1rem",
-        "--media-button-icon-width": "1rem",
-        "--media-control-background": "transparent",
-        "--media-control-hover-background": "var(--color-accent)",
-        "--media-control-padding": "0",
-        "--media-font": "var(--font-sans)",
-        "--media-font-size": "10px",
-        "--media-icon-color": "currentColor",
-        "--media-preview-time-background": "var(--color-background)",
-        "--media-preview-time-border-radius": "var(--radius-md)",
-        "--media-preview-time-text-shadow": "none",
-        "--media-primary-color": "var(--color-primary)",
-        "--media-range-bar-color": "var(--color-primary)",
-        "--media-range-track-background": "var(--color-secondary)",
-        "--media-secondary-color": "var(--color-secondary)",
-        "--media-text-color": "var(--color-foreground)",
-        "--media-tooltip-arrow-display": "none",
-        "--media-tooltip-background": "var(--color-background)",
-        "--media-tooltip-border-radius": "var(--radius-md)",
-        ...style,
-      } as CSSProperties
-    }
     {...props}
+    {...stylex.props(styles.player, xstyle)}
   >
     {children}
   </MediaController>
 );
 
-// Orbis plays remote audio only, so the AI SDK speech-result variant is removed
-// here; re-adding this component from the registry would bring it back.
+// Orbis plays remote audio only, so the AI SDK speech-result variant is removed.
 export type AudioPlayerElementProps = ComponentProps<"audio"> & {
   src: string;
 };
 
 export const AudioPlayerElement = (props: AudioPlayerElementProps) => (
-  // oxlint-disable-next-line eslint-plugin-jsx-a11y(media-has-caption) -- audio player captions are provided by consumer
   <audio data-slot="audio-player-element" slot="media" {...props} />
 );
 
@@ -80,26 +86,18 @@ export const AudioPlayerControlBar = ({
   ...props
 }: AudioPlayerControlBarProps) => (
   <MediaControlBar data-slot="audio-player-control-bar" {...props}>
-    <ButtonGroup orientation="horizontal">{children}</ButtonGroup>
+    <ButtonGroup>{children}</ButtonGroup>
   </MediaControlBar>
 );
 
 export type AudioPlayerPlayButtonProps = ComponentProps<typeof MediaPlayButton>;
 
-export const AudioPlayerPlayButton = ({
-  className,
-  ...props
-}: AudioPlayerPlayButtonProps) => (
+export const AudioPlayerPlayButton = (props: AudioPlayerPlayButtonProps) => (
   <Button
+    grouped
     size="icon-sm"
     variant="outline"
-    render={
-      <MediaPlayButton
-        className={cn("bg-transparent", className)}
-        data-slot="audio-player-play-button"
-        {...props}
-      />
-    }
+    render={<MediaPlayButton data-slot="audio-player-play-button" {...props} />}
   ></Button>
 );
 
@@ -112,6 +110,7 @@ export const AudioPlayerSeekBackwardButton = ({
   ...props
 }: AudioPlayerSeekBackwardButtonProps) => (
   <Button
+    grouped
     size="icon-sm"
     variant="outline"
     render={
@@ -133,6 +132,7 @@ export const AudioPlayerSeekForwardButton = ({
   ...props
 }: AudioPlayerSeekForwardButtonProps) => (
   <Button
+    grouped
     size="icon-sm"
     variant="outline"
     render={
@@ -149,17 +149,13 @@ export type AudioPlayerTimeDisplayProps = ComponentProps<
   typeof MediaTimeDisplay
 >;
 
-export const AudioPlayerTimeDisplay = ({
-  className,
-  ...props
-}: AudioPlayerTimeDisplayProps) => (
+export const AudioPlayerTimeDisplay = (props: AudioPlayerTimeDisplayProps) => (
   <ButtonGroupText
-    className="bg-transparent"
     render={
       <MediaTimeDisplay
-        className={cn("tabular-nums", className)}
         data-slot="audio-player-time-display"
         {...props}
+        {...stylex.props(styles.time)}
       />
     }
   ></ButtonGroupText>
@@ -167,19 +163,9 @@ export const AudioPlayerTimeDisplay = ({
 
 export type AudioPlayerTimeRangeProps = ComponentProps<typeof MediaTimeRange>;
 
-export const AudioPlayerTimeRange = ({
-  className,
-  ...props
-}: AudioPlayerTimeRangeProps) => (
+export const AudioPlayerTimeRange = (props: AudioPlayerTimeRangeProps) => (
   <ButtonGroupText
-    className="bg-transparent"
-    render={
-      <MediaTimeRange
-        className={cn("", className)}
-        data-slot="audio-player-time-range"
-        {...props}
-      />
-    }
+    render={<MediaTimeRange data-slot="audio-player-time-range" {...props} />}
   ></ButtonGroupText>
 );
 
@@ -187,17 +173,15 @@ export type AudioPlayerDurationDisplayProps = ComponentProps<
   typeof MediaDurationDisplay
 >;
 
-export const AudioPlayerDurationDisplay = ({
-  className,
-  ...props
-}: AudioPlayerDurationDisplayProps) => (
+export const AudioPlayerDurationDisplay = (
+  props: AudioPlayerDurationDisplayProps
+) => (
   <ButtonGroupText
-    className="bg-transparent"
     render={
       <MediaDurationDisplay
-        className={cn("tabular-nums", className)}
         data-slot="audio-player-duration-display"
         {...props}
+        {...stylex.props(styles.time)}
       />
     }
   ></ButtonGroupText>
@@ -205,19 +189,9 @@ export const AudioPlayerDurationDisplay = ({
 
 export type AudioPlayerMuteButtonProps = ComponentProps<typeof MediaMuteButton>;
 
-export const AudioPlayerMuteButton = ({
-  className,
-  ...props
-}: AudioPlayerMuteButtonProps) => (
+export const AudioPlayerMuteButton = (props: AudioPlayerMuteButtonProps) => (
   <ButtonGroupText
-    className="bg-transparent"
-    render={
-      <MediaMuteButton
-        className={cn("", className)}
-        data-slot="audio-player-mute-button"
-        {...props}
-      />
-    }
+    render={<MediaMuteButton data-slot="audio-player-mute-button" {...props} />}
   ></ButtonGroupText>
 );
 
@@ -225,18 +199,10 @@ export type AudioPlayerVolumeRangeProps = ComponentProps<
   typeof MediaVolumeRange
 >;
 
-export const AudioPlayerVolumeRange = ({
-  className,
-  ...props
-}: AudioPlayerVolumeRangeProps) => (
+export const AudioPlayerVolumeRange = (props: AudioPlayerVolumeRangeProps) => (
   <ButtonGroupText
-    className="bg-transparent"
     render={
-      <MediaVolumeRange
-        className={cn("", className)}
-        data-slot="audio-player-volume-range"
-        {...props}
-      />
+      <MediaVolumeRange data-slot="audio-player-volume-range" {...props} />
     }
   ></ButtonGroupText>
 );

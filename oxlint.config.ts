@@ -13,9 +13,6 @@ export default defineConfig({
   extends: [core, antiSlop],
   ignorePatterns: [
     ...core.ignorePatterns,
-    // shadcn generates these; `shadcn add` overwrites any hand edits.
-    "apps/web/src/components/ui/**",
-    "apps/web/src/components/ai-elements/**",
     // Vendored upstream plugin source; fix it upstream, not here.
     "lint-plugins/t3code/**",
     // Each fixture holds the findings its rule must report; scripts/fence.test.mjs checks them.
@@ -27,6 +24,7 @@ export default defineConfig({
   jsPlugins: [
     "./lint-plugins/t3code/index.ts",
     "./lint-plugins/orbis/index.mjs",
+    "@stylexjs/eslint-plugin",
   ],
   // A suppression that no longer hides a diagnostic is noise; delete it.
   options: { reportUnusedDisableDirectives: "error", typeAware: true },
@@ -116,6 +114,35 @@ export default defineConfig({
         // Tests may build one-off Effect functions; Effect.fn names spans for production code.
         "t3code/prefer-effect-fn": "off",
       },
+    },
+    {
+      // StyleX (PAL-2190): a style StyleX cannot compile, an unknown property or value, a
+      // multi-value shorthand, or a raw value a token covers fails the check.
+      files: ["apps/web/src/**/*.{ts,tsx}"],
+      rules: {
+        "@stylexjs/enforce-extension": "error",
+        "@stylexjs/no-conflicting-props": "error",
+        "@stylexjs/no-legacy-contextual-styles": "error",
+        "@stylexjs/no-lookahead-selectors": "error",
+        "@stylexjs/no-nonstandard-styles": "error",
+        "@stylexjs/no-unused": "error",
+        // @stylexjs/sort-keys -- off: it wants StyleX's property-priority order, which fights the
+        // alphabetical eslint/sort-keys the repo keeps, and StyleX resolves a conflict by property
+        // specificity, not by key order, so the order never changes the CSS.
+        "@stylexjs/sort-keys": "off",
+        "@stylexjs/valid-shorthands": "error",
+        "@stylexjs/valid-styles": "error",
+        "orbis/stylex-tokens": "error",
+      },
+    },
+    {
+      // eslint/sort-keys -- off in the design tokens: a scale reads smallest to largest and a
+      // derived colour sits after the base colours it mixes, which an alphabetical order breaks.
+      files: [
+        "apps/web/src/styles/tokens.stylex.ts",
+        "apps/web/src/styles/theme.ts",
+      ],
+      rules: { "eslint/sort-keys": "off" },
     },
     {
       // Product copy that users read: the web app and the Raycast extension.

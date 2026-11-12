@@ -1,4 +1,5 @@
 import { GROUP_PASSCODE } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent, ReactNode } from "react";
@@ -37,6 +38,60 @@ import type { IssuedSignInCode } from "@/lib/sign-in";
 import { useApiCall } from "@/lib/use-api-call";
 import { useCopy } from "@/lib/use-copy";
 import type { Session } from "@/routes/_app";
+import { layout } from "@/styles/layout";
+import { colors, radii, space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  actions: { display: "flex", gap: space[2] },
+  createdKey: {
+    backgroundColor: colors.muted,
+    borderRadius: radii.xl2,
+    display: "flex",
+    flexDirection: "column",
+    gap: space[3],
+    padding: space[4],
+  },
+  fields: { display: "flex", flexWrap: "wrap", gap: space[2] },
+  key: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[2],
+    paddingBlock: space[3],
+  },
+  keyName: {
+    display: "flex",
+    flexDirection: "column",
+    marginRight: "auto",
+    minWidth: 0,
+  },
+  labelField: {
+    flexBasis: "0%",
+    flexGrow: 1,
+    flexShrink: 1,
+    minWidth: space[48],
+  },
+  passcode: {
+    backgroundColor: colors.muted,
+    borderRadius: radii.xl2,
+    padding: space[4],
+  },
+  personHeader: {
+    alignItems: "center",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: space[2],
+  },
+  personName: { marginRight: "auto" },
+  personRow: { paddingBlock: space[4] },
+  token: {
+    backgroundColor: colors.background,
+    borderRadius: radii.lg,
+    padding: space[2],
+    userSelect: "all",
+    wordBreak: "break-all",
+  },
+});
 
 const Section = ({
   children,
@@ -56,7 +111,7 @@ const Section = ({
       </CardTitle>
       <CardDescription>{description}</CardDescription>
     </CardHeader>
-    <CardContent className="flex flex-col gap-4">{children}</CardContent>
+    <CardContent xstyle={layout.stack4}>{children}</CardContent>
   </Card>
 );
 
@@ -74,7 +129,7 @@ const OpenPasscode = ({
   const router = useRouter();
   return (
     <>
-      <div className="bg-muted rounded-2xl p-4">
+      <div {...stylex.props(styles.passcode)}>
         <ShownCode
           code={passcode}
           copyLabel="Copy passcode"
@@ -83,7 +138,7 @@ const OpenPasscode = ({
           label="Group Passcode"
         />
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div {...stylex.props(styles.fields)}>
         <ConfirmDialog
           action="New passcode"
           call={async () => await newPasscode(session)}
@@ -129,7 +184,7 @@ const Passcode = ({
         <>
           <p>Joining is closed.</p>
           <Button
-            className="self-start"
+            xstyle={layout.selfStart}
             disabled={busy}
             onClick={detach(
               async () => await change(async () => await newPasscode(session))
@@ -171,9 +226,11 @@ const PersonRow = ({
     }
   };
   return (
-    <li className="flex flex-col gap-3 py-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="mr-auto font-medium">{person.username}</h3>
+    <li {...stylex.props(layout.stack3, styles.personRow, layout.divided)}>
+      <div {...stylex.props(styles.personHeader)}>
+        <h3 {...stylex.props(styles.personName, type.medium)}>
+          {person.username}
+        </h3>
         {isHost ? <Badge variant="secondary">You</Badge> : null}
         <Button
           aria-label={`Show Sign-in Code for ${person.username}`}
@@ -219,19 +276,17 @@ const CreatedKey = ({
 }) => {
   const { copy, copyText: copyKey } = useCopy(token);
   return (
-    <div className="bg-muted flex flex-col gap-3 rounded-2xl p-4" role="status">
-      <p className="text-sm">
+    <div {...stylex.props(styles.createdKey)} role="status">
+      <p {...stylex.props(type.sm)}>
         Copy this key now. Orbis will not show it again.
       </p>
-      <code className="bg-background rounded-lg p-2 text-xs break-all select-all">
-        {token}
-      </code>
+      <code {...stylex.props(styles.token, type.xs)}>{token}</code>
       {copy === "failed" ? (
-        <p className="text-destructive text-sm">
+        <p {...stylex.props(type.error, type.sm)}>
           Could not copy the key. Select and copy it instead.
         </p>
       ) : null}
-      <div className="flex gap-2">
+      <div {...stylex.props(styles.actions)}>
         <Button onClick={detach(copyKey)} size="sm">
           {copy === "copied" ? "Copied" : "Copy key"}
         </Button>
@@ -282,14 +337,16 @@ const Keys = ({
       id="keys-title"
       title="Keys"
     >
-      <ul aria-label="Keys" className="divide-y">
+      <ul aria-label="Keys">
         {keys.map((key) => {
           const owner = usernames.get(key.personId) ?? key.personId;
           return (
-            <li className="flex items-center gap-2 py-3" key={key.id}>
-              <div className="mr-auto flex min-w-0 flex-col">
-                <span className="truncate font-medium">{key.label}</span>
-                <span className="text-muted-foreground text-xs">
+            <li {...stylex.props(styles.key, layout.divided)} key={key.id}>
+              <div {...stylex.props(styles.keyName)}>
+                <span {...stylex.props(type.truncate, type.medium)}>
+                  {key.label}
+                </span>
+                <span {...stylex.props(type.muted, type.xs)}>
                   {key.scope === "node" ? "Audio node" : owner} ·{" "}
                   {lastUsedText(key.lastUsedAt)}
                 </span>
@@ -313,9 +370,9 @@ const Keys = ({
           );
         })}
       </ul>
-      <form className="flex flex-col gap-2" onSubmit={detach(create)}>
-        <div className="flex flex-wrap gap-2">
-          <div className="flex flex-col gap-2">
+      <form {...stylex.props(layout.stack2)} onSubmit={detach(create)}>
+        <div {...stylex.props(styles.fields)}>
+          <div {...stylex.props(layout.stack2)}>
             <Label htmlFor="key-person">Person</Label>
             <NativeSelect id="key-person" name="personId">
               {people.map((person) => (
@@ -325,7 +382,7 @@ const Keys = ({
               ))}
             </NativeSelect>
           </div>
-          <div className="flex min-w-48 flex-1 flex-col gap-2">
+          <div {...stylex.props(layout.stack2, styles.labelField)}>
             <Label htmlFor="key-label">Key label</Label>
             <Input
               autoComplete="off"
@@ -335,7 +392,7 @@ const Keys = ({
             />
           </div>
         </div>
-        <Button className="self-start" disabled={busy} type="submit">
+        <Button xstyle={layout.selfStart} disabled={busy} type="submit">
           Create key
         </Button>
       </form>
@@ -359,15 +416,15 @@ const AdminPage = ({
   readonly data: AdminData;
   readonly session: Session;
 }) => (
-  <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-    <h1 className="text-2xl font-medium">Admin</h1>
+  <main {...stylex.props(layout.stack6, layout.main)}>
+    <h1 {...stylex.props(type.title)}>Admin</h1>
     <Passcode passcode={data.passcode} session={session} />
     <Section
       description="Show a Sign-in Code to sign in a device for any Person."
       id="people-title"
       title="People"
     >
-      <ul aria-label="People in the Group" className="divide-y">
+      <ul aria-label="People in the Group">
         {data.people.map((person) => (
           <PersonRow key={person.id} person={person} session={session} />
         ))}

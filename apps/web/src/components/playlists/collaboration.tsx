@@ -1,7 +1,9 @@
+import * as stylex from "@stylexjs/stylex";
 import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 
+import { Problem } from "@/components/problem";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +24,19 @@ import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
 import { setCollaborative, setEditors } from "@/lib/playlists";
 import type { Collaboration, VisiblePerson } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
+import { space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  editor: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[4],
+    justifyContent: "space-between",
+    paddingBlock: space[2],
+  },
+});
 
 export const CollaborationCard = ({
   collaboration,
@@ -72,14 +87,14 @@ export const CollaborationCard = ({
     <Card>
       <CardHeader>
         <CardTitle>
-          <h2 className="text-lg">Collaboration</h2>
+          <h2 {...stylex.props(type.lg)}>Collaboration</h2>
         </CardTitle>
         <CardDescription>
           Editors can add, remove, and reorder Sets. Only you can rename or
           delete this Playlist and choose its editors.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent xstyle={layout.stack4}>
         <Label>
           <Switch
             checked={collaboration.collaborative}
@@ -96,15 +111,12 @@ export const CollaborationCard = ({
         {collaboration.collaborative ? (
           <>
             {editorIds.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No editors yet.</p>
+              <p {...stylex.props(type.muted, type.sm)}>No editors yet.</p>
             ) : (
-              <ul aria-label="Editors" className="divide-y">
+              <ul aria-label="Editors">
                 {editorIds.map((id) => (
-                  <li
-                    className="flex items-center justify-between gap-4 py-2"
-                    key={id}
-                  >
-                    <span className="text-sm">{nameOf(id)}</span>
+                  <li {...stylex.props(styles.editor, layout.divided)} key={id}>
+                    <span {...stylex.props(type.sm)}>{nameOf(id)}</span>
                     <Button
                       aria-label={`Remove editor ${nameOf(id)}`}
                       disabled={pending}
@@ -128,14 +140,14 @@ export const CollaborationCard = ({
               </ul>
             )}
             {candidates.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
+              <p {...stylex.props(type.muted, type.sm)}>
                 No one else can be an editor. An editor must have Social on, and
                 you must be able to see each other.
               </p>
             ) : (
-              <form className="flex flex-col gap-2" onSubmit={addEditor}>
+              <form {...stylex.props(layout.stack2)} onSubmit={addEditor}>
                 <Label htmlFor="playlist-editor">Add editor</Label>
-                <div className="flex gap-2">
+                <div {...stylex.props(layout.row2)}>
                   <NativeSelect id="playlist-editor" name="editor">
                     {candidates.map((person) => (
                       <NativeSelectOption key={person.id} value={person.id}>
@@ -151,11 +163,7 @@ export const CollaborationCard = ({
             )}
           </>
         ) : null}
-        {problem === null ? null : (
-          <p className="text-destructive text-sm" role="alert">
-            {problem}
-          </p>
-        )}
+        <Problem message={problem} />
       </CardContent>
     </Card>
   );

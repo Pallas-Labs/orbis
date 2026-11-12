@@ -223,7 +223,7 @@ try {
       0
     );
     const pageDetails = await textOf(
-      page.locator("header p.text-muted-foreground")
+      page.locator("header p", { hasText: " · Apple Music · " })
     );
     assert.match(pageDetails, / · Apple Music · (?:\d+h )?\d+m$/u);
     assert.equal(

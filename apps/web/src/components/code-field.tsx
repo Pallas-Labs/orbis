@@ -1,5 +1,6 @@
 import { codeFromText } from "@orbis/contracts";
 import type { CodeFormat } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { OTPInputContext } from "input-otp";
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -12,6 +13,8 @@ import {
 } from "@/components/ui/input-otp";
 import { detach } from "@/lib/detach";
 import { useCopy } from "@/lib/use-copy";
+import { layout } from "@/styles/layout";
+import { type } from "@/styles/type";
 
 /** Each group's slot indexes, such as `[[0, 1, 2, 3], [4, 5, 6, 7]]` for `[4, 4]`. */
 const slotGroups = (format: CodeFormat) =>
@@ -22,17 +25,25 @@ const slotGroups = (format: CodeFormat) =>
     return Array.from({ length: size }, (_, offset) => start + offset);
   });
 
+const groupStyles = stylex.create({
+  group: { flexGrow: 1, minWidth: 0 },
+});
+
+const styles = stylex.create({
+  shown: { alignItems: "center" },
+});
+
 const Slots = ({
-  className,
   format,
+  size,
 }: {
-  readonly className?: string;
   readonly format: CodeFormat;
+  readonly size: "field" | "shown";
 }) =>
   slotGroups(format).map((indexes) => (
-    <InputOTPGroup className="min-w-0 flex-1" key={indexes[0]}>
+    <InputOTPGroup key={indexes[0]} xstyle={groupStyles.group}>
       {indexes.map((index) => (
-        <InputOTPSlot className={className} index={index} key={index} />
+        <InputOTPSlot index={index} key={index} size={size} />
       ))}
     </InputOTPGroup>
   ));
@@ -81,7 +92,6 @@ export const CodeField = ({
     <InputOTP
       aria-label={label}
       autoCapitalize="characters"
-      containerClassName="w-full gap-2"
       id={id}
       inputMode={/^\d+$/u.test(format.alphabet) ? "numeric" : "text"}
       maxLength={format.length}
@@ -95,7 +105,7 @@ export const CodeField = ({
       pattern={`^[${format.alphabet}${format.alphabet.toLowerCase()}]*$`}
       value={code}
     >
-      <Slots className="h-10 w-auto min-w-0 flex-1 text-base" format={format} />
+      <Slots format={format} size="field" />
     </InputOTP>
   );
 };
@@ -121,9 +131,9 @@ export const ShownCode = ({
     .map((indexes) => indexes.map((index) => characters[index]).join(" "))
     .join(", ");
   return (
-    <div className="flex flex-col items-center gap-3">
+    <div {...stylex.props(layout.stack3, styles.shown)}>
       <div aria-label={label} role="status">
-        <span className="sr-only">{spoken}</span>
+        <span {...stylex.props(layout.srOnly)}>{spoken}</span>
         <OTPInputContext.Provider
           value={{
             isFocused: false,
@@ -136,11 +146,8 @@ export const ShownCode = ({
             })),
           }}
         >
-          <div aria-hidden="true" className="flex items-center gap-2">
-            <Slots
-              className="size-11 min-w-0 shrink text-2xl"
-              format={format}
-            />
+          <div aria-hidden="true" {...stylex.props(layout.rowCenter2)}>
+            <Slots format={format} size="shown" />
           </div>
         </OTPInputContext.Provider>
       </div>
@@ -148,7 +155,7 @@ export const ShownCode = ({
         {copy === "copied" ? "Copied" : copyLabel}
       </Button>
       {copy === "failed" ? (
-        <p className="text-destructive text-sm" role="alert">
+        <p {...stylex.props(type.error, type.sm)} role="alert">
           Could not copy the code. Type it instead.
         </p>
       ) : null}

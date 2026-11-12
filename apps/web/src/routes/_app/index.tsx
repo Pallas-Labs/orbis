@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import {
   createFileRoute,
   useNavigate,
@@ -32,6 +33,20 @@ import type { Credentials } from "@/lib/orbis";
 import { listPlaylists } from "@/lib/playlists";
 import type { Playlist } from "@/lib/playlists";
 import type { Session } from "@/routes/_app";
+import { layout } from "@/styles/layout";
+import { space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  filters: {
+    display: "grid",
+    gap: space[4],
+    gridTemplateColumns: {
+      "@media (min-width: 40rem)": "1fr auto auto",
+      default: null,
+    },
+  },
+});
 
 const LibrarySearch = Schema.Struct({
   q: Schema.optionalKey(Schema.String),
@@ -99,9 +114,9 @@ const SaveSetForm = ({
     await router.invalidate();
   };
   return (
-    <form className="flex flex-col gap-2" onSubmit={detach(save)}>
+    <form {...stylex.props(layout.stack2)} onSubmit={detach(save)}>
       <Label htmlFor="source-link">Source Link</Label>
-      <div className="flex gap-2">
+      <div {...stylex.props(layout.row2)}>
         <Input
           autoComplete="off"
           id="source-link"
@@ -114,7 +129,7 @@ const SaveSetForm = ({
         </Button>
       </div>
       {message === null ? null : (
-        <p className="text-muted-foreground text-sm" role="status">
+        <p {...stylex.props(type.sm, type.muted)} role="status">
           {message}
         </p>
       )}
@@ -151,8 +166,8 @@ const Filters = ({
       void update(value === "" ? rest : { ...rest, [name]: value });
     };
   return (
-    <div className="grid gap-4 sm:grid-cols-[1fr_auto_auto]">
-      <div className="flex flex-col gap-2">
+    <div {...stylex.props(styles.filters)}>
+      <div {...stylex.props(layout.stack2)}>
         <Label htmlFor="library-search">Search library</Label>
         <Input
           defaultValue={filters.q ?? ""}
@@ -162,7 +177,7 @@ const Filters = ({
           type="search"
         />
       </div>
-      <div className="flex flex-col gap-2">
+      <div {...stylex.props(layout.stack2)}>
         <Label htmlFor="library-source">Source</Label>
         <NativeSelect
           id="library-source"
@@ -177,7 +192,7 @@ const Filters = ({
           ))}
         </NativeSelect>
       </div>
-      <div className="flex flex-col gap-2">
+      <div {...stylex.props(layout.stack2)}>
         <Label htmlFor="library-tag">Tag</Label>
         <NativeSelect
           id="library-tag"
@@ -212,8 +227,8 @@ const AutoDownloadSwitch = ({ session }: { readonly session: Session }) => {
     setPending(false);
   };
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-3">
+    <div {...stylex.props(layout.stack2)}>
+      <div {...stylex.props(layout.rowCenter3)}>
         <Switch
           aria-label="Auto Download"
           checked={session.person.autoDownload}
@@ -222,7 +237,7 @@ const AutoDownloadSwitch = ({ session }: { readonly session: Session }) => {
         />
         <span aria-hidden>Auto Download</span>
       </div>
-      <p className="text-muted-foreground text-sm">
+      <p {...stylex.props(type.sm, type.muted)}>
         Keep audio automatically when you save a Set.
       </p>
       {problem === null ? null : <p role="alert">{problem}</p>}
@@ -246,17 +261,17 @@ const Library = ({
   const progress = useDownloadProgress(credentials, sets);
   const filtered = Object.keys(filters).length > 0;
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <h1 className="text-2xl font-medium">Library</h1>
+    <main {...stylex.props(layout.main, layout.stack6)}>
+      <h1 {...stylex.props(type.title)}>Library</h1>
       <AutoDownloadSwitch session={credentials} />
       <SaveSetForm credentials={credentials} />
       <AppleMusicSearch credentials={credentials} />
       <Filters filters={filters} tags={tags} />
-      <p className="text-muted-foreground text-sm" role="status">
+      <p {...stylex.props(type.sm, type.muted)} role="status">
         {sets.length} {sets.length === 1 ? "Set" : "Sets"}
       </p>
       {sets.length === 0 ? (
-        <p className="text-muted-foreground">
+        <p {...stylex.props(type.muted)}>
           {filtered
             ? "No Sets match these filters."
             : "Save a Source Link to start your Library."}

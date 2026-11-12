@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -10,8 +11,9 @@ import {
 import { useDownloadProgress } from "@/components/library/use-download-progress";
 import { useLiveEvents } from "@/components/live-events";
 import { usePlayer } from "@/components/player/player";
+import { Problem } from "@/components/problem";
 import { RouteProblem } from "@/components/route-problem";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, buttonLook } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -31,6 +33,42 @@ import {
   listVisiblePeople,
 } from "@/lib/people";
 import type { FriendPlaylist, Listen } from "@/lib/people";
+import { layout } from "@/styles/layout";
+import { colors, radii, space, widths } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  actions: { display: "flex", flexShrink: 0, gap: space[2] },
+  artwork: {
+    borderRadius: radii.md,
+    flexShrink: 0,
+    height: space[16],
+    width: space[16],
+  },
+  artworkImage: { objectFit: "cover" },
+  artworkPlaceholder: { backgroundColor: colors.muted },
+  badges: { display: "flex", flexWrap: "wrap", gap: space[1] },
+  listen: {
+    display: "flex",
+    gap: space[4],
+    justifyContent: "space-between",
+    paddingBlock: space[2],
+  },
+  notVisible: {
+    marginInline: "auto",
+    maxWidth: widths.md,
+    padding: space[6],
+    width: "100%",
+  },
+  numbered: { listStyleType: "decimal", paddingLeft: space[5] },
+  setRow: {
+    alignItems: "flex-start",
+    display: "flex",
+    gap: space[4],
+    paddingBlock: space[4],
+  },
+  shrink0: { flexShrink: 0 },
+});
 
 const RECENT_SETS = 3;
 
@@ -89,29 +127,25 @@ const FriendSetRow = ({
   };
   const downloadable = canDownload(set);
   return (
-    <li className="flex items-start gap-4 py-4">
+    <li {...stylex.props(styles.setRow, layout.divided)}>
       {set.artworkUrl === null ? (
-        <div className="bg-muted size-16 shrink-0 rounded-md" />
+        <div {...stylex.props(styles.artworkPlaceholder, styles.artwork)} />
       ) : (
         <img
           alt=""
-          className="size-16 shrink-0 rounded-md object-cover"
+          {...stylex.props(styles.artwork, styles.artworkImage)}
           src={set.artworkUrl}
         />
       )}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <h3 className="truncate font-medium">{set.title}</h3>
-        <p className="text-muted-foreground text-sm">{setDetails(set)}</p>
-        <div className="flex flex-wrap gap-1">
+      <div {...stylex.props(layout.stack1, layout.fill)}>
+        <h3 {...stylex.props(type.truncate, type.medium)}>{set.title}</h3>
+        <p {...stylex.props(type.muted, type.sm)}>{setDetails(set)}</p>
+        <div {...stylex.props(styles.badges)}>
           <DownloadBadge progress={progress} set={set} />
         </div>
-        {problem === null ? null : (
-          <p className="text-destructive text-sm" role="alert">
-            {problem}
-          </p>
-        )}
+        <Problem message={problem} />
       </div>
-      <div className="flex shrink-0 gap-2">
+      <div {...stylex.props(styles.actions)}>
         {set.downloadState === "ready" ? (
           <Button
             aria-label={`Play ${set.title}`}
@@ -171,7 +205,7 @@ const Section = ({
   <Card>
     <CardHeader>
       <CardTitle>
-        <h2 className="text-lg">{title}</h2>
+        <h2 {...stylex.props(type.lg)}>{title}</h2>
       </CardTitle>
       {description === undefined ? null : (
         <CardDescription>{description}</CardDescription>
@@ -182,7 +216,7 @@ const Section = ({
 );
 
 const Empty = ({ children }: { readonly children: string }) => (
-  <p className="text-muted-foreground text-sm">{children}</p>
+  <p {...stylex.props(type.muted, type.sm)}>{children}</p>
 );
 
 const FriendProfile = ({
@@ -201,10 +235,10 @@ const FriendProfile = ({
     ).values(),
   ].slice(0, RECENT_SETS);
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-medium">{profile.username}</h1>
-        <p className="text-muted-foreground text-sm" role="status">
+    <main {...stylex.props(layout.stack6, layout.main)}>
+      <div {...stylex.props(layout.stack1)}>
+        <h1 {...stylex.props(type.title)}>{profile.username}</h1>
+        <p {...stylex.props(type.muted, type.sm)} role="status">
           {listening === undefined
             ? "Not listening right now"
             : `${profile.username} is listening to ${listening.set.title}`}
@@ -217,7 +251,7 @@ const FriendProfile = ({
         {profile.sets.length === 0 ? (
           <Empty>No Sets yet.</Empty>
         ) : (
-          <ul aria-label={`${profile.username}’s Sets`} className="divide-y">
+          <ul aria-label={`${profile.username}’s Sets`}>
             {profile.sets.map((set) => (
               <FriendSetRow
                 credentials={credentials}
@@ -234,11 +268,11 @@ const FriendProfile = ({
         {profile.playlists.length === 0 ? (
           <Empty>No Playlists yet.</Empty>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div {...stylex.props(layout.stack4)}>
             {profile.playlists.map((playlist) => (
               <section aria-label={playlist.name} key={playlist.id}>
-                <h3 className="font-medium">{playlist.name}</h3>
-                <ol className="text-muted-foreground list-decimal pl-5 text-sm">
+                <h3 {...stylex.props(type.medium)}>{playlist.name}</h3>
+                <ol {...stylex.props(type.muted, styles.numbered, type.sm)}>
                   {playlist.sets.map((set) => (
                     <li key={set.id}>{set.title}</li>
                   ))}
@@ -252,7 +286,10 @@ const FriendProfile = ({
         {recent.length === 0 ? (
           <Empty>No recent Sets.</Empty>
         ) : (
-          <ul aria-label="Recent Sets" className="flex flex-col gap-1 text-sm">
+          <ul
+            aria-label="Recent Sets"
+            {...stylex.props(layout.stack1, type.sm)}
+          >
             {recent.map((set) => (
               <li key={set.id}>{set.title}</li>
             ))}
@@ -263,10 +300,10 @@ const FriendProfile = ({
         {profile.listens.length === 0 ? (
           <Empty>No Listens yet.</Empty>
         ) : (
-          <ol aria-label="Listen History" className="divide-y text-sm">
+          <ol aria-label="Listen History" {...stylex.props(type.sm)}>
             {profile.listens.map((listen) => (
               <li
-                className="flex justify-between gap-4 py-2"
+                {...stylex.props(styles.listen, layout.divided)}
                 key={`${listen.startedAt}-${listen.set.id}`}
               >
                 <span>
@@ -274,7 +311,7 @@ const FriendProfile = ({
                   {listen.set.title}
                 </span>
                 <time
-                  className="text-muted-foreground shrink-0"
+                  {...stylex.props(type.muted, styles.shrink0)}
                   dateTime={listen.startedAt}
                 >
                   {timeFormat.format(new Date(listen.startedAt))}
@@ -290,11 +327,11 @@ const FriendProfile = ({
 
 /** The API answers 404 for a Person the caller cannot see, whatever the reason. */
 const NotVisible = () => (
-  <main className="mx-auto w-full max-w-md p-6">
+  <main {...stylex.props(styles.notVisible)}>
     <Card>
       <CardHeader>
         <CardTitle>
-          <h1 className="text-2xl">Not visible</h1>
+          <h1 {...stylex.props(type.xl2)}>Not visible</h1>
         </CardTitle>
         <CardDescription>
           This Person’s Library is not visible to you. One of you may have
@@ -302,7 +339,10 @@ const NotVisible = () => (
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Link className={buttonVariants({ variant: "outline" })} to="/people">
+        <Link
+          {...stylex.props(buttonLook({ variant: "outline" }))}
+          to="/people"
+        >
           Back to People
         </Link>
       </CardContent>

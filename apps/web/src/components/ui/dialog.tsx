@@ -1,157 +1,171 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "@phosphor-icons/react";
-import { cn } from "cn";
-import * as React from "react";
+import * as stylex from "@stylexjs/stylex";
+import type { ComponentProps } from "react";
 
-import { Button } from "@/components/ui/button";
+import { buttonLook } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { fade, zoom } from "@/components/ui/surface";
+import { layout } from "@/styles/layout";
+import {
+  colors,
+  filters,
+  fonts,
+  layers,
+  radii,
+  shadows,
+  space,
+  text,
+  weights,
+  widths,
+} from "@/styles/tokens.stylex";
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
-}
+/** The scrim and the centred panel, shared with the alert dialog. */
+const modal = stylex.create({
+  backdrop: {
+    backdropFilter: filters.scrim,
+    backgroundColor: colors.scrim,
+    inset: 0,
+    isolation: "isolate",
+    position: "fixed",
+    zIndex: layers.overlay,
+  },
+  popup: {
+    backgroundColor: colors.popover,
+    borderRadius: radii.xl4,
+    boxShadow: `0 0 0 1px ${colors.surfaceRing}, ${shadows.xl}`,
+    color: colors.popoverForeground,
+    display: "grid",
+    gap: space[6],
+    insetBlockStart: "50%",
+    insetInlineStart: "50%",
+    outlineStyle: "none",
+    padding: space[6],
+    position: "fixed",
+    translate: "-50% -50%",
+    width: "100%",
+    zIndex: layers.overlay,
+  },
+});
 
-function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
-}
+const styles = stylex.create({
+  close: {
+    backgroundColor: colors.secondary,
+    insetBlockStart: space[4],
+    insetInlineEnd: space[4],
+    position: "absolute",
+  },
+  description: {
+    color: colors.mutedForeground,
+    fontSize: text.sm,
+    lineHeight: text.smLeading,
+  },
+  footer: {
+    display: "flex",
+    flexDirection: {
+      "@media (min-width: 40rem)": "row",
+      default: "column-reverse",
+    },
+    gap: space[2],
+    justifyContent: { "@media (min-width: 40rem)": "flex-end", default: null },
+  },
+  header: { display: "flex", flexDirection: "column", gap: space[1.5] },
+  popup: {
+    fontSize: text.sm,
+    lineHeight: text.smLeading,
+    maxWidth: {
+      "@media (min-width: 40rem)": widths.md,
+      default: `calc(100% - ${space[8]})`,
+    },
+  },
+  title: {
+    fontFamily: fonts.sans,
+    fontSize: text.base,
+    fontWeight: weights.medium,
+    lineHeight: text.leadingNone,
+  },
+});
 
-function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
-}
+const Dialog = (props: DialogPrimitive.Root.Props) => (
+  <DialogPrimitive.Root data-slot="dialog" {...props} />
+);
 
-function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
-  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
-}
+const DialogTrigger = (props: DialogPrimitive.Trigger.Props) => (
+  <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
+);
 
-function DialogOverlay({
-  className,
+const DialogContent = ({
+  children,
   ...props
-}: DialogPrimitive.Backdrop.Props) {
-  return (
+}: Omit<DialogPrimitive.Popup.Props, "className" | "style">) => (
+  <DialogPrimitive.Portal data-slot="dialog-portal">
     <DialogPrimitive.Backdrop
+      className={(state) =>
+        stylex.props(modal.backdrop, fade(state.open)).className ?? ""
+      }
       data-slot="dialog-overlay"
-      className={cn(
-        "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 fixed inset-0 isolate z-50 bg-black/30 duration-100 supports-backdrop-filter:backdrop-blur-sm",
-        className
-      )}
-      {...props}
     />
-  );
-}
-
-function DialogContent({
-  className,
-  children,
-  showCloseButton = true,
-  ...props
-}: DialogPrimitive.Popup.Props & {
-  showCloseButton?: boolean;
-}) {
-  return (
-    <DialogPortal>
-      <DialogOverlay />
-      <DialogPrimitive.Popup
-        data-slot="dialog-content"
-        className={cn(
-          "bg-popover text-popover-foreground ring-foreground/5 dark:ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-4xl p-6 text-sm shadow-xl ring-1 duration-100 outline-none sm:max-w-md",
-          className
-        )}
-        {...props}
-      >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            render={
-              <Button
-                variant="ghost"
-                className="bg-secondary absolute top-4 right-4"
-                size="icon-sm"
-              />
-            }
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Popup>
-    </DialogPortal>
-  );
-}
-
-function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="dialog-header"
-      className={cn("flex flex-col gap-1.5", className)}
-      {...props}
-    />
-  );
-}
-
-function DialogFooter({
-  className,
-  showCloseButton = false,
-  children,
-  ...props
-}: React.ComponentProps<"div"> & {
-  showCloseButton?: boolean;
-}) {
-  return (
-    <div
-      data-slot="dialog-footer"
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className
-      )}
+    <DialogPrimitive.Popup
+      className={(state) =>
+        stylex.props(modal.popup, styles.popup, zoom(state.open)).className ??
+        ""
+      }
+      data-slot="dialog-content"
       {...props}
     >
       {children}
-      {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Close
-        </DialogPrimitive.Close>
-      )}
-    </div>
-  );
-}
+      <DialogPrimitive.Close
+        data-slot="dialog-close"
+        {...stylex.props(
+          buttonLook({ size: "icon-sm", variant: "ghost" }),
+          styles.close
+        )}
+      >
+        <Icon glyph={XIcon} />
+        <span {...stylex.props(layout.srOnly)}>Close</span>
+      </DialogPrimitive.Close>
+    </DialogPrimitive.Popup>
+  </DialogPrimitive.Portal>
+);
 
-function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
-  return (
-    <DialogPrimitive.Title
-      data-slot="dialog-title"
-      className={cn(
-        "font-heading text-base leading-none font-medium",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+type Div = Omit<ComponentProps<"div">, "className" | "style">;
 
-function DialogDescription({
-  className,
-  ...props
-}: DialogPrimitive.Description.Props) {
-  return (
-    <DialogPrimitive.Description
-      data-slot="dialog-description"
-      className={cn(
-        "text-muted-foreground *:[a]:hover:text-foreground text-sm *:[a]:underline *:[a]:underline-offset-3",
-        className
-      )}
-      {...props}
-    />
-  );
-}
+const DialogHeader = (props: Div) => (
+  <div data-slot="dialog-header" {...props} {...stylex.props(styles.header)} />
+);
+
+const DialogFooter = (props: Div) => (
+  <div data-slot="dialog-footer" {...props} {...stylex.props(styles.footer)} />
+);
+
+const DialogTitle = (
+  props: Omit<DialogPrimitive.Title.Props, "className" | "style">
+) => (
+  <DialogPrimitive.Title
+    data-slot="dialog-title"
+    {...props}
+    {...stylex.props(styles.title)}
+  />
+);
+
+const DialogDescription = (
+  props: Omit<DialogPrimitive.Description.Props, "className" | "style">
+) => (
+  <DialogPrimitive.Description
+    data-slot="dialog-description"
+    {...props}
+    {...stylex.props(styles.description)}
+  />
+);
 
 export {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogOverlay,
-  DialogPortal,
   DialogTitle,
   DialogTrigger,
+  modal,
+  styles as dialogParts,
 };

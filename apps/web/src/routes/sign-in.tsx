@@ -1,10 +1,12 @@
 import { SIGN_IN_CODE } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { createFileRoute, getRouteApi, redirect } from "@tanstack/react-router";
 import { Schema } from "effect";
 
 import { CodeField } from "@/components/code-field";
 import { JoinFields, SignInForm, checkJoin } from "@/components/sign-in-form";
 import {
+  cardSize,
   Card,
   CardContent,
   CardDescription,
@@ -16,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { formField } from "@/lib/form";
 import { joinGroup, redeemSignInCode } from "@/lib/sign-in";
 import { readKey } from "@/lib/stored-key";
+import { layout } from "@/styles/layout";
 
 const SignInSearch = Schema.Struct({
   notice: Schema.optionalKey(Schema.Literal("expired")),
@@ -27,19 +30,19 @@ const SignIn = () => {
   const { apiUrl } = signInRoute.useRouteContext();
   const { notice } = signInRoute.useSearch();
   return (
-    <main className="flex min-h-svh items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
+    <main {...stylex.props(layout.centered)}>
+      <Card xstyle={cardSize.narrow}>
         <CardHeader>
           <CardTitle>
             <h1>Sign in to Orbis</h1>
           </CardTitle>
           {notice === "expired" ? (
-            <CardDescription className="text-destructive" role="alert">
+            <CardDescription tone="destructive" role="alert">
               Your saved key no longer works. Sign in again.
             </CardDescription>
           ) : null}
         </CardHeader>
-        <CardContent className="flex flex-col gap-6">
+        <CardContent xstyle={layout.stack6}>
           <SignInForm
             call={async (form) =>
               await redeemSignInCode(apiUrl, formField(form, "code"))
@@ -55,7 +58,7 @@ const SignIn = () => {
             title="Sign in with a Sign-in Code"
           >
             {(submitWhenReady) => (
-              <div className="flex flex-col gap-2">
+              <div {...stylex.props(layout.stack2)}>
                 <Label htmlFor="sign-in-code">Sign-in Code</Label>
                 <CodeField
                   format={SIGN_IN_CODE}

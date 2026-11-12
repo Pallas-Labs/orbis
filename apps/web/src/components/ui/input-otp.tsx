@@ -1,83 +1,159 @@
-import { MinusIcon } from "@phosphor-icons/react";
-import { cn } from "cn";
+import * as stylex from "@stylexjs/stylex";
 import { OTPInput, OTPInputContext } from "input-otp";
-import * as React from "react";
+import { useContext } from "react";
+import type { ComponentProps } from "react";
 
-function InputOTP({
-  className,
-  containerClassName,
+import type { Overrides } from "@/styles/overrides";
+import {
+  colors,
+  layers,
+  motion,
+  radii,
+  space,
+  text,
+} from "@/styles/tokens.stylex";
+
+const blink = stylex.keyframes({
+  "0%, 70%, 100%": { opacity: 1 },
+  "20%, 50%": { opacity: 0 },
+});
+
+const styles = stylex.create({
+  active: {
+    borderColor: colors.ring,
+    boxShadow: `0 0 0 3px ${colors.focusHalo}`,
+    zIndex: layers.raised,
+  },
+  caret: {
+    animationDuration: motion.blink,
+    animationIterationCount: "infinite",
+    animationName: blink,
+    animationTimingFunction: "ease-out",
+    backgroundColor: colors.foreground,
+    height: space[4],
+    width: space.px,
+  },
+  caretBox: {
+    alignItems: "center",
+    display: "flex",
+    inset: 0,
+    justifyContent: "center",
+    pointerEvents: "none",
+    position: "absolute",
+  },
+  container: {
+    alignItems: "center",
+    display: "flex",
+    gap: space[2],
+    opacity: { ":has(:disabled)": 0.5, default: null },
+    width: "100%",
+  },
+  group: {
+    alignItems: "center",
+    borderRadius: radii.xl3,
+    display: "flex",
+  },
+  input: { cursor: { ":disabled": "not-allowed", default: null } },
+  slot: {
+    alignItems: "center",
+    backgroundColor: colors.fieldFill,
+    borderBlockWidth: space.px,
+    borderColor: colors.input,
+    borderEndEndRadius: { ":last-child": radii.xl3, default: null },
+    borderEndStartRadius: { ":first-child": radii.xl3, default: null },
+    borderInlineEndWidth: space.px,
+    borderInlineStartWidth: { ":first-child": space.px, default: 0 },
+    borderStartEndRadius: { ":last-child": radii.xl3, default: null },
+    borderStartStartRadius: { ":first-child": radii.xl3, default: null },
+    borderStyle: "solid",
+    display: "flex",
+    justifyContent: "center",
+    outlineStyle: "none",
+    position: "relative",
+    transitionDuration: motion.normal,
+    transitionProperty: "all",
+    transitionTimingFunction: motion.ease,
+  },
+});
+
+/** How big a code box is: a field to type into, or a code shown to read from across a table. */
+const slotSizes = stylex.create({
+  field: {
+    flexGrow: 1,
+    fontSize: text.base,
+    height: space[10],
+    lineHeight: text.baseLeading,
+    minWidth: 0,
+  },
+  shown: {
+    flexShrink: 1,
+    fontSize: text.xl2,
+    height: space[11],
+    lineHeight: text.xl2Leading,
+    minWidth: 0,
+    width: space[11],
+  },
+});
+
+// input-otp's props are a union (slots drawn by `render`, or children), so the omit distributes.
+type OTPInputProps<Props = ComponentProps<typeof OTPInput>> =
+  Props extends unknown
+    ? Omit<Props, "className" | "containerClassName" | "style">
+    : never;
+
+const InputOTP = (props: OTPInputProps) => (
+  <OTPInput
+    className={stylex.props(styles.input).className ?? ""}
+    containerClassName={stylex.props(styles.container).className ?? ""}
+    data-slot="input-otp"
+    spellCheck={false}
+    {...props}
+  />
+);
+
+const InputOTPGroup = ({
+  xstyle,
   ...props
-}: React.ComponentProps<typeof OTPInput> & {
-  containerClassName?: string;
-}) {
-  return (
-    <OTPInput
-      data-slot="input-otp"
-      containerClassName={cn(
-        "cn-input-otp flex items-center has-disabled:opacity-50",
-        containerClassName
-      )}
-      spellCheck={false}
-      className={cn("disabled:cursor-not-allowed", className)}
-      {...props}
-    />
-  );
-}
+}: Omit<ComponentProps<"div">, "className" | "style"> & {
+  /** How the group shares its row with the others. */
+  readonly xstyle?: Overrides<"flexGrow" | "minWidth">;
+}) => (
+  <div
+    data-slot="input-otp-group"
+    {...props}
+    {...stylex.props(styles.group, xstyle)}
+  />
+);
 
-function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="input-otp-group"
-      className={cn(
-        "has-aria-invalid:border-destructive has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 flex items-center rounded-3xl has-aria-invalid:ring-3",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function InputOTPSlot({
+const InputOTPSlot = ({
   index,
-  className,
+  size,
   ...props
-}: React.ComponentProps<"div"> & {
-  index: number;
-}) {
-  const inputOTPContext = React.useContext(OTPInputContext);
-  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
-
+}: Omit<ComponentProps<"div">, "className" | "style"> & {
+  readonly index: number;
+  readonly size: keyof typeof slotSizes;
+}) => {
+  const { char, hasFakeCaret, isActive } =
+    useContext(OTPInputContext)?.slots[index] ?? {};
   return (
     <div
-      data-slot="input-otp-slot"
       data-active={isActive}
-      className={cn(
-        "border-input bg-input/50 aria-invalid:border-destructive data-[active=true]:border-ring data-[active=true]:ring-ring/30 data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40 relative flex size-9 items-center justify-center border-y border-r text-sm transition-all outline-none first:rounded-l-3xl first:border-l last:rounded-r-3xl data-[active=true]:z-10 data-[active=true]:ring-3",
-        className
-      )}
+      data-slot="input-otp-slot"
       {...props}
+      {...stylex.props(
+        styles.slot,
+        slotSizes[size],
+        isActive === true && styles.active
+      )}
     >
       {char}
-      {hasFakeCaret && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="animate-caret-blink bg-foreground h-4 w-px duration-1000" />
+      {hasFakeCaret === true ? (
+        <div {...stylex.props(styles.caretBox)}>
+          <div {...stylex.props(styles.caret)} />
         </div>
-      )}
+      ) : null}
     </div>
   );
-}
+};
 
-function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="input-otp-separator"
-      className="flex items-center [&_svg:not([class*='size-'])]:size-4"
-      role="separator"
-      {...props}
-    >
-      <MinusIcon />
-    </div>
-  );
-}
-
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };
+export { InputOTP, InputOTPGroup, InputOTPSlot };

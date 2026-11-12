@@ -1,5 +1,6 @@
 import { isDownloadInFlight } from "@orbis/contracts";
 import { ExportIcon } from "@phosphor-icons/react";
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
@@ -8,19 +9,66 @@ import { Tracklist } from "@/components/library/tracklist";
 import { useDownloadProgress } from "@/components/library/use-download-progress";
 import { usePlayer } from "@/components/player/player";
 import { RouteProblem } from "@/components/route-problem";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, buttonLook } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Icon } from "@/components/ui/icon";
 import { detach } from "@/lib/detach";
 import { listSets, requestDownload } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
 import { FAILURE_MESSAGES } from "@/lib/orbis";
 import { getTracklist, retryTracklist } from "@/lib/tracklists";
 import type { Session } from "@/routes/_app";
+import { layout } from "@/styles/layout";
+import { colors, radii, space, widths } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  actions: {
+    alignItems: "center",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: space[2],
+  },
+  artwork: {
+    aspectRatio: "1 / 1",
+    borderRadius: radii.md,
+    flexShrink: 0,
+    width: { "@media (min-width: 40rem)": space[48], default: space[32] },
+  },
+  artworkImage: { objectFit: "cover" },
+  artworkPlaceholder: { backgroundColor: colors.muted },
+  back: { color: colors.primary, textDecorationLine: "underline" },
+  header: {
+    alignItems: { "@media (min-width: 40rem)": "flex-end", default: null },
+    display: "flex",
+    flexDirection: { "@media (min-width: 40rem)": "row", default: "column" },
+    gap: space[4],
+  },
+  heading: { textWrap: "pretty" },
+  info: {
+    alignItems: "flex-start",
+    display: "flex",
+    flexDirection: "column",
+    gap: space[3],
+    minWidth: 0,
+  },
+  libraryLink: { textDecorationLine: "underline", width: "fit-content" },
+  main: {
+    marginInline: "auto",
+    maxWidth: widths.xl3,
+    width: "100%",
+  },
+  page: {
+    paddingBottom: space[40],
+    paddingInline: space[6],
+    paddingTop: space[6],
+  },
+});
 
 const AudioAction = ({
   download,
@@ -37,7 +85,7 @@ const AudioAction = ({
   if (set.source === "apple-music") {
     return (
       <a
-        className={buttonVariants()}
+        {...stylex.props(buttonLook())}
         href={set.url}
         rel="noreferrer"
         target="_blank"
@@ -59,7 +107,7 @@ const AudioAction = ({
   }
   if (isDownloadInFlight(set.downloadState)) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p {...stylex.props(type.sm, type.muted)}>
         {progress === undefined
           ? "Keeping audio…"
           : `Keeping audio ${Math.round(progress * 100)}%`}
@@ -84,7 +132,7 @@ const ShareMenu = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="outline" />}>
-        <ExportIcon data-icon="inline-start" />
+        <Icon data-icon="inline-start" glyph={ExportIcon} />
         Share
       </DropdownMenuTrigger>
       <DropdownMenuContent>
@@ -141,9 +189,9 @@ const SetPage = ({
 
   if (set === null) {
     return (
-      <main className="mx-auto w-full max-w-3xl p-6">
-        <h1 className="text-2xl font-medium">Set not found</h1>
-        <Link className="text-primary underline" to="/">
+      <main {...stylex.props(layout.main)}>
+        <h1 {...stylex.props(type.title)}>Set not found</h1>
+        <Link {...stylex.props(styles.back, layout.focusOutline)} to="/">
           Back to Library
         </Link>
       </main>
@@ -188,7 +236,7 @@ const SetPage = ({
   let tracklistContent = null;
   if (tracklist?.ok === false) {
     tracklistContent = (
-      <div className="flex items-center gap-3">
+      <div {...stylex.props(layout.rowCenter3)}>
         <p role="alert">{FAILURE_MESSAGES[tracklist.failure]}</p>
         <Button
           onClick={detach(async () => {
@@ -225,29 +273,37 @@ const SetPage = ({
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 pt-6 pb-40">
-      <Link className="text-muted-foreground w-fit text-sm underline" to="/">
+    <main {...stylex.props(styles.main, layout.stack6, styles.page)}>
+      <Link
+        {...stylex.props(
+          type.sm,
+          type.muted,
+          styles.libraryLink,
+          layout.focusOutline
+        )}
+        to="/"
+      >
         Library
       </Link>
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end">
+      <header {...stylex.props(styles.header)}>
         {(set.artworkLargeUrl ?? set.artworkUrl ?? "") === "" ? (
           <div
             aria-hidden
-            className="bg-muted aspect-square w-32 shrink-0 rounded-md sm:w-48"
+            {...stylex.props(styles.artwork, styles.artworkPlaceholder)}
           />
         ) : (
           <img
             alt=""
-            className="aspect-square w-32 shrink-0 rounded-md object-cover sm:w-48"
+            {...stylex.props(styles.artwork, styles.artworkImage)}
             src={set.artworkLargeUrl ?? set.artworkUrl ?? ""}
           />
         )}
-        <div className="flex min-w-0 flex-col items-start gap-3">
+        <div {...stylex.props(styles.info)}>
           <div>
-            <h1 className="text-2xl font-medium text-pretty">{set.title}</h1>
-            <p className="text-muted-foreground">{setDetails(set)}</p>
+            <h1 {...stylex.props(type.title, styles.heading)}>{set.title}</h1>
+            <p {...stylex.props(type.muted)}>{setDetails(set)}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div {...stylex.props(styles.actions)}>
             <AudioAction
               download={download}
               play={play}
@@ -256,7 +312,7 @@ const SetPage = ({
             />
             <ShareMenu onCopy={copy} set={set} />
             {copied === null ? null : (
-              <p className="text-muted-foreground text-sm" role="status">
+              <p {...stylex.props(type.sm, type.muted)} role="status">
                 Copied the {copied}
               </p>
             )}

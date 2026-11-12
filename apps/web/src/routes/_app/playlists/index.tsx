@@ -1,7 +1,9 @@
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 
+import { Problem } from "@/components/problem";
 import { RouteProblem } from "@/components/route-problem";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +25,26 @@ import {
   listSharedPlaylists,
 } from "@/lib/playlists";
 import type { Playlist, SharedPlaylist } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
+import { colors, radii, space } from "@/styles/tokens.stylex";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  detail: { flexShrink: 0 },
+  link: {
+    alignItems: "baseline",
+    backgroundColor: {
+      ":hover": { "@media (hover: hover)": colors.muted, default: null },
+      default: null,
+    },
+    borderRadius: radii.md,
+    display: "flex",
+    gap: space[4],
+    justifyContent: "space-between",
+    paddingBlock: space[3],
+    paddingInline: space[2],
+  },
+});
 
 const setCount = (count: number) => `${count} ${count === 1 ? "Set" : "Sets"}`;
 
@@ -58,9 +80,9 @@ const CreatePlaylistForm = ({
     });
   };
   return (
-    <form className="flex flex-col gap-2" onSubmit={detach(create)}>
+    <form {...stylex.props(layout.stack2)} onSubmit={detach(create)}>
       <Label htmlFor="playlist-name">Playlist name</Label>
-      <div className="flex gap-2">
+      <div {...stylex.props(layout.row2)}>
         <Input
           autoComplete="off"
           id="playlist-name"
@@ -71,11 +93,7 @@ const CreatePlaylistForm = ({
           Create Playlist
         </Button>
       </div>
-      {problem === null ? null : (
-        <p className="text-destructive text-sm" role="alert">
-          {problem}
-        </p>
-      )}
+      <Problem message={problem} />
     </form>
   );
 };
@@ -87,14 +105,16 @@ const PlaylistLink = ({
   readonly detail: string;
   readonly playlist: Playlist;
 }) => (
-  <li>
+  <li {...stylex.props(layout.divided)}>
     <Link
-      className="hover:bg-muted flex items-baseline justify-between gap-4 rounded-md px-2 py-3"
+      {...stylex.props(styles.link, layout.focusOutline)}
       params={{ id: playlist.id }}
       to="/playlists/$id"
     >
-      <span className="truncate font-medium">{playlist.name}</span>
-      <span className="text-muted-foreground shrink-0 text-sm">{detail}</span>
+      <span {...stylex.props(type.truncate, type.medium)}>{playlist.name}</span>
+      <span {...stylex.props(type.muted, styles.detail, type.sm)}>
+        {detail}
+      </span>
     </Link>
   </li>
 );
@@ -108,24 +128,24 @@ const Playlists = ({
   readonly owned: readonly Playlist[];
   readonly shared: readonly SharedPlaylist[];
 }) => (
-  <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
+  <main {...stylex.props(layout.stack6, layout.main)}>
     <Card>
       <CardHeader>
         <CardTitle>
-          <h1 className="text-2xl">Playlists</h1>
+          <h1 {...stylex.props(type.xl2)}>Playlists</h1>
         </CardTitle>
         <CardDescription>
           A Playlist is a named, ordered selection of Sets.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6">
+      <CardContent xstyle={layout.stack6}>
         <CreatePlaylistForm credentials={credentials} />
         {owned.length === 0 ? (
-          <p className="text-muted-foreground text-sm">
+          <p {...stylex.props(type.muted, type.sm)}>
             You have no Playlists yet.
           </p>
         ) : (
-          <ul aria-label="Your Playlists" className="divide-y">
+          <ul aria-label="Your Playlists">
             {owned.map((playlist) => (
               <PlaylistLink
                 detail={setCount(playlist.setCount)}
@@ -141,14 +161,14 @@ const Playlists = ({
       <Card>
         <CardHeader>
           <CardTitle>
-            <h2 className="text-lg">Shared with you</h2>
+            <h2 {...stylex.props(type.lg)}>Shared with you</h2>
           </CardTitle>
           <CardDescription>
             Collaborative Playlists where you can add, remove, and reorder Sets.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ul aria-label="Shared with you" className="divide-y">
+          <ul aria-label="Shared with you">
             {shared.map((playlist) => (
               <PlaylistLink
                 detail={`${playlist.creator.username} · ${setCount(playlist.setCount)}`}

@@ -1,12 +1,14 @@
 import { GROUP_PASSCODE, codeFromText } from "@orbis/contracts";
+import * as stylex from "@stylexjs/stylex";
 import { Link, createFileRoute, getRouteApi } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { Problem } from "@/components/problem";
 import { JoinFields, SignInForm, checkJoin } from "@/components/sign-in-form";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonLook } from "@/components/ui/button";
 import {
+  cardSize,
   Card,
   CardContent,
   CardDescription,
@@ -18,6 +20,8 @@ import { takeFragment } from "@/lib/fragment";
 import { fetchMe, problemFor } from "@/lib/orbis";
 import { joinGroup } from "@/lib/sign-in";
 import { forgetKey, readKey } from "@/lib/stored-key";
+import { layout } from "@/styles/layout";
+import { type } from "@/styles/type";
 
 const SITE = "https://orbis.p11a.xyz";
 const TITLE = "Join the Orbis Group";
@@ -74,15 +78,15 @@ const JoinCard = ({
   readonly children: ReactNode;
   readonly description: string;
 }) => (
-  <main className="flex min-h-svh items-center justify-center p-6">
-    <Card className="w-full max-w-sm">
+  <main {...stylex.props(layout.centered)}>
+    <Card xstyle={cardSize.narrow}>
       <CardHeader>
         <CardTitle>
           <h1>{TITLE}</h1>
         </CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-6">{children}</CardContent>
+      <CardContent xstyle={layout.stack6}>{children}</CardContent>
     </Card>
   </main>
 );
@@ -142,7 +146,7 @@ const Join = () => {
   if (read?.kind === "signed-in") {
     return (
       <JoinCard description={`You are already signed in as ${read.username}.`}>
-        <Link className={buttonVariants()} to="/">
+        <Link {...stylex.props(buttonLook())} to="/">
           Open Orbis
         </Link>
       </JoinCard>
@@ -150,9 +154,9 @@ const Join = () => {
   }
   return (
     <JoinCard description="Your friend invited you to their Orbis Group.">
-      <section className="flex flex-col gap-1" aria-label="Install Orbis">
-        <h2 className="font-medium">Install Orbis first</h2>
-        <p className="text-muted-foreground text-sm">
+      <section {...stylex.props(layout.stack1)} aria-label="Install Orbis">
+        <h2 {...stylex.props(type.medium)}>Install Orbis first</h2>
+        <p {...stylex.props(type.muted, type.sm)}>
           Open the TestFlight email from Apple on this iPhone and install Orbis,
           then come back and tap your link again.
         </p>

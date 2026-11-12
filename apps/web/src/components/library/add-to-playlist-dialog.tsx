@@ -1,6 +1,8 @@
+import * as stylex from "@stylexjs/stylex";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { Problem } from "@/components/problem";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -17,6 +19,12 @@ import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { Credentials } from "@/lib/orbis";
 import { replaceSetPlaylists } from "@/lib/playlists";
 import type { Playlist } from "@/lib/playlists";
+import { layout } from "@/styles/layout";
+import { type } from "@/styles/type";
+
+const styles = stylex.create({
+  link: { textDecorationLine: "underline" },
+});
 
 export const AddToPlaylistDialog = ({
   credentials,
@@ -78,14 +86,17 @@ export const AddToPlaylistDialog = ({
           </DialogDescription>
         </DialogHeader>
         {playlists.length === 0 ? (
-          <Link className="text-sm underline" to="/playlists">
+          <Link
+            {...stylex.props(type.sm, styles.link, layout.focusOutline)}
+            to="/playlists"
+          >
             Create a Playlist
           </Link>
         ) : (
-          <ul aria-label="Your Playlists" className="flex flex-col gap-3">
+          <ul aria-label="Your Playlists" {...stylex.props(layout.stack3)}>
             {playlists.map((playlist) => (
               <li key={playlist.id}>
-                <label className="flex items-center gap-3 text-sm">
+                <label {...stylex.props(type.sm, layout.rowCenter3)}>
                   <Checkbox
                     checked={chosen.has(playlist.id)}
                     onCheckedChange={(checked) => {
@@ -98,11 +109,7 @@ export const AddToPlaylistDialog = ({
             ))}
           </ul>
         )}
-        {problem === null ? null : (
-          <p className="text-destructive text-sm" role="alert">
-            {problem}
-          </p>
-        )}
+        <Problem message={problem} />
         {playlists.length === 0 ? null : (
           <DialogFooter>
             <Button disabled={pending} onClick={detach(save)}>

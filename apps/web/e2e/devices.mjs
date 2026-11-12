@@ -169,10 +169,12 @@ try {
     assert.match(code, VALID_SIGN_IN_CODE);
     assert.equal(await boxGroups(shownCode), 2);
     assert.doesNotMatch(await shownCode.textContent(), /-/u);
-    assert.equal(
-      await textOf(shownCode.locator(".sr-only")),
-      `${code.slice(0, 4)}, ${code.slice(4)}`.replaceAll(/(?<=\w)(?=\w)/gu, " ")
+    // A screen reader hears the code spelt out, in two groups.
+    const spoken = `${code.slice(0, 4)}, ${code.slice(4)}`.replaceAll(
+      /(?<=\w)(?=\w)/gu,
+      " "
     );
+    assert.equal(await shownCode.getByText(spoken, { exact: true }).count(), 1);
     await page.getByRole("button", { name: "Copy code" }).click();
     await page.getByRole("button", { name: "Copied" }).waitFor();
     assert.equal(
