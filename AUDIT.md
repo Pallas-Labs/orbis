@@ -192,6 +192,14 @@ Decision made without the owner: three more tries over 7 s. Undo: empty `COMPLET
 
 Left: the Apple app (finding 6) and Rune have the same gap. Rune plays the next Set at once and says "Orbis didn't hear that the Set ended" (`completed` in `apps/rune/src/playing/mod.rs`), so the service keeps the finished Set active, with no Finish and no Listen for the next one, until the person plays something. Not changed here: the Rune fix needs a retry timer in its write queue and a press test, and the Apple one needs a Mac.
 
+### 17. Web: a completion's answer restarted a Set the person had just chosen — fixed
+
+`finish` started whatever the completion's answer named active, even when the person had played another Set while the completion was out. That Set then started a second time: a new stream grant, a reload, and playback from its saved place again. The window was one round trip; the retry of finding 16 makes it up to 7 s when Orbis does not answer.
+
+Evidence: the last step of the `live-queue` journey drops the first completion, plays the Second set while the player waits, and holds the second completion until that Set plays. Without the guard: `a late completion started the Set the person chose a second time`, 6 stream grants where 5 were expected. With it, the step passes.
+
+Fix: `finish` keeps the play intent it started with, as `play` and `start` already do, and does nothing with the answer when the person has chosen since.
+
 ## Rejected
 
 - Queue and Listen counts drift under ordinary use. A 400-step random run of play, Play Next, Add to Queue and completion over HTTP matched a model at every step (queue order, active Set, `listenCount`, `finishCount`). Not committed.

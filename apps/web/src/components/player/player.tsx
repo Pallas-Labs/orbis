@@ -310,9 +310,14 @@ export const PlayerProvider = ({
     }
     // The completion resets the Playback Position on the server, so no save of 0 goes first.
     const { id } = playing.set;
+    const intent = playIntent.current;
     const completed = await write(
       async () => await completeSet(credentials, id)
     );
+    // A Set the person chose while the completion was out keeps the player.
+    if (intent !== playIntent.current) {
+      return;
+    }
     if (!completed.ok) {
       setProblem(FAILURE_MESSAGES[completed.failure]);
       return;

@@ -383,6 +383,50 @@ try {
     }, "playing another Set did not save the place of the Set that was playing");
     step("playing another Set saves the place of the Set that was playing");
 
+    // The First set ends and its first completion is dropped again. While the player waits to
+    // send it again, the person plays the Second set. The second completion is held until that
+    // Set plays, so its answer arrives after the person's choice.
+    let completions = 0;
+    const dropped = Promise.withResolvers();
+    const chosen = Promise.withResolvers();
+    await page.route("**/queue/completion", async (route) => {
+      completions += 1;
+      if (completions === 1) {
+        await route.abort("failed");
+        dropped.resolve();
+        return;
+      }
+      await chosen.promise;
+      await route.continue();
+    });
+    await page.evaluate(() => {
+      const element = document.querySelector("audio");
+      if (element) {
+        element.currentTime = Math.max(0, element.duration - 0.3);
+      }
+    });
+    await dropped.promise;
+    await page.getByRole("button", { name: "Actions for Second set" }).click();
+    await page.getByRole("menuitem", { exact: true, name: "Play" }).click();
+    await waitUntil(async () => {
+      const state = await audioState();
+      return state?.src.includes(`/sets/${sets["Second set"]}/audio`);
+    }, "the Set the person chose did not start");
+    const grantsForChoice = grants;
+    const answered = page.waitForResponse((response) =>
+      response.url().endsWith("/queue/completion")
+    );
+    chosen.resolve();
+    await answered;
+    await delay(500);
+    assert.equal(
+      grants,
+      grantsForChoice,
+      "a late completion started the Set the person chose a second time"
+    );
+    await page.unroute("**/queue/completion");
+    step("a Set chosen while a completion is out keeps playing");
+
     assert.deepEqual(violations, []);
     step("no Content Security Policy violations");
   } finally {
