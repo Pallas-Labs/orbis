@@ -2,31 +2,31 @@
 
 ## Resume here
 
-The run on Vanta stopped early: the machine was overloaded by other jobs, and the audit moves to another machine. Continue from this branch, `audit/fable-2026-11-12`.
+The audit ran on two machines: Vanta, then DataGhost after Vanta was overloaded. It ended with the branch `audit/fable-2026-11-12` pushed and one PR open against `main`.
 
-State when it stopped:
+State at the end:
 
-- Finding 1 is fixed and its test passes: `CI=true bun test --timeout 60000 src/heavy-rotation-http.test.ts` in `apps/server`, 3 pass.
-- The first commit attempt failed in the pre-commit hook. `@orbis/web#test` timed out starting its servers (`vite preview did not listen on port … in 15 s`, 11 of the journeys) while the load average was 65 to 96 on 12 cores. The other 20 tasks passed. The same check passed on the untouched branch an hour before (21 of 21, 59 s), and the change touches no web code, so the cause is load. No hook was skipped.
-- If this file is in a commit, a later attempt passed the hook. Run `bun run check` once on the new machine before you trust it.
+- Nine fixes, one commit each, each with a test that failed first: findings 1, 2, 3, 10, 12, 13, 15, 16 and 17. Each commit passed the pre-commit hook (`bun run check`, 21 of 21 tasks): finding 1 on Vanta, the rest on DataGhost. No hook was skipped.
+- No Swift file changed and no Swift check ran. `bun run ci` was not run, so the PR head has no `verify` status: it needs the Mac half (`native:format` and `swift test` for `OrbisDesign`).
+- On Vanta, the first commit attempt failed in the hook because `@orbis/web#test` could not start its servers at a load average of 65 to 96. The same commit passed later.
 
-Next, in this order:
+Rules that cost time here: do not edit a tracked file while `bun run check` runs (the first check on DataGhost failed that way, on a half-made edit); each commit runs the whole `bun run check`, so expect one to three minutes for each.
 
-1. Fix finding 2 (queue change, Finish and Listen in one transaction). The failing test and the design are written under the finding.
-2. Fix finding 3 (bound `GET /people/:id/listens`), and drop its line from `scripts/bounded-reads.baseline.json` with `node scripts/check-bounded-reads.mjs --update-baseline`.
-3. Look for more in sync, where a test can run here: the web player (`apps/web/src/components/player/player.tsx`, journeys in `apps/web/e2e`) and the Rune client (`apps/rune/scripts/check`). Findings 5 and 10 are the leads.
-4. Read `apps/server/src/tracklists.ts` and `playlist-importer.ts` for state that status strings and nullable fields hold together (`tracklistState` with `tracklistRunId` and `tracklistRunStartedAt`; `playlistImports.state` with `pageToken` and `failure`). Not read closely yet.
-5. Push, then open one PR against `main` whose body summarizes this file. Say in it that no Swift check ran.
+What to do next, most useful first:
 
-Rules that cost time here: run one command at a time when the second reads what the first writes; each commit runs the whole `bun run check`, so batch nothing but expect minutes for each commit.
+1. Decide finding 4 (the queue only grows). It is the largest cost that is left: every queue change rewrites and answers the whole queue.
+2. Give Rune and the Apple app the completion retry the web player now has (findings 6 and 16). Rune's is testable on Linux with a press test.
+3. Decide finding 5 (a paused player overwrites a newer place from another device). It needs the owner because the fix changes what Play does after a pause.
+4. Resume a details read that a restart lost (finding 13, the half that is left).
+5. Drop the four dead columns on `sets` (finding 9) after checking the transfer scripts.
 
 ## Scope
 
 Listening data (Listens, Listening Time, Heavy Rotation) and sync between the apps and the backend, then whatever those led to.
 
-This machine is Linux with no Xcode. Server, web, API and Rune checks can run here. No Swift check ran; every Swift finding is from reading the code and says so.
+Both machines are Linux with no Xcode. Server, web, API and Rune checks can run here. No Swift check ran; every Swift finding is from reading the code and says so.
 
-Status words: **fixed** (a commit on this branch, with a test that failed first), **planned** (evidence in hand, fix not written), **left** (real, not changed here, with the reason), **rejected** (looked wrong, is not).
+Status words: **fixed** (a commit on this branch, with a test that failed first), **left** (real, not changed here, with the reason), **rejected** (looked wrong, is not).
 
 ## Findings
 
@@ -106,7 +106,7 @@ By reading `finishedPlaying` in `AppModel.swift`. One `reportCompletion` with no
 
 ### 7. Each start, resume and seek loses up to one save interval of Listening Time — left
 
-The first save after a start or a resume has no matching earlier save, so it credits nothing: up to 5 s on Apple (it reports only on its 5 s tick), none on the web for a resume (it saves at once). Under 1% of an hour-long Set. A client change (save when playback starts); Swift, so not done here.
+The first save after a start or a resume has no matching earlier save, so it credits nothing: up to 5 s on Apple (it reports only on its 5 s tick), none on the web for a resume (it saves at once). Under 1% of an hour-long Set. A client change (save when playback starts); Swift, so not done here. The end of a Set loses the same way on Apple (up to 5 s) and Rune (up to 15 s): neither saves the last place before the completion resets it. The web player saves it on the pause at the end, and since finding 15 when another Set starts.
 
 ### 8. A UTC day splits an afternoon in Los Angeles — left
 
@@ -118,7 +118,7 @@ Listening Time is by UTC day (GLOSSARY.md), and a day under two minutes of a Set
 
 ### 10. Web: a position save could land after the completion that reset it — fixed
 
-`player.tsx` did not await a position save, and `finish` sent a save of 0 and then the completion while earlier saves could still be out. A Set that ends is not a rare case for this: Chrome fires `pause` before `ended`, so every Set that plays out on the web saves its last second (`seconds` = the length) at the moment it finishes. A save that lands after the completion leaves the finished Set at its end. The next play of that Set starts there, ends at once, and counts a Listen and a Finish nobody heard.
+`player.tsx` did not await a position save, and `finish` sent a save of 0 and then the completion while earlier saves could still be out. A Set that ends is not a rare case for this: Chrome fires `pause` before `ended`, so every Set that plays out on the web saves its last second (`seconds` = the length) at the moment it finishes. A save that lands after the completion leaves the finished Set at its end, so the next play of that Set starts there. By reading, not tested: a player that starts a Set at its end finishes it at once, which counts a Listen and a Finish nobody heard.
 
 Evidence: the `live-queue` journey (`apps/web/e2e/live-queue.mjs`) now holds each save of the First set other than 0 for 1.5 s, seeks to 0.3 s before the end and lets the Set end. Before the fix:
 
@@ -131,7 +131,7 @@ The two late saves are the seek and the pause at the end. After the fix the step
 
 Fix: position saves and the completion go out one at a time, in the order the player made them, as Rune's `writes` queue does. The save of 0 before the completion is gone, because `Queue.complete` resets the position itself.
 
-How likely it was without the 1.5 s hold: the late save must be slower than the two requests after it by more than one round trip. Rare on a good network; the result when it happens is a Set that skips itself.
+How likely it was without the 1.5 s hold: the late save must be slower than the two requests after it by more than one round trip. Rare on a good network.
 
 Found while here and fixed next: finding 15.
 
@@ -203,11 +203,19 @@ Fix: `finish` keeps the play intent it started with, as `play` and `start` alrea
 ## Rejected
 
 - Queue and Listen counts drift under ordinary use. A 400-step random run of play, Play Next, Add to Queue and completion over HTTP matched a model at every step (queue order, active Set, `listenCount`, `finishCount`). Not committed.
-- Two completions at once record two Finishes. See finding 2.
+- Two completions at once record two Finishes, or two Add to Queue requests at once lose one. See finding 2.
 - Download state is an unwritten state machine. `download-state.ts` already names every move. Presence has `decide` in `presence.ts`, and the web player has `PRESENCE_MOVES`.
+- A Playlist import is an unwritten state machine. `playlist-importer.ts` holds it as a tagged `ImportState` (Running, Done, Failed) with one writer, resumes after a restart, and fails the import when its Playlist is deleted.
+- A Playlist import keeps saving Sets for a removed Person. `importTrack` in `app-core.ts` refuses a removed Person before each save.
+- Removing a Person leaves their Listening Time or Collections. `removePerson` deletes both.
+- A Collection's tag filter misses tags by letter case. Tags are stored lowercase and the filter is lowercased.
 
 ## Decisions made without the owner
 
 - Finding 1: chose "the step counts whole" over "cap at the time rounded up". Rounding up still drops a second when network jitter passes a second, and the cap protected only against a forward seek of under 3 s between two saves, which no client's controls make (they skip 15 s or 30 s). Undo: restore the `Math.min` in `listenedBetween`.
-- Finding 2 (when done): keep the repo's own way of writing a state machine, a table of moves or a `decide` function, as `download-state.ts` and `presence.ts` do. Orbis has no XState, and adding it is a dependency choice for the owner.
-- Finding 3 (when done): 200 Listens. Undo: change the constant.
+- Finding 2: kept the repo's own way of writing a state machine, a table of moves or a `decide` function, as `download-state.ts` and `presence.ts` do. Orbis has no XState, and adding it is a dependency choice for the owner.
+- Finding 3: 200 Listens. ADR 0009 says "full Listen History is on the profile"; the profile now holds the newest 200, so the ADR and the code differ until the owner picks: a page cursor, or the bound as the rule. Undo: remove `.limit(LISTEN_HISTORY_LIMIT)` and add the read back to the bounded-reads baseline.
+- Finding 12: a `GET` starts background work (a Tracklist run). Undo: remove the `resumeTracklist` call in the `tracklist` handler.
+- Finding 13: a failed details read now shows "Tracklist unavailable" with Try again in the clients, where it showed "Finding tracklist…". Undo: restore the one-column update in `recordDetailsFailure`.
+- Finding 16: three more tries of a completion over 7 s. Undo: empty `COMPLETION_WAITS_MS`.
+- ADR 0019 got a dated note under its sentence about Queue and Stats, because that sentence is no longer true. The decision text is not changed.
