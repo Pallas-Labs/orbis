@@ -45,7 +45,7 @@ final class SetPageTests: XCTestCase {
       failure.map { StubProtocol.session(failure: $0) }
       ?? StubProtocol.session(status: status, body: body)
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: session
     )
@@ -178,7 +178,7 @@ final class SetPageTests: XCTestCase {
     responder: @Sendable @escaping (URLRequest) -> (Int, String)
   ) throws -> AppModel {
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(responder: responder)
     )

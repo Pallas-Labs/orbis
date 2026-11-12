@@ -7,7 +7,7 @@ import XCTest
 final class PasteAndFileTests: XCTestCase {
   private func model() throws -> AppModel {
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(
         status: 201, body: OrbisClientTests.savedSet(title: "Night session", tags: []))

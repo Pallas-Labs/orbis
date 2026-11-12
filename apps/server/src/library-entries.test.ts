@@ -23,7 +23,7 @@ type RemotePayload =
 const remote = (method: string, url: string, payload?: RemotePayload) => ({
   accessMode: "device" as const,
   headers: { authorization: `Bearer ${B_TOKEN}` },
-  host: "vanta.example.ts.net",
+  host: "orbis.example.test",
   method,
   payload,
   url,

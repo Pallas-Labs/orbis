@@ -51,7 +51,7 @@ Do not ship yet. One blocking defect: the Ogg "starvation" is a premature end-of
   - `after/all-native-after` (12:45–12:52 PDT): 125 unit tests, all 6 reliability tests pass, Ogg recovery passes (standalone player only), and AAC recovery fails.
 - **Code drift after the last run.** The last run used the 12:53 snapshot. `AppModel.swift` changed at 12:57 (operation-error guards in `queueSet` and `deleteSet`), and `startPosition` gained `duration > 0`. No native build covers the final tree.
 - **No UI journey evidence after the fixes.** `after/focused-native-after/console.log` contains only the lane address, so the run did not happen. `PlaybackRecoveryUITests`, `testAColdCueNearTheEndStartsAtItsTimestamp`, and the mini-player journeys have no post-fix result. The only late-Cue result is the expected failure in `before/repro-late-cue`.
-- **Mac paths.** Rows at 19:21, 19:23 and 19:45 cite `/Users/parthmangrola/…` or `/Users/parth/…`. Point them at the local copies. `repro-all-native` (Cortex) was not copied.
+- **Mac paths.** Rows at 19:21, 19:23 and 19:45 cite Mac home paths (`~/…`). Point them at the local copies. `repro-all-native` (Cortex) was not copied.
 - **Wording.** No row or report may say that spontaneous 1–2 s jumps or repeats are fixed. The packet check and the timeline diagnostics are evidence, not a fix.
 
 ## Checked against the source and found correct

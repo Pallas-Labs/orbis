@@ -1,6 +1,6 @@
 # Playback verification record
 
-Base revision `91d3b90`. Evidence on Vanta is `/home/parth/.cache/orbis-playback-evidence/2026-10-18`. The Mac source snapshot is `/Users/parthmangrola/.cache/agent-scratch/orbis-playback-after-t3-9f35`.
+Base revision `91d3b90`. Evidence on Vanta is `~/.cache/orbis-playback-evidence/2026-10-18`. The Mac source snapshot is `~/.cache/agent-scratch/orbis-playback-after-t3-9f35`.
 
 ## Accepted source
 
@@ -52,4 +52,4 @@ Settings now offers Copy Playback Report for recent in-memory playback evidence.
 
 ## SigNoz follow-up
 
-The [automatic delivery verification](signoz-verification.md) records the new native, HTTP, Workerd and actual collector evidence under `/home/parth/.cache/orbis-playback-evidence/2026-10-18/signoz`. It supersedes the earlier clipboard-only scope without changing the retained historical results.
+The [automatic delivery verification](signoz-verification.md) records the new native, HTTP, Workerd and actual collector evidence under `~/.cache/orbis-playback-evidence/2026-10-18/signoz`. It supersedes the earlier clipboard-only scope without changing the retained historical results.

@@ -95,7 +95,7 @@ final class SignInTests: XCTestCase {
   func testPlaylistsThatFailToLoadSaySoInsteadOfReadingAsEmpty() async throws {
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session { _ in (500, #"{"message":"The library is busy."}"#) }
       ), settings: MemoryClientSettings())

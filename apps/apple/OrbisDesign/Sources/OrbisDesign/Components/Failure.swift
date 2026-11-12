@@ -144,7 +144,7 @@ public func copyToPasteboard(_ text: String) {
       "Cannot reach your library. Check that Tailscale is connected and the Orbis service is running on the host.",
     symbol: "wifi.exclamationmark",
     isRetryable: true,
-    address: "https://vanta.example.ts.net:8444"
+    address: "https://orbis.example.test:8444"
   )
   VStack(alignment: .leading, spacing: 12) {
     Label(failure.title, systemImage: failure.symbol).font(.orbis.rowTitle)
@@ -184,7 +184,7 @@ private struct FailureSample: View {
           message: "Check the address points at your Orbis service.",
           symbol: "hand.raised",
           isRetryable: false,
-          address: "https://vanta.example.ts.net:8444"
+          address: "https://orbis.example.test:8444"
         ),
         context: "changing a set",
         retry: {}

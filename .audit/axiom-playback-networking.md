@@ -58,7 +58,7 @@ Real media-daemon restart, Lock Screen/AirPods command delivery, phone-call inte
 
 ## Verification results
 
-Both new reset probes failed before the handler at PlaybackReliabilityTests.swift:178. The updated full suite then passed 127 native tests, including both reset probes, against matching AudioPlayer and test source hashes. Evidence is `/home/parth/.cache/orbis-playback-evidence/2026-10-18/axiom-reset-after/`, with the preserved before run in `axiom-reset-before/`. Both bundles are retained as `.xcresult.tgz` files. Swift style and the updated tvOS simulator build passed. All three focused playback UI journeys also passed. Their screenshot and result artifacts are in `axiom-reset-ui/`.
+Both new reset probes failed before the handler at PlaybackReliabilityTests.swift:178. The updated full suite then passed 127 native tests, including both reset probes, against matching AudioPlayer and test source hashes. Evidence is `~/.cache/orbis-playback-evidence/2026-10-18/axiom-reset-after/`, with the preserved before run in `axiom-reset-before/`. Both bundles are retained as `.xcresult.tgz` files. Swift style and the updated tvOS simulator build passed. All three focused playback UI journeys also passed. Their screenshot and result artifacts are in `axiom-reset-ui/`.
 
 The reset probes post the public notification; they do not terminate the system's media daemon. The existing physical-device acceptance limits remain.
 

@@ -64,7 +64,7 @@ final class ShareCaptureTests: XCTestCase {
       return (409, #"{"message":"This set is already in your library."}"#)
     }
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "synthetic-token",
       session: session
     )
@@ -84,7 +84,7 @@ final class ShareCaptureTests: XCTestCase {
     XCTAssertTrue(settings.store(deviceToken: "synthetic-token"))
     let session = StubProtocol.session(failure: URLError(.notConnectedToInternet))
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "synthetic-token",
       session: session
     )
@@ -121,7 +121,7 @@ final class ShareCaptureTests: XCTestCase {
       }
     }
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "synthetic-token",
       session: session
     )

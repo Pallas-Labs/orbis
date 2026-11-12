@@ -125,7 +125,7 @@ final class BulkImportTests: XCTestCase {
       return (201, String(saved.dropLast()) + #","autoDownloadResult":"queued"}"#)
     }
     let client = OrbisClient(
-      address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")), token: "token",
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")), token: "token",
       session: session)
     let importer = BulkImport()
     importer.text = """

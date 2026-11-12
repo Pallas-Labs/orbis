@@ -6,7 +6,7 @@ This follow-up adds reports for issue #277 and PR #278. It does not establish th
 
 The implementation starts at `5b8ef57` after design commit `7618776`. Final source corrections are commit `eebbad8`. The exact input manifest covers 120 Swift files in Orbis, OrbisTests, OrbisUITests and OrbisDesign. Its SHA-256 is `a50f80eb153615c63f991aeb6f7ae149dd9737c8922a735e768daca979a07c41`. Each file matched on the Mac before and after the final native run. The manifest and a digest of the compiled `Orbis.debug.dylib` output after the native run live with the evidence. That digest alone does not identify the loaded test process.
 
-The Mac checkout is `/Users/parthmangrola/.cache/agent-scratch/orbis-playback-after-t3-9f35`. The owned iOS 27 simulator is `09C1B8C9-E33F-4E63-B3F0-AF92DD1E9517`. T3 opened it for visible verification. No physical iPhone or macOS app run is claimed.
+The Mac checkout is `~/.cache/agent-scratch/orbis-playback-after-t3-9f35`. The owned iOS 27 simulator is `09C1B8C9-E33F-4E63-B3F0-AF92DD1E9517`. T3 opened it for visible verification. No physical iPhone or macOS app run is claimed.
 
 All native lanes ran serially. A private wrapper records the current xcodebuild inventory and adds `-jobs 2 -parallel-testing-enabled NO -collect-test-diagnostics never ONLY_ACTIVE_ARCH=YES ARCHS=arm64`. The Axiom build helper was unavailable on the Mac, so complete xcodebuild logs and result bundles provide the fallback evidence. No other simulator or build job was stopped.
 
@@ -37,7 +37,7 @@ The first 131-test run passed the new logging probes and failed an existing load
 
 ## Evidence locations
 
-Durable Linux root: `/home/parth/.cache/orbis-playback-evidence/2026-10-18/logging`.
+Durable Linux root: `~/.cache/orbis-playback-evidence/2026-10-18/logging`.
 
 - `source-manifest.sha256` identifies the final native input.
 - `before/` and `logging-native-before.xcresult.tgz` retain the first report-probe failure.

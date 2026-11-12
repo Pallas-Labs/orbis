@@ -53,7 +53,7 @@ final class SupersessionTests: XCTestCase {
     let newBody = libraryBody(title: "New playlist")
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(
           responder: { request in
@@ -92,7 +92,7 @@ final class SupersessionTests: XCTestCase {
   func testTheSearchHeadingKeepsTheQueryTheResultsAnswer() async throws {
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(status: 200, body: libraryBody(title: "Night session"))
       ), settings: MemoryClientSettings())
@@ -113,7 +113,7 @@ final class SupersessionTests: XCTestCase {
     let filed = set(id: "1", title: "Night session")
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session(status: 200, body: libraryBody(title: "Night session"))
       ), settings: MemoryClientSettings())
@@ -150,7 +150,7 @@ final class SupersessionTests: XCTestCase {
     let setsBody = libraryBody(title: "Night session")
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session { request in
           guard request.url?.path() == "/playlists" else { return (200, setsBody) }
@@ -180,7 +180,7 @@ final class SupersessionTests: XCTestCase {
     let library = "{\"sets\":[\(downloading)]}"
     let model = AppModel(
       client: OrbisClient(
-        address: try XCTUnwrap(URL(string: "https://vanta.example.ts.net")),
+        address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
         token: "token",
         session: StubProtocol.session { request in
           request.httpMethod == "POST" ? (200, downloading) : (200, library)

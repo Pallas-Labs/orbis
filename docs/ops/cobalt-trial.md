@@ -22,7 +22,7 @@ The Compose file is [`deploy/cobalt/compose.yaml`](../../deploy/cobalt/compose.y
 
 The base image is pinned by digest, so it carries no tag to resolve and no registry digest of its own to compare against. What identifies the built image instead is the pair recorded in the Dockerfile plus the local image ID, `sha256:814f3e023bf6a7a2529e26ee89e3f8af010d483eaf0938e6cd2791dc7c4cd80a` at the time of writing. Rebuilding from the same base digest and the same `YOUTUBEI_VERSION` reproduces it.
 
-The `.env.example` file records the address observed during the initial read-only check. Recheck it on Vanta before every deployment; do not assume the Tailscale address is permanent.
+The `.env.example` file holds placeholders. In `.env`, set both to the address that `tailscale ip -4` prints on Vanta, and recheck it before every deployment; do not assume the Tailscale address is permanent.
 
 ## Prerequisites
 
@@ -116,7 +116,7 @@ read -r -s -p 'Cobalt API key: ' COBALT_API_KEY
 printf '\n'
 export COBALT_API_KEY
 node scripts/smoke-cobalt.mjs \
-  --endpoint 'http://100.100.100.100:9000/' \
+  --endpoint 'http://<vanta-tailnet-ip>:9000/' \
   --api-key-env COBALT_API_KEY \
   --sample 'youtube|https://www.youtube.com/watch?v=<permitted-video-id>|<seconds>' \
   --sample 'soundcloud|https://soundcloud.com/<permitted-artist>/<permitted-track>|<seconds>' \

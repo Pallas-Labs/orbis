@@ -54,7 +54,7 @@ test("a creator grants and revokes collaborative Playlist editing, and reading, 
     request(app, {
       accessMode: "device",
       headers: { authorization: `Bearer ${tokens[who]}` },
-      host: "vanta.example.ts.net",
+      host: "orbis.example.test",
       method,
       payload,
       url,
