@@ -111,6 +111,8 @@ const lane = async (name, [first, ...rest], log) => {
   return code === 0 ? lane(name, rest, log) : `${name}: ${step}`;
 };
 
+const kitTest = "swift test --package-path apps/apple/OrbisKit";
+
 const linux = () =>
   lane("checks", [
     ["Install dependencies", ["bun", "install", "--frozen-lockfile"]],
@@ -120,6 +122,9 @@ const linux = () =>
       "Install browser for web journey",
       ["bunx", "playwright", "install", "chromium"],
     ],
+    // OrbisKit holds the service client and the Listening Queue state, with no UI framework, so
+    // its tests run here with no simulator and no Mac lease.
+    ["Test OrbisKit (no simulator)", ["sh", "-c", kitTest]],
     [
       "bun run check (oxlint, oxfmt, Ultracite, tsgo, tests, diagnostics)",
       ["bun", "run", "check"],
@@ -143,6 +148,10 @@ const linux = () =>
     ],
   ]);
 
+// On a Mac the same tests also compile the Apple-only code the Linux build leaves out: the event
+// stream and the diagnostics upload.
+const kitMacTest = `${kitTest} --scratch-path apps/apple/OrbisKit/.build`;
+
 const designTest = (scratch) =>
   `swift test --package-path apps/apple/OrbisDesign --scratch-path ${scratch}`;
 
@@ -150,7 +159,7 @@ const designTest = (scratch) =>
 // design package's build folder stays in the issue's sat- folder on the Mac until the PR merges, so
 // the next run builds warm.
 const leasedMacStep = [
-  "Check Swift style and test the design package",
+  "Check Swift style and test the design and OrbisKit packages",
   [
     ...factory,
     "lease",
@@ -161,7 +170,7 @@ const leasedMacStep = [
     "--",
     "sh",
     "-c",
-    `${scripts["native:format"]} && ${designTest("apps/apple/OrbisDesign/.build")}`,
+    `${scripts["native:format"]} && ${designTest("apps/apple/OrbisDesign/.build")} && ${kitMacTest}`,
   ],
 ];
 
@@ -176,6 +185,7 @@ const mac = async () => {
             "Test the design package",
             ["sh", "-c", designTest("apps/apple/OrbisDesign/.build")],
           ],
+          ["Test OrbisKit on macOS", ["sh", "-c", kitMacTest]],
         ],
         log
       )

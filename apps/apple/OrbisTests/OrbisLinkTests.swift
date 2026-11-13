@@ -1,7 +1,9 @@
 import Foundation
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// An Orbis Link opens the Set it names (ADR 0023): its own page when the Library holds it, its
 /// shared facts with Save when it does not, and the same once sign-in completes when the device

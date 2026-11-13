@@ -1,6 +1,8 @@
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// Signing in stores the key the service hands back, and a sign-in that fails changes nothing
 /// and says why in the service's own words (ADR 0020).
@@ -23,7 +25,7 @@ final class SignInTests: XCTestCase {
       case let path? where path.hasSuffix("/sign-in/code"):
         (200, #"{"key":"synthetic-new-key","person":{"id":"p1","username":"ada"}}"#)
       case let path? where path.hasSuffix("/sets"):
-        (200, "{\"sets\":[" + OrbisClientTests.savedSet(title: "Night session", tags: []) + "]}")
+        (200, "{\"sets\":[" + Fixtures.savedSet(title: "Night session", tags: []) + "]}")
       case let path? where path.hasSuffix("/playlists"):
         (200, Self.playlistsBody)
       default:

@@ -4,6 +4,7 @@ import MediaPlayer
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// An Apple Music Set plays through MusicKit, song by song, while the rest of the app sees one mix
 /// with one clock (ADR 0021). MusicKit does not play in the simulator, so these tests check the

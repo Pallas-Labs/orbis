@@ -1,8 +1,10 @@
 import AVFoundation
 import MediaPlayer
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// Audio downloads and streaming, end to end at the seams: the client speaks the four
 /// audio routes, the model carries download state into the library, and the player

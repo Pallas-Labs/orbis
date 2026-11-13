@@ -2,6 +2,7 @@ import Foundation
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 final class ContractResponseTests: XCTestCase {
   private struct Samples: Decodable {

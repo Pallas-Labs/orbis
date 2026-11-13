@@ -1,7 +1,9 @@
 import Foundation
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// Pairing storage is the one place the app writes a credential, so a test that reaches it
 /// would overwrite a real pairing. These cases prove that every path a test can take lands in

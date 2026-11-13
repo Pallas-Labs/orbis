@@ -1,7 +1,9 @@
 import Foundation
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// The Set page changes one Set at a time. What a refusal leaves behind matters as much as what
 /// a success does, because the person is looking at the Set when it happens.
@@ -38,7 +40,7 @@ final class SetPageTests: XCTestCase {
   private func model(
     sets: [SavedSet],
     status: Int = 200,
-    body: String = OrbisClientTests.savedSet(title: "Night session", tags: []),
+    body: String = Fixtures.savedSet(title: "Night session", tags: []),
     failure: URLError? = nil
   ) throws -> AppModel {
     let session =
@@ -157,7 +159,7 @@ final class SetPageTests: XCTestCase {
 
   /// A change that does not touch membership keeps the row where it was.
   func testRenamingASetInThePlaylistBeingViewedKeepsItsRow() async throws {
-    let body = OrbisClientTests.savedSet(title: "Renamed", tags: []).replacingOccurrences(
+    let body = Fixtures.savedSet(title: "Renamed", tags: []).replacingOccurrences(
       of: "\"playlistIds\":[]", with: "\"playlistIds\":[\"viewed\"]")
     let model = try model(sets: [set(id: "1", playlists: ["viewed"])], body: body)
     model.selectedPlaylistId = "viewed"

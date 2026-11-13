@@ -1,8 +1,10 @@
 import AVFoundation
 import Foundation
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 @MainActor
 final class PlaybackReliabilityTests: XCTestCase {
@@ -252,7 +254,7 @@ final class PlaybackReliabilityTests: XCTestCase {
   #endif
 
   func testACueOnTheCurrentSetSupersedesADelayedPlayOfAnotherSet() async throws {
-    let a = OrbisClientTests.savedSet(title: "Current Set", tags: [], downloadState: "ready")
+    let a = Fixtures.savedSet(title: "Current Set", tags: [], downloadState: "ready")
       .replacingOccurrences(of: "\"id\":\"1\"", with: "\"id\":\"a\"")
     let b = a.replacingOccurrences(of: "\"id\":\"a\"", with: "\"id\":\"b\"")
     let set = try JSONDecoder().decode(SavedSet.self, from: Data(a.utf8))
@@ -300,7 +302,7 @@ final class PlaybackReliabilityTests: XCTestCase {
   }
 
   func testPausingAPendingSelectionDoesNotActivateItAgain() async throws {
-    let set = OrbisClientTests.savedSet(title: "Pending Set", tags: [], downloadState: "ready")
+    let set = Fixtures.savedSet(title: "Pending Set", tags: [], downloadState: "ready")
     let log = QueueTests.RequestLog()
     let model = AppModel(
       client: OrbisClient(

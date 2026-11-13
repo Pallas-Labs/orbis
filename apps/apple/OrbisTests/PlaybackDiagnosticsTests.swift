@@ -2,6 +2,7 @@ import Foundation
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 @MainActor
 final class PlaybackDiagnosticsTests: XCTestCase {

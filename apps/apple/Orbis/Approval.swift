@@ -1,5 +1,6 @@
 import Foundation
 import OrbisDesign
+import OrbisKit
 
 /// The link a signed-out device's QR code holds, `https://orbis.p11a.xyz/pair#<Approval Code>`
 /// (ADR 0022), and the `orbis://pair#<code>` form the lane opens, because a simulator cannot

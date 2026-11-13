@@ -1,7 +1,9 @@
+import OrbisKitTesting
 import Synchronization
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// The reveal is the step between filing a link and the Set being named, so what it sends and
 /// what it leaves behind are both worth pinning.
@@ -79,7 +81,7 @@ final class RevealTests: XCTestCase {
   /// playlist holds joins the top, and one it does not hold stays out instead of inventing
   /// a row the playlist does not have.
   func testFilingIntoThePlaylistBeingViewedKeepsTheListTruthful() async throws {
-    let saveBody = OrbisClientTests.savedSet(title: "Fresh paste", tags: [])
+    let saveBody = Fixtures.savedSet(title: "Fresh paste", tags: [])
     let belonging = saveBody.replacingOccurrences(
       of: "\"playlistIds\":[]", with: "\"playlistIds\":[\"viewed\"]")
     for (body, expected) in [(belonging, ["Fresh paste", "First"]), (saveBody, ["First"])] {
@@ -192,7 +194,7 @@ final class RevealTests: XCTestCase {
   func testTitleAndTagsEditedDuringARetryBothSurviveIt() async throws {
     let model = try retryModel(
       set: set(metadataState: "failed"), title: "Night session", tags: [],
-      body: OrbisClientTests.savedSet(title: "Server name", tags: []))
+      body: Fixtures.savedSet(title: "Server name", tags: []))
 
     let started = await startRetryAndEdit(model) {
       $0.reveal?.title = "Renamed while waiting"
@@ -211,7 +213,7 @@ final class RevealTests: XCTestCase {
     let open = set(title: "YouTube video", metadataState: "failed")
     let model = try retryModel(
       set: open, title: "", tags: [],
-      body: OrbisClientTests.savedSet(title: "Server name", tags: []))
+      body: Fixtures.savedSet(title: "Server name", tags: []))
     model.library = .loaded([open])
 
     let started = await startRetryAndEdit(model) { _ in }
@@ -231,7 +233,7 @@ final class RevealTests: XCTestCase {
     let open = set(title: "YouTube video", metadataState: "failed")
     let model = try retryModel(
       set: open, title: "My own name", tags: [],
-      body: OrbisClientTests.savedSet(title: "Server name", tags: []))
+      body: Fixtures.savedSet(title: "Server name", tags: []))
     model.library = .loaded([open])
 
     let started = await startRetryAndEdit(model) { _ in }
@@ -246,7 +248,7 @@ final class RevealTests: XCTestCase {
   func testADismissedRevealStaysDismissedWhenTheRetryLands() async throws {
     let model = try retryModel(
       set: set(metadataState: "failed"), title: "", tags: [],
-      body: OrbisClientTests.savedSet(title: "Server name", tags: []))
+      body: Fixtures.savedSet(title: "Server name", tags: []))
 
     let started = await startRetryAndEdit(model) { $0.closeReveal() }
     guard let started else { return }
@@ -261,7 +263,7 @@ final class RevealTests: XCTestCase {
     let open = set(title: "YouTube video", metadataState: "failed")
     let model = try retryModel(
       set: open, title: "", tags: [],
-      body: OrbisClientTests.savedSet(title: "Server name", tags: []))
+      body: Fixtures.savedSet(title: "Server name", tags: []))
     model.library = .loaded([open, other])
 
     let started = await startRetryAndEdit(model) {
@@ -286,7 +288,7 @@ final class RevealTests: XCTestCase {
       set: set(metadataState: "failed"), title: "", tags: [],
       responder: { _ in
         requests.record()
-        return (200, OrbisClientTests.savedSet(title: "Server name", tags: []))
+        return (200, Fixtures.savedSet(title: "Server name", tags: []))
       })
 
     let started = await startRetryAndEdit(model) { _ in }
@@ -305,7 +307,7 @@ final class RevealTests: XCTestCase {
   /// and the busy state clears.
   func testAProviderFailureStillKeepsTheDraftAndRefreshesTheSavedSet() async throws {
     let placeholder =
-      OrbisClientTests.savedSet(title: "YouTube video", tags: [])
+      Fixtures.savedSet(title: "YouTube video", tags: [])
       .replacingOccurrences(of: "\"metadataState\":\"enriched\"", with: "\"metadataState\":\"failed\"")
     let open = set(title: "YouTube video", metadataState: "failed")
     let model = try retryModel(set: open, title: "My own name", tags: [], body: placeholder)

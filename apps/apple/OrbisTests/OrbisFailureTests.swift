@@ -2,6 +2,7 @@ import OrbisDesign
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// The library's failure state used to wear one heading for every failure, so a service older
 /// than the app told a person their network was down and offered a retry that could never work.

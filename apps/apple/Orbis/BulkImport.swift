@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OrbisDesign
+import OrbisKit
 
 /// One link found in a pasted block of text, and whether Import will file it.
 struct BulkLink: Equatable, Sendable {

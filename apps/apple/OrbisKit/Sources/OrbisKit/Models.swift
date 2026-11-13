@@ -2,7 +2,7 @@ import Foundation
 
 /// Mirrors the server contract. Only the fields the Library needs are decoded, so a
 /// server that adds a field does not break this client.
-struct SavedSet: Identifiable, Decodable, Hashable {
+public struct SavedSet: Identifiable, Decodable, Hashable, Sendable {
   enum CodingKeys: String, CodingKey {
     case id, url, title, source, tags, createdAt, releasedAt, creator, creatorId, artworkUrl, durationSeconds
     case artworkLargeUrl
@@ -11,45 +11,45 @@ struct SavedSet: Identifiable, Decodable, Hashable {
     case tracklistState
   }
 
-  let id: String
-  let url: String
-  let title: String
-  let source: SetSource
-  let tags: [String]
-  let createdAt: String
-  let releasedAt: String?
-  let creator: String?
+  public let id: String
+  public let url: String
+  public let title: String
+  public let source: SetSource
+  public let tags: [String]
+  public let createdAt: String
+  public let releasedAt: String?
+  public let creator: String?
   /// The provider's stable id for the creator; nil until the service has read the details.
-  var creatorId: String? = nil
-  let artworkUrl: String?
-  let artworkLargeUrl: String?
-  let durationSeconds: Int?
-  let metadataState: String
-  let downloadState: String
-  let playlistIds: [String]
-  let playbackPositionSeconds: Int
-  let listenCount: Int
-  let finishCount: Int
-  let lastListenedAt: String?
-  var tracklistState: TracklistState = .none
+  public var creatorId: String? = nil
+  public let artworkUrl: String?
+  public let artworkLargeUrl: String?
+  public let durationSeconds: Int?
+  public let metadataState: String
+  public let downloadState: String
+  public let playlistIds: [String]
+  public let playbackPositionSeconds: Int
+  public let listenCount: Int
+  public let finishCount: Int
+  public let lastListenedAt: String?
+  public var tracklistState: TracklistState = .none
 }
 
 extension SavedSet {
   /// Whether the app can play this Set: it has Retained Audio, or it is an Apple Music Set, which
   /// plays through MusicKit (ADR 0021). The service's `isPlayableSet` holds the same rule.
-  var isPlayable: Bool { downloadState == "ready" || source == .appleMusic }
+  public var isPlayable: Bool { downloadState == "ready" || source == .appleMusic }
 
   /// Whether the service is still working on a download in `state`: it is `queued` or
   /// `downloading`. Every other state has settled. The service's `isDownloadInFlight` holds the
   /// same rule.
-  static func isInFlight(_ state: String) -> Bool { state == "queued" || state == "downloading" }
+  public static func isInFlight(_ state: String) -> Bool { state == "queued" || state == "downloading" }
 
   /// True while the service is still working on this Set's audio.
-  var isDownloading: Bool { Self.isInFlight(downloadState) }
+  public var isDownloading: Bool { Self.isInFlight(downloadState) }
 
   /// The catalog id of an Apple Music Set's album, the last part of its Source Link
   /// (`https://music.apple.com/album/<id>`).
-  var appleMusicAlbumID: String? {
+  public var appleMusicAlbumID: String? {
     guard source == .appleMusic, let url = URL(string: url) else { return nil }
     let id = url.lastPathComponent
     return id.isEmpty || id == "/" ? nil : id
@@ -57,7 +57,7 @@ extension SavedSet {
 
   /// Where playback should start for this Set: where the last Listen left off, or the beginning
   /// for a Set nobody has heard, which is also where a finished one starts again.
-  var resumePosition: TimeInterval { TimeInterval(playbackPositionSeconds) }
+  public var resumePosition: TimeInterval { TimeInterval(playbackPositionSeconds) }
 }
 
 /// The decode is written out rather than left to the compiler for one reason: `playlistIds` is
@@ -68,7 +68,7 @@ extension SavedSet {
 /// library" on both platforms with a Try again button that could never work. A field that is
 /// missing because the service predates it is not worth making someone's library unreadable.
 extension SavedSet {
-  init(from decoder: any Decoder) throws {
+  public init(from decoder: any Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     id = try values.decode(String.self, forKey: .id)
     url = try values.decode(String.self, forKey: .url)
@@ -93,36 +93,41 @@ extension SavedSet {
   }
 }
 
-enum TracklistState: String, Decodable, Hashable {
+public enum TracklistState: String, Decodable, Hashable, Sendable {
   case pending
   case ready
   case none
   case failed
 
   /// A newer service state must not make the whole Library unreadable.
-  init(from decoder: any Decoder) throws {
+  public init(from decoder: any Decoder) throws {
     let raw = try decoder.singleValueContainer().decode(String.self)
     self = Self(rawValue: raw) ?? .none
   }
 }
 
-struct Cue: Decodable, Equatable, Identifiable {
-  let position: Int
-  let startSeconds: TimeInterval?
-  let artist: String
-  let title: String
-  let appleMusicId: String?
-  let artworkUrl: String?
+public struct Cue: Decodable, Equatable, Identifiable, Sendable {
+  public let position: Int
+  public let startSeconds: TimeInterval?
+  public let artist: String
+  public let title: String
+  public let appleMusicId: String?
+  public let artworkUrl: String?
 
-  var id: Int { position }
+  public var id: Int { position }
 }
 
-struct Tracklist: Decodable, Equatable {
-  let state: TracklistState
-  let cues: [Cue]
+public struct Tracklist: Decodable, Equatable, Sendable {
+  public let state: TracklistState
+  public let cues: [Cue]
+
+  public init(state: TracklistState, cues: [Cue]) {
+    self.state = state
+    self.cues = cues
+  }
 }
 
-enum SetSource: Hashable, Decodable {
+public enum SetSource: Hashable, Decodable, Sendable {
   case youtube
   case soundcloud
   /// An Apple Music album, which plays through Apple Music and is never downloaded (ADR 0021).
@@ -132,7 +137,7 @@ enum SetSource: Hashable, Decodable {
   /// version skew, not a broken library.
   case unknown(String)
 
-  var label: String {
+  public var label: String {
     switch self {
     case .youtube: "YouTube"
     case .soundcloud: "SoundCloud"
@@ -143,14 +148,14 @@ enum SetSource: Hashable, Decodable {
 
   /// Whether the service can keep this Source's audio. Apple Music audio plays through Apple Music
   /// and is never downloaded (ADR 0021), so nothing offers a Download for it.
-  var isDownloadable: Bool { self != .appleMusic }
+  public var isDownloadable: Bool { self != .appleMusic }
 
   /// Which service a link names, or nil when Orbis takes none of them.
   ///
   /// Only the host is judged here, so a paste is refused without asking the service. The shape of
   /// the path stays the service's judgement: it owns that rule, and its refusal reaches the field
   /// in its own words rather than a second copy of the rule going stale in the app.
-  static func named(by url: URL) -> SetSource? {
+  public static func named(by url: URL) -> SetSource? {
     guard let host = url.host()?.lowercased() else { return nil }
     let youTube = [
       "youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be",
@@ -170,7 +175,7 @@ enum SetSource: Hashable, Decodable {
 /// it rides on. A closed enum turned one new word from the service into a library that
 /// would not decode at all, and the silent decode that reported it hid the reason.
 extension SetSource {
-  init(from decoder: any Decoder) throws {
+  public init(from decoder: any Decoder) throws {
     let raw = try decoder.singleValueContainer().decode(String.self)
     switch raw {
     case "youtube": self = .youtube
@@ -181,45 +186,45 @@ extension SetSource {
   }
 }
 
-struct LibraryResponse: Decodable {
-  let sets: [SavedSet]
+public struct LibraryResponse: Decodable, Sendable {
+  public let sets: [SavedSet]
 }
 
 /// What anyone with a Set's Orbis Link may read about it (ADR 0023): the provider's facts, never
 /// a Library's.
-struct SharedSet: Decodable, Equatable, Identifiable {
-  let id: String
+public struct SharedSet: Decodable, Equatable, Identifiable, Sendable {
+  public let id: String
   /// The Source Link, which saving the Set sends.
-  let url: String
-  let title: String
-  let source: SetSource
-  let creator: String?
-  let artworkUrl: String?
+  public let url: String
+  public let title: String
+  public let source: SetSource
+  public let creator: String?
+  public let artworkUrl: String?
 }
 
 /// An album an Apple Music search found. Saving its link makes it a Set (ADR 0021).
-struct AppleMusicAlbum: Decodable, Equatable, Identifiable, Sendable {
-  let url: String
-  let title: String
-  let creator: String?
-  let artworkUrl: String?
-  let releasedAt: String?
-  let songCount: Int
-  let durationSeconds: Int?
-  let djMix: Bool
+public struct AppleMusicAlbum: Decodable, Equatable, Identifiable, Sendable {
+  public let url: String
+  public let title: String
+  public let creator: String?
+  public let artworkUrl: String?
+  public let releasedAt: String?
+  public let songCount: Int
+  public let durationSeconds: Int?
+  public let djMix: Bool
   /// Whether the Set is in this Person's Library.
-  var inLibrary: Bool
+  public var inLibrary: Bool
 
-  var id: String { url }
+  public var id: String { url }
 }
 
-struct AppleMusicSearchResponse: Decodable {
-  let albums: [AppleMusicAlbum]
+public struct AppleMusicSearchResponse: Decodable, Sendable {
+  public let albums: [AppleMusicAlbum]
 }
 
 /// Where the Find on Apple Music field stands. A search in flight keeps its words, so a late
 /// answer to words since replaced is dropped.
-enum AppleMusicSearch: Equatable {
+public enum AppleMusicSearch: Equatable, Sendable {
   case idle
   case searching(words: String)
   case found([AppleMusicAlbum])
@@ -228,53 +233,53 @@ enum AppleMusicSearch: Equatable {
 
 /// How far a download has got. Bytes are the worker's own count, because a converted
 /// tunnel carries no content length; the format is what the worker stored, if anything.
-struct AudioState: Decodable, Equatable {
-  let state: String
-  let bytesReceived: Int
-  let bytesTotal: Int?
-  let format: String?
+public struct AudioState: Decodable, Equatable, Sendable {
+  public let state: String
+  public let bytesReceived: Int
+  public let bytesTotal: Int?
+  public let format: String?
 }
 
 /// Mirrors the server contract. The count comes from the server so a sidebar does not ask once
 /// per playlist, and the creation date is left out because nothing shows it.
-struct Playlist: Identifiable, Decodable, Hashable {
-  let id: String
-  let name: String
-  let setCount: Int
+public struct Playlist: Identifiable, Decodable, Hashable, Sendable {
+  public let id: String
+  public let name: String
+  public let setCount: Int
 }
 
-struct PlaylistsResponse: Decodable {
-  let playlists: [Playlist]
+public struct PlaylistsResponse: Decodable, Sendable {
+  public let playlists: [Playlist]
 }
 
-struct ImportPlaylistRequest: Encodable {
-  let url: String
+public struct ImportPlaylistRequest: Encodable, Sendable {
+  public let url: String
 }
 
 /// A YouTube playlist being read into a new Playlist in the background. The service answers the
 /// import request with one and reports it again on `/events` as each page lands.
-struct PlaylistImportJob: Decodable, Equatable {
+public struct PlaylistImportJob: Decodable, Equatable, Sendable {
   /// What the finished import did. `unavailable` counts tracks YouTube no longer serves and
   /// `overLimit` tracks past the Playlist maximum; neither was saved.
-  struct Summary: Decodable, Equatable {
-    let added: Int
-    let downloading: Int
+  public struct Summary: Decodable, Equatable, Sendable {
+    public let added: Int
+    public let downloading: Int
     /// Saved while the download queue was full, so they wait for a Download to be asked for.
-    let waiting: Int
-    let unavailable: Int
-    let overLimit: Int
+    public let waiting: Int
+    public let unavailable: Int
+    public let overLimit: Int
   }
 
-  enum State: Equatable {
+  public enum State: Equatable, Sendable {
     /// `processed` counts the playlist's entries read so far, out of `total` when YouTube said.
     case running(processed: Int, total: Int?)
     case done(Summary)
     case failed(message: String)
   }
 
-  let id: String
-  let playlist: Playlist
-  let state: State
+  public let id: String
+  public let playlist: Playlist
+  public let state: State
 
   private enum CodingKeys: String, CodingKey {
     case id, playlist, state
@@ -284,13 +289,13 @@ struct PlaylistImportJob: Decodable, Equatable {
     case kind, processed, total, message
   }
 
-  init(id: String, playlist: Playlist, state: State) {
+  public init(id: String, playlist: Playlist, state: State) {
     self.id = id
     self.playlist = playlist
     self.state = state
   }
 
-  init(from decoder: any Decoder) throws {
+  public init(from decoder: any Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     id = try container.decode(String.self, forKey: .id)
     playlist = try container.decode(Playlist.self, forKey: .playlist)
@@ -313,115 +318,121 @@ struct PlaylistImportJob: Decodable, Equatable {
 
 /// A finished import as its summary shows it: the Playlist, what the import did, and the first
 /// Sets of the Playlist for the artwork mosaic.
-struct ImportedPlaylist: Equatable {
-  let playlist: Playlist
-  let summary: PlaylistImportJob.Summary
-  let firstSets: [SavedSet]
+public struct ImportedPlaylist: Equatable, Sendable {
+  public let playlist: Playlist
+  public let summary: PlaylistImportJob.Summary
+  public let firstSets: [SavedSet]
+
+  public init(playlist: Playlist, summary: PlaylistImportJob.Summary, firstSets: [SavedSet]) {
+    self.playlist = playlist
+    self.summary = summary
+    self.firstSets = firstSets
+  }
 }
 
 /// The one Listening Queue, in play order. `activeSetId` is the Set playing now, and at most one
 /// entry ever matches it.
-struct ListeningQueue: Decodable, Equatable {
-  let activeSetId: String?
-  let entries: [SavedSet]
+public struct ListeningQueue: Decodable, Equatable, Sendable {
+  public let activeSetId: String?
+  public let entries: [SavedSet]
 
   /// The Set playing now, if any. A queue with entries but no active Set is a queue nobody has
   /// started yet.
-  var active: SavedSet? { entries.first { $0.id == activeSetId } }
+  public var active: SavedSet? { entries.first { $0.id == activeSetId } }
 
-  func isActive(_ id: String) -> Bool { id == activeSetId }
+  public func isActive(_ id: String) -> Bool { id == activeSetId }
 }
 
 /// Every queue request answers with the queue itself, so a change is read back from the service
 /// rather than assumed from locally applied rules.
-struct QueueResponse: Decodable {
-  let queue: ListeningQueue
+public struct QueueResponse: Decodable, Sendable {
+  public let queue: ListeningQueue
 }
 
 /// The save request. `tags` goes out empty on the first save, and the server takes the title,
 /// the creator, and the rest from the link, so a save needs nothing the person has not typed.
-struct SaveSetRequest: Encodable {
-  let tags: [String]
-  let url: String
+public struct SaveSetRequest: Encodable, Sendable {
+  public let tags: [String]
+  public let url: String
 }
 
 /// What the service did about a filed Set's download, as `POST /sets` reports it.
-enum AutoDownload: String, Decodable {
+public enum AutoDownload: String, Decodable, Sendable {
   case queued, disabled, ready, inProgress, queueFull, unavailable
 }
 
-struct AutoDownloadReport: Decodable {
-  let autoDownloadResult: AutoDownload?
+public struct AutoDownloadReport: Decodable, Sendable {
+  public let autoDownloadResult: AutoDownload?
 }
 
 /// The two edits the reveal makes. The service caps a title at 200 characters, so a longer one
 /// is cut rather than refused.
-struct SetTitleRequest: Encodable {
-  let title: String
+public struct SetTitleRequest: Encodable, Sendable {
+  public let title: String
 }
 
-struct SetTagsRequest: Encodable {
-  let tags: [String]
+public struct SetTagsRequest: Encodable, Sendable {
+  public let tags: [String]
 }
 
 /// The Playlists a Set belongs to. The service treats this as the whole membership, so naming
 /// another Playlist moves the Set rather than adding a second one.
-struct SetPlaylistsRequest: Encodable {
-  let playlistIds: [String]
+public struct SetPlaylistsRequest: Encodable, Sendable {
+  public let playlistIds: [String]
 }
 
-struct CreatePlaylistRequest: Encodable {
-  let name: String
+public struct CreatePlaylistRequest: Encodable, Sendable {
+  public let name: String
 }
 
-struct PlaylistNameRequest: Encodable {
-  let name: String
+public struct PlaylistNameRequest: Encodable, Sendable {
+  public let name: String
 }
 
-struct PlaylistMembersRequest: Encodable {
-  let setIds: [String]
+public struct PlaylistMembersRequest: Encodable, Sendable {
+  public let setIds: [String]
 }
 
-struct PlaylistMembersResponse: Decodable {
-  let sets: [SavedSet]
+public struct PlaylistMembersResponse: Decodable, Sendable {
+  public let sets: [SavedSet]
 }
 
 /// Where a queued Set goes: `next` starts after the active Set, `end` goes last.
-enum QueuePlacement: String {
+public enum QueuePlacement: String, Sendable {
   case next
   case end
 }
 
-struct SetIdRequest: Encodable {
-  let setId: String
+public struct SetIdRequest: Encodable, Sendable {
+  public let setId: String
 }
 
-struct QueueEntryRequest: Encodable {
-  let placement: String
-  let setId: String
+public struct QueueEntryRequest: Encodable, Sendable {
+  public let placement: String
+  public let setId: String
 }
 
 /// The order a Playlist plays in. `shuffled` is random; `playlist` keeps the Playlist's own order.
-enum PlaylistOrder: String, Encodable {
+public enum PlaylistOrder: String, Encodable, Sendable {
   case playlist
   case shuffled
 }
 
 /// `order` left out keeps Playlist order, which is what a service from before shuffle reads.
-struct PlaylistQueueRequest: Encodable {
-  let playlistId: String
-  let order: PlaylistOrder?
+public struct PlaylistQueueRequest: Encodable, Sendable {
+  public let playlistId: String
+  public let order: PlaylistOrder?
 }
 
 /// The ranges Heavy Rotation covers. The service ranks each and weighs recent days by range.
-enum ListeningRange: String, CaseIterable, Identifiable, Sendable, Codable {
+public enum ListeningRange: String, CaseIterable, Identifiable, Sendable, Codable {
   case month
   case quarter
   case year
 
-  var id: Self { self }
+  public var id: Self { self }
 
-  var title: String {
+  public var title: String {
     switch self {
     case .month: "30 days"
     case .quarter: "3 months"
@@ -430,7 +441,7 @@ enum ListeningRange: String, CaseIterable, Identifiable, Sendable, Codable {
   }
 
   /// What the collection's subtitle says it holds.
-  var summary: String {
+  public var summary: String {
     switch self {
     case .month: "What you've played most this month."
     case .quarter: "What you've played most in the last 3 months."
@@ -441,22 +452,34 @@ enum ListeningRange: String, CaseIterable, Identifiable, Sendable, Codable {
 
 /// What a Collection admits. Nil admits every Set. `source` is the service's name for a source,
 /// as the filter stores it.
-struct CollectionFilter: Equatable, Sendable {
-  var name = ""
-  var range: ListeningRange = .month
-  var source: String?
-  var creatorId: String?
-  var tag: String?
-  var minimumMinutes = 0
+public struct CollectionFilter: Equatable, Sendable {
+  public var name = ""
+  public var range: ListeningRange = .month
+  public var source: String?
+  public var creatorId: String?
+  public var tag: String?
+  public var minimumMinutes = 0
+
+  public init(
+    name: String = "", range: ListeningRange = .month, source: String? = nil,
+    creatorId: String? = nil, tag: String? = nil, minimumMinutes: Int = 0
+  ) {
+    self.name = name
+    self.range = range
+    self.source = source
+    self.creatorId = creatorId
+    self.tag = tag
+    self.minimumMinutes = minimumMinutes
+  }
 
   /// The sources a filter can name, with the words a person reads.
-  static let sources: [(id: String, label: String)] = [
+  public static let sources: [(id: String, label: String)] = [
     ("youtube", "YouTube"), ("soundcloud", "SoundCloud"), ("apple-music", "Apple Music"),
   ]
   /// The least listening a filter can ask for, in minutes.
-  static let minimums = [0, 30, 60, 120]
+  public static let minimums = [0, 30, 60, 120]
 
-  static func minimumLabel(_ minutes: Int) -> String {
+  public static func minimumLabel(_ minutes: Int) -> String {
     switch minutes {
     case 0: "Any time"
     case ..<60: "\(minutes) min or more"
@@ -467,25 +490,25 @@ struct CollectionFilter: Equatable, Sendable {
 }
 
 /// One Person's saved filter over their listening, ranked as Heavy Rotation is.
-struct ListeningCollection: Identifiable, Decodable, Hashable, Sendable {
-  let id: String
-  let name: String
-  let range: ListeningRange
-  let source: String?
-  let creatorId: String?
+public struct ListeningCollection: Identifiable, Decodable, Hashable, Sendable {
+  public let id: String
+  public let name: String
+  public let range: ListeningRange
+  public let source: String?
+  public let creatorId: String?
   /// The creator's name when the filter was saved.
-  let creator: String?
-  let tag: String?
-  let minimumMinutes: Int
+  public let creator: String?
+  public let tag: String?
+  public let minimumMinutes: Int
 
-  var filter: CollectionFilter {
+  public var filter: CollectionFilter {
     CollectionFilter(
       name: name, range: range, source: source, creatorId: creatorId, tag: tag,
       minimumMinutes: minimumMinutes)
   }
 
   /// The filter in a few words: the range, then whatever narrows it.
-  var summary: String {
+  public var summary: String {
     var parts = [range.title]
     if let source, let label = CollectionFilter.sources.first(where: { $0.id == source })?.label {
       parts.append(label)
@@ -497,19 +520,19 @@ struct ListeningCollection: Identifiable, Decodable, Hashable, Sendable {
   }
 }
 
-struct CollectionsResponse: Decodable {
-  let collections: [ListeningCollection]
+public struct CollectionsResponse: Decodable, Sendable {
+  public let collections: [ListeningCollection]
 }
 
 /// Every key is sent, a nil as null, because the service reads a whole filter on each save.
-struct CollectionRequest: Encodable {
-  let filter: CollectionFilter
+public struct CollectionRequest: Encodable, Sendable {
+  public let filter: CollectionFilter
 
   private enum CodingKeys: String, CodingKey {
     case name, range, source, creatorId, tag, minimumMinutes
   }
 
-  func encode(to encoder: any Encoder) throws {
+  public func encode(to encoder: any Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(filter.name, forKey: .name)
     try container.encode(filter.range, forKey: .range)
@@ -520,18 +543,18 @@ struct CollectionRequest: Encodable {
   }
 }
 
-struct CollectionQueueRequest: Encodable {
-  let collectionId: String
-  let order: String?
+public struct CollectionQueueRequest: Encodable, Sendable {
+  public let collectionId: String
+  public let order: String?
 }
 
 /// `order` left out keeps the service's ranking.
-struct HeavyRotationQueueRequest: Encodable {
-  let range: ListeningRange
-  let order: String?
+public struct HeavyRotationQueueRequest: Encodable, Sendable {
+  public let range: ListeningRange
+  public let order: String?
 }
 
 /// A Playback Position in whole seconds. The service bounds it to the Set's own length.
-struct PlaybackPositionRequest: Encodable {
-  let seconds: Int
+public struct PlaybackPositionRequest: Encodable, Sendable {
+  public let seconds: Int
 }

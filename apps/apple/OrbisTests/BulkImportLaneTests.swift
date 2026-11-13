@@ -1,3 +1,5 @@
+@testable import OrbisKit
+
 #if os(macOS)
   import AppKit
   import SwiftUI

@@ -15,6 +15,7 @@ Source ownership, local setup, and verification.
 | Download selection and retained files | [`download-backends.ts`](../apps/server/src/download-backends.ts) and [`media-store.ts`](../apps/server/src/media-store.ts) |
 | Identity, trust storage, and administration | [`identity.ts`](../apps/server/src/identity.ts), [`trust-storage.ts`](../apps/server/src/trust-storage.ts), and [`admin.ts`](../apps/server/src/admin.ts) |
 | Web routes and player | [`apps/web/src/routes`](../apps/web/src/routes) and [`player.tsx`](../apps/web/src/components/player/player.tsx) |
+| Orbis service client, models and Listening Queue state (Swift, no simulator) | [`apps/apple/OrbisKit`](../apps/apple/OrbisKit) and [OrbisKit](#orbiskit) |
 | Apple client and project specification | [`apps/apple/Orbis`](../apps/apple/Orbis) and [`project.yml`](../apps/apple/project.yml) |
 | Rune desktop client | [`apps/rune`](../apps/rune) and its [README](../apps/rune/README.md) |
 | Native fixture setup and HTTP client | [`scripts/native-lanes.mjs`](../scripts/native-lanes.mjs), [`seed-lane-audio.mjs`](../scripts/seed-lane-audio.mjs), and [`LaneService.swift`](../apps/apple/OrbisUITests/LaneService.swift) |
@@ -150,6 +151,7 @@ Build shared contracts before running a focused lane from the repository root:
 | Group data transfer | `bun run --filter @orbis/api test:transfer` | See [data transfer](data-transfer.md) for restore and comparison artifacts |
 | Web client | `bun run --filter @orbis/web test` | Production browser journeys and artifacts listed in [web verification](../apps/web/README.md#verify-the-migration); install Chromium with `bun x playwright install chromium` |
 | Rune desktop client | `apps/rune/scripts/check` | Press tests and scene goldens in `apps/rune/goldens`; for a live window, `apps/rune/scripts/stand-in` (see the [Rune README](../apps/rune/README.md#against-a-stand-in-orbis)) |
+| OrbisKit: service client and Listening Queue state | `swift test --package-path apps/apple/OrbisKit` | Runs on Linux or macOS with no simulator and no Mac lease; `bun run ci` runs it on both |
 | Apple client | `bun run native:lanes --journeys` | Simulator journeys; see [native clients](#native-clients) for outputs and required tools. Add `--tvos` for the Apple TV journey |
 
 These local checks use disposable storage. Record production acceptance separately on the issue.
@@ -159,6 +161,26 @@ These local checks use disposable storage. Record production acceptance separate
 Before rerunning a lane, copy its logs, result JSON, screenshots, and result bundles to a unique directory for that run. Native runs replace `apps/apple/DerivedData/result.xcresult` and the screenshot output directory. Preserve the xcresult and console output even when a failed run exports no screenshots.
 
 Record the commit, exact command, target platform and simulator ID, result, and artifact path together. For a failure, include the failed test and source line from the log or result bundle. Link this record from the issue or PR so the next agent can find it without reading the session history. Keep credentials out of artifacts.
+
+## OrbisKit
+
+`apps/apple/OrbisKit` is a Swift package with no UI framework. It holds what talks to the service and what the Listening Queue knows, so `swift test` covers it on Linux or macOS with no simulator (PAL-2196). The app, the share extension and the `orbis` command line tool depend on it; the precedent is ShadowfaxKit in Shadowfax.
+
+- `OrbisClient`, `OrbisError` and the models (`SavedSet`, `ListeningQueue`, and the rest of the service's contract).
+- `ListeningQueueStore`: the queue's state and its rules. Mutations run one at a time in the order asked, only the newest mutation's answer is published, an answer that arrives after a sign-out is dropped, and a mutation queued under one key is never sent under another. `AppModel` owns one and starts and stops the player from what it answers.
+- `OrbisKitTesting`: `StubProtocol`, which answers `URLSession` requests from a test, and `Fixtures`. The app's unit tests use it too.
+- `orbis`: a command line tool over the same client and store, for checking a queue by hand. It reads the device key from `ORBIS_TOKEN` and the address from `ORBIS_ADDRESS`, so the key is not in the process list:
+
+```sh
+ORBIS_TOKEN=<device key> swift run --package-path apps/apple/OrbisKit orbis queue
+ORBIS_TOKEN=<device key> swift run --package-path apps/apple/OrbisKit orbis play <set-id>
+```
+
+The Linux build leaves out the two uses of `URLSession.bytes(for:)`, the event stream and the diagnostics upload, because swift-corelibs-foundation does not have it. The macOS run in `bun run ci` compiles them. Everything the app shows or plays stays in the app target: `AudioPlayer`, the engines, SwiftUI and Keychain code. A queue test belongs in OrbisKit unless it needs the player; `OrbisTests/QueueTests` holds the ones that do.
+
+`bun scripts/orbis-cli-smoke.mjs --out <file>` runs the tool against the real service: it starts the lane's disposable service and audio seed, files two Sets, and writes one `$ orbis ...` line and its output per step. It needs no simulator and no Mac, and the transcript is its artifact.
+
+`scripts/orbiskit-publicize.mjs` is the codemod that made the moved files public and gave each app file its `import OrbisKit`. It is the record of the move, and a second run changes nothing.
 
 ## Native clients
 

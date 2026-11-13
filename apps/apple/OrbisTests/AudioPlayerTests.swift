@@ -1,8 +1,10 @@
 import AVFoundation
 import Foundation
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// What a press does while the audio session is still coming up, or after it has gone. Each test
 /// holds the session's activation open, presses a button, then lets the session answer, and reads
