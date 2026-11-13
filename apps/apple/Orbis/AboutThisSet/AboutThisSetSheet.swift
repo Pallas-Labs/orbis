@@ -39,7 +39,7 @@
     @GestureState private var isHolding = false
     @Namespace private var highlight
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.reducesMotion) private var reduceMotion
 
     init(analysis: SetAnalysis, position: TimeInterval, artwork: URL?, expanded: Bool) {
       self.analysis = analysis
@@ -80,7 +80,7 @@
       // Holding starts a bar on the touch: the circle kicks on beat 1 as the first tap lands.
       .onChange(of: isHolding) { _, holding in
         if holding {
-          withAnimation(.snappy(duration: 0.2)) { clock.restart(bpm: clock.bpm) }
+          withAnimation(motion(0.2)) { clock.restart(bpm: clock.bpm) }
           haptics.startLoop(bpm: clock.bpm)
         } else {
           haptics.stopLoop()
@@ -116,19 +116,24 @@
       VStack(spacing: 6) {
         Metronome(clock: clock, diameter: 140)
           .scaleEffect(isHolding && !reduceMotion ? 1.05 : 1)
-          .animation(.snappy(duration: 0.2), value: isHolding)
+          .animation(motion(0.2), value: isHolding)
           .contentShape(Circle())
           .gesture(hold)
         Text(isHolding ? "Feeling \(Int(clock.bpm.rounded())) BPM" : "Hold to feel the beat")
           .font(.caption)
           .opacity(isHolding ? 0.85 : 0.45)
           .contentTransition(.opacity)
-          .animation(.snappy(duration: 0.2), value: isHolding)
+          .animation(motion(0.2), value: isHolding)
       }
       .accessibilityElement(children: .ignore)
       .accessibilityLabel("Tempo, \(Int(clock.bpm.rounded())) beats per minute")
       .accessibilityAction(named: "Feel the beat") { feelBar(bpm: clock.bpm) }
       .accessibilityIdentifier("about-this-set-tempo")
+    }
+
+    /// How a tempo change or a hold settles: a quick spring, or a fade under Reduce Motion.
+    private func motion(_ duration: TimeInterval) -> Animation {
+      reduceMotion ? .easeOut(duration: duration) : .snappy(duration: duration)
     }
 
     private var hold: some Gesture {
@@ -149,7 +154,7 @@
     }
 
     private func feelBar(bpm: Double) {
-      withAnimation(.snappy(duration: 0.25)) { clock.restart(bpm: bpm) }
+      withAnimation(motion(0.25)) { clock.restart(bpm: bpm) }
       haptics.playBar(bpm: bpm)
     }
 
@@ -283,7 +288,7 @@
   private struct Metronome: View {
     let clock: BeatClock
     var diameter: CGFloat = 170
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.reducesMotion) private var reduceMotion
 
     var body: some View {
       TimelineView(.animation(paused: reduceMotion)) { context in
@@ -366,7 +371,7 @@
     let isCurrent: Bool
     let highlight: Namespace.ID
     let pick: () -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.reducesMotion) private var reduceMotion
 
     var body: some View {
       Button(action: pick) {

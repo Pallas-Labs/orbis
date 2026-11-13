@@ -135,6 +135,10 @@ extension EnvironmentValues {
     get { self[OrbisReduceMotionKey.self] }
     set { self[OrbisReduceMotionKey.self] = newValue }
   }
+
+  /// Reduce Motion as this view should honour it: the forced setting when there is one, else
+  /// the system's.
+  public var reducesMotion: Bool { orbisReduceMotion ?? accessibilityReduceMotion }
 }
 
 /// Plays a motion's symbol effect when the trigger changes, in the form the accessibility
@@ -309,7 +313,8 @@ extension View {
   }
 
   /// Forces the Reduce Motion form, so a preview or a test can show both forms side by side.
-  public func orbisReduceMotion(_ enabled: Bool) -> some View {
+  /// `nil` leaves the system's setting in charge.
+  public func orbisReduceMotion(_ enabled: Bool?) -> some View {
     environment(\.orbisReduceMotion, enabled)
   }
 }
