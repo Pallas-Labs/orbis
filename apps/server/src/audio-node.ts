@@ -253,6 +253,8 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
           return;
         }
         await stopDownload();
+        // A new Download replaces the Set's audio, so an analysis of the old file must not report.
+        await analysis?.cancel(setId);
         if (closed || socket?.readyState !== WebSocket.OPEN) {
           return;
         }
@@ -273,12 +275,14 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       }
       case "cancel": {
         await stopDownload(setId, requestId);
+        await analysis?.cancel(setId);
         await runtime.runPromise(media.removeFiles(setId));
         finish(command, { kind: "released", requestId, setId });
         return;
       }
       case "release": {
         await stopDownload(setId);
+        await analysis?.cancel(setId);
         await runtime.runPromise(media.removeFiles(setId));
         finish(command, { kind: "released", requestId, setId });
         return;
