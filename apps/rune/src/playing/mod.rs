@@ -46,6 +46,9 @@ pub enum Origin {
 const TRACKLIST_AGAIN: Duration = Duration::from_secs(10);
 /// How often a playing Set's place is saved.
 const SAVE_EVERY: f64 = 15.0;
+
+/// How long a completion that got no answer, a 429 or a 5xx waits before each further try.
+const COMPLETION_WAITS: [Duration; 3] = [Duration::from_secs(1), Duration::from_secs(2), Duration::from_secs(4)];
 /// What Back and Ahead move, in seconds.
 pub const BACK: f64 = 15.0;
 pub const AHEAD: f64 = 30.0;
@@ -661,19 +664,40 @@ impl App {
         self.write(Write::Complete(id, generation));
     }
 
+    /// Sends the completion, with the place reset first. A completion that got no answer, a 429
+    /// or a 5xx goes again after each of [`COMPLETION_WAITS`], as the web player's does: Orbis
+    /// counts it once, by whether the Set is still active, so a repeat is safe. The write lane
+    /// stays held through the waits, so no later write overtakes it.
     fn send_completion(&mut self, id: String, generation: u64) {
+        let reset = id.clone();
         self.spawn(
-            move || (api::save_position(&id, 0.0), api::complete(&id)),
+            move || (api::save_position(&reset, 0.0), api::complete(&reset)),
             move |s, (reset, got)| {
-                s.playing.writing = false;
                 // The Set starts over next time, wherever the app shows it.
                 if let Ok(set) = reset {
                     s.replace_set(&set);
                 }
-                s.completed(got, generation);
-                s.next_write();
+                s.complete_tried(id, generation, got, 0);
             },
         );
+    }
+
+    /// What try `tried` (from 0) of a completion met: done, or wait and send it again.
+    fn complete_tried(&mut self, id: String, generation: u64, got: Result<crate::model::Queue, api::Failure>, tried: usize) {
+        let outlast = matches!(&got, Err(f) if f.status.is_none_or(|status| status == 429 || status >= 500));
+        if let Some(wait) = COMPLETION_WAITS.get(tried).filter(|_| outlast && self.playing.generation == generation) {
+            let session = self.session;
+            self.after(*wait, move |s| {
+                if s.session != session {
+                    return;
+                }
+                s.spawn(move || (api::complete(&id), id), move |s, (got, id)| s.complete_tried(id, generation, got, tried + 1));
+            });
+            return;
+        }
+        self.playing.writing = false;
+        self.completed(got.map_err(String::from), generation);
+        self.next_write();
     }
 
     /// What Orbis answered a completion: the queue, and the Set it names next.

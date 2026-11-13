@@ -1647,16 +1647,15 @@ final class AppModel {
     defer {
       if generation == playGeneration { pendingActivation = nil }
     }
-    let request = enqueueQueueMutation { try await client.reportCompletion(id) }
-    let revision = queueMutationGeneration
     do {
-      let loaded = try await request.value
-      guard generation == playGeneration else { return }
+      guard let completed = try await reportCompletion(id, to: client, generation: generation)
+      else { return }
+      let loaded = completed.queue
       guard !Task.isCancelled else {
         recordPendingActivation(.cancelled)
         return
       }
-      queueStore.publish(loaded, revision: revision)
+      queueStore.publish(loaded, revision: completed.revision)
       recordPendingActivation(.accepted)
       let wantsSound = pendingActivation?.wantsSound ?? false
       pendingActivation = nil
@@ -1676,6 +1675,47 @@ final class AppModel {
       guard generation == playGeneration else { return }
       recordPendingActivation(.failed)
       setFailure = OrbisError.unreachable.failure(at: client.address)
+    }
+  }
+
+  /// How long `finishedPlaying` waits before each further try of a completion that got no answer,
+  /// a 429 or a 5xx, as the web player does. The service counts a completion once, by whether the
+  /// Set is still the active one, so a repeat is safe. A test shortens the waits.
+  var completionWaits: [Duration] = [.seconds(1), .seconds(2), .seconds(4)]
+
+  /// Sends the completion of `id`, and again after each of `completionWaits` while the failure is
+  /// one a later try can outlast. Each try queues behind the mutations asked for since, so a Set
+  /// the person plays meanwhile is not held up by the waits. Nil when the person played something
+  /// else meanwhile; the last failure otherwise.
+  private func reportCompletion(
+    _ id: String, to client: OrbisClient, generation: Int
+  ) async throws -> (queue: ListeningQueue, revision: Int)? {
+    var waits = completionWaits[...]
+    while true {
+      let request = enqueueQueueMutation { try await client.reportCompletion(id) }
+      let revision = queueMutationGeneration
+      do {
+        let loaded = try await request.value
+        return generation == playGeneration ? (loaded, revision) : nil
+      } catch let error as OrbisError where Self.mayOutlast(error) && !waits.isEmpty {
+        guard generation == playGeneration else { return nil }
+        do {
+          try await Task.sleep(for: waits.removeFirst())
+        } catch {
+          throw OrbisError.cancelled
+        }
+        guard generation == playGeneration else { return nil }
+      }
+    }
+  }
+
+  /// Whether a request that failed this way may succeed when sent again: no answer came, or the
+  /// service was busy or broken rather than refusing the request.
+  private static func mayOutlast(_ error: OrbisError) -> Bool {
+    switch error {
+    case .unreachable: true
+    case .server(let status, _): status == 429 || status >= 500
+    default: false
     }
   }
 

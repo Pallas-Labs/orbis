@@ -226,6 +226,78 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(queue(model)?.activeSetId, "b")
   }
 
+  /// Answers `/queue/completion` from `answers` in order, and the Library after it, so a test can
+  /// say what each try of a completion meets.
+  private func finishingModel(log: RequestLog, answers: [(Int, String)]) throws -> AppModel {
+    let remaining = Answers(answers)
+    let model = try model(log: log) { request in
+      switch (request.httpMethod, request.url?.path()) {
+      case ("POST", "/queue/completion"):
+        return remaining.next()
+      case ("GET", "/sets"):
+        return (200, "{\"sets\":[\(Self.set(id: "b"))]}")
+      default:
+        return (200, "{}")
+      }
+    }
+    // The waits of the service's retry schedule, shortened: the order is what is tested.
+    model.completionWaits = [.milliseconds(1), .milliseconds(2), .milliseconds(4)]
+    return model
+  }
+
+  /// Answers handed out one at a time, the last one standing once the rest are used.
+  final class Answers: @unchecked Sendable {
+    private let lock = NSLock()
+    private var queue: [(Int, String)]
+
+    init(_ answers: [(Int, String)]) { queue = answers }
+
+    func next() -> (Int, String) {
+      lock.withLock { queue.count > 1 ? queue.removeFirst() : queue[0] }
+    }
+  }
+
+  private var nextQueue: (Int, String) {
+    (200, Self.queueBody(active: "b", entries: [Self.set(id: "b")]))
+  }
+
+  func testACompletionRefusedWith503IsSentAgainAndTheQueueAdvances() async throws {
+    let log = RequestLog()
+    let model = try finishingModel(
+      log: log, answers: [(503, #"{"message":"Try again."}"#), nextQueue])
+
+    await model.finishedPlaying("a")
+
+    XCTAssertEqual(log.all.filter { $0 == "POST /queue/completion" }.count, 2)
+    XCTAssertEqual(queue(model)?.activeSetId, "b")
+    XCTAssertEqual(model.audioPlayer.currentSetId, "b")
+    XCTAssertNil(model.setFailure)
+  }
+
+  func testACompletionThatFailsFourTimesSaysSoAfterTheFourthRequest() async throws {
+    let log = RequestLog()
+    let failure = (503, #"{"message":"Try again."}"#)
+    let model = try finishingModel(
+      log: log, answers: [failure, failure, failure, failure, nextQueue])
+
+    await model.finishedPlaying("a")
+
+    XCTAssertEqual(log.all.filter { $0 == "POST /queue/completion" }.count, 4)
+    XCTAssertEqual(model.setFailure?.message.contains("Try again."), true)
+    XCTAssertNil(model.audioPlayer.currentSetId)
+  }
+
+  func testACompletionRefusedWith404IsSentOnce() async throws {
+    let log = RequestLog()
+    let model = try finishingModel(
+      log: log, answers: [(404, #"{"message":"No such set."}"#), nextQueue])
+
+    await model.finishedPlaying("a")
+
+    XCTAssertEqual(log.all.filter { $0 == "POST /queue/completion" }.count, 1)
+    XCTAssertEqual(model.setFailure?.message.contains("No such set."), true)
+  }
+
   func testAnEmptyQueueAfterAFinishLeavesNothingPlaying() async throws {
     let model = try model { request in
       if request.url?.path() == "/queue/completion" {
