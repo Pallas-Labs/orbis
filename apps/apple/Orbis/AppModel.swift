@@ -373,9 +373,10 @@ final class AppModel {
 
   /// A model already signed in to a service. The launch screen and the settings file are the real
   /// path; this one exists so tests and previews can drive a change without either.
-  init(client: OrbisClient, settings: any ClientSettingsStore) {
+  init(client: OrbisClient, settings: any ClientSettingsStore, player: AudioPlayer? = nil) {
     self.settings = settings
     recentStore = nil
+    if let player { audioPlayer = player }
     self.client = client
     session = client.session
     serviceAddress = client.address
@@ -1139,6 +1140,13 @@ final class AppModel {
     audioPlayer.onFinished = { [weak self] setId in
       Task { await self?.finishedPlaying(setId) }
     }
+    audioPlayer.onStartedPlaying = { [weak self] id, position in
+      self?.reportPositionNow(id, at: position)
+    }
+    audioPlayer.onSeeking = { [weak self] id, from, to in
+      self?.reportPositionNow(id, at: from)
+      self?.reportPositionNow(id, at: to)
+    }
     audioPlayer.onReloadNeeded = { [weak self] id, position in
       guard let self else { return }
       let generation = self.playGeneration
@@ -1639,6 +1647,11 @@ final class AppModel {
     guard pendingActivation == nil else { return }
     if let current = audioPlayer.currentSetId, current != id { return }
     stopReportingPosition()
+    // The Set's end is its last place. It goes out before the completion, so the seconds since
+    // the last tick count and the completion's reset to the start lands after it.
+    let lastPlace =
+      audioPlayer.currentSetId == id
+      ? reportPositionNow(id, at: audioPlayer.settledPosition ?? audioPlayer.elapsed) : nil
     playGeneration += 1
     let generation = playGeneration
     pendingActivation = PendingActivation(
@@ -1647,7 +1660,10 @@ final class AppModel {
     defer {
       if generation == playGeneration { pendingActivation = nil }
     }
-    let request = enqueueQueueMutation { try await client.reportCompletion(id) }
+    let request = enqueueQueueMutation {
+      await lastPlace?.value
+      return try await client.reportCompletion(id)
+    }
     let revision = queueMutationGeneration
     do {
       let loaded = try await request.value
@@ -1708,10 +1724,35 @@ final class AppModel {
           let seconds = reports.position(
             elapsed: elapsed, state: state)
         else { continue }
-        await self.reportPosition(
-          id, seconds: seconds, settled: PositionReporting.settles(state))
+        await self.reportPositionInOrder(
+          id, seconds: seconds, settled: PositionReporting.settles(state)
+        ).value
       }
     }
+  }
+
+  /// The last Playback Position report made. Each report waits for the one before it, so a
+  /// report made at once never lands after a newer one.
+  @ObservationIgnored private var positionWrites: Task<Void, Never>?
+
+  @discardableResult
+  private func reportPositionInOrder(
+    _ id: String, seconds: Int, settled: Bool
+  ) -> Task<Void, Never> {
+    let previous = positionWrites
+    let write = Task { [weak self] in
+      await previous?.value
+      await self?.reportPosition(id, seconds: seconds, settled: settled)
+    }
+    positionWrites = write
+    return write
+  }
+
+  /// Reports the place now rather than at the next tick, so the service counts the next step from
+  /// here (PAL-2133).
+  @discardableResult
+  private func reportPositionNow(_ id: String, at elapsed: TimeInterval) -> Task<Void, Never> {
+    reportPositionInOrder(id, seconds: max(Int(elapsed.rounded(.down)), 0), settled: false)
   }
 
   private func stopReportingPosition() {

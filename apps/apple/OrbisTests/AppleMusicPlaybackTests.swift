@@ -307,7 +307,7 @@ final class AppleMusicPlaybackTests: XCTestCase {
 
 /// Orbis's own audio session, which is active from a start until the next end.
 @MainActor
-private final class OwnSession {
+final class OwnSession {
   private(set) var isActive = false
 
   nonisolated var session: AudioPlayer.Session {
@@ -325,7 +325,7 @@ private final class OwnSession {
 /// An engine that plays nothing and reports what the test tells it to. It owns Now Playing for an
 /// Apple Music Set, as the MusicKit engine does.
 @MainActor
-private final class FakeEngine: PlaybackEngine {
+final class FakeEngine: PlaybackEngine {
   let source: SetSource
   private var onEvent: (@MainActor (PlaybackEngineEvent) -> Void)?
   var time: TimeInterval = 0

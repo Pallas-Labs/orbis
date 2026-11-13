@@ -24,7 +24,8 @@ fn pressing_a_set_plays_it_and_tells_orbis_it_is_active() {
     assert_eq!((p.set.as_ref().map(|x| x.id.as_str()), &p.status), (Some("s-low-tide"), &Status::Playing), "it plays at once");
     assert_eq!(rt.state.queue.items.data.as_ref().unwrap().active_set_id.as_deref(), Some("s-low-tide"), "and is active in the queue at once");
     land(&mut rt);
-    assert_eq!(calls(), ["GET /sets/s-low-tide/tracklist", "PUT /queue/active {\"setId\":\"s-low-tide\"}"]);
+    // The place it starts from goes out at once, so Orbis counts Listening Time from the start.
+    assert_eq!(calls(), ["GET /sets/s-low-tide/tracklist", "PUT /sets/s-low-tide/position {\"seconds\":0.0}", "PUT /queue/active {\"setId\":\"s-low-tide\"}"]);
     assert_eq!(rt.state.queue.items.data.as_ref().unwrap().entries.len(), 2, "the queue is what Orbis sent back");
     assert_eq!(rt.state.playing.tracklist.data.as_ref().map(|t| t.cues.len()), Some(1));
     assert!(shows(&rt, "bar-open"), "the bar shows what plays");
@@ -262,15 +263,17 @@ fn a_late_position_save_never_lands_after_the_completion_reset() {
     fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": null, "entries": [] } }));
     rt.key(space());
     rt.frame(1.0 / 60.0);
+    land(&mut rt);
+    let before = writes_of("s-sunrise").len();
     rt.update(|s, _| {
         s.playing.position = 1_800.0;
         s.toggle();
         s.next();
     });
-    let order: Vec<String> = calls().into_iter().filter(|c| c.contains("/position") || c.contains("/queue/completion")).collect();
+    let order = writes_of("s-sunrise").split_off(before);
     assert_eq!(order.len(), 1, "the reset waits for the save before it: {order:?}");
     land(&mut rt);
-    let order: Vec<String> = calls().into_iter().filter(|c| c.contains("/position") || c.contains("/queue/completion")).collect();
+    let order = writes_of("s-sunrise").split_off(before);
     assert_eq!(order, ["PUT /sets/s-sunrise/position {\"seconds\":1800.0}", "PUT /sets/s-sunrise/position {\"seconds\":0.0}", "POST /queue/completion {\"setId\":\"s-sunrise\"}"]);
 }
 
@@ -373,4 +376,69 @@ fn of_two_sets_picked_quickly_orbis_hears_them_in_order_and_ends_on_the_second()
     assert_eq!(asked(&rt).last().map(String::as_str), Some("PUT /queue/active {\"setId\":\"s-static\"}"), "the newest goes last: {:?}", asked(&rt));
     assert!(!asked(&rt).iter().any(|c| c.contains("s-tram")), "a choice already replaced isn't sent");
     assert_eq!(rt.state.playing.set.as_ref().map(|x| x.id.as_str()), Some("s-static"));
+}
+
+/// The place saves of `id` and its completions, in the order the app sent them.
+fn writes_of(id: &str) -> Vec<String> {
+    let place = format!("PUT /sets/{id}/position");
+    calls().into_iter().filter(|c| c.starts_with(&place) || c.starts_with("POST /queue/completion")).collect()
+}
+
+#[test]
+fn a_start_and_a_resume_each_save_the_place_at_once() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("PUT /sets/s-sunrise/position", set_json("s-sunrise", "Sunrise on the Pier"));
+    rt.update(|s, _| s.toggle());
+    let start = rt.state.playing.position;
+    land(&mut rt);
+    assert_eq!(writes_of("s-sunrise"), [format!("PUT /sets/s-sunrise/position {{\"seconds\":{start:?}}}")], "the start saves its place");
+    rt.update(|s, _| {
+        s.playing.position = 600.0;
+        s.toggle();
+    });
+    land(&mut rt);
+    rt.update(|s, _| s.toggle());
+    land(&mut rt);
+    assert_eq!(rt.state.playing.status, Status::Playing);
+    let last: Vec<String> = writes_of("s-sunrise").split_off(1);
+    assert_eq!(last, ["PUT /sets/s-sunrise/position {\"seconds\":600.0}", "PUT /sets/s-sunrise/position {\"seconds\":600.0}"], "the pause, then the resume at once");
+}
+
+#[test]
+fn a_seek_saves_the_place_it_leaves_then_the_new_place() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("PUT /sets/s-sunrise/position", set_json("s-sunrise", "Sunrise on the Pier"));
+    rt.update(|s, _| s.toggle());
+    land(&mut rt);
+    rt.update(|s, _| {
+        s.playing.position = 610.0;
+        s.seek(900.0);
+    });
+    land(&mut rt);
+    let last: Vec<String> = writes_of("s-sunrise").split_off(1);
+    assert_eq!(last, ["PUT /sets/s-sunrise/position {\"seconds\":610.0}", "PUT /sets/s-sunrise/position {\"seconds\":900.0}"]);
+}
+
+#[test]
+fn a_set_that_plays_out_saves_its_last_place_then_zero_then_the_completion() {
+    let mut rt = live(Screen::Playing);
+    fixture::reply("PUT /sets/s-sunrise/position", set_json("s-sunrise", "Sunrise on the Pier"));
+    fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": null, "entries": [] } }));
+    rt.update(|s, _| s.toggle());
+    land(&mut rt);
+    let end = rt.state.playing.duration.unwrap();
+    // 10 s before the end, so the save before it and the last place are one short step apart.
+    rt.update(move |s, _| s.seek(end - 10.0));
+    land(&mut rt);
+    for _ in 0..12 {
+        rt.frame(1.0);
+        land(&mut rt);
+    }
+    let writes = writes_of("s-sunrise");
+    let tail = &writes[writes.len() - 3..];
+    assert_eq!(
+        tail,
+        [format!("PUT /sets/s-sunrise/position {{\"seconds\":{end:?}}}"), "PUT /sets/s-sunrise/position {\"seconds\":0.0}".to_owned(), "POST /queue/completion {\"setId\":\"s-sunrise\"}".to_owned()],
+        "{writes:?}"
+    );
 }

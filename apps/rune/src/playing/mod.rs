@@ -1,7 +1,9 @@
 //! Playback: the Set playing now, where it is, and its Tracklist. Pressing Play makes a Set the
-//! Listening Queue's active one, then streams its Retained Audio. Orbis keeps the place: every
-//! 15 s while it plays, on pause and when another Set starts. At the end, Orbis takes the Set
-//! out of the queue and the next one plays.
+//! Listening Queue's active one, then streams its Retained Audio. Orbis keeps the place: when it
+//! starts or resumes, every 15 s while it plays, on pause, on both sides of a seek, at the Set's
+//! end and when another Set starts. Orbis counts Listening Time from the steps between saves, so
+//! each of these saves keeps a step from going uncounted. At the end, Orbis takes the Set out of
+//! the queue and the next one plays.
 //!
 //! A live app streams through mpv ([`crate::audio`]). Headless renders, the demo and tests make
 //! no sound; their place moves on Rune's clock in [`poll`].
@@ -320,6 +322,8 @@ impl App {
                     self.presence_ensure(&id);
                 }
                 self.presence_act(presence::Kind::Play);
+                // Orbis counts the next step from this save's time, not from the pause or the start.
+                self.mark_place();
             }
             Status::Paused => self.presence_act(presence::Kind::Pause),
             Status::Idle | Status::Failed(_) => self.presence_act(presence::Kind::Stop),
@@ -451,6 +455,8 @@ impl App {
         }
         let target = seconds.clamp(0.0, self.playing.duration.unwrap_or(f64::MAX));
         self.command(kind, Origin::App, Some(target));
+        // The place left, then the new one: the steps on each side of the jump count.
+        self.save_place();
         let p = &mut self.playing;
         p.position = target;
         p.seeks += 1;
@@ -459,6 +465,7 @@ impl App {
         }
         let event = json!({ "seekResult": { "_0": { "actual": target, "duration": p.duration, "finished": true, "seekID": p.seeks, "target": target } } });
         self.report(event);
+        self.mark_place();
     }
 
     /// Ends the Set now, as if it had played out: the next one in the queue plays.
@@ -587,11 +594,20 @@ impl App {
         }
     }
 
-    /// Tells Orbis where the person is in the Set playing now.
+    /// Tells Orbis where the person is in the Set playing now, when it moved since the last save.
     fn save_place(&mut self) {
+        self.save_place_if(|moved| moved >= 1.0);
+    }
+
+    /// Tells Orbis the place now, moved or not, so its next step counts from now.
+    fn mark_place(&mut self) {
+        self.save_place_if(|_| true);
+    }
+
+    fn save_place_if(&mut self, moved_enough: impl Fn(f64) -> bool) {
         let p = &mut self.playing;
         let Some(id) = p.set.as_ref().map(|x| x.id.clone()) else { return };
-        if p.player.is_none() || (p.position - p.saved).abs() < 1.0 {
+        if p.player.is_none() || !moved_enough((p.position - p.saved).abs()) {
             return;
         }
         p.saved = p.position;
@@ -630,6 +646,8 @@ impl App {
     /// resets the Set's place and names the next too; when it names another, that one plays.
     fn finish(&mut self) {
         let Some(id) = self.playing.set.as_ref().map(|x| x.id.clone()) else { return };
+        // The last place goes before the reset to 0, so the last step counts.
+        self.save_place();
         self.playing.position = 0.0;
         self.playing.saved = 0.0;
         let next = self.queue.items.data.as_mut().and_then(|q| q.advance(&id));
