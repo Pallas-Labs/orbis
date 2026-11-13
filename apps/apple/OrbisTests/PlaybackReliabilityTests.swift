@@ -372,7 +372,7 @@ final class PlaybackReliabilityTests: XCTestCase {
   }
 
   /// Sends one request on to the real service and answers what it said.
-  private static func forward(_ request: URLRequest) -> (Int, String) {
+  nonisolated private static func forward(_ request: URLRequest) -> (Int, String) {
     let forwarded = Forwarded()
     let done = DispatchSemaphore(value: 0)
     URLSession.shared.dataTask(with: request) { data, response, _ in
@@ -387,7 +387,7 @@ final class PlaybackReliabilityTests: XCTestCase {
     return forwarded.value
   }
 
-  private static func isQueueRead(_ request: URLRequest) -> Bool {
+  nonisolated private static func isQueueRead(_ request: URLRequest) -> Bool {
     request.httpMethod == "GET" && request.url?.path() == "/queue"
   }
 
