@@ -19,7 +19,7 @@
     "lint": "oxlint --deny-warnings .",
     "bounded-reads": "node scripts/check-bounded-reads.mjs",
     "hosts": "node scripts/check-host-addresses.mjs",
-    "fence": "node --test scripts/fence.test.mjs",
+    "fence": "node --test scripts/fence.test.mjs scripts/check-simulator-scope.test.mjs && node scripts/check-simulator-scope.mjs",
     "tokens:generate": "node scripts/design-tokens.mjs",
     "tokens:check": "node scripts/design-tokens.mjs --check",
     "flags": "bun scripts/flags/flags.bundle",
