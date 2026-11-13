@@ -59,8 +59,7 @@ final class AudioPlayer {
   /// sound and the position the reporter reads both wait for the answer. A pause, a seek, or
   /// another Set drops the check, and the player then ignores its answer, so the answer must
   /// change nothing unless the test still passes.
-  @ObservationIgnored var onResumeCheck:
-    (@MainActor (String, @escaping @MainActor () -> Bool) async -> TimeInterval?)?
+  @ObservationIgnored var onResumeCheck: (@MainActor (String, @escaping @MainActor () -> Bool) async -> TimeInterval?)?
 
   private(set) var state = PlaybackState.idle {
     didSet {

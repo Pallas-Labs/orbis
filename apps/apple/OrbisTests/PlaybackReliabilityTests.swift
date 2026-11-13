@@ -360,7 +360,12 @@ final class PlaybackReliabilityTests: XCTestCase {
     var started: Int { lock.withLock { counts.started } }
     var finished: Int { lock.withLock { counts.finished } }
     /// Answers true for the first read, which waits for `release()`.
-    func begin() -> Bool { lock.withLock { counts.started += 1; return counts.started == 1 } }
+    func begin() -> Bool {
+      lock.withLock {
+        counts.started += 1
+        return counts.started == 1
+      }
+    }
     func wait() { gate.wait() }
     func end() { lock.withLock { counts.finished += 1 } }
     func release() { gate.signal() }
