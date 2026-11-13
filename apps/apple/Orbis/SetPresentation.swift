@@ -1,5 +1,6 @@
 import Foundation
 import OrbisDesign
+import OrbisKit
 
 /// Everything the design system's row needs, derived from one Set. A value rather than a view
 /// so the mapping is testable without rendering anything.

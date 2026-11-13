@@ -1,11 +1,15 @@
 import Foundation
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// The Listening Queue is what makes playback shared state: playing makes a Set active on the
-/// service, and the queue that comes back is what the app shows. These tests assert the request
-/// each action makes and the state that follows it.
+/// service, and the queue that comes back is what the app shows. The requests each action makes
+/// and the state that follows them are tested in OrbisKit with `swift test`, with no simulator.
+/// These tests cover what only the app does with an answer: start and stop the player, ask for
+/// Apple Music access, and read the Library again.
 @MainActor
 final class QueueTests: XCTestCase {
   /// Every request a model made, in order. `StubProtocol` keeps only the last one, and the order
@@ -134,65 +138,6 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(body(StubProtocol.lastBody), ["placement": "next", "setId": "b"])
     XCTAssertEqual(queue(model)?.entries.map(\.id), ["a", "b"])
     XCTAssertEqual(model.queueNotice, "Plays next")
-  }
-
-  func testAddToQueueIsSentAsAnAppend() async throws {
-    let model = try model { request in
-      if request.url?.path() == "/queue/entries" {
-        return (
-          201,
-          Self.queueBody(
-            active: "a", entries: [Self.set(id: "a"), Self.set(id: "b")])
-        )
-      }
-      return (200, "{}")
-    }
-
-    await model.addToQueue("b")
-
-    XCTAssertEqual(body(StubProtocol.lastBody), ["placement": "end", "setId": "b"])
-    XCTAssertEqual(model.queueNotice, "Added to the queue")
-  }
-
-  func testPlayingAPlaylistReplacesTheQueue() async throws {
-    let model = try model { request in
-      if request.url?.path() == "/queue/playlist" {
-        return (
-          200,
-          Self.queueBody(active: "a", entries: [Self.set(id: "a"), Self.set(id: "b")])
-        )
-      }
-      return (200, "{}")
-    }
-
-    await model.playPlaylist("closing")
-
-    XCTAssertEqual(StubProtocol.lastRequest?.httpMethod, "PUT")
-    XCTAssertEqual(StubProtocol.lastRequest?.url?.path(), "/queue/playlist")
-    XCTAssertEqual(body(StubProtocol.lastBody), ["playlistId": "closing"])
-    XCTAssertEqual(queue(model)?.entries.map(\.id), ["a", "b"])
-  }
-
-  /// Shuffle asks the service for the whole Playlist in a random order in one request. Queueing
-  /// the members one at a time behind `PUT /queue/active` kept the old queue around them.
-  func testShufflingAPlaylistReplacesTheQueueInOneRequest() async throws {
-    let log = RequestLog()
-    let model = try model(log: log) { request in
-      if request.url?.path() == "/queue/playlist" {
-        return (
-          200,
-          Self.queueBody(active: "c", entries: [Self.set(id: "c"), Self.set(id: "a"), Self.set(id: "b")])
-        )
-      }
-      return (200, "{}")
-    }
-
-    await model.playPlaylist("closing", shuffled: true)
-
-    XCTAssertEqual(log.all.filter { $0.contains("/queue") }, ["PUT /queue/playlist"])
-    XCTAssertEqual(body(StubProtocol.lastBody), ["order": "shuffled", "playlistId": "closing"])
-    XCTAssertEqual(queue(model)?.activeSetId, "c")
-    XCTAssertEqual(queue(model)?.entries.map(\.id), ["c", "a", "b"])
   }
 
   /// A shuffle whose first Set is from Apple Music asks for access before that Set starts, as

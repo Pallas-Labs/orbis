@@ -1,6 +1,7 @@
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// The filter is derived from the loaded library rather than fetched, so it is worth pinning
 /// what the screen shows for a given library.

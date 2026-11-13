@@ -15,6 +15,11 @@ options:
 packages:
   OrbisDesign:
     path: OrbisDesign
+  # The Orbis service client and the Listening Queue state: no UI framework, so `swift test`
+  # covers it on Linux or macOS with no simulator. The `orbis` command line tool is its
+  # executable product and is not part of any app.
+  OrbisKit:
+    path: OrbisKit
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -48,6 +53,7 @@ targets:
       - Flags
     dependencies:
       - package: OrbisDesign
+      - package: OrbisKit
       - target: OrbisShare
         embed: true
         destinationFilters: [iOS, macOS]
@@ -104,13 +110,13 @@ targets:
         includes:
           - OrbisSharedIdentity.swift
           - ClientSettings.swift
-          - OrbisClient.swift
-          - Models.swift
+          - OrbisService+Address.swift
           - PlaylistLink.swift
           - SetPresentation.swift
           - ShareCapture.swift
     dependencies:
       - package: OrbisDesign
+      - package: OrbisKit
     entitlements:
       path: OrbisShare/OrbisShare.entitlements
       # Declared here, not only in the file: xcodegen writes the file from these properties on
@@ -136,6 +142,9 @@ targets:
     dependencies:
       - target: Orbis
       - package: OrbisDesign
+      - package: OrbisKit
+      - package: OrbisKit
+        product: OrbisKitTesting
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.orbis.client.tests

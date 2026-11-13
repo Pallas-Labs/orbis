@@ -1,7 +1,9 @@
 import Foundation
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// Bulk import reads many links out of one paste and files each one on its own.
 ///
@@ -121,7 +123,7 @@ final class BulkImportTests: XCTestCase {
       if url.contains("dupe") {
         return (409, #"{"message":"This set is already in your library."}"#)
       }
-      let saved = OrbisClientTests.savedSet(title: "Filed \(url.suffix(11))", tags: ["Friday"])
+      let saved = Fixtures.savedSet(title: "Filed \(url.suffix(11))", tags: ["Friday"])
       return (201, String(saved.dropLast()) + #","autoDownloadResult":"queued"}"#)
     }
     let client = OrbisClient(

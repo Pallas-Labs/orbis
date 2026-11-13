@@ -1,7 +1,9 @@
 import Foundation
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// A request that is answered after a newer one began must not publish over it. These tests
 /// hold a response back with a semaphore so the ordering the app has to survive is real
@@ -32,7 +34,7 @@ final class SupersessionTests: XCTestCase {
   }
 
   private func libraryBody(title: String) -> String {
-    "{\"sets\":[" + OrbisClientTests.savedSet(title: title, tags: []) + "]}"
+    "{\"sets\":[" + Fixtures.savedSet(title: title, tags: []) + "]}"
   }
 
   /// Waits until the stub has received a request, so a held response is really held before
@@ -175,7 +177,7 @@ final class SupersessionTests: XCTestCase {
   /// was made before the service accepted the download, so the Library is read again rather than
   /// the answer being dropped because there was no loaded list to swap into.
   func testADownloadThatLandsWhileTheLibraryIsLoadingIsNotDropped() async throws {
-    let downloading = OrbisClientTests.savedSet(
+    let downloading = Fixtures.savedSet(
       title: "Night session", tags: [], downloadState: "downloading")
     let library = "{\"sets\":[\(downloading)]}"
     let model = AppModel(

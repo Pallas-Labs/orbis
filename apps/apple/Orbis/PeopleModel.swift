@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import OrbisDesign
+import OrbisKit
 
 /// What People shows and the requests that change it.
 @MainActor

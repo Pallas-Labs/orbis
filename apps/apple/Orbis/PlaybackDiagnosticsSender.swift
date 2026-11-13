@@ -1,4 +1,5 @@
 import Foundation
+import OrbisKit
 
 struct PlaybackDiagnosticsUpload: Codable, Sendable {
   let schemaVersion: Int

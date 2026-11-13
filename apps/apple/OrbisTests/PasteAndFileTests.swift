@@ -1,6 +1,8 @@
+import OrbisKitTesting
 import XCTest
 
 @testable import Orbis
+@testable import OrbisKit
 
 /// Pasting is the shortcut, so what it refuses matters as much as what it files.
 @MainActor
@@ -10,7 +12,7 @@ final class PasteAndFileTests: XCTestCase {
       address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
       token: "token",
       session: StubProtocol.session(
-        status: 201, body: OrbisClientTests.savedSet(title: "Night session", tags: []))
+        status: 201, body: Fixtures.savedSet(title: "Night session", tags: []))
     )
     let model = AppModel(client: client, settings: MemoryClientSettings())
     // A loaded library keeps a successful filing from reloading, so the last request stays the save.

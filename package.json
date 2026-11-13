@@ -28,7 +28,7 @@
     "check": "turbo run lint format:check tokens:check flags:check bounded-reads hosts fence typecheck test diagnostics doctor --concurrency=100% --continue=dependencies-successful",
     "fix": "ultracite fix",
     "check:force": "turbo run lint format:check tokens:check flags:check bounded-reads hosts fence typecheck test diagnostics doctor --concurrency=100% --continue=dependencies-successful --force",
-    "native:format": "xcrun swift-format lint --strict --recursive apps/apple/Orbis apps/apple/OrbisTests apps/apple/OrbisUITests apps/apple/OrbisTVUITests apps/apple/OrbisDesign/Sources apps/apple/OrbisDesign/Tests apps/apple/OrbisDesign/Package.swift",
+    "native:format": "xcrun swift-format lint --strict --recursive apps/apple/Orbis apps/apple/OrbisTests apps/apple/OrbisUITests apps/apple/OrbisTVUITests apps/apple/OrbisDesign/Sources apps/apple/OrbisDesign/Tests apps/apple/OrbisDesign/Package.swift apps/apple/OrbisKit/Sources apps/apple/OrbisKit/Tests apps/apple/OrbisKit/Package.swift",
     "native:lanes": "node scripts/native-lanes.mjs",
     "native:perf": "node scripts/native-perf.mjs",
     "garden": "scripts/garden sense"

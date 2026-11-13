@@ -1,4 +1,5 @@
 import OrbisDesign
+import OrbisKit
 import SwiftUI
 
 /// A failure's sentence and the way to copy its details, as rows of the section that failed.
