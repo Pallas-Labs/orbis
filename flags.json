@@ -16,9 +16,9 @@
       "issue": "PAL-2135",
       "owner": "Parth",
       "purpose": "A Show older control on a friend's profile that reads the next page of their Listen History.",
-      "state": "off",
-      "onAt": null,
-      "removeBy": null
+      "state": "on",
+      "onAt": "2026-11-13",
+      "removeBy": "2026-11-20"
     }
   ],
   "retired": []

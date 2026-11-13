@@ -39,7 +39,7 @@ public enum Flag: CaseIterable, Sendable {
     public var declared: FlagState {
         switch self {
         case .setPageV2: .on
-        case .listenHistoryPaging: .off
+        case .listenHistoryPaging: .on
         }
     }
 }
