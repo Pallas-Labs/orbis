@@ -86,6 +86,9 @@ final class AppModel {
   private(set) var tracklists: [String: Tracklist] = [:] {
     didSet { refreshCueMatches() }
   }
+  /// Each Set's tempo and loudness, by Set, once the audio node has measured it. A Set the node
+  /// has not measured has no entry.
+  private(set) var analyses: [String: SetAnalysis] = [:]
   /// The playlist the Library is showing. Nil is everything the library holds.
   var selectedPlaylistId: String?
   var searchQuery = ""
@@ -602,6 +605,7 @@ final class AppModel {
     tracklistLoads.removeAll()
     tracklistReaders.removeAll()
     tracklists.removeAll()
+    analyses.removeAll()
     settings.store(deviceToken: nil)
     client = nil
     signInFailure = nil
@@ -1419,6 +1423,17 @@ final class AppModel {
     }
     tracklistLoads[id] = (load, task)
     return task
+  }
+
+  /// Reads a Set's tempo and loudness for its page. A measured Set does not change, so it is read
+  /// once; a Set the node has not measured is read again each time its page opens.
+  func loadAnalysis(_ id: String) async {
+    guard let client, analyses[id] == nil else { return }
+    // A sign-out moves the generation on, so it drops an answer that arrives after it.
+    let generation = tracklistGeneration
+    guard let page = try? await client.setPage(id) else { return }
+    guard generation == tracklistGeneration, let analysis = page.analysis else { return }
+    analyses[id] = analysis
   }
 
   /// What a screen keys its Tracklist read on. A retry makes a failed Tracklist pending again, and

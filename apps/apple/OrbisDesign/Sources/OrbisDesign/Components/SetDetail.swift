@@ -106,9 +106,13 @@ public struct SetDetail: View {
     "\(title), \(source)"
   }
 
-  /// The line under the creator: the source, the length, and the release year.
-  public static func eyebrow(source: String, length: String?, dates: Dates?) -> String {
-    [source, length, dates?.releaseYear].compactMap { $0 }.joined(separator: " · ").uppercased()
+  /// The line under the creator: the source, the length, the release year, and the median tempo
+  /// once the Set has been measured.
+  public static func eyebrow(source: String, length: String?, dates: Dates?, bpm: Int? = nil)
+    -> String
+  {
+    [source, length, dates?.releaseYear, bpm.map { "\($0) BPM" }].compactMap { $0 }
+      .joined(separator: " · ").uppercased()
   }
 
   /// The facts under the tracklist, one subject per line, so no line breaks inside a phrase.

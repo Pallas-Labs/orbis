@@ -28,6 +28,7 @@ struct OrbisApp: App {
       WindowGroup {
         RootView(model: model)
           .frame(minWidth: 320, minHeight: 320)
+          .orbisReduceMotion(Self.forcedReduceMotion)
       }
       .windowResizability(.contentMinSize)
     #else
@@ -36,6 +37,18 @@ struct OrbisApp: App {
       }
     #endif
   }
+
+  /// A Debug journey launched with `-orbisReduceMotion YES` sees every view in its Reduce Motion
+  /// form: a test cannot turn on the simulator's own setting. `nil` leaves the system's.
+  private static let forcedReduceMotion: Bool? = {
+    #if DEBUG
+      let arguments = ProcessInfo.processInfo.arguments
+      if zip(arguments, arguments.dropFirst()).contains(where: { $0 == ("-orbisReduceMotion", "YES") }) {
+        return true
+      }
+    #endif
+    return nil
+  }()
 }
 
 struct RootView: View {
