@@ -143,6 +143,10 @@ export const PlayerProvider = ({
   const [elapsed, setElapsed] = useState(0);
   const [problem, setProblem] = useState<string | null>(null);
   const lastReport = useRef(0);
+  // The last place the audio reported while it played. A seek saves it before the new place, so
+  // Orbis counts the seconds before the seek; it is null until the Set's first second, so the
+  // seek to the place it starts from saves nothing.
+  const lastTime = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const playIntent = useRef(0);
   const presence = useRef<PresenceSession | null>(null);
@@ -257,6 +261,7 @@ export const PlayerProvider = ({
       state: "idle",
     };
     lastReport.current = 0;
+    lastTime.current = null;
     savedPosition.current = {
       seconds: set.playbackPositionSeconds,
       setId: set.id,
@@ -395,6 +400,7 @@ export const PlayerProvider = ({
           seconds: entry.playbackPositionSeconds,
           setId,
         };
+        lastTime.current = entry.playbackPositionSeconds;
         audio.currentTime = entry.playbackPositionSeconds;
         setElapsed(entry.playbackPositionSeconds);
       }
@@ -407,11 +413,24 @@ export const PlayerProvider = ({
     })();
   };
 
+  // A seek first saves the place it leaves, so Orbis counts the seconds before the seek. The
+  // resume read's own move to a newer place is not the person's seek: it saves nothing here.
+  const leave = () => {
+    const seconds = lastTime.current;
+    if (playing !== null && seconds !== null && !holding.current) {
+      save(playing.set.id, seconds);
+    }
+  };
+
   const reportNowAndThen = (event: SyntheticEvent<HTMLAudioElement>) => {
     if (holding.current) {
       return;
     }
-    setElapsed(Math.floor(event.currentTarget.currentTime));
+    const { currentTime, seeking } = event.currentTarget;
+    if (!seeking) {
+      lastTime.current = currentTime;
+    }
+    setElapsed(Math.floor(currentTime));
     const now = Date.now();
     if (now - lastReport.current >= REPORT_EVERY_MS) {
       lastReport.current = now;
@@ -509,6 +528,7 @@ export const PlayerProvider = ({
                 act("play");
               }}
               onSeeked={seeked}
+              onSeeking={leave}
               onTimeUpdate={reportNowAndThen}
               src={playing.src}
             />

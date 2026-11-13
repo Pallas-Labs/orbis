@@ -66,6 +66,9 @@ final class AudioPlayer {
       let before = diagnosticState(oldValue)
       let after = diagnosticState(state)
       if before != after { record(.state(.init(from: before, to: after))) }
+      if state == .playing, oldValue != .playing, let currentSetId {
+        onStartedPlaying?(currentSetId, settledPosition ?? elapsed)
+      }
     }
   }
   private(set) var currentSetId: String?
@@ -146,6 +149,15 @@ final class AudioPlayer {
   /// Listen and start whatever the Listening Queue holds next. Nothing is called when playback
   /// stops early: that Set keeps its position and its Listen.
   @ObservationIgnored var onFinished: ((String) -> Void)?
+
+  /// Called with the Set and its place each time sound starts or resumes. The service counts
+  /// Listening Time from the step between two saved places, measured against the time between
+  /// them, so the place is saved here and the next step counts from now, not from the pause.
+  @ObservationIgnored var onStartedPlaying: ((String, TimeInterval) -> Void)?
+
+  /// Called with the Set, the place a seek leaves and the place it moves to, while sound plays.
+  /// Both are saved, so the seconds before the seek and the step after it each count.
+  @ObservationIgnored var onSeeking: ((String, TimeInterval, TimeInterval) -> Void)?
 
   /// Which observations are current: a callback carrying an older number is dropped.
   private var playbackGeneration = 0
@@ -718,6 +730,9 @@ final class AudioPlayer {
     // A place the person chose wins over a resume check still out.
     cancelResumeCheck()
     let target = boundedPosition(seconds)
+    if state == .playing, let currentSetId {
+      onSeeking?(currentSetId, settledPosition ?? elapsed, target)
+    }
     elapsed = target
     timelineSample = nil
     guard engine.status == .ready else {
