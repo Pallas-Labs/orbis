@@ -173,7 +173,6 @@
       .padding(.horizontal, 6)
       .padding(.bottom, 6)
       .background(.white.opacity(0.08), in: .rect(cornerRadius: 20))
-      .accessibilityIdentifier("about-this-set-sections")
     }
 
     /// The dark sheet, tinted by the Set's artwork.
