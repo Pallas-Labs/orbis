@@ -35,7 +35,9 @@ export const request = async (
     options.accessMode ?? "device",
     options.clientAddress
   );
-  const body = await response.json();
+  // A request the API schema refuses answers with an empty body.
+  const text = await response.text();
+  const body = text === "" ? null : JSON.parse(text);
   return {
     headers: response.headers,
     json: () => body,

@@ -17,6 +17,7 @@ import {
   CollaborationPayload,
   ImportPlaylistPayload,
   JoinPayload,
+  MAX_FRIEND_LISTENS,
   RedeemSignInCodePayload,
   SaveSetPayload,
   OrbisApi,
@@ -39,7 +40,7 @@ import {
   UpdateMePayload,
   WaitApprovalRequestPayload,
 } from "@orbis/contracts/http-api";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, lt, or, sql } from "drizzle-orm";
 import {
   Context,
   Deferred,
@@ -117,6 +118,7 @@ import {
   updatePersonFilters,
 } from "./identity.js";
 import { Library } from "./library.js";
+import { decodeListensCursor, encodeListensCursor } from "./listens-cursor.js";
 import type { LoggedRecord, LoggingOptions } from "./logging.js";
 import {
   annotateForwardedRequest,
@@ -2109,11 +2111,27 @@ export const createPortableApp = (options: {
               })
             )
           )
-          .handleRaw("friendListens", ({ params }) =>
+          .handleRaw("friendListens", ({ params, query }) =>
             withFailureResponse(
               Effect.gen(function* readFriendListens() {
                 const target = yield* visibleFriend(params.id);
-                const rows = yield* db
+                const limit = query.limit ?? MAX_FRIEND_LISTENS;
+                const before =
+                  query.before === undefined
+                    ? undefined
+                    : yield* Effect.fromOption(
+                        decodeListensCursor(query.before)
+                      ).pipe(
+                        Effect.mapError(
+                          () =>
+                            new LibraryError({
+                              message: "This page of Listens does not exist.",
+                              statusCode: 400,
+                            })
+                        )
+                      );
+                // One row past the page tells whether an older page exists.
+                const fetched = yield* db
                   .select({
                     finishedAt: listens.finishedAt,
                     id: listens.id,
@@ -2121,8 +2139,28 @@ export const createPortableApp = (options: {
                     startedAt: listens.startedAt,
                   })
                   .from(listens)
-                  .where(eq(listens.personId, target.id))
-                  .orderBy(desc(listens.startedAt), desc(listens.id));
+                  .where(
+                    and(
+                      eq(listens.personId, target.id),
+                      before === undefined
+                        ? undefined
+                        : or(
+                            lt(listens.startedAt, before.startedAt),
+                            and(
+                              eq(listens.startedAt, before.startedAt),
+                              lt(listens.id, before.id)
+                            )
+                          )
+                    )
+                  )
+                  .orderBy(desc(listens.startedAt), desc(listens.id))
+                  .limit(limit + 1);
+                const rows = fetched.slice(0, limit);
+                const last = rows.at(-1);
+                const nextCursor =
+                  fetched.length > limit && last !== undefined
+                    ? encodeListensCursor(last)
+                    : null;
                 const history = yield* Effect.gen(
                   function* hydrateFriendListens() {
                     const personal = yield* Library;
@@ -2145,7 +2183,7 @@ export const createPortableApp = (options: {
                     });
                   }
                 ).pipe(withLibraryOf(target.id));
-                return { listens: history };
+                return { listens: history, nextCursor };
               })
             )
           )

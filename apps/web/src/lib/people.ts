@@ -34,9 +34,17 @@ export const friendPlaylists = async (credentials: Credentials, id: string) =>
     client.people.friendPlaylists({ params: { id } })
   );
 
-export const friendListens = async (credentials: Credentials, id: string) =>
+/** One page of a friend's Listen History; `before` is the last page's `nextCursor`. */
+export const friendListens = async (
+  credentials: Credentials,
+  id: string,
+  before?: string
+) =>
   await callOrbis(credentials, (client) =>
-    client.people.friendListens({ params: { id } })
+    client.people.friendListens({
+      params: { id },
+      query: before === undefined ? {} : { before },
+    })
   );
 
 export type PersonFilters = Extract<

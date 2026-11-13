@@ -21,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { flags } from "@/flags.gen";
 import { detach } from "@/lib/detach";
 import { listSets, requestDownload, saveSet } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
@@ -79,9 +80,12 @@ const timeFormat = new Intl.DateTimeFormat(undefined, {
 
 export interface Profile {
   readonly id: string;
+  /** The newest page of the friend's Listen History. */
   readonly listens: readonly Listen[];
   /** The ids of the Sets in the viewer's own Library. */
   readonly mine: readonly string[];
+  /** Reads the page of Listens older than `listens`; `null` when there is none. */
+  readonly nextCursor: string | null;
   readonly playlists: readonly FriendPlaylist[];
   readonly sets: readonly SavedSet[];
   readonly username: string;
@@ -219,6 +223,77 @@ const Empty = ({ children }: { readonly children: string }) => (
   <p {...stylex.props(type.muted, type.sm)}>{children}</p>
 );
 
+/** The friend's Listens, newest first; "Show older" appends the next page. */
+const ListenHistory = ({
+  credentials,
+  profile,
+}: {
+  readonly credentials: Credentials;
+  readonly profile: Profile;
+}) => {
+  const [older, setOlder] = useState<readonly Listen[]>([]);
+  const [cursor, setCursor] = useState(profile.nextCursor);
+  const [pending, setPending] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const listens = [...profile.listens, ...older];
+  const showOlder = async (before: string) => {
+    setPending(true);
+    const page = await friendListens(credentials, profile.id, before);
+    setPending(false);
+    if (!page.ok) {
+      setProblem(FAILURE_MESSAGES[page.failure]);
+      return;
+    }
+    setProblem(null);
+    setOlder((shown) => [...shown, ...page.value.listens]);
+    setCursor(page.value.nextCursor);
+  };
+  return (
+    <Section title="Listen History">
+      {listens.length === 0 ? (
+        <Empty>No Listens yet.</Empty>
+      ) : (
+        <div {...stylex.props(layout.stack4)}>
+          <ol aria-label="Listen History" {...stylex.props(type.sm)}>
+            {listens.map((listen) => (
+              <li
+                {...stylex.props(styles.listen, layout.divided)}
+                key={`${listen.startedAt}-${listen.set.id}`}
+              >
+                <span>
+                  {listen.finishedAt === null ? "Listened to" : "Finished"}{" "}
+                  {listen.set.title}
+                </span>
+                <time
+                  {...stylex.props(type.muted, styles.shrink0)}
+                  dateTime={listen.startedAt}
+                >
+                  {timeFormat.format(new Date(listen.startedAt))}
+                </time>
+              </li>
+            ))}
+          </ol>
+          {flags.listenHistoryPaging() && cursor !== null ? (
+            <div>
+              <Button
+                disabled={pending}
+                onClick={detach(async () => {
+                  await showOlder(cursor);
+                })}
+                size="sm"
+                variant="outline"
+              >
+                Show older
+              </Button>
+            </div>
+          ) : null}
+          <Problem message={problem} />
+        </div>
+      )}
+    </Section>
+  );
+};
+
 const FriendProfile = ({
   credentials,
   profile,
@@ -296,31 +371,12 @@ const FriendProfile = ({
           </ul>
         )}
       </Section>
-      <Section title="Listen History">
-        {profile.listens.length === 0 ? (
-          <Empty>No Listens yet.</Empty>
-        ) : (
-          <ol aria-label="Listen History" {...stylex.props(type.sm)}>
-            {profile.listens.map((listen) => (
-              <li
-                {...stylex.props(styles.listen, layout.divided)}
-                key={`${listen.startedAt}-${listen.set.id}`}
-              >
-                <span>
-                  {listen.finishedAt === null ? "Listened to" : "Finished"}{" "}
-                  {listen.set.title}
-                </span>
-                <time
-                  {...stylex.props(type.muted, styles.shrink0)}
-                  dateTime={listen.startedAt}
-                >
-                  {timeFormat.format(new Date(listen.startedAt))}
-                </time>
-              </li>
-            ))}
-          </ol>
-        )}
-      </Section>
+      {/* A reload that moves the first page's end starts the older pages again. */}
+      <ListenHistory
+        credentials={credentials}
+        key={`${profile.id} ${profile.nextCursor}`}
+        profile={profile}
+      />
     </main>
   );
 };
@@ -389,6 +445,7 @@ export const Route = createFileRoute("/_app/people/$id")({
       id,
       listens: listens.value.listens,
       mine: mine.value.sets.map((set) => set.id),
+      nextCursor: listens.value.nextCursor,
       playlists: playlists.value.playlists,
       sets: sets.value.sets,
       username: person.username,
