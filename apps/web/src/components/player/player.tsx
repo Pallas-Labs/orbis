@@ -360,8 +360,9 @@ export const PlayerProvider = ({
   const resume = (event: SyntheticEvent<HTMLAudioElement>) => {
     const audio = event.currentTarget;
     if (holding.current) {
-      // Play again during the read: the person wants sound now, and the read still moves it.
-      holding.current = false;
+      // Play again during the read: the read already plays when it answers. Sound now would
+      // report the old place before the read, and the read would then find that old place.
+      audio.pause();
       return;
     }
     if (playing === null || !resumable.current) {

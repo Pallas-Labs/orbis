@@ -351,23 +351,57 @@ final class PlaybackReliabilityTests: XCTestCase {
     var value: (Int, String) { lock.withLock { answer } }
   }
 
+  /// Holds the first Listening Queue read until the test releases it, and counts the reads that
+  /// started and finished.
+  private final class QueueReadGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private let gate = DispatchSemaphore(value: 0)
+    private var counts = (started: 0, finished: 0)
+    var started: Int { lock.withLock { counts.started } }
+    var finished: Int { lock.withLock { counts.finished } }
+    /// Answers true for the first read, which waits for `release()`.
+    func begin() -> Bool { lock.withLock { counts.started += 1; return counts.started == 1 } }
+    func wait() { gate.wait() }
+    func end() { lock.withLock { counts.finished += 1 } }
+    func release() { gate.signal() }
+  }
+
+  /// Sends one request on to the real service and answers what it said.
+  private static func forward(_ request: URLRequest) -> (Int, String) {
+    let forwarded = Forwarded()
+    let done = DispatchSemaphore(value: 0)
+    URLSession.shared.dataTask(with: request) { data, response, _ in
+      forwarded.set(
+        (
+          (response as? HTTPURLResponse)?.statusCode ?? 502,
+          String(decoding: data ?? Data(), as: UTF8.self)
+        ))
+      done.signal()
+    }.resume()
+    done.wait()
+    return forwarded.value
+  }
+
+  private static func isQueueRead(_ request: URLRequest) -> Bool {
+    request.httpMethod == "GET" && request.url?.path() == "/queue"
+  }
+
   /// A session that sends each request on to the real service, except the Listening Queue read,
   /// which fails. The audio itself streams through AVPlayer, outside this session.
   private static func sessionFailingTheQueueRead() -> URLSession {
     StubProtocol.session(responder: { request in
-      if request.httpMethod == "GET", request.url?.path() == "/queue" { return (500, "{}") }
-      let forwarded = Forwarded()
-      let done = DispatchSemaphore(value: 0)
-      URLSession.shared.dataTask(with: request) { data, response, _ in
-        forwarded.set(
-          (
-            (response as? HTTPURLResponse)?.statusCode ?? 502,
-            String(decoding: data ?? Data(), as: UTF8.self)
-          ))
-        done.signal()
-      }.resume()
-      done.wait()
-      return forwarded.value
+      isQueueRead(request) ? (500, "{}") : forward(request)
+    })
+  }
+
+  /// A session that sends each request on to the real service, and holds the first Listening
+  /// Queue read at `gate` before it sends it, so the read answers what the service holds then.
+  private static func sessionHoldingTheFirstQueueRead(_ gate: QueueReadGate) -> URLSession {
+    StubProtocol.session(responder: { request in
+      guard isQueueRead(request) else { return forward(request) }
+      if gate.begin() { gate.wait() }
+      defer { gate.end() }
+      return forward(request)
     })
   }
 
@@ -519,6 +553,48 @@ final class PlaybackReliabilityTests: XCTestCase {
       [
         "togglePlayback": ["pausedAt": togglePause, "otherDevice": 15, "resumedAt": toggled] as [String: Any],
         "playSet": ["pausedAt": playPause, "otherDevice": 18, "resumedAt": played] as [String: Any],
+      ])
+  }
+
+  /// A pause while the resume's read is out drops that resume. The read's answer then changes
+  /// nothing, so the next resume still finds the place another device saved, and this device's
+  /// next report keeps it.
+  func testAResumeDroppedByAPauseLeavesTheNewerPlaceForTheNextResume() async throws {
+    let fixture = try await fixture()
+    let gate = QueueReadGate()
+    let client = OrbisClient(
+      address: fixture.client.address, token: fixture.client.token,
+      session: Self.sessionHoldingTheFirstQueueRead(gate))
+    let model = AppModel(client: client, settings: MemoryClientSettings())
+    defer {
+      gate.release()
+      model.signOut()
+    }
+    try await start(model, fixture)
+
+    let paused = try await pause(model, at: 5, fixture)
+    _ = try await fixture.client.reportPosition(fixture.set.id, seconds: 18)
+    model.togglePlayback()
+    try await waitUntil("The resume must read the queue") { gate.started == 1 }
+    model.togglePlayback()
+    try await waitUntil("The second press must pause") { model.audioPlayer.state == .paused }
+    gate.release()
+    try await waitUntil("The dropped read must answer") { gate.finished == 1 }
+    try await Task.sleep(for: .milliseconds(500))
+    XCTAssertEqual(model.audioPlayer.state, .paused, "The dropped read must not play the Set")
+    let stillPaused = try XCTUnwrap(model.audioPlayer.player?.currentTime().seconds)
+    XCTAssertLessThan(stillPaused, Double(paused) + 1, "The dropped read must not move the Set")
+
+    model.togglePlayback()
+    let played = try await resumed(model, after: paused)
+    XCTAssertGreaterThanOrEqual(played, 18, "The next resume played from its own pause")
+    XCTAssertLessThan(played, 21)
+    let after = try await waitForService(fixture, "The next report must keep 18 s") { $0 >= 18 }
+    try record(
+      "resume-dropped-by-pause",
+      [
+        "pausedAt": paused, "otherDevice": 18, "afterDroppedRead": stillPaused,
+        "resumedAt": played, "serviceAfterNextReport": after,
       ])
   }
 }

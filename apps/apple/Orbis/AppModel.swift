@@ -1143,8 +1143,8 @@ final class AppModel {
         await self.playSet(id, startAt: position)
       }
     }
-    audioPlayer.onResumeCheck = { [weak self] id in
-      await self?.newerSavedPosition(of: id)
+    audioPlayer.onResumeCheck = { [weak self] id, isCurrent in
+      await self?.newerSavedPosition(of: id, isCurrent: isCurrent)
     }
     audioPlayer.onCommand = { [weak self] command in
       guard let self, self.pendingActivation != nil else { return false }
@@ -1721,9 +1721,14 @@ final class AppModel {
   /// Where a paused Set should play from when another device saved a newer place since this one
   /// last knew the service's, or nil to play from where the player stands. It reads the Listening
   /// Queue, which holds the Set's position; a read that fails answers nil, so the Set still plays.
-  private func newerSavedPosition(of id: String) async -> TimeInterval? {
+  /// The newer place becomes the known one only when the player still waits for this read: a
+  /// resume that a pause dropped never moved the player, so the next resume must find the same
+  /// newer place again.
+  private func newerSavedPosition(
+    of id: String, isCurrent: @MainActor () -> Bool
+  ) async -> TimeInterval? {
     guard let client, savedPosition?.setId == id else { return nil }
-    guard let loaded = try? await client.listeningQueue(),
+    guard let loaded = try? await client.listeningQueue(), isCurrent(),
       self.client?.token == client.token, audioPlayer.currentSetId == id,
       let known = savedPosition, known.setId == id,
       let set = loaded.entries.first(where: { $0.id == id }),

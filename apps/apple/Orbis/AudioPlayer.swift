@@ -53,10 +53,14 @@ final class AudioPlayer {
 
   @ObservationIgnored var onCommand: ((Command) -> Bool)?
   @ObservationIgnored var onReloadNeeded: ((String, TimeInterval) -> Void)?
-  /// Asked before a paused or interrupted Set plays again, with the Set's id. Answers a place to
-  /// move to first, when another device saved a newer one, or nil to play from where the player
-  /// stands. The sound and the position the reporter reads both wait for the answer.
-  @ObservationIgnored var onResumeCheck: (@MainActor (String) async -> TimeInterval?)?
+  /// Asked before a paused or interrupted Set plays again, with the Set's id and a test that
+  /// answers whether the player still waits for this check. Answers a place to move to first,
+  /// when another device saved a newer one, or nil to play from where the player stands. The
+  /// sound and the position the reporter reads both wait for the answer. A pause, a seek, or
+  /// another Set drops the check, and the player then ignores its answer, so the answer must
+  /// change nothing unless the test still passes.
+  @ObservationIgnored var onResumeCheck:
+    (@MainActor (String, @escaping @MainActor () -> Bool) async -> TimeInterval?)?
 
   private(set) var state = PlaybackState.idle {
     didSet {
@@ -667,10 +671,12 @@ final class AudioPlayer {
     let check = latestResumeCheck
     let generation = playbackGeneration
     isCheckingResume = true
+    let isCurrent: @MainActor () -> Bool = { [weak self] in
+      self?.playbackGeneration == generation && self?.latestResumeCheck == check
+    }
     Task { [weak self] in
-      let target = await onResumeCheck(id)
-      guard let self, self.playbackGeneration == generation, self.latestResumeCheck == check
-      else { return }
+      let target = await onResumeCheck(id, isCurrent)
+      guard let self, isCurrent() else { return }
       self.isCheckingResume = false
       if let target {
         logger.info("Resume moves to \(clock(target), privacy: .public), saved on another device")

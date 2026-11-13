@@ -94,14 +94,25 @@ try {
       page.evaluate(() => {
         const element = document.querySelector("audio");
         return element
-          ? { currentTime: element.currentTime, paused: element.paused }
+          ? {
+              currentTime: element.currentTime,
+              paused: element.paused,
+              seeking: element.seeking,
+            }
           : null;
       });
     const queueReads = [];
+    const positionSaves = [];
     page.on("request", (request) => {
       const url = new URL(request.url());
       if (url.pathname === "/queue" && request.method() === "GET") {
         queueReads.push(url.pathname);
+      }
+      if (
+        url.pathname === `/sets/${saved.id}/position` &&
+        request.method() === "PUT"
+      ) {
+        positionSaves.push(request);
       }
     });
     // The player's own play control, which only the `<audio>` element hears.
@@ -110,7 +121,11 @@ try {
       .locator("media-play-button");
 
     // Moves the playing element to `seconds` and pauses it there with the play
-    // control, then waits for the pause's save to reach the service.
+    // control, then waits for the pause's own save to reach the service. The
+    // seek must land first: a seek that ends during the next resume's read is
+    // the person's choice of place and drops the read. The seek saves the same
+    // second, so only the pause's answer shows that no save of this page can
+    // still land after another device's.
     const pauseAt = async (seconds) => {
       await page.evaluate((target) => {
         const element = document.querySelector("audio");
@@ -118,13 +133,23 @@ try {
       }, seconds);
       await waitUntil(async () => {
         const state = await audioState();
-        return state.currentTime >= seconds && state.currentTime < seconds + 2;
+        return (
+          !state.seeking &&
+          state.currentTime >= seconds &&
+          state.currentTime < seconds + 2
+        );
       }, `the audio did not move to ${seconds} s`);
+      const savesBefore = positionSaves.length;
       await playButton.click();
       await waitUntil(async () => {
         const state = await audioState();
         return state.paused;
       }, "the play control did not pause the audio");
+      await waitUntil(
+        () => positionSaves.length > savesBefore,
+        "the pause did not save its position"
+      );
+      await positionSaves[savesBefore].response();
       await waitUntil(
         async () => Math.abs((await servicePosition()) - seconds) <= 1,
         `the pause at ${seconds} s did not reach the service`
@@ -230,6 +255,76 @@ try {
       failedPause,
       failedResume,
     });
+
+    // 4. Play twice while the read is out: the page stays quiet and saves
+    // nothing until the read answers, then plays from the other device's place.
+    const heldPause = await pauseAt(4);
+    await api("PUT", `/sets/${saved.id}/position`, { seconds: 18 });
+    const { promise: readReleased, resolve: releaseRead } =
+      Promise.withResolvers();
+    await page.route("**/queue", async (route) => {
+      if (route.request().method() === "GET") {
+        await readReleased;
+      }
+      await route.continue();
+    });
+    const readsBefore = queueReads.length;
+    const savesBefore = positionSaves.length;
+    await playButton.click();
+    await waitUntil(
+      () => queueReads.length > readsBefore,
+      "the first play did not read the service's position"
+    );
+    await waitUntil(async () => {
+      const state = await audioState();
+      return state.paused;
+    }, "the page did not wait, paused, for the read");
+    await playButton.click();
+    // Long enough for the element's time updates to report, if they could.
+    await page.waitForTimeout(1500);
+    const whileHeld = await audioState();
+    const savesWhileHeld = positionSaves
+      .slice(savesBefore)
+      .map((request) => request.postDataJSON().seconds);
+    await page.screenshot({
+      path: path.join(artifacts, "second-play-while-reading.png"),
+    });
+    assert.ok(
+      whileHeld.paused,
+      "a second play sounded before the read answered"
+    );
+    assert.deepEqual(
+      savesWhileHeld,
+      [],
+      "the page saved a position before the read answered"
+    );
+    releaseRead();
+    await waitUntil(async () => {
+      const state = await audioState();
+      return !state.paused && state.currentTime > 18.5;
+    }, "the page did not resume at the other device's place after a second play");
+    const { currentTime: heldResume } = await audioState();
+    await page.unroute("**/queue");
+    assert.ok(
+      heldResume >= 18 && heldResume < 22,
+      `the page resumed at ${heldResume} s after a second play, not at the other device's 18 s`
+    );
+    await waitUntil(
+      async () => (await servicePosition()) >= 18,
+      "the page's next report after a second play did not keep 18 s"
+    );
+    const heldService = await servicePosition();
+    step(
+      "a second play during the read waits for it and keeps the newer place",
+      {
+        heldPause,
+        heldResume,
+        heldService,
+        otherDevice: 18,
+        savesWhileHeld,
+        whileHeld,
+      }
+    );
   } finally {
     await browser.close();
   }
