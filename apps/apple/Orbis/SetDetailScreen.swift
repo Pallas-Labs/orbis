@@ -113,8 +113,9 @@ struct SetDetailScreen: View {
   }
 
   /// How the controls sit. `.today` puts the seek bar under them once the Set is in the player.
-  /// `.thumbReach`, the `set-page-v2` page, always puts it above them and draws Play from
-  /// Beginning and Play Next as icons, so the whole row fits one line at the foot of the screen.
+  /// `.thumbReach`, the `set-page-v2` page, has no seek bar, because Now Playing has one and
+  /// Resume shows the position (PAL-2293). It draws Play from Beginning and Play Next as icons,
+  /// so the whole row fits one line.
   enum AudioLayout {
     case today
     case thumbReach
@@ -136,10 +137,6 @@ struct SetDetailScreen: View {
       let isCurrent = model.audioPlayer.currentSetId == set.id
       let iconsOnly = layout == .thumbReach
       VStack(spacing: 12) {
-        if layout == .thumbReach {
-          // Before the Set is in the player the bar shows where it was left, and does not move.
-          transport(set, isCurrent: isCurrent)
-        }
         HStack(spacing: 12) {
           playButton(set, isCurrent: isCurrent)
           if model.canPlayFromBeginning(set) {

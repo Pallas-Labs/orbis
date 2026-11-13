@@ -97,13 +97,27 @@ const LANE_PLAYLIST = {
 /**
  * Videos the Data API knows that no lane playlist holds, so a journey can save a Set with a
  * creator without colliding with an import. The Set page journey (PAL-2060) saves the first two,
- * by one creator, and the third, whose creator has one Set.
+ * by one creator, and the third, whose creator has one Set. The first has landscape artwork, as
+ * most Sets do, and the third portrait artwork (PAL-2293); the fixture serves both.
  */
 const LANE_VIDEOS = [
-  ["laneSetPg01", "Sunrise Session", "Kai Moreno"],
+  ["laneSetPg01", "Sunrise Session", "Kai Moreno", "landscape.png"],
   ["laneSetPg02", "Night Drive", "Kai Moreno"],
-  ["laneSetPg03", "Solo Hour", "Lone Creator"],
+  ["laneSetPg03", "Solo Hour", "Lone Creator", "portrait.png"],
 ] as const;
+const LANE_ART = "/lane-art/";
+/** The fixture's own address, known once it listens; it serves the lane's artwork. */
+interface LaneArt {
+  base?: URL;
+}
+const laneArt: LaneArt = {};
+const laneArtwork = (name: string | undefined) => {
+  if (name === undefined || laneArt.base === undefined) {
+    return {};
+  }
+  const image = { url: new URL(LANE_ART + name, laneArt.base).toString() };
+  return { high: image, maxres: image };
+};
 interface DataApiAnswer {
   readonly items: readonly unknown[];
   readonly nextPageToken?: string | undefined;
@@ -146,13 +160,13 @@ const laneYouTube = async (url: string) => {
     return answer({
       items: [...LANE_PLAYLIST.entries, ...LANE_VIDEOS]
         .filter(([id, title]) => ids.has(id) && title !== "")
-        .map(([id, title, channelTitle]) => ({
+        .map(([id, title, channelTitle, artwork]) => ({
           contentDetails: { duration: "PT58M12S" },
           id,
           snippet: {
             channelTitle,
             publishedAt: "2026-06-01T00:00:00Z",
-            thumbnails: {},
+            thumbnails: laneArtwork(artwork),
             title,
           },
         })),
@@ -210,12 +224,28 @@ const app = createApp({
       "https://otlp.parthm.me/v1/logs",
   },
 });
+const artworkDirectory = path.join(import.meta.dir, "fixtures", "artwork");
 const fixture = startFixtureServer({
   allowedOrigin: process.env.ORBIS_FIXTURE_ORIGIN,
-  app,
+  app: {
+    ...app,
+    handler: async (request, ...rest) => {
+      const { pathname } = new URL(request.url);
+      if (pathname.startsWith(LANE_ART)) {
+        const file = Bun.file(
+          path.join(artworkDirectory, path.basename(pathname))
+        );
+        return (await file.exists()) === true
+          ? new Response(file)
+          : new Response("not found", { status: 404 });
+      }
+      return await app.handler(request, ...rest);
+    },
+  },
   port: Number(process.env.ORBIS_FIXTURE_PORT ?? 0),
   token,
 });
+laneArt.base = fixture.url;
 process.stdout.write(
   `${JSON.stringify({
     address: fixture.url.toString().replace(/\/$/u, ""),

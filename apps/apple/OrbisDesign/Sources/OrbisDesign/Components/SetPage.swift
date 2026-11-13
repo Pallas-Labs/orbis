@@ -2,9 +2,9 @@ import SwiftUI
 
 /// One Set's page on iPhone, as the `set-page-v2` flag lays it out (PAL-2060).
 ///
-/// The first screen is the artwork, full-bleed behind the top bar and fading into the page, then
-/// the words and the controls, which end at the bottom of the screen where a thumb reaches them.
-/// The rest arrives on scroll: the Tracklist, more from the creator, the Tags and the facts.
+/// The page opens on the artwork, full-bleed behind the top bar and fading into the page, then
+/// the words and, directly under them, the controls. The hero is landscape, as most Sets'
+/// artwork is (PAL-2293). The Tracklist, more from the creator, the Tags and the facts follow.
 public struct SetPage: View {
   public let title: String
   public let source: String
@@ -81,6 +81,17 @@ public struct SetPage: View {
 
   /// How far the words climb onto the artwork's fade.
   private static let overlap: CGFloat = 64
+  /// The hero's height below the top bar, as a fraction of its width: 16:9, the shape of most
+  /// Sets' artwork.
+  private static let heroAspect: CGFloat = 9 / 16
+  /// The most of the visible height the hero takes below the bar, so a wide, short window
+  /// still shows the controls without scrolling.
+  private static let heroShare: CGFloat = 0.4
+
+  /// The hero's height below the top bar.
+  private var heroHeight: CGFloat {
+    min(width * Self.heroAspect, visibleHeight * Self.heroShare)
+  }
 
   private var shownTitle: String { Self.displayTitle(title, creator: creator) }
 
@@ -110,8 +121,8 @@ public struct SetPage: View {
     } action: { _, inset in
       topInset = inset
     }
-    // The height between the bars, which the first screen fills. The container is already
-    // the part the bars leave visible.
+    // The height between the bars, which caps the hero. The container is already the part
+    // the bars leave visible.
     .onScrollGeometryChange(for: CGFloat.self) { geometry in
       geometry.containerSize.height
     } action: { _, height in
@@ -127,24 +138,22 @@ public struct SetPage: View {
     .background(Color.orbis.paper)
   }
 
-  /// The artwork, the words and the controls, at least one screen tall, so the controls end at
-  /// the bottom of the first screen. Text sizes that need more room push the controls below it
-  /// rather than over the words.
+  /// The artwork, the words and the controls, with the controls directly under the words.
   private var firstScreen: some View {
     VStack(spacing: 0) {
       Color.clear
-        .frame(height: max(width - topInset - Self.overlap, 0))
+        .frame(height: max(heroHeight - Self.overlap, 0))
       header
-      Spacer(minLength: 24)
       controls
+        .padding(.top, 20)
     }
     .padding(.horizontal)
-    .padding(.bottom, 12)
-    .frame(minHeight: visibleHeight, alignment: .bottom)
     .background(alignment: .top) {
-      HeroArtwork(url: artwork, standIn: artworkStandIn, seed: title)
-        .frame(width: width, height: width)
-        .offset(y: -topInset)
+      HeroArtwork(
+        url: artwork, standIn: artworkStandIn, seed: title,
+        size: CGSize(width: width, height: heroHeight + topInset)
+      )
+      .offset(y: -topInset)
     }
   }
 
@@ -233,11 +242,13 @@ public struct SetPage: View {
   }
 }
 
-/// The artwork at the head of the page: square, edge to edge, fading into the paper below it.
+/// The artwork at the head of the page: edge to edge, fading into the paper below it. Artwork
+/// taller than the hero keeps its top, where a portrait's face usually is.
 private struct HeroArtwork: View {
   let url: URL?
   let standIn: URL?
   let seed: String
+  let size: CGSize
 
   var body: some View {
     Group {
@@ -251,6 +262,7 @@ private struct HeroArtwork: View {
         placeholder
       }
     }
+    .frame(width: size.width, height: size.height, alignment: .top)
     .clipped()
     .mask {
       LinearGradient(

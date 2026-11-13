@@ -2,8 +2,8 @@ import UIKit
 import XCTest
 
 /// The iPhone Set page behind `set-page-v2` (PAL-2060), launched with every flag on. The journey
-/// proves the first screen holds the controls in thumb reach, and that the sections below arrive
-/// on scroll in their order, each only when the Set has something to show in it.
+/// proves the controls sit directly under the words on the first screen (PAL-2293), and that the
+/// sections below arrive on scroll in their order, each only when the Set has something to show.
 final class SetPageV2UITests: LibraryJourney {
   private func launchWithFlagsOn() throws -> XCUIApplication {
     let service = try LaneService()
@@ -29,11 +29,24 @@ final class SetPageV2UITests: LibraryJourney {
     }
   }
 
+  /// The controls start just under the source line, with no empty band and no seek bar between
+  /// them: Now Playing has the seek bar, and Resume shows the position.
+  private func assertControlsFollowTheWords(
+    play: XCUIElement, sourceLine: XCUIElement, in app: XCUIApplication,
+    file: StaticString = #filePath, line: UInt = #line
+  ) {
+    let gap = play.frame.minY - sourceLine.frame.maxY
+    XCTAssertGreaterThan(gap, 0, "Play sits below the source line", file: file, line: line)
+    XCTAssertLessThan(gap, 48, "no empty band above Play: gap \(gap)", file: file, line: line)
+    XCTAssertFalse(app.sliders["detail-seek"].exists, "no seek bar", file: file, line: line)
+  }
+
   func testFirstScreenHoldsTheControlsAndTheRestFollowsOnScroll() throws {
     try skipUnlessPhone()
     let service = try LaneService()
-    // The fixture names both videos' creator Kai Moreno, so the page has more from them. Each is
-    // saved untitled, because a title given at save keeps the service from reading the creator.
+    // The fixture names both videos' creator Kai Moreno, so the page has more from them, and gives
+    // this one landscape artwork. Each is saved untitled, because a title given at save keeps the
+    // service from reading the creator.
     let set = try service.saveReadySet(
       title: "", url: "https://www.youtube.com/watch?v=laneSetPg01", tags: ["house", "sunrise"])
     let other = try service.saveSet(title: "", url: "https://www.youtube.com/watch?v=laneSetPg02")
@@ -57,7 +70,8 @@ final class SetPageV2UITests: LibraryJourney {
     let title = app.staticTexts["detail-title"]
     XCTAssertTrue(title.label.hasPrefix("Sunrise Session"), "title read \(title.label)")
     XCTAssertTrue(app.buttons["detail-creator"].exists, "the creator must sit under the title")
-    XCTAssertTrue(app.staticTexts["detail-source-line"].exists, "the source line must show")
+    let sourceLine = app.staticTexts["detail-source-line"]
+    XCTAssertTrue(sourceLine.exists, "the source line must show")
 
     // Tags is an icon in the top bar, beside More.
     let tagsButton = app.navigationBars.buttons["detail-tags-button"]
@@ -66,11 +80,13 @@ final class SetPageV2UITests: LibraryJourney {
     XCTAssertTrue(more.exists)
     XCTAssertLessThan(tagsButton.frame.maxX, more.frame.minX + 1, "Tags must sit before More")
 
-    // Every control is in reach on the first screen, without scrolling.
-    let seek = app.sliders["detail-seek"]
-    XCTAssertTrue(seek.waitForExistence(timeout: 15), "the scrubber must show before playing")
+    // Every control shows on the first screen, without scrolling.
+    let play = app.buttons["detail-play-toggle"]
+    XCTAssertTrue(play.waitForExistence(timeout: 15), "Resume must show")
+    capture("set-page-v2-01-first-screen-landscape-artwork")
+    assertControlsFollowTheWords(play: play, sourceLine: sourceLine, in: app)
     let controls = [
-      app.buttons["detail-play-toggle"],
+      play,
       app.buttons["detail-play-from-beginning"],
       app.buttons["detail-queue-actions"],
       // The route picker is a system view, so it is not reported as a button.
@@ -81,16 +97,14 @@ final class SetPageV2UITests: LibraryJourney {
         control.waitForExistence(timeout: 10), "\(control) must show\n\(app.debugDescription)")
       XCTAssertTrue(control.isHittable, "\(control.identifier) must be hittable without scrolling")
       XCTAssertLessThanOrEqual(control.frame.maxY, window.maxY, "\(control.identifier) on screen")
-      XCTAssertGreaterThan(control.frame.minY, seek.frame.maxY, "the scrubber sits above")
     }
-    // The controls end in the lower part of the screen, where a thumb reaches them.
-    XCTAssertGreaterThan(controls[0].frame.midY, window.height * 0.6, "controls in thumb reach")
-    // The first screen ends with the controls: the Tracklist starts below the tab bar.
-    let tabBar = app.tabBars.firstMatch.frame
-    XCTAssertGreaterThan(
-      app.descendants(matching: .any)["tracklist"].frame.minY, min(tabBar.minY, window.maxY) - 1,
-      "the Tracklist must wait below the first screen")
-    capture("set-page-v2-01-first-screen")
+    // The tab bar covers none of them.
+    let tabBar = app.tabBars.firstMatch
+    if tabBar.exists {
+      for control in controls {
+        XCTAssertLessThanOrEqual(control.frame.maxY, tabBar.frame.minY, "\(control.identifier)")
+      }
+    }
 
     // Below, in order: the Tracklist, more from the creator, the Tags, the facts.
     let tracklist = app.descendants(matching: .any)["tracklist"]
@@ -132,6 +146,13 @@ final class SetPageV2UITests: LibraryJourney {
 
     let app = try launchWithFlagsOn()
     openSet(set.id, in: app)
+    // The fixture gives this Set portrait artwork. The controls still follow the words.
+    let play = app.buttons["detail-play-toggle"]
+    XCTAssertTrue(play.waitForExistence(timeout: 15), "Play must show")
+    capture("set-page-v2-06-first-screen-portrait-artwork")
+    assertControlsFollowTheWords(
+      play: play, sourceLine: app.staticTexts["detail-source-line"], in: app)
+    XCTAssertTrue(play.isHittable, "Play must show without scrolling")
     for _ in 0..<6 { app.swipeUp() }
 
     // No Tracklist, no other Sets by the creator, and no Tags: the page says nothing of them.
