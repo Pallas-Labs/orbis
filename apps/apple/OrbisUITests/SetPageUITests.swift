@@ -109,7 +109,11 @@ final class SetPageUITests: LibraryJourney {
       app.sheets.firstMatch.waitForExistence(timeout: 10),
       "removing must ask first\n\(app.debugDescription)"
     )
-    app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.92)).tap()
+    // On iPhone the dialog is a popover from More with no cancel button, and a tap on the tab
+    // bar passes through it, so dismiss it with a tap on the page clear of the popover.
+    app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.35)).tap()
+    XCTAssertTrue(
+      app.buttons["Remove from library"].waitForNonExistence(timeout: 5), "a tap outside must dismiss")
     XCTAssertTrue(app.staticTexts["detail-title"].exists, "dismissing must keep the Set")
 
     app.buttons["detail-actions"].tap()

@@ -94,6 +94,16 @@ const LANE_PLAYLIST = {
   id: "PLorbisLaneMix",
   title: "Lane Mix",
 } as const;
+/**
+ * Videos the Data API knows that no lane playlist holds, so a journey can save a Set with a
+ * creator without colliding with an import. The Set page journey (PAL-2060) saves the first two,
+ * by one creator, and the third, whose creator has one Set.
+ */
+const LANE_VIDEOS = [
+  ["laneSetPg01", "Sunrise Session", "Kai Moreno"],
+  ["laneSetPg02", "Night Drive", "Kai Moreno"],
+  ["laneSetPg03", "Solo Hour", "Lone Creator"],
+] as const;
 interface DataApiAnswer {
   readonly items: readonly unknown[];
   readonly nextPageToken?: string | undefined;
@@ -134,7 +144,7 @@ const laneYouTube = async (url: string) => {
   if (resource === "videos") {
     const ids = new Set(parsed.searchParams.get("id")?.split(","));
     return answer({
-      items: LANE_PLAYLIST.entries
+      items: [...LANE_PLAYLIST.entries, ...LANE_VIDEOS]
         .filter(([id, title]) => ids.has(id) && title !== "")
         .map(([id, title, channelTitle]) => ({
           contentDetails: { duration: "PT58M12S" },

@@ -11,9 +11,12 @@ struct SetManagementSection: View {
   var style: Style = .page
 
   /// `.page` shows the Tags and puts the menu in the toolbar; `.inline` is the
-  /// menu alone, as one button, for Now Playing.
+  /// menu alone, as one button, for Now Playing. `.pageV2`, the `set-page-v2` page, puts a Tags
+  /// button beside the menu, shows the Tags only when the Set has some, and offers Find Tracklist
+  /// in the menu while the Set has none.
   enum Style {
     case page
+    case pageV2
     case inline
   }
 
@@ -61,6 +64,27 @@ struct SetManagementSection: View {
       .toolbar {
         ToolbarItem(placement: .primaryAction) { actions }
       }
+    case .pageV2:
+      // A stack, not a bare `if`, so the toolbar and the sheets stay on the page when the
+      // Set has no Tags to show.
+      VStack(spacing: 0) {
+        if !set.tags.isEmpty {
+          SetPageTags(
+            SetManagement(
+              tags: set.tags,
+              category: SetPresentation.category(for:),
+              showTag: { model.showTag($0) },
+              editTags: { isEditingTags = true }
+            ))
+        }
+      }
+      .toolbar {
+        ToolbarItem(placement: .primaryAction) {
+          Button("Tags", systemImage: "tag") { isEditingTags = true }
+            .accessibilityIdentifier("detail-tags-button")
+        }
+        ToolbarItem(placement: .primaryAction) { actions }
+      }
     case .inline:
       actions
         .buttonStyle(.plain)
@@ -77,6 +101,13 @@ struct SetManagementSection: View {
         .accessibilityIdentifier("detail-rename-action")
       Button("Add to Playlist", systemImage: "text.badge.plus") { isAddingToPlaylist = true }
         .accessibilityIdentifier("detail-playlist")
+      if offersFindTracklist {
+        // Versos chooses where the Tracklist comes from (ADR 0017); this asks it to look again.
+        Button("Find Tracklist", systemImage: "music.note.list") {
+          Task { await model.retryTracklist(set.id) }
+        }
+        .accessibilityIdentifier("detail-find-tracklist")
+      }
       Button("Open in \(set.source.label)", systemImage: SetPresentation.sourceSymbol(set.source)) {
         open()
       }
@@ -117,6 +148,12 @@ struct SetManagementSection: View {
       }
     }
     .accessibilityIdentifier("detail-actions")
+  }
+
+  /// The `set-page-v2` page shows nothing for a Set with no Tracklist, so its menu is where a
+  /// person asks for one.
+  private var offersFindTracklist: Bool {
+    style == .pageV2 && (model.tracklists[set.id]?.state ?? set.tracklistState) == .none
   }
 
   private var removalMessage: String {

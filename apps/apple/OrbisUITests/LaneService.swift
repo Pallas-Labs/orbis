@@ -53,6 +53,8 @@ struct LaneService {
     let tags: [String]
     let playbackPositionSeconds: Int
     let finishCount: Int
+    let creator: String?
+    let tracklistState: String?
   }
 
   struct AudioState: Codable {
@@ -93,8 +95,8 @@ struct LaneService {
     try send("POST", "sets", ["title": title, "url": url, "tags": tags])
   }
 
-  func saveReadySet(title: String, url: String) throws -> Set {
-    let saved = try saveSet(title: title, url: url)
+  func saveReadySet(title: String, url: String, tags: [String] = []) throws -> Set {
+    let saved = try saveSet(title: title, url: url, tags: tags)
     try seed("ready-audio/\(saved.id)")
     return saved
   }
@@ -123,6 +125,11 @@ struct LaneService {
 
   func seedLateTracklist(_ id: String) throws {
     try seed("late-tracklist/\(id)")
+  }
+
+  /// Settles the Set's Tracklist as none found, as Versos leaves a Set it has no source for.
+  func seedNoTracklist(_ id: String) throws {
+    try seed("no-tracklist/\(id)")
   }
 
   /// Leaves the Set's Tracklist pending with its Cues, as it is while Versos scans.
@@ -216,6 +223,25 @@ struct LaneService {
 
   func set(id: String) throws -> Set? {
     try library().first { $0.id == id }
+  }
+
+  /// Renames a Set as a person does, which keeps the title over the provider's.
+  func rename(_ id: String, to title: String) throws {
+    let code = try status("PATCH", "sets/\(id)/title", ["title": title])
+    guard (200..<300).contains(code) else { throw URLError(.badServerResponse) }
+  }
+
+  /// Waits until the service has read the Set's creator from the provider. Answers the Set as
+  /// it then reads.
+  func named(_ id: String) throws -> Set? {
+    let deadline = Date().addingTimeInterval(20)
+    repeat {
+      if let set = try set(id: id), set.creator != nil {
+        return set
+      }
+      usleep(200_000)
+    } while Date() < deadline
+    return try set(id: id)
   }
 
   func position(of id: String, becomesAtLeast minimum: Int) throws -> Int {

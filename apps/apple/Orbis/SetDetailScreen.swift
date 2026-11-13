@@ -15,50 +15,18 @@ struct SetDetailScreen: View {
   var body: some View {
     Group {
       if let set = model.savedSet(setId) {
-        SetDetail(
-          title: set.title,
-          source: set.source.label,
-          creator: set.creator,
-          showCreator: { model.showCreator(of: set) },
-          length: set.durationSeconds.flatMap { $0 > 0 ? SetPresentation.length($0) : nil },
-          artwork: SetPresentation.pageArtwork(set),
-          artworkStandIn: SetPresentation.row(set).artwork,
-          failedToName: set.metadataState == "failed",
-          dates: SetDetail.Dates(
-            imported: SetPresentation.plainDate(set.createdAt),
-            released: set.releasedAt.map(SetPresentation.plainDate),
-            releaseYear: set.releasedAt.map(SetPresentation.year)
-          ),
-          statistics: SetDetail.Statistics(
-            listenCount: set.listenCount,
-            finishCount: set.finishCount,
-            lastHeard: set.lastListenedAt.map(SetPresentation.day)
-          ),
-          retryName: { Task { await model.nameAgain(set.id) } }
-        ) {
-          audioSection(set)
-        } tracklist: {
-          // A Tracklist that arrives after the page opened eases the facts below it down,
-          // rather than pushing them in one frame.
-          TracklistSection(model: model, set: set)
-            .orbisAnimation(.tracklistArrived, value: model.tracklists[set.id]?.cues.count)
-        } management: {
-          SetManagementSection(model: model, set: set, isRenaming: $isRenaming)
-        }
-        .scrollEdgeEffectStyle(.soft, for: .top)
-        .scrollEdgeEffectStyle(.soft, for: .bottom)
-        .toolbarTitleDisplayMode(.inline)
-        .accessibilityIdentifier("set-detail")
-        .task(id: setId) {
-          if set.source == .appleMusic { await model.checkAppleMusicAccess() }
-        }
-        .task(id: model.tracklistRead(setId)) {
-          if set.tracklistState != .none { await model.loadTracklist(setId) }
-        }
-        // Keyed on whether the Set is downloading, so a download asked for on this page is followed
-        // from the moment the service accepts it, and moving from queued to downloading does not
-        // start the watch over.
-        .task(id: set.isDownloading ? setId : nil) { await model.followDownload(setId) }
+        page(set)
+          .accessibilityIdentifier("set-detail")
+          .task(id: setId) {
+            if set.source == .appleMusic { await model.checkAppleMusicAccess() }
+          }
+          .task(id: model.tracklistRead(setId)) {
+            if set.tracklistState != .none { await model.loadTracklist(setId) }
+          }
+          // Keyed on whether the Set is downloading, so a download asked for on this page is
+          // followed from the moment the service accepts it, and moving from queued to downloading
+          // does not start the watch over.
+          .task(id: set.isDownloading ? setId : nil) { await model.followDownload(setId) }
       } else {
         // Only a library that has arrived without the Set can say it is gone.
         switch model.library {
@@ -82,6 +50,59 @@ struct SetDetailScreen: View {
     .setChangeStatus(model)
   }
 
+  /// Today's page, or on an iPhone with `set-page-v2` on, the redesigned one (PAL-2060).
+  @ViewBuilder
+  private func page(_ set: SavedSet) -> some View {
+    if Self.usesPageV2 {
+      SetPageV2(model: model, set: set, isRenaming: $isRenaming) {
+        audioSection(set, layout: .thumbReach)
+      }
+    } else {
+      SetDetail(
+        title: set.title,
+        source: set.source.label,
+        creator: set.creator,
+        showCreator: { model.showCreator(of: set) },
+        length: set.durationSeconds.flatMap { $0 > 0 ? SetPresentation.length($0) : nil },
+        artwork: SetPresentation.pageArtwork(set),
+        artworkStandIn: SetPresentation.row(set).artwork,
+        failedToName: set.metadataState == "failed",
+        dates: SetDetail.Dates(
+          imported: SetPresentation.plainDate(set.createdAt),
+          released: set.releasedAt.map(SetPresentation.plainDate),
+          releaseYear: set.releasedAt.map(SetPresentation.year)
+        ),
+        statistics: SetDetail.Statistics(
+          listenCount: set.listenCount,
+          finishCount: set.finishCount,
+          lastHeard: set.lastListenedAt.map(SetPresentation.day)
+        ),
+        retryName: { Task { await model.nameAgain(set.id) } }
+      ) {
+        audioSection(set, layout: .today)
+      } tracklist: {
+        // A Tracklist that arrives after the page opened eases the facts below it down,
+        // rather than pushing them in one frame.
+        TracklistSection(model: model, set: set)
+          .orbisAnimation(.tracklistArrived, value: model.tracklists[set.id]?.cues.count)
+      } management: {
+        SetManagementSection(model: model, set: set, isRenaming: $isRenaming)
+      }
+      .scrollEdgeEffectStyle(.soft, for: .top)
+      .scrollEdgeEffectStyle(.soft, for: .bottom)
+      .toolbarTitleDisplayMode(.inline)
+    }
+  }
+
+  /// The redesigned page is for iPhone only; iPad, the Mac and the TV keep today's page.
+  static var usesPageV2: Bool {
+    #if os(iOS)
+      UIDevice.current.userInterfaceIdiom == .phone && Flags.client.getBooleanValue(.setPageV2)
+    #else
+      false
+    #endif
+  }
+
   private var missing: some View {
     ContentUnavailableView {
       Label("This set is gone", systemImage: "questionmark.folder")
@@ -91,38 +112,48 @@ struct SetDetailScreen: View {
     .accessibilityIdentifier("detail-missing")
   }
 
+  /// How the controls sit. `.today` puts the seek bar under them once the Set is in the player.
+  /// `.thumbReach`, the `set-page-v2` page, always puts it above them and draws Play from
+  /// Beginning and Play Next as icons, so the whole row fits one line at the foot of the screen.
+  enum AudioLayout {
+    case today
+    case thumbReach
+  }
+
   /// Download, progress, and playback for this Set. Each state shows exactly one
   /// control, so a Set that is downloading cannot also offer to play.
-  private func audioSection(_ set: SavedSet) -> some View {
+  private func audioSection(_ set: SavedSet, layout: AudioLayout) -> some View {
     // When the audio arrives the capsule grows into the player rather than being swapped for it.
-    Group { audioControl(set) }
+    Group { audioControl(set, layout: layout) }
       .orbisAnimation(.downloadProgressed, value: set.isPlayable)
   }
 
   @ViewBuilder
-  private func audioControl(_ set: SavedSet) -> some View {
+  private func audioControl(_ set: SavedSet, layout: AudioLayout) -> some View {
     if set.source == .appleMusic, !model.appleMusicAccess.offersPlay {
       openInAppleMusic(set)
     } else if set.isPlayable {
       let isCurrent = model.audioPlayer.currentSetId == set.id
+      let iconsOnly = layout == .thumbReach
       VStack(spacing: 12) {
+        if layout == .thumbReach {
+          // Before the Set is in the player the bar shows where it was left, and does not move.
+          transport(set, isCurrent: isCurrent)
+        }
         HStack(spacing: 12) {
           playButton(set, isCurrent: isCurrent)
-          if model.canPlayFromBeginning(set) { playFromBeginningButton(set) }
-          queueActions(set)
+          if model.canPlayFromBeginning(set) {
+            playFromBeginningButton(set, iconOnly: iconsOnly)
+          }
+          queueActions(set, iconOnly: iconsOnly)
           // Where the sound goes, chosen here rather than only from Now Playing.
           AirPlayButton(color: Color.orbis.tint)
             .frame(width: 48, height: 48)
             .background(Color.orbis.paperRaised, in: .rect(cornerRadius: Radius.row))
         }
         .orbisAnimation(.playbackToggled, value: model.canPlayFromBeginning(set))
-        if isCurrent {
-          Transport(
-            player: model.audioPlayer,
-            fallbackDuration: set.durationSeconds.map(TimeInterval.init),
-            showsControls: false,
-            cueStarts: model.tracklists[set.id]?.cues.compactMap(\.startSeconds) ?? []
-          )
+        if layout == .today, isCurrent {
+          transport(set, isCurrent: true)
         }
         if let notice = model.queueNotice {
           Text(notice)
@@ -141,6 +172,17 @@ struct SetDetailScreen: View {
       .frame(maxWidth: .infinity)
       .transition(.opacity.combined(with: .scale(0.96, anchor: .top)))
     }
+  }
+
+  private func transport(_ set: SavedSet, isCurrent: Bool) -> some View {
+    Transport(
+      player: model.audioPlayer,
+      fallbackDuration: set.durationSeconds.map(TimeInterval.init),
+      isCurrent: isCurrent,
+      savedPosition: TimeInterval(set.playbackPositionSeconds),
+      showsControls: false,
+      cueStarts: model.tracklists[set.id]?.cues.compactMap(\.startSeconds) ?? []
+    )
   }
 
   /// What an Apple Music Set offers in place of Play when this device cannot play it: the album in
@@ -213,12 +255,14 @@ struct SetDetailScreen: View {
   /// Starts a part-played Set over, beside the Resume that would pick it up. It does not stretch,
   /// so where its share of the row cannot hold the words it is an icon and leaves Play and Play
   /// Next their width.
-  private func playFromBeginningButton(_ set: SavedSet) -> some View {
+  private func playFromBeginningButton(_ set: SavedSet, iconOnly: Bool) -> some View {
     Button {
       Task { await model.playFromBeginning(set.id) }
     } label: {
       ViewThatFits(in: .horizontal) {
-        Label("Play from Beginning", systemImage: "backward.end.fill").fixedSize()
+        if !iconOnly {
+          Label("Play from Beginning", systemImage: "backward.end.fill").fixedSize()
+        }
         Label("Play from Beginning", systemImage: "backward.end.fill").labelStyle(.iconOnly)
       }
       .albumButton(fills: false)
@@ -230,7 +274,7 @@ struct SetDetailScreen: View {
 
   /// Where a Set goes when it is not the one being started now. Both actions are offered only for
   /// a Set whose audio is kept, because a Set that cannot play cannot be queued either.
-  private func queueActions(_ set: SavedSet) -> some View {
+  private func queueActions(_ set: SavedSet, iconOnly: Bool) -> some View {
     Menu {
       Button("Play Next", systemImage: "text.line.first.and.arrowtriangle.forward") {
         Task { await model.playNext(set.id) }
@@ -242,7 +286,9 @@ struct SetDetailScreen: View {
       .accessibilityIdentifier("detail-add-to-queue")
     } label: {
       ViewThatFits(in: .horizontal) {
-        Label("Play Next", systemImage: "text.badge.plus").fixedSize()
+        if !iconOnly {
+          Label("Play Next", systemImage: "text.badge.plus").fixedSize()
+        }
         Label("Play Next", systemImage: "text.badge.plus").labelStyle(.iconOnly)
       }
       .albumButton(fills: false)
@@ -342,9 +388,12 @@ extension View {
   }
 }
 
-private struct TracklistSection: View {
+struct TracklistSection: View {
   @Bindable var model: AppModel
   let set: SavedSet
+  /// The `set-page-v2` page says nothing for a Set with no Tracklist; its More menu offers Find
+  /// Tracklist instead.
+  var hidesNone = false
 
   @ViewBuilder
   var body: some View {
@@ -390,12 +439,14 @@ private struct TracklistSection: View {
         .accessibilityIdentifier("tracklist-pending")
       }
     case .none:
-      HStack(spacing: 8) {
-        Text("No tracklist found")
-          .foregroundStyle(.secondary)
-        refreshButton
+      if !hidesNone {
+        HStack(spacing: 8) {
+          Text("No tracklist found")
+            .foregroundStyle(.secondary)
+          refreshButton
+        }
+        .font(.orbis.detail)
       }
-      .font(.orbis.detail)
     case .failed:
       HStack(spacing: 8) {
         Text("Tracklist unavailable")
