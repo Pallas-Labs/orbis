@@ -337,4 +337,269 @@ final class PlaybackReliabilityTests: XCTestCase {
     XCTAssertEqual(activations.last?.wantsSound, false)
     XCTAssertNotNil(activations.last?.requestDuration.value)
   }
+
+  // MARK: - Resuming after another device saved (PAL-2130)
+
+  // The fixture's audio is 30 s long, and a place within 5 s of the end starts the Set over, so
+  // these tests pause early and the other device saves at most 18 s.
+
+  /// Holds one answer from the service, for a forward that waits on another thread.
+  private final class Forwarded: @unchecked Sendable {
+    private let lock = NSLock()
+    private var answer = (502, "")
+    func set(_ value: (Int, String)) { lock.withLock { answer = value } }
+    var value: (Int, String) { lock.withLock { answer } }
+  }
+
+  /// Holds the first Listening Queue read until the test releases it, and counts the reads that
+  /// started and finished.
+  private final class QueueReadGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private let gate = DispatchSemaphore(value: 0)
+    private var counts = (started: 0, finished: 0)
+    var started: Int { lock.withLock { counts.started } }
+    var finished: Int { lock.withLock { counts.finished } }
+    /// Answers true for the first read, which waits for `release()`.
+    func begin() -> Bool {
+      lock.withLock {
+        counts.started += 1
+        return counts.started == 1
+      }
+    }
+    func wait() { gate.wait() }
+    func end() { lock.withLock { counts.finished += 1 } }
+    func release() { gate.signal() }
+  }
+
+  /// Sends one request on to the real service and answers what it said.
+  private static func forward(_ request: URLRequest) -> (Int, String) {
+    let forwarded = Forwarded()
+    let done = DispatchSemaphore(value: 0)
+    URLSession.shared.dataTask(with: request) { data, response, _ in
+      forwarded.set(
+        (
+          (response as? HTTPURLResponse)?.statusCode ?? 502,
+          String(decoding: data ?? Data(), as: UTF8.self)
+        ))
+      done.signal()
+    }.resume()
+    done.wait()
+    return forwarded.value
+  }
+
+  private static func isQueueRead(_ request: URLRequest) -> Bool {
+    request.httpMethod == "GET" && request.url?.path() == "/queue"
+  }
+
+  /// A session that sends each request on to the real service, except the Listening Queue read,
+  /// which fails. The audio itself streams through AVPlayer, outside this session.
+  private static func sessionFailingTheQueueRead() -> URLSession {
+    StubProtocol.session(responder: { request in
+      isQueueRead(request) ? (500, "{}") : forward(request)
+    })
+  }
+
+  /// A session that sends each request on to the real service, and holds the first Listening
+  /// Queue read at `gate` before it sends it, so the read answers what the service holds then.
+  private static func sessionHoldingTheFirstQueueRead(_ gate: QueueReadGate) -> URLSession {
+    StubProtocol.session(responder: { request in
+      guard isQueueRead(request) else { return forward(request) }
+      if gate.begin() { gate.wait() }
+      defer { gate.end() }
+      return forward(request)
+    })
+  }
+
+  private func servicePosition(_ fixture: Fixture) async throws -> Int {
+    let library = try await fixture.client.library()
+    return try XCTUnwrap(library.first { $0.id == fixture.set.id }).playbackPositionSeconds
+  }
+
+  /// Polls the service until its position for the Set passes `check`, for up to 15 s, and
+  /// answers the last position read.
+  @discardableResult
+  private func waitForService(
+    _ fixture: Fixture, _ message: String, _ check: (Int) -> Bool
+  ) async throws -> Int {
+    let deadline = ContinuousClock.now + .seconds(15)
+    var seconds = try await servicePosition(fixture)
+    while !check(seconds), ContinuousClock.now < deadline {
+      try await Task.sleep(for: .milliseconds(200))
+      seconds = try await servicePosition(fixture)
+    }
+    XCTAssertTrue(check(seconds), "\(message): the service holds \(seconds) s")
+    return seconds
+  }
+
+  /// Plays the fixture's Set through the model, silent.
+  private func start(_ model: AppModel, _ fixture: Fixture) async throws {
+    await model.playSet(fixture.set.id)
+    try await waitUntil("The Set must play") {
+      model.audioPlayer.state == .playing && (model.audioPlayer.player?.currentTime().seconds ?? 0) > 0.3
+    }
+    model.audioPlayer.player?.volume = 0
+  }
+
+  /// Moves the playing Set to `seconds`, pauses it with the mini player's button, and waits until
+  /// the service holds the paused place. Answers that place.
+  private func pause(
+    _ model: AppModel, at seconds: TimeInterval, _ fixture: Fixture
+  ) async throws -> Int {
+    model.audioPlayer.seek(to: seconds)
+    try await waitUntil("The seek to \(seconds) s must land") {
+      model.audioPlayer.settledPosition.map { $0 >= seconds && $0 < seconds + 1 } ?? false
+    }
+    model.togglePlayback()
+    try await waitUntil("The Set must pause") { model.audioPlayer.state == .paused }
+    let paused = Int(try XCTUnwrap(model.audioPlayer.settledPosition).rounded())
+    return try await waitForService(fixture, "The pause must reach the service") {
+      abs($0 - paused) <= 1
+    }
+  }
+
+  /// Waits until the resumed Set plays half a second past its pause, and answers where it plays.
+  private func resumed(_ model: AppModel, after paused: Int) async throws -> TimeInterval {
+    try await waitUntil("The Set must play again") {
+      model.audioPlayer.state == .playing
+        && (model.audioPlayer.player?.currentTime().seconds ?? 0) > Double(paused) + 0.5
+    }
+    return try XCTUnwrap(model.audioPlayer.player?.currentTime().seconds)
+  }
+
+  /// The mini player's button and Play on the Set in the player both resume where another device
+  /// saved since the pause, and this device's next report keeps that place.
+  func testAResumeFollowsAPlaceAnotherDeviceSavedLater() async throws {
+    let fixture = try await fixture()
+    let model = AppModel(client: fixture.client, settings: MemoryClientSettings())
+    defer { model.signOut() }
+    let otherDevice = OrbisClient(address: fixture.client.address, token: fixture.client.token)
+    try await start(model, fixture)
+
+    let togglePause = try await pause(model, at: 3, fixture)
+    _ = try await otherDevice.reportPosition(fixture.set.id, seconds: 15)
+    model.togglePlayback()
+    let toggled = try await resumed(model, after: togglePause)
+    XCTAssertGreaterThanOrEqual(toggled, 15, "togglePlayback resumed at its own pause")
+    XCTAssertLessThan(toggled, 18)
+    let afterToggle = try await waitForService(fixture, "The next report must keep 15 s") {
+      $0 >= 15
+    }
+
+    let playPause = try await pause(model, at: 5, fixture)
+    _ = try await otherDevice.reportPosition(fixture.set.id, seconds: 18)
+    await model.playSet(fixture.set.id)
+    let played = try await resumed(model, after: playPause)
+    XCTAssertGreaterThanOrEqual(played, 18, "playSet resumed at its own pause")
+    XCTAssertLessThan(played, 21)
+    let afterPlay = try await waitForService(fixture, "The next report must keep 18 s") {
+      $0 >= 18
+    }
+    try record(
+      "resume-follows-other-device",
+      [
+        "togglePlayback": [
+          "pausedAt": togglePause, "otherDevice": 15, "resumedAt": toggled,
+          "serviceAfterNextReport": afterToggle,
+        ] as [String: Any],
+        "playSet": [
+          "pausedAt": playPause, "otherDevice": 18, "resumedAt": played,
+          "serviceAfterNextReport": afterPlay,
+        ] as [String: Any],
+      ])
+  }
+
+  /// With no save from another device, both paths resume where this device paused.
+  func testAResumeWithNoOtherSavePlaysFromItsOwnPause() async throws {
+    let fixture = try await fixture()
+    let model = AppModel(client: fixture.client, settings: MemoryClientSettings())
+    defer { model.signOut() }
+    try await start(model, fixture)
+
+    let togglePause = try await pause(model, at: 6, fixture)
+    model.togglePlayback()
+    let toggled = try await resumed(model, after: togglePause)
+    XCTAssertLessThan(toggled, Double(togglePause) + 3)
+
+    let playPause = try await pause(model, at: 9, fixture)
+    await model.playSet(fixture.set.id)
+    let played = try await resumed(model, after: playPause)
+    XCTAssertLessThan(played, Double(playPause) + 3)
+    try record(
+      "resume-own-pause",
+      [
+        "togglePlayback": ["pausedAt": togglePause, "resumedAt": toggled] as [String: Any],
+        "playSet": ["pausedAt": playPause, "resumedAt": played] as [String: Any],
+      ])
+  }
+
+  /// When the position read fails, the Set still plays, from where this device paused.
+  func testAResumeWhoseReadFailsPlaysFromItsOwnPlace() async throws {
+    let fixture = try await fixture()
+    let client = OrbisClient(
+      address: fixture.client.address, token: fixture.client.token,
+      session: Self.sessionFailingTheQueueRead())
+    let model = AppModel(client: client, settings: MemoryClientSettings())
+    defer { model.signOut() }
+    try await start(model, fixture)
+
+    let togglePause = try await pause(model, at: 4, fixture)
+    _ = try await fixture.client.reportPosition(fixture.set.id, seconds: 15)
+    model.togglePlayback()
+    let toggled = try await resumed(model, after: togglePause)
+    XCTAssertLessThan(toggled, Double(togglePause) + 3)
+
+    let playPause = try await pause(model, at: 7, fixture)
+    _ = try await fixture.client.reportPosition(fixture.set.id, seconds: 18)
+    await model.playSet(fixture.set.id)
+    let played = try await resumed(model, after: playPause)
+    XCTAssertLessThan(played, Double(playPause) + 3)
+    try record(
+      "resume-read-failed",
+      [
+        "togglePlayback": ["pausedAt": togglePause, "otherDevice": 15, "resumedAt": toggled] as [String: Any],
+        "playSet": ["pausedAt": playPause, "otherDevice": 18, "resumedAt": played] as [String: Any],
+      ])
+  }
+
+  /// A pause while the resume's read is out drops that resume. The read's answer then changes
+  /// nothing, so the next resume still finds the place another device saved, and this device's
+  /// next report keeps it.
+  func testAResumeDroppedByAPauseLeavesTheNewerPlaceForTheNextResume() async throws {
+    let fixture = try await fixture()
+    let gate = QueueReadGate()
+    let client = OrbisClient(
+      address: fixture.client.address, token: fixture.client.token,
+      session: Self.sessionHoldingTheFirstQueueRead(gate))
+    let model = AppModel(client: client, settings: MemoryClientSettings())
+    defer {
+      gate.release()
+      model.signOut()
+    }
+    try await start(model, fixture)
+
+    let paused = try await pause(model, at: 5, fixture)
+    _ = try await fixture.client.reportPosition(fixture.set.id, seconds: 18)
+    model.togglePlayback()
+    try await waitUntil("The resume must read the queue") { gate.started == 1 }
+    model.togglePlayback()
+    try await waitUntil("The second press must pause") { model.audioPlayer.state == .paused }
+    gate.release()
+    try await waitUntil("The dropped read must answer") { gate.finished == 1 }
+    try await Task.sleep(for: .milliseconds(500))
+    XCTAssertEqual(model.audioPlayer.state, .paused, "The dropped read must not play the Set")
+    let stillPaused = try XCTUnwrap(model.audioPlayer.player?.currentTime().seconds)
+    XCTAssertLessThan(stillPaused, Double(paused) + 1, "The dropped read must not move the Set")
+
+    model.togglePlayback()
+    let played = try await resumed(model, after: paused)
+    XCTAssertGreaterThanOrEqual(played, 18, "The next resume played from its own pause")
+    XCTAssertLessThan(played, 21)
+    let after = try await waitForService(fixture, "The next report must keep 18 s") { $0 >= 18 }
+    try record(
+      "resume-dropped-by-pause",
+      [
+        "pausedAt": paused, "otherDevice": 18, "afterDroppedRead": stillPaused,
+        "resumedAt": played, "serviceAfterNextReport": after,
+      ])
+  }
 }

@@ -53,6 +53,13 @@ final class AudioPlayer {
 
   @ObservationIgnored var onCommand: ((Command) -> Bool)?
   @ObservationIgnored var onReloadNeeded: ((String, TimeInterval) -> Void)?
+  /// Asked before a paused or interrupted Set plays again, with the Set's id and a test that
+  /// answers whether the player still waits for this check. Answers a place to move to first,
+  /// when another device saved a newer one, or nil to play from where the player stands. The
+  /// sound and the position the reporter reads both wait for the answer. A pause, a seek, or
+  /// another Set drops the check, and the player then ignores its answer, so the answer must
+  /// change nothing unless the test still passes.
+  @ObservationIgnored var onResumeCheck: (@MainActor (String, @escaping @MainActor () -> Bool) async -> TimeInterval?)?
 
   private(set) var state = PlaybackState.idle {
     didSet {
@@ -85,7 +92,7 @@ final class AudioPlayer {
   private(set) var duration: TimeInterval?
 
   var settledPosition: TimeInterval? {
-    guard pendingSeek == nil, !isSeeking,
+    guard pendingSeek == nil, !isSeeking, !isCheckingResume,
       let seconds = engine?.currentTime, seconds.isFinite, seconds >= 0
     else { return nil }
     return seconds
@@ -106,6 +113,11 @@ final class AudioPlayer {
   /// item knows its own timeline, so the position waits here until it does.
   private var pendingSeek: TimeInterval?
   private var isSeeking = false
+  /// True while a resume waits for `onResumeCheck`. The player stays quiet and reports no
+  /// position, so its old place cannot overwrite a newer one from another device.
+  private var isCheckingResume = false
+  /// Which resume check is the newest. A seek, a pause, or a newer resume drops an older answer.
+  @ObservationIgnored private var latestResumeCheck = 0
   private var sessionReady = false
   private var itemNeedsReload = false
 
@@ -541,7 +553,7 @@ final class AudioPlayer {
 
   private func playIfReady() {
     guard sessionReady, wantsSound, !itemNeedsReload, pendingSeek == nil, !isSeeking,
-      let engine, engine.status != .failed
+      !isCheckingResume, let engine, engine.status != .failed
     else { return }
     if engine.rate == 0 { engine.play() }
     stallChanged(status: engine.timeControl)
@@ -588,6 +600,7 @@ final class AudioPlayer {
     let requestedAt = ProcessInfo.processInfo.systemUptime
     timelineSample = nil
     soundRequestedAt = nil
+    cancelResumeCheck()
     logger.debug("Pause from \(String(describing: self.state), privacy: .public)")
     if wantsSound || state == .interrupted {
       state = .paused
@@ -603,6 +616,9 @@ final class AudioPlayer {
   /// Plays the Set in the player again. Waits for the audio session like any start, so a resume
   /// before the session is up, or after a failure or interruption took it down, still has one.
   /// An item that failed to load has nothing to resume; the caller starts the Set again.
+  ///
+  /// A paused or interrupted Set first asks `onResumeCheck` where to play from, so a place another
+  /// device saved since the pause wins over the place this player holds.
   func resume(origin: PlaybackDiagnostics.Origin = .app) {
     record(.command(.init(kind: .play, origin: origin)))
     logger.debug("Command play generation=\(self.playbackGeneration, privacy: .public)")
@@ -610,7 +626,17 @@ final class AudioPlayer {
     resumePlayback()
   }
 
-  private func resumePlayback() {
+  /// Moves the Set in the player to `seconds` and plays it there. The place was chosen, so the
+  /// resume asks nobody where to play from.
+  func resume(at seconds: TimeInterval, origin: PlaybackDiagnostics.Origin = .app) {
+    seek(to: seconds, origin: origin)
+    record(.command(.init(kind: .play, origin: origin)))
+    logger.debug("Command play generation=\(self.playbackGeneration, privacy: .public)")
+    guard onCommand?(.play) != true else { return }
+    resumePlayback(checkingPosition: false)
+  }
+
+  private func resumePlayback(checkingPosition: Bool = true) {
     if let currentSetId, itemNeedsReload || engine?.status == .failed {
       onReloadNeeded?(currentSetId, elapsed)
       return
@@ -622,16 +648,46 @@ final class AudioPlayer {
     logger.debug("Resume from \(String(describing: self.state), privacy: .public)")
     switch state {
     case .paused, .interrupted, .failed:
+      let wasQuiet = state == .paused || state == .interrupted
       // Now Playing turns to playing when the sound does, in `startPlayback()`.
       state = .loading
       soundRequestedAt = ProcessInfo.processInfo.systemUptime
       applyPendingSeek()
+      if checkingPosition, wasQuiet, let currentSetId { checkResumePosition(of: currentSetId) }
       startPlayback()
     case .loading:
       playIfReady()
     case .idle, .playing:
       return
     }
+  }
+
+  /// Holds the sound while `onResumeCheck` answers, then moves to the place it names, if any, and
+  /// plays. A pause, a seek, or another Set in the meantime drops the answer.
+  private func checkResumePosition(of id: String) {
+    guard let onResumeCheck else { return }
+    latestResumeCheck += 1
+    let check = latestResumeCheck
+    let generation = playbackGeneration
+    isCheckingResume = true
+    let isCurrent: @MainActor () -> Bool = { [weak self] in
+      self?.playbackGeneration == generation && self?.latestResumeCheck == check
+    }
+    Task { [weak self] in
+      let target = await onResumeCheck(id, isCurrent)
+      guard let self, isCurrent() else { return }
+      self.isCheckingResume = false
+      if let target {
+        logger.info("Resume moves to \(clock(target), privacy: .public), saved on another device")
+        self.seek(to: target, origin: .internalOperation)
+      }
+      self.playIfReady()
+    }
+  }
+
+  private func cancelResumeCheck() {
+    latestResumeCheck += 1
+    isCheckingResume = false
   }
 
   /// What a single play/pause control does: pauses while sound is wanted, including while it
@@ -659,6 +715,8 @@ final class AudioPlayer {
       logger.notice("Seek to \(clock(seconds), privacy: .public) ignored: nothing in the player")
       return
     }
+    // A place the person chose wins over a resume check still out.
+    cancelResumeCheck()
     let target = boundedPosition(seconds)
     elapsed = target
     timelineSample = nil
@@ -735,6 +793,7 @@ final class AudioPlayer {
     engine = nil
     pendingSeek = nil
     isSeeking = false
+    cancelResumeCheck()
     sessionReady = false
     itemNeedsReload = false
     timelineSample = nil

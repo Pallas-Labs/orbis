@@ -329,6 +329,10 @@ final class AppModel {
   /// Follows the player and reports where playback has reached. One of these exists at a time,
   /// because one Set plays at a time.
   private var positionReporter: Task<Void, Never>?
+  /// The Playback Position this device last knew the service held for the Set in the player: the
+  /// one it loaded, or the last one it saved. A resume that finds another value on the service
+  /// knows another device saved it later.
+  @ObservationIgnored private var savedPosition: (setId: String, seconds: Int)?
   private var diagnosticsSender: PlaybackDiagnosticsSender?
 
   /// Every client this model makes uses this session, so a test injects one session and it
@@ -1139,6 +1143,9 @@ final class AppModel {
         await self.playSet(id, startAt: position)
       }
     }
+    audioPlayer.onResumeCheck = { [weak self] id, isCurrent in
+      await self?.newerSavedPosition(of: id, isCurrent: isCurrent)
+    }
     audioPlayer.onCommand = { [weak self] command in
       guard let self, self.pendingActivation != nil else { return false }
       switch command {
@@ -1243,8 +1250,11 @@ final class AppModel {
       switch audioPlayer.state {
       case .loading, .playing, .paused, .interrupted:
         supersedePendingActivation(reassertCurrent: true)
-        if let startAt { audioPlayer.seek(to: startAt) }
-        audioPlayer.resume()
+        if let startAt {
+          audioPlayer.resume(at: startAt)
+        } else {
+          audioPlayer.resume()
+        }
         return
       case .idle, .failed:
         break
@@ -1294,6 +1304,7 @@ final class AppModel {
       let wantsSound = pendingActivation?.wantsSound ?? false
       let requestedStart = pendingActivation?.startAt
       pendingActivation = nil
+      savedPosition = (playing.id, playing.playbackPositionSeconds)
       audioPlayer.play(
         set: playing, baseURL: client.address, token: client.token,
         startAt: requestedStart
@@ -1352,8 +1363,7 @@ final class AppModel {
       return
     }
     supersedePendingActivation()
-    audioPlayer.seek(to: seconds)
-    audioPlayer.resume()
+    audioPlayer.resume(at: seconds)
   }
 
   private func attachTracklist(to set: SavedSet) {
@@ -1596,6 +1606,7 @@ final class AppModel {
       stopReportingPosition()
       return
     }
+    savedPosition = (active.id, active.playbackPositionSeconds)
     audioPlayer.play(
       set: active, baseURL: client.address, token: client.token,
       startAt: AudioPlayer.startPosition(
@@ -1701,9 +1712,31 @@ final class AppModel {
     guard let client else { return }
     guard let updated = try? await client.reportPosition(id, seconds: seconds) else { return }
     guard self.client?.token == client.token, !Task.isCancelled else { return }
+    if savedPosition?.setId == id { savedPosition = (id, updated.playbackPositionSeconds) }
     if settled {
       await publish(updated)
     }
+  }
+
+  /// Where a paused Set should play from when another device saved a newer place since this one
+  /// last knew the service's, or nil to play from where the player stands. It reads the Listening
+  /// Queue, which holds the Set's position; a read that fails answers nil, so the Set still plays.
+  /// The newer place becomes the known one only when the player still waits for this read: a
+  /// resume that a pause dropped never moved the player, so the next resume must find the same
+  /// newer place again.
+  private func newerSavedPosition(
+    of id: String, isCurrent: @MainActor () -> Bool
+  ) async -> TimeInterval? {
+    guard let client, savedPosition?.setId == id else { return nil }
+    guard let loaded = try? await client.listeningQueue(), isCurrent(),
+      self.client?.token == client.token, audioPlayer.currentSetId == id,
+      let known = savedPosition, known.setId == id,
+      let set = loaded.entries.first(where: { $0.id == id }),
+      set.playbackPositionSeconds != known.seconds
+    else { return nil }
+    savedPosition = (id, set.playbackPositionSeconds)
+    return AudioPlayer.startPosition(
+      set.resumePosition, duration: set.durationSeconds.map(TimeInterval.init))
   }
 
   /// Reads the library again without blanking it. A change the person did not make on this screen —
