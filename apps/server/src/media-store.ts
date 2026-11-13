@@ -103,12 +103,13 @@ export class MediaStore extends Context.Service<
           statusCode: 500,
         }),
       try: async () => {
-        // A release clears the three formats a stored Set can have, and no
-        // more, so the list at the call names every file it removes.
+        // A release clears the three formats a stored Set can have and its
+        // analysis, and no more, so the list at the call names every file it removes.
         await Promise.all([
           removeAudioFile(directory, id, "ogg"),
           removeAudioFile(directory, id, "mp3"),
           removeAudioFile(directory, id, "m4a"),
+          removeAudioFile(directory, id, "analysis.json"),
         ]);
       },
     });
@@ -356,14 +357,15 @@ export class MediaStore extends Context.Service<
     const removeFiles = Effect.fn("MediaStore.removeFiles")((id: string) =>
       Effect.promise(
         async () =>
-          // A stored Set has at most a partial pair and the three audio
-          // formats, so the list at the call names every file it removes.
+          // A stored Set has at most a partial pair, the three audio
+          // formats and its analysis, so the list at the call names every file it removes.
           await Promise.all([
             removeAudioFile(audioDir, id, "part"),
             removeAudioFile(audioDir, id, "part.ytdl"),
             removeAudioFile(audioDir, id, "ogg"),
             removeAudioFile(audioDir, id, "mp3"),
             removeAudioFile(audioDir, id, "m4a"),
+            removeAudioFile(audioDir, id, "analysis.json"),
           ])
       )
     );

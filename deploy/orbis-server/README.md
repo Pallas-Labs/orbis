@@ -36,6 +36,37 @@ Set `ORBIS_OTLP_LOGS_URL` to SigNoz's local collector, `http://127.0.0.1:4318/v1
 
 Run `bun run --cwd apps/api test:node` to exercise the local Group with a fake node and the built node process. The journey writes a protocol transcript and process log under `.cache/audio-node/<run>/`, including a forced process stop, recovery of the same job, progress through the API, and file deletion after removing the Library Entry. It needs ffmpeg and ffprobe on `PATH`.
 
+## Analyse each Set's tempo and loudness
+
+After each new Download, the node runs `orbis-analyze` on the file, at `nice 19` and one Set at a time, and writes `<set id>.analysis.json` beside the audio. It then sends the analysis to the Group, which stores it in `set_analysis` and returns it as `analysis` from `GET /api/sets/<id>`. After each inventory, the node also sends every stored analysis, so a report that a lost link dropped arrives on the next connection. A release deletes the analysis with the audio. Each run writes one `job: audio-analysis` event. A failure or a timeout after 2 hours ends there; it never changes the Download. Without `ORBIS_ANALYZE_BIN`, the node analyses nothing.
+
+`orbis-analyze` is the Python program in [`apps/server/analysis`](../../apps/server/analysis). It runs beat_this `final0` on the CPU in 10-minute chunks and ffmpeg's `ebur128` filter. It takes about 9 minutes of wall time per hour of audio on a busy Vanta (980 s for a 113-minute Set at load 40 on 2026-11-12) and about 450 MB of RAM.
+
+- **Python.** `uv` installs Python 3.12 and the locked packages, CPU-only torch included, into `apps/server/analysis/.venv` of the production checkout. Run `uv sync --frozen --project apps/server/analysis` after each checkout update. The program is `apps/server/analysis/.venv/bin/orbis-analyze`. Its shebang names the venv's Python, so the node needs no Python on `PATH`. Set `ORBIS_ANALYZE_BIN` to that path.
+- **The model file.** `ORBIS_ANALYZE_CHECKPOINT` names the beat_this `final0` checkpoint file. `orbis-analyze` refuses a file whose SHA-256 differs from `CHECKPOINT_SHA256` in [`analyze.py`](../../apps/server/analysis/orbis_analysis/analyze.py). It never downloads the file. To get it, download `https://cloud.cp.jku.at/public.php/dav/files/7ik4RrBKTS273gp/final0.ckpt` once, check it with `sha256sum`, and keep it beside the audio directory, for example at `~/Developer/orbis-service-data/models/beat_this-final0.ckpt`. On 2026-11-12 Vanta had a copy at `~/.cache/torch/hub/checkpoints/beat_this-final0.ckpt`.
+- **ffmpeg.** `orbis-analyze` runs `ffmpeg` from `PATH`, the same one the node uses to validate Downloads. `ORBIS_FFMPEG` names another one. `nice` comes from coreutils.
+- **Threads.** `ORBIS_ANALYZE_THREADS` caps torch's CPU threads at 4 by default.
+
+Set `ORBIS_ANALYZE_BIN` and `ORBIS_ANALYZE_CHECKPOINT` in a drop-in for `orbis-server`, next to `ORBIS_YTDLP_BIN`, and restart the unit in the update window. To check the installation without the node, run the program on one file:
+
+```sh
+cd ~/Developer/orbis-service
+ORBIS_ANALYZE_CHECKPOINT=<checkpoint> apps/server/analysis/.venv/bin/orbis-analyze \
+  ~/Developer/orbis-service-data/audio/<set id>.ogg /tmp/check.analysis.json
+```
+
+`python -m orbis_analysis.check_reference <audio dir> <out dir>`, run from `apps/server/analysis` with the venv's Python, checks the program against the four reference Sets of the 2026-11-11 audio research. Each median BPM must be within 1.5, and the Rinse FM Set's five sections must start within 1 minute of the About This Set prototype.
+
+### Analyse the Retained Audio already on the node
+
+`python -m orbis_analysis.backfill <audio dir> [<library-run results dir>]` writes the missing `<set id>.analysis.json` files. The node reports them on its next connection. It imports a Set that has 2026-11-11 library-run results (`<id>.beatthis.beats.npy` and `<id>.loudness.json`, in `~/.cache/orbis-audio-intel-2026-11-11/out/dglib/` on Vanta), using the same line fit. Every other Set runs `orbis-analyze` at `nice 19`. The script skips a Set that already has a file, so a second run analyses only what is new. It prints one JSON line per Set and a summary with the imported, analysed, failed, and skipped counts and the wall time.
+
+```sh
+cd ~/Developer/orbis-service/apps/server/analysis
+ORBIS_ANALYZE_CHECKPOINT=<checkpoint> .venv/bin/python -m orbis_analysis.backfill \
+  ~/Developer/orbis-service-data/audio ~/.cache/orbis-audio-intel-2026-11-11/out/dglib
+```
+
 ## Update the installed service
 
 Use the approved Vanta update window. Preserve the installed unit and drop-ins.

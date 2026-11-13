@@ -12,7 +12,11 @@ import {
   PlaybackDiagnosticsBatch,
   PlaybackDiagnosticsReceipt,
 } from "./playback-diagnostics.js";
+import { SetAnalysisSchema } from "./set-analysis.js";
 import type { SetCaller } from "./set-caller.js";
+
+export type { SetAnalysis } from "./set-analysis.js";
+export { SetAnalysisSchema, SetSectionSchema } from "./set-analysis.js";
 
 export type {
   PlaybackDiagnosticsPayload,
@@ -82,6 +86,11 @@ export const CueSchema = Schema.Struct({
 export const TracklistSchema = Schema.Struct({
   cues: Schema.Array(CueSchema),
   state: SavedSetSchema.fields.tracklistState,
+});
+/** One Set as the caller sees it, with its tempo and loudness: `analysis` is null until the node has measured it. */
+export const SetPageSchema = Schema.Struct({
+  ...SavedSetSchema.fields,
+  analysis: Schema.NullOr(SetAnalysisSchema),
 });
 /** A song on a found album, starting where the lengths before it add up to, as its Cue will. */
 export const AppleMusicSongSchema = Schema.Struct({
@@ -584,6 +593,11 @@ export const SetsApi = HttpApi.make("orbis").add(
           tag: Schema.optionalKey(Schema.Array(Schema.String)),
         },
         success: LibraryResponseSchema,
+      }),
+      HttpApiEndpoint.get("read", "/sets/:id", {
+        error: [NotFound, InternalError],
+        params: SetId,
+        success: SetPageSchema,
       }),
       HttpApiEndpoint.post("retryMetadata", "/sets/:id/metadata", {
         error: [NotFound, InternalError],

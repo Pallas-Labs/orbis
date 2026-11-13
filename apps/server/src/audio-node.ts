@@ -1,9 +1,11 @@
 import { rm } from "node:fs/promises";
+import path from "node:path";
 
 import type { NodeCommand, NodeMessage } from "@orbis/contracts/node";
 import { NodeCommandSchema, NodeMessageSchema } from "@orbis/contracts/node";
 import { Effect, Layer, ManagedRuntime, Schema } from "effect";
 
+import { makeAudioAnalysis, readStoredAnalysis } from "./audio-analysis.js";
 import { Cobalt } from "./cobalt.js";
 import type { CobaltOptions } from "./cobalt.js";
 import { DownloadBackends } from "./download-backends.js";
@@ -27,6 +29,8 @@ const decodeNodeMessage = Schema.decodeUnknownSync(NodeMessageSchema);
 
 export interface AudioNodeOptions
   extends CobaltOptions, MediaStoreOptions, YtdlpOptions {
+  /** `orbis-analyze`; without it the node measures no Set. */
+  readonly analyzeBin?: string | undefined;
   readonly groupUrl: string;
   readonly heartbeatMs?: number;
   readonly logging?: LoggingOptions;
@@ -60,6 +64,8 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       : undefined;
   let closed = false;
   let socket: WebSocket | undefined;
+  /** Whether the current socket has sent its inventory; the Group closes a link that sends work first. */
+  let inventorySent = false;
   let retry: ReturnType<typeof setTimeout> | undefined;
   let attempt = 0;
   let active:
@@ -77,6 +83,22 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       socket.send(JSON.stringify(message));
     }
   };
+  const audioDir = options.audioDir ?? path.join(".", "audio");
+  // A report made while the link is down, or before its inventory, is dropped. The file stays, and
+  // the stored analyses sent after the inventory include it.
+  const analysis =
+    options.analyzeBin !== undefined && options.analyzeBin !== ""
+      ? makeAudioAnalysis({
+          audioDir,
+          bin: options.analyzeBin,
+          logging: options.logging,
+          report: (setId, measured) => {
+            if (inventorySent) {
+              send({ analysis: measured, kind: "analysis", setId });
+            }
+          },
+        })
+      : undefined;
   const finish = (command: NodeCommand, message: NodeMessage) => {
     completed.set(`${command.kind}:${command.requestId}`, message);
     const oldest = completed.keys().next().value;
@@ -199,6 +221,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
           ...stored,
         })
       );
+      analysis?.queue(setId, media.fileFor(setId, stored.format));
     } catch (error) {
       if (!signal.aborted) {
         outcome = "failure";
@@ -230,6 +253,8 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
           return;
         }
         await stopDownload();
+        // A new Download replaces the Set's audio, so an analysis of the old file must not report.
+        await analysis?.cancel(setId);
         if (closed || socket?.readyState !== WebSocket.OPEN) {
           return;
         }
@@ -250,12 +275,14 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       }
       case "cancel": {
         await stopDownload(setId, requestId);
+        await analysis?.cancel(setId);
         await runtime.runPromise(media.removeFiles(setId));
         finish(command, { kind: "released", requestId, setId });
         return;
       }
       case "release": {
         await stopDownload(setId);
+        await analysis?.cancel(setId);
         await runtime.runPromise(media.removeFiles(setId));
         finish(command, { kind: "released", requestId, setId });
         return;
@@ -296,6 +323,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       headers: { authorization: `Bearer ${options.nodeKey}` },
     });
     socket = current;
+    inventorySent = false;
     // The Group can lose this socket without a close ever reaching the node, so
     // an unanswered ping is the only sign the link is gone.
     let awaitingPong = false;
@@ -329,12 +357,27 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
             kind: "inventory",
           })
         );
+        inventorySent = true;
         logEvent(
           "info",
           { attempt, event: "node-link-connected", files: files.length },
           options.logging
         );
         attempt = 0;
+        // Every stored analysis goes again on each connect: the Group stores the newest, and a
+        // report the last link lost arrives this way.
+        const reportStored = async (rest: typeof files): Promise<void> => {
+          const [file, ...remaining] = rest;
+          if (file === undefined || socket !== current || closed) {
+            return;
+          }
+          const stored = await readStoredAnalysis(audioDir, file.setId);
+          if (stored !== undefined) {
+            send({ analysis: stored, kind: "analysis", setId: file.setId });
+          }
+          await reportStored(remaining);
+        };
+        await reportStored(files);
       } catch {
         current.close();
       }
@@ -430,6 +473,7 @@ export const startAudioNode = async (options: AudioNodeOptions) => {
       clearTimeout(retry);
       socket?.close();
       await stopDownload();
+      await analysis?.close();
       // oxlint-disable-next-line orbis/bounded-concurrency -- waits for work already started; it starts nothing.
       await Promise.allSettled(pending.values());
       await runtime.dispose();

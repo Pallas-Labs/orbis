@@ -34,6 +34,7 @@ const audio = Bun.serve({
   port: Number(process.env.ORBIS_NODE_PORT ?? "4311"),
 });
 const node = await startAudioNode({
+  analyzeBin: process.env.ORBIS_ANALYZE_BIN,
   audioDir,
   cobaltApiKey: process.env.ORBIS_COBALT_API_KEY,
   cobaltUrl: process.env.ORBIS_COBALT_URL,

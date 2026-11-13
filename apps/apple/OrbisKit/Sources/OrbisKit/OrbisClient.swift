@@ -542,6 +542,12 @@ public struct OrbisClient: Sendable {
     return try Self.decode(SharedSet.self, from: response)
   }
 
+  /// One Set the caller can see, with its tempo and loudness once the audio node has measured it.
+  public func setPage(_ id: String) async throws -> SetPage {
+    let response = try await send(path: "sets/\(id)", method: "GET", body: nil)
+    return try Self.decode(SetPage.self, from: response)
+  }
+
   public func tracklist(_ id: String) async throws -> Tracklist {
     let response = try await send(path: "sets/\(id)/tracklist", method: "GET", body: nil)
     return try Self.decode(Tracklist.self, from: response)

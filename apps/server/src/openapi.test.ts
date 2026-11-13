@@ -157,6 +157,22 @@ const sampleFor = (operationId: string) => {
   if (operationId === "diagnostics.playback") {
     return { accepted: 2, rejected: 0 };
   }
+  // OrbisKit's `SetPage` reads this; the app screen that shows it comes with PAL-2233.
+  if (operationId === "sets.read") {
+    return {
+      ...samples.savedSet,
+      analysis: {
+        bpmCurve: [{ bpm: 140, seconds: 90 }],
+        durationSeconds: 7206.1,
+        integratedLufs: -13.5,
+        loudnessCurve: [{ lufs: -12.1, seconds: 30 }],
+        medianBpm: 140,
+        sections: [
+          { bpm: 140, endSeconds: 6045, name: "Locked in", startSeconds: 0 },
+        ],
+      },
+    };
+  }
   if (["sets.tracklist", "sets.retryTracklist"].includes(operationId)) {
     return {
       cues: [
@@ -336,7 +352,7 @@ test("the served OpenAPI document accepts the Swift response samples", async () 
         }
       }
     }
-    expect(checked).toBe(63);
+    expect(checked).toBe(64);
   } finally {
     await app.dispose();
   }
