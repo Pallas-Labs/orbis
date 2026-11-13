@@ -33,7 +33,7 @@ bun install
 bun run dev
 ```
 
-`bun run dev` runs workspace development tasks. The server workspace starts the production audio node and requires its node environment. Web API configuration is in the [web README](../apps/web/README.md#develop). Browser and native journeys start `scripts/fixture.ts` with disposable SQLite and keyed loopback HTTP.
+`bun run dev` runs workspace development tasks. The server workspace starts the production audio node and requires its node environment. On a host with no node environment, such as an agent's worktree on Vanta, run the page and the API Worker with `bun run dev:stack` in `apps/web` instead; the [web README](../apps/web/README.md#develop) describes it and the web API configuration. Browser and native journeys start `scripts/fixture.ts` with disposable SQLite and keyed loopback HTTP.
 
 ### Server logs
 

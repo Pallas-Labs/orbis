@@ -4,12 +4,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --host 127.0.0.1 --port 3000",
+    "dev:stack": "bun run --cwd ../../packages/contracts build && alchemy dev --stage \"dev_${USER:-agent}_$(basename \"$(git rev-parse --show-toplevel)\" | sed 's/[^A-Za-z0-9_-]/-/g')\"",
     "build": "vite build",
     "typecheck": "tsc --noEmit --tsBuildInfoFile .cache/typecheck.tsbuildinfo",
     "doctor": "bunx react-doctor@0.9.18 . --scope changed --base origin/main --blocking error --no-telemetry --yes",
     "deploy": "bun ../api/scripts/migrations.ts --check && alchemy deploy --stage prod",
     "destroy": "alchemy destroy --stage prod",
-    "test": "vite build && node e2e/run.mjs"
+    "test": "bun test infra && vite build && node e2e/run.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.8.0",

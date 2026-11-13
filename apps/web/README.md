@@ -42,6 +42,10 @@ bun run deploy     # alchemy deploy --stage prod
 
 Alchemy builds with Vite, uploads the web Worker with its static assets and the API Worker with its SQLite Group, and attaches `orbis.p11a.xyz`. Deploy state lives on Cloudflare (`Cloudflare.state()`), so any machine with the profile deploys the same stack. `bun alchemy deploy --stage prod --dry-run` shows the plan without applying it.
 
+## Stages
+
+Only the `prod` stage claims `orbis.p11a.xyz` and the `/api/*` route (`infra/stage.ts`). A hostname has one Worker, so any other stage that named it would take it from production. Every other stage, such as `pr-12` or a personal stage, gets its own two Workers on workers.dev, and its page calls its own API Worker, which starts with an empty Group.
+
 ## Destroy
 
 ```sh
@@ -51,6 +55,19 @@ bun run destroy    # alchemy destroy --stage prod
 This removes both Workers, the custom domain, the `/api/*` route, and the Group namespace with its stored data. The Vanta audio node is outside this stack. Export Group data before destroying a stack once the API migration has cut over.
 
 ## Develop
+
+```sh
+cd apps/web
+bun run dev:stack
+```
+
+`dev:stack` runs `alchemy dev`: the page on its Vite server and the API Worker with its Group, both on this machine. It needs no Cloudflare login and no env. State stays in `apps/web/.alchemy/`, each run makes its own stream secret, and a loopback address stands in for the audio node, so only audio requests fail (`infra/dev.ts`). The stage is `dev_<user>_<worktree directory>`.
+
+When both are ready it prints their addresses, such as `{ api: 'http://localhost:1337', url: 'http://localhost:1338' }`, and writes them to `.alchemy/state/OrbisWeb/<stage>/__stack_output__.json`. A busy port moves to the next free one, so several worktrees can run at once; read the address, do not assume it.
+
+The Group starts empty, so the page shows the sign-in form and nothing seeds a Person. For signed-in pages, use the browser journeys (`bun run test`), which seed their own API.
+
+To run the page alone against another API:
 
 ```sh
 ORBIS_API_URL=https://<funnel-host>:10000/api bun run dev
