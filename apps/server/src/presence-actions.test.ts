@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { PresenceAction } from "@orbis/contracts";
+import type { PresenceAction, QueuePlacement } from "@orbis/contracts";
 import {
   PresenceActionResultSchema,
   PresenceConflictSchema,
@@ -21,17 +21,11 @@ import { Presence } from "./presence.js";
 import { createTestApp as createApp } from "./test-app.js";
 import { eventStream, waitUntil } from "./test-http.js";
 
-const decodeQueueEntries = Schema.decodeUnknownSync(
+const decodeListenCount = Schema.decodeUnknownSync(
   Schema.Struct({
-    queue: Schema.Struct({
-      entries: Schema.Array(
-        Schema.Struct({
-          finishCount: Schema.Number,
-          id: Schema.String,
-          listenCount: Schema.Number,
-        })
-      ),
-    }),
+    finishCount: Schema.Number,
+    id: Schema.String,
+    listenCount: Schema.Number,
   })
 );
 
@@ -63,6 +57,7 @@ type Entries = readonly { personId: string; setId: string }[];
 type Payload =
   | PresenceAction
   | { setId: string }
+  | { placement: QueuePlacement; setId: string }
   | { seconds: number }
   | {
       actionId: string;
@@ -375,9 +370,8 @@ const listenCount = async (
   key: Key,
   setId: string
 ) => {
-  const queue = await call(key, "/queue");
-  const decoded = decodeQueueEntries(queue.body);
-  return decoded.queue.entries.find((entry) => entry.id === setId);
+  const set = await call(key, `/sets/${setId}`);
+  return decodeListenCount(set.body);
 };
 
 test("explicit actions own live Presence through play, pause, resume, stale devices, and retries", async () => {
@@ -838,6 +832,13 @@ test("Queue changes, lease expiry, revocation, the session cap, and removal clea
     expect(alarm.calls.at(-1)).toEqual({
       at: Date.parse(second.session.leaseExpiresAt),
     });
+    // Playing s2 dropped s1 from the queue (PAL-2128); queue it again so the
+    // completion below advances to it.
+    const requeued = await server.call("a-phone", "/queue/entries", "POST", {
+      placement: "end",
+      setId: "s1",
+    });
+    expect(requeued.status).toBe(201);
     const completion = await server.call(
       "a-phone",
       "/queue/completion",

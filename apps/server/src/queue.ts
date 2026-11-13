@@ -77,31 +77,24 @@ const placedAfter = (
 };
 
 /**
- * Where a Set goes when it takes the active place from the Set playing now.
- */
-const placedBefore = (
-  ids: readonly string[],
-  id: string,
-  before: string | null
-) => {
-  const at = before === null ? -1 : ids.indexOf(before);
-  return at === -1 ? [...ids, id] : [...ids.slice(0, at), id, ...ids.slice(at)];
-};
-
-/**
- * Playing a Set. A Set already in the queue takes the active place without moving: the queue
- * behind it is the order the person made. A Set that is not in the queue takes the active place
- * where the listening had reached, so nothing is dropped and the Set that was playing becomes
- * what plays next.
+ * Playing a Set. The queue keeps only what lies ahead, so it does not grow with every Set a
+ * person starts and leaves unfinished (PAL-2128). A Set already in the queue takes the active
+ * place without moving, and the Sets before it leave. A Set that is not in the queue takes the
+ * place of the Set playing now, which leaves, and what followed that Set still follows. With
+ * nothing playing, every queued Set is still ahead and stays behind the new one.
  */
 const played =
   (id: string) =>
   (rows: readonly QueueRow[]): QueueChange => {
     const ids = rows.map((row) => row.setId);
-    return {
-      activeSetId: id,
-      ids: ids.includes(id) ? ids : placedBefore(ids, id, activeIn(rows)),
-    };
+    const at = ids.indexOf(id);
+    if (at !== -1) {
+      return { activeSetId: id, ids: ids.slice(at) };
+    }
+    const activeSetId = activeIn(rows);
+    const ahead =
+      activeSetId === null ? ids : ids.slice(ids.indexOf(activeSetId) + 1);
+    return { activeSetId: id, ids: [id, ...ahead] };
   };
 
 /**
