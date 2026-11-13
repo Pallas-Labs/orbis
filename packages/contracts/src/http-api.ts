@@ -221,6 +221,18 @@ export const ListenSchema = Schema.Struct({
   set: SavedSetSchema,
   startedAt: Schema.String,
 });
+/** The most Listens one answer of `GET /people/:id/listens` holds, and its default. */
+export const MAX_FRIEND_LISTENS = 200;
+/** A page of a friend's Listen History; `nextCursor` reads the older page, and is `null` at the end. */
+export const FriendListensSchema = Schema.Struct({
+  listens: Schema.Array(ListenSchema),
+  nextCursor: Schema.NullOr(Schema.String),
+});
+const ListensCursor = Schema.String.check(Schema.isMaxLength(200));
+const ListensLimit = Schema.NumberFromString.check(
+  Schema.isInt(),
+  Schema.isBetween({ maximum: MAX_FRIEND_LISTENS, minimum: 1 })
+);
 const PlaylistName = Schema.String.check(Schema.isMaxLength(100));
 const MembershipId = Schema.String.check(Schema.isMaxLength(100));
 export const PlaylistNamePayload = Schema.Struct({ name: PlaylistName });
@@ -895,9 +907,13 @@ export const OrbisApi = PlaylistApi.add(
           }),
         }),
         HttpApiEndpoint.get("friendListens", "/people/:id/listens", {
-          error: [NotFound, InternalError],
+          error: [BadRequest, NotFound, InternalError],
           params: SetId,
-          success: Schema.Struct({ listens: Schema.Array(ListenSchema) }),
+          query: {
+            before: Schema.optionalKey(ListensCursor),
+            limit: Schema.optionalKey(ListensLimit),
+          },
+          success: FriendListensSchema,
         })
       )
       .middleware(SetAccess)

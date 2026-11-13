@@ -2,7 +2,7 @@
 
 export type FlagState = "off" | "internal" | "on";
 
-export type FlagKey = "set-page-v2";
+export type FlagKey = "set-page-v2" | "listen-history-paging";
 
 /** Who reads the flag: `internal` is the owner or a named tester. */
 export interface FlagViewer {
@@ -14,6 +14,7 @@ export const anonymous: FlagViewer = { internal: false };
 /** Each flag's declared state on this commit: the compiled default. */
 export const declared: Readonly<Record<FlagKey, FlagState>> = {
   "set-page-v2": "on",
+  "listen-history-paging": "off",
 };
 
 export const evaluate = (state: FlagState, viewer: FlagViewer): boolean =>
@@ -59,11 +60,15 @@ export const makeClient = (provider: FlagProvider): FlagClient => ({
 export interface Flags {
   /** The iPhone Set page with full-bleed artwork, controls in thumb reach, and More from the creator. (PAL-2060, release). */
   readonly setPageV2: (viewer?: FlagViewer) => boolean;
+  /** A Show older control on a friend's profile that reads the next page of their Listen History. (PAL-2135, release). */
+  readonly listenHistoryPaging: (viewer?: FlagViewer) => boolean;
 }
 
 export const makeFlags = (client: FlagClient): Flags => ({
   setPageV2: (viewer) =>
     client.getBooleanValue("set-page-v2", declared["set-page-v2"] === "on", viewer),
+  listenHistoryPaging: (viewer) =>
+    client.getBooleanValue("listen-history-paging", declared["listen-history-paging"] === "on", viewer),
 });
 
 /** The accessors over the declared states. A server or a debug build passes its own client. */
