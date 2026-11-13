@@ -31,22 +31,16 @@ export const sets = sqliteTable("sets", {
     .notNull()
     .default("none"),
   durationSeconds: integer("duration_seconds"),
-  finishCount: integer("finish_count").notNull().default(0),
   genre: text("genre"),
   hostRemoved: integer("host_removed", { mode: "boolean" })
     .notNull()
     .default(false),
   id: text("id").primaryKey(),
-  lastListenedAt: text("last_listened_at"),
-  listenCount: integer("listen_count").notNull().default(0),
   metadataState: text("metadata_state", {
     enum: ["pending", "enriched", "failed"],
   })
     .notNull()
     .default("pending"),
-  playbackPositionSeconds: integer("playback_position_seconds")
-    .notNull()
-    .default(0),
   /** When the source published the Set. Filled by metadata enrichment when the provider names it. */
   releasedAt: text("released_at"),
   retainedAudioBytes: integer("retained_audio_bytes"),
