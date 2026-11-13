@@ -178,6 +178,8 @@ ORBIS_TOKEN=<device key> swift run --package-path apps/apple/OrbisKit orbis play
 
 The Linux build leaves out the two uses of `URLSession.bytes(for:)`, the event stream and the diagnostics upload, because swift-corelibs-foundation does not have it. The macOS run in `bun run ci` compiles them. Everything the app shows or plays stays in the app target: `AudioPlayer`, the engines, SwiftUI and Keychain code. A queue test belongs in OrbisKit unless it needs the player; `OrbisTests/QueueTests` holds the ones that do.
 
+`bun scripts/orbis-cli-smoke.mjs --out <file>` runs the tool against the real service: it starts the lane's disposable service and audio seed, files two Sets, and writes one `$ orbis ...` line and its output per step. It needs no simulator and no Mac, and the transcript is its artifact.
+
 `scripts/orbiskit-publicize.mjs` is the codemod that made the moved files public and gave each app file its `import OrbisKit`. It is the record of the move, and a second run changes nothing.
 
 ## Native clients
