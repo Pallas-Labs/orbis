@@ -96,7 +96,9 @@
           .accessibilityAddTraits(.isHeader)
         HStack {
           Spacer()
-          Button { dismiss() } label: {
+          Button {
+            dismiss()
+          } label: {
             Image(systemName: "xmark").font(.footnote.weight(.bold))
               .foregroundStyle(.secondary)
               .frame(width: 30, height: 30)
@@ -247,7 +249,8 @@
       static func label(lufs: Double, readings: [Double]) -> String {
         let level = lufs > -14 ? "Loud" : lufs < -20 ? "Quiet" : "Moderate"
         let mean = readings.reduce(0, +) / Double(readings.count)
-        let spread = (readings.map { ($0 - mean) * ($0 - mean) }.reduce(0, +)
+        let spread =
+          (readings.map { ($0 - mean) * ($0 - mean) }.reduce(0, +)
           / Double(readings.count)).squareRoot()
         return "\(level), \(spread > 3 ? "varied" : "even")"
       }
