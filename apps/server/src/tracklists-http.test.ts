@@ -1299,3 +1299,147 @@ test("transcript: a Set whose details read failed shows a failed Tracklist, and 
     await rm(directory, { force: true, recursive: true });
   }
 });
+
+// A restart can stop a Set's details read before it records the details or the failure, which
+// leaves the details and the Tracklist pending with nothing to move them.
+//
+// Ways it could fail:
+// - A read of the Tracklist starts nothing, so it shows "Finding tracklist…" for good.
+// - Reads or a Try again during a running details read start a second yt-dlp read.
+// - A details read that fails leaves the Tracklist pending, or a later read reads again.
+// - A read of a Set whose details failed reads the source again.
+test("transcript: a Set whose details read was lost to a restart reads its details again when someone reads its Tracklist", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "orbis-tracklists-"));
+  const databasePath = path.join(directory, "library.sqlite");
+  const urls = {
+    answers: "https://www.youtube.com/watch?v=answersaaaa",
+    fails: "https://www.youtube.com/watch?v=failsbbbbbb",
+    held: "https://www.youtube.com/watch?v=heldccccccc",
+  };
+  const kinds = ["answers", "fails", "held"] as const;
+  const reads = { answers: 0, fails: 0, held: 0 };
+  const kindOf = (url: string) =>
+    kinds.find((kind) => urls[kind] === url) ?? "answers";
+  const versos = Versos.layerOf({
+    poll: () => Effect.succeed({ cues: CUES, state: "ready" }),
+    request: () => Effect.succeed({ requestId: "job-1" }),
+  });
+  const row = (id: string) => {
+    const db = new Sqlite(databasePath);
+    try {
+      const found = db
+        .query<{ details: string; tracklist: string }, [string]>(
+          "SELECT details_state AS details, tracklist_state AS tracklist FROM sets WHERE id = ?"
+        )
+        .get(id);
+      return `details ${found?.details}, Tracklist ${found?.tracklist}`;
+    } finally {
+      db.close();
+    }
+  };
+
+  const stopped = createApp({
+    databasePath,
+    logging: { silent: true },
+    metadata: Metadata.layerOf({
+      details: () => Effect.never,
+      enrich: () => Effect.die("title supplied by caller"),
+    }),
+    versos,
+  });
+  const [answersSet, failsSet, heldSet] = await Promise.all(
+    kinds.map((kind) =>
+      request(stopped, {
+        method: "POST",
+        payload: { title: `The ${kind} mix`, url: urls[kind] },
+        url: "/sets",
+      })
+    )
+  );
+  const ids = {
+    answers: String(answersSet?.json().id),
+    fails: String(failsSet?.json().id),
+    held: String(heldSet?.json().id),
+  };
+  await stopped.dispose();
+
+  const answers = {
+    answers: Promise.withResolvers<null>(),
+    held: Promise.withResolvers<null>(),
+  };
+  const app = createApp({
+    databasePath,
+    logging: { silent: true },
+    metadata: Metadata.layerOf({
+      details: ({ url }) => {
+        const kind = kindOf(url);
+        reads[kind] += 1;
+        if (kind === "fails") {
+          return Effect.fail(
+            new MetadataError({
+              message: "yt-dlp could not read the source.",
+              reason: "provider-unavailable",
+            })
+          );
+        }
+        return Effect.promise(() => answers[kind].promise).pipe(
+          Effect.as(DETAILS)
+        );
+      },
+      enrich: () => Effect.die("title supplied by caller"),
+    }),
+    versos,
+  });
+  try {
+    const t = transcript();
+    // Each read waits for the first details read to start, so the count it shows is settled.
+    const line = async (kind: keyof typeof urls) => {
+      const answer = await read(app, ids[kind]);
+      await eventually(() => Promise.resolve(reads[kind] > 0 ? true : null));
+      return `${answer.json().state} | ${row(ids[kind])}, ${reads[kind]} reads`;
+    };
+    t.step(
+      "save three Sets, stop the service during their details reads",
+      kinds.map((kind) => row(ids[kind])).join(" | ")
+    );
+
+    t.step("restart, read the Tracklist", await line("answers"));
+    answers.answers.resolve(null);
+    await waitForState(app, ids.answers, "ready");
+    t.step("the source answers, read again", await line("answers"));
+
+    t.step("read a Set whose source holds the read open", await line("held"));
+    t.step("read again", await line("held"));
+    const retried = await request(app, {
+      method: "POST",
+      url: `/sets/${ids.held}/tracklist/retry`,
+    });
+    t.step(`Try again (${retried.statusCode}), read again`, await line("held"));
+    answers.held.resolve(null);
+    await waitForState(app, ids.held, "ready");
+    t.step("the source answers, read again", await line("held"));
+
+    await read(app, ids.fails);
+    await waitForState(app, ids.fails, "failed");
+    t.step("read a Set whose source fails, read again", await line("fails"));
+    await Bun.sleep(50);
+    t.step("wait, read again", await line("fails"));
+
+    expect(t.text()).toMatchInlineSnapshot(`
+      "
+      save three Sets, stop the service during their details reads  -> details pending, Tracklist pending | details pending, Tracklist pending | details pending, Tracklist pending
+      restart, read the Tracklist  -> pending | details pending, Tracklist pending, 1 reads
+      the source answers, read again  -> ready | details filled, Tracklist ready, 1 reads
+      read a Set whose source holds the read open  -> pending | details pending, Tracklist pending, 1 reads
+      read again  -> pending | details pending, Tracklist pending, 1 reads
+      Try again (200), read again  -> pending | details pending, Tracklist pending, 1 reads
+      the source answers, read again  -> ready | details filled, Tracklist ready, 1 reads
+      read a Set whose source fails, read again  -> failed | details failed, Tracklist failed, 1 reads
+      wait, read again  -> failed | details failed, Tracklist failed, 1 reads
+      "
+    `);
+  } finally {
+    await app.dispose();
+    await rm(directory, { force: true, recursive: true });
+  }
+});
