@@ -114,9 +114,10 @@ pub fn enqueue(id: &str, placement: Placement) -> Result<Queue, String> {
     queue_call("POST", "/queue/entries", json!({ "setId": id, "placement": placement }))
 }
 
-/// Tells Orbis `id` played to its end: it leaves the queue and the next Set becomes active.
-pub fn complete(id: &str) -> Result<Queue, String> {
-    queue_call("POST", "/queue/completion", json!({ "setId": id }))
+/// Tells Orbis `id` played to its end: it leaves the queue and the next Set becomes active. The
+/// failure keeps Orbis's status, which says whether sending it again can help.
+pub fn complete(id: &str) -> Result<Queue, Failure> {
+    exchange::<QueueReply>(As::Device, None, "POST", "/queue/completion", Some(json!({ "setId": id }))).map(|r| r.queue)
 }
 
 /// Replaces the queue with a Playlist's playable Sets, in order or shuffled.

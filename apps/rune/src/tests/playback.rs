@@ -374,3 +374,80 @@ fn of_two_sets_picked_quickly_orbis_hears_them_in_order_and_ends_on_the_second()
     assert!(!asked(&rt).iter().any(|c| c.contains("s-tram")), "a choice already replaced isn't sent");
     assert_eq!(rt.state.playing.set.as_ref().map(|x| x.id.as_str()), Some("s-static"));
 }
+
+/// Sets Orbis to answer the playing Set's end with the queue that names Low Tide Dub next.
+fn answer_the_end() {
+    fixture::reply("PUT /sets/s-sunrise/position", set_json("s-sunrise", "Sunrise on the Pier"));
+    fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": "s-low-tide", "entries": [set_json("s-low-tide", "Low Tide Dub")] } }));
+    fixture::reply("GET /sets/s-low-tide/tracklist", json!({ "cues": [], "state": "none" }));
+}
+
+/// Moves Rune's clock on `seconds`, and lands what the timers due by then sent.
+fn wait(rt: &mut Runtime<App>, seconds: f64) {
+    rt.frame(seconds);
+    land(rt);
+}
+
+fn completions() -> usize {
+    calls().iter().filter(|c| c.starts_with("POST /queue/completion")).count()
+}
+
+#[test]
+fn a_completion_orbis_refused_with_503_is_sent_again_and_the_next_set_plays() {
+    let mut rt = live(Screen::Playing);
+    answer_the_end();
+    fixture::refuse_once("POST /queue/completion", Some(503), "Orbis answered 503");
+    rt.update(|s, _| s.next());
+    land(&mut rt);
+    assert_eq!(completions(), 1);
+    assert_eq!(rt.state.toast, None, "nothing is said while a try is left");
+    wait(&mut rt, 1.0);
+    assert_eq!(completions(), 2, "sent again after a second: {:?}", calls());
+    assert_eq!(rt.state.queue.items.data.as_ref().unwrap().active_set_id.as_deref(), Some("s-low-tide"), "the queue Orbis sent back lands");
+    assert_eq!(rt.state.playing.set.as_ref().map(|x| x.id.as_str()), Some("s-low-tide"), "the next Set plays");
+    wait(&mut rt, 8.0);
+    assert_eq!(completions(), 2, "and not again");
+    assert_eq!(rt.state.toast, None);
+}
+
+#[test]
+fn a_completion_that_gets_no_answer_is_tried_four_times_then_the_person_is_told() {
+    let mut rt = live(Screen::Playing);
+    answer_the_end();
+    for _ in 0..4 {
+        fixture::refuse_once("POST /queue/completion", None, "Orbis didn't answer");
+    }
+    rt.update(|s, _| s.next());
+    land(&mut rt);
+    // The next Set moves on far enough to save its place: that write waits behind the completion.
+    fixture::reply("PUT /sets/s-low-tide/position", set_json("s-low-tide", "Low Tide Dub"));
+    rt.update(|s, _| s.playing.position += 20.0);
+    for (wait_s, sent) in [(1.0, 2), (2.0, 3)] {
+        wait(&mut rt, wait_s - 0.1);
+        assert_eq!(completions(), sent - 1, "not before the wait is over");
+        wait(&mut rt, 0.1);
+        assert_eq!(completions(), sent);
+        assert_eq!(rt.state.toast, None, "nothing is said while a try is left");
+    }
+    wait(&mut rt, 4.0);
+    assert_eq!(completions(), 4, "{:?}", calls());
+    let sent = calls();
+    let last_try = sent.iter().rposition(|c| c.starts_with("POST /queue/completion")).unwrap();
+    let save = sent.iter().position(|c| c.starts_with("PUT /sets/s-low-tide/position"));
+    assert!(save.is_some_and(|at| at > last_try), "the later write goes out after the last try: {sent:?}");
+    assert_eq!(rt.state.toast.as_deref(), Some("Orbis didn't hear that the Set ended: Orbis didn't answer"));
+    wait(&mut rt, 8.0);
+    assert_eq!(completions(), 4, "three more tries, no fourth");
+}
+
+#[test]
+fn a_completion_orbis_refused_with_404_is_sent_once() {
+    let mut rt = live(Screen::Playing);
+    answer_the_end();
+    fixture::refuse_once("POST /queue/completion", Some(404), "No such Set");
+    rt.update(|s, _| s.next());
+    land(&mut rt);
+    assert_eq!(rt.state.toast.as_deref(), Some("Orbis didn't hear that the Set ended: No such Set"));
+    wait(&mut rt, 8.0);
+    assert_eq!(completions(), 1, "{:?}", calls());
+}
