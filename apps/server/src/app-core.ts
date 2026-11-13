@@ -703,33 +703,15 @@ export const createPortableApp = (options: {
             );
           })
       );
-      /** Whether the Set's details are read. A Tracklist run needs them: Versos scans the description. */
-      const detailsFilled = Effect.fn("SaveSet.detailsFilled")(
+      /** The Set's details state. A Tracklist run needs the details: Versos scans the description. */
+      const detailsState = Effect.fn("SaveSet.detailsState")(
         function* readDetailsState(id: string) {
           const [set] = yield* db
             .select({ detailsState: setRows.detailsState })
             .from(setRows)
             .where(eq(setRows.id, id))
             .limit(1);
-          return set?.detailsState === "filled";
-        }
-      );
-      // A pending Tracklist with no run finding it is stalled: a restart stopped its run, or the
-      // worker that claimed it died. Every client shows a pending Tracklist as being found and
-      // offers no retry, so a read starts the run again. The claim keeps it to one run, and a
-      // run that fails leaves the Tracklist failed, which a read does not restart.
-      const resumeTracklist = Effect.fn("SaveSet.resumeTracklist")(
-        function* resumeStalledTracklist(set: SavedSet) {
-          if (
-            set.tracklistState === "pending" &&
-            // An Apple Music Tracklist is the album's songs, never a Versos answer.
-            set.source !== "apple-music" &&
-            versos.configured &&
-            !runningTracklists.has(set.id) &&
-            (yield* detailsFilled(set.id))
-          ) {
-            yield* startTracklist(set.id);
-          }
+          return set?.detailsState;
         }
       );
       const reviseTitle = Effect.fn("SaveSet.reviseTitle")((
@@ -754,9 +736,7 @@ export const createPortableApp = (options: {
             Effect.catchTag("TitleReviserError", keepProviderTitle)
           );
       });
-      // The slow yt-dlp read runs after the response, tied to the app so `dispose` stops it. A
-      // failure is logged and marks the Set's details failed; the save itself is unaffected.
-      const fillDetails = Effect.fn("SaveSet.fillDetails")((set: SavedSet) =>
+      const readDetails = (set: SavedSet) =>
         metadata.details({ source: set.source, url: set.url }).pipe(
           Effect.flatMap((details) => library.recordDetails(set.id, details)),
           Effect.tap(() => startTracklist(set.id)),
@@ -776,10 +756,54 @@ export const createPortableApp = (options: {
                     )
                   ),
           }),
-          withWideEvent({ job: "set-details", set: set.id }, options.logging),
-          Effect.forkIn(scope),
-          Effect.asVoid
-        )
+          withWideEvent({ job: "set-details", set: set.id }, options.logging)
+        );
+      const runningDetails = new Set<string>();
+      // The slow yt-dlp read runs after the response, tied to the app so `dispose` stops it. A
+      // failure is logged and marks the Set's details failed; the save itself is unaffected.
+      // One read per Set at a time: a read while one runs starts nothing.
+      const fillDetails = Effect.fn("SaveSet.fillDetails")((set: SavedSet) =>
+        Effect.suspend(() => {
+          if (runningDetails.has(set.id)) {
+            return Effect.void;
+          }
+          runningDetails.add(set.id);
+          return readDetails(set).pipe(
+            Effect.interruptible,
+            Effect.ensuring(
+              Effect.sync(() => {
+                runningDetails.delete(set.id);
+              })
+            ),
+            Effect.forkIn(scope),
+            Effect.asVoid
+          );
+        }).pipe(Effect.uninterruptible)
+      );
+      // A pending Tracklist with no run finding it is stalled: a restart stopped its run or its
+      // details read, or the worker that claimed it died. Every client shows a pending Tracklist
+      // as being found and offers no retry, so a read starts the stalled step again: the run when
+      // the details are read, else the details read, which starts the run or fails the Tracklist.
+      // The claim and the in-memory guards keep each to one, and failed details or a failed run
+      // leave the Tracklist failed, which a read does not restart.
+      const resumeTracklist = Effect.fn("SaveSet.resumeTracklist")(
+        function* resumeStalledTracklist(set: SavedSet) {
+          if (
+            set.tracklistState !== "pending" ||
+            // An Apple Music Tracklist is the album's songs, never a Versos answer.
+            set.source === "apple-music" ||
+            !versos.configured ||
+            runningTracklists.has(set.id)
+          ) {
+            return;
+          }
+          const details = yield* detailsState(set.id);
+          if (details === "filled") {
+            yield* startTracklist(set.id);
+          } else if (details === "pending") {
+            yield* fillDetails(set);
+          }
+        }
       );
       // Stores provider metadata, then reads details unless the yt-dlp fallback already did.
       const recordMetadata = (
@@ -1173,10 +1197,11 @@ export const createPortableApp = (options: {
                     Effect.provideService(Database, db)
                   );
                 }
-                // A pending Tracklist resumes a stalled run; a running one starts nothing new.
-                // Any other state is a refresh: the source is read again and Versos scans it.
+                // A pending Tracklist resumes its stalled run or details read; a running one starts
+                // nothing new. Any other state is a refresh: the source is read again and Versos
+                // scans it.
                 if (saved.tracklistState === "pending") {
-                  yield* (yield* detailsFilled(params.id))
+                  yield* (yield* detailsState(params.id)) === "filled"
                     ? startTracklist(params.id, "retry")
                     : fillDetails(saved);
                 } else {
