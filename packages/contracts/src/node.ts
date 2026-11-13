@@ -1,5 +1,7 @@
 import { Schema } from "effect";
 
+import { SetAnalysisSchema } from "./set-analysis.js";
+
 const SetId = Schema.String.check(Schema.isPattern(/^[a-zA-Z0-9_-]+$/u));
 const Identity = { requestId: Schema.String, setId: SetId };
 const Format = Schema.Literals(["mp3", "ogg", "m4a"]);
@@ -62,6 +64,12 @@ export const NodeMessageSchema = Schema.Union([
   Schema.Struct({
     files: Schema.Array(Schema.Struct({ setId: SetId, ...Audio })),
     kind: Schema.Literal("inventory"),
+  }),
+  // Sent after a Download's analysis finishes, and after the inventory for every stored analysis.
+  Schema.Struct({
+    analysis: SetAnalysisSchema,
+    kind: Schema.Literal("analysis"),
+    setId: SetId,
   }),
 ]);
 export type NodeMessage = typeof NodeMessageSchema.Type;

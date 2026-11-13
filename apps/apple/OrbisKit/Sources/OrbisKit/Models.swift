@@ -127,6 +127,55 @@ public struct Tracklist: Decodable, Equatable, Sendable {
   }
 }
 
+/// A Set's tempo and loudness, which the audio node measures from its Retained Audio. Mirrors
+/// `SetAnalysis` in packages/contracts. Each curve reading is a 30 s window starting at `seconds`;
+/// a window with no steady beat, or a silent one, has no reading.
+public struct SetAnalysis: Decodable, Equatable, Sendable {
+  public struct TempoReading: Decodable, Equatable, Sendable {
+    public let seconds: TimeInterval
+    public let bpm: Double
+  }
+
+  public struct LoudnessReading: Decodable, Equatable, Sendable {
+    public let seconds: TimeInterval
+    public let lufs: Double
+  }
+
+  /// A stretch of the Set that holds one tempo: "Locked in", "Lift", "Peak", "Come down",
+  /// "Close", or "Section N".
+  public struct Section: Decodable, Equatable, Sendable {
+    public let name: String
+    public let startSeconds: TimeInterval
+    public let endSeconds: TimeInterval
+    public let bpm: Double
+  }
+
+  public let durationSeconds: TimeInterval
+  /// Nil when no window had a steady beat.
+  public let medianBpm: Double?
+  public let integratedLufs: Double?
+  public let bpmCurve: [TempoReading]
+  public let loudnessCurve: [LoudnessReading]
+  public let sections: [Section]
+}
+
+/// One Set as `GET /sets/<id>` answers it: the Set, and its analysis, which is nil until the
+/// audio node has measured it.
+public struct SetPage: Decodable, Sendable {
+  enum CodingKeys: String, CodingKey {
+    case analysis
+  }
+
+  public let set: SavedSet
+  public let analysis: SetAnalysis?
+
+  public init(from decoder: any Decoder) throws {
+    set = try SavedSet(from: decoder)
+    analysis = try decoder.container(keyedBy: CodingKeys.self)
+      .decodeIfPresent(SetAnalysis.self, forKey: .analysis)
+  }
+}
+
 public enum SetSource: Hashable, Decodable, Sendable {
   case youtube
   case soundcloud

@@ -1,5 +1,10 @@
 import { normalizeSourceUrl, youTubePlaylistId } from "@orbis/contracts";
-import type { PlaylistImport, SavedSet, SharedSet } from "@orbis/contracts";
+import type {
+  PlaylistImport,
+  SavedSet,
+  SetAnalysis,
+  SharedSet,
+} from "@orbis/contracts";
 import type {
   ChangeTopic,
   SaveSetResultSchema,
@@ -143,6 +148,8 @@ import { Presence } from "./presence.js";
 import type { PresenceOptions } from "./presence.js";
 import { QueueSignals } from "./queue-signals.js";
 import { Queue } from "./queue.js";
+import { readSetAnalysis, storeSetAnalysis } from "./set-analysis.js";
+import type { SetAnalysisOutcome } from "./set-analysis.js";
 import { loadArtwork } from "./share-image/artwork.js";
 import { renderShareImage } from "./share-image/render.js";
 import { renderSharePage, sharePagePolicy } from "./share-page.js";
@@ -525,6 +532,12 @@ export const createPortableApp = (options: {
   );
   let presenceService: typeof Presence.Service | null = null;
   let importerService: typeof PlaylistImporter.Service | null = null;
+  let recordAnalysis:
+    | ((
+        setId: string,
+        analysis: SetAnalysis
+      ) => Effect.Effect<SetAnalysisOutcome>)
+    | null = null;
   const seesPerson = (personId: string) => (viewerId: string) =>
     Effect.sync(() => {
       if (viewerId === personId) {
@@ -607,6 +620,16 @@ export const createPortableApp = (options: {
           Effect.provideService(Database, db),
           Effect.as(true),
           Effect.orElseSucceed(() => false)
+        );
+      recordAnalysis = (setId, analysis) =>
+        storeSetAnalysis(setId, analysis).pipe(
+          Effect.provideService(Database, db),
+          Effect.tap((outcome) =>
+            outcome === "stored"
+              ? announce("set", readsSet(setId))
+              : Effect.void
+          ),
+          Effect.orDie
         );
       const announceForCaller = Effect.fn("App.announceForCaller")(
         function* announceCallerChange(
@@ -1105,6 +1128,17 @@ export const createPortableApp = (options: {
               }).pipe(
                 Effect.tap(() => announceForCaller("library", ownDevices))
               )
+            )
+          )
+          .handle("read", ({ params }) =>
+            withFailureResponse(
+              Effect.gen(function* readSetPage() {
+                const set = yield* (yield* Library).find(params.id);
+                const analysis = yield* readSetAnalysis(params.id).pipe(
+                  Effect.provideService(Database, db)
+                );
+                return { ...set, analysis };
+              })
             )
           )
           .handle("retryMetadata", ({ params }) =>
@@ -2974,6 +3008,18 @@ export const createPortableApp = (options: {
       );
     },
     initialize,
+    /**
+     * Store an analysis the audio node reported and, when it changed, tell every viewer of the Set.
+     */
+    recordAnalysis: async (
+      setId: string,
+      analysis: SetAnalysis
+    ): Promise<SetAnalysisOutcome> => {
+      await initialize();
+      return recordAnalysis
+        ? await Effect.runPromise(recordAnalysis(setId, analysis))
+        : "unknown-set";
+    },
     resumeImports: async (): Promise<void> => {
       await initialize();
       if (importerService) {

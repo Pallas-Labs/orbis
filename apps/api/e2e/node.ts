@@ -6,7 +6,11 @@ import net from "node:net";
 import path from "node:path";
 
 import type { SaveSetInput } from "@orbis/contracts";
-import { AudioStateSchema, SavedSetSchema } from "@orbis/contracts/http-api";
+import {
+  AudioStateSchema,
+  SavedSetSchema,
+  SetPageSchema,
+} from "@orbis/contracts/http-api";
 import type { NodeCommand, NodeMessage } from "@orbis/contracts/node";
 import { NodeCommandSchema } from "@orbis/contracts/node";
 import { Schema } from "effect";
@@ -23,6 +27,8 @@ const decodeDetailsState = Schema.decodeUnknownSync(
 const decodeAudioState = Schema.decodeUnknownSync(AudioStateSchema);
 
 const decodeSavedSet = Schema.decodeUnknownSync(SavedSetSchema);
+
+const decodeSetPage = Schema.decodeUnknownSync(SetPageSchema);
 
 const decodeNodeCommand = Schema.decodeUnknownSync(NodeCommandSchema);
 
@@ -647,6 +653,22 @@ try {
     `#!/usr/bin/env python3\nimport sys, json, time\nif '--version' in sys.argv: print('fixture')\nelif '--dump-single-json' in sys.argv: print(json.dumps({'title':'Real fixture', 'duration':2}))\nelse:\n data=open(${JSON.stringify(fixture)},'rb').read()\n with open(sys.argv[sys.argv.index('-o')+1],'wb') as f:\n  f.write(data[:len(data)//2]); f.flush(); time.sleep(2); f.write(data[len(data)//2:])\n`,
     { mode: 0o755 }
   );
+  // orbis-analyze needs torch and the beat_this checkpoint; this stand-in writes a fixed analysis
+  // where the real one would, so the journey follows the node's analysis to the Set page.
+  const measured = {
+    bpmCurve: [{ bpm: 120, seconds: 0 }],
+    durationSeconds: 2,
+    integratedLufs: -14,
+    loudnessCurve: [{ lufs: -14, seconds: 0 }],
+    medianBpm: 120,
+    sections: [{ bpm: 120, endSeconds: 2, name: "Locked in", startSeconds: 0 }],
+  };
+  const analyzer = path.join(artifact, "orbis-analyze");
+  await writeFile(
+    analyzer,
+    `#!/usr/bin/env python3\nimport sys\nopen(sys.argv[2], 'w').write(${JSON.stringify(JSON.stringify(measured))})\n`,
+    { mode: 0o755 }
+  );
   const audioDir = path.join(artifact, "audio");
   const secret = path.join(artifact, "stream-grant.key");
   await writeFile(secret, Buffer.alloc(32, 17));
@@ -668,6 +690,7 @@ try {
         detached: true,
         env: {
           ...process.env,
+          ORBIS_ANALYZE_BIN: analyzer,
           ORBIS_API_FORWARD_URL: new URL("/api", api).toString(),
           ORBIS_AUDIO_DIR: audioDir,
           ORBIS_GROUP_URL: new URL("/api", api).toString(),
@@ -727,6 +750,16 @@ try {
     );
     const audioFiles = await readdir(audioDir);
     assert.ok(audioFiles.includes(`${realSet.id}.mp3`));
+    // After the Download, the node analyses the file, keeps the result beside it, and reports it.
+    const readPage = async () => {
+      const response = await request(`/sets/${realSet.id}`);
+      return decodeSetPage(await response.json());
+    };
+    const page = await until(readPage, (value) => value.analysis !== null);
+    assert.deepEqual(page.analysis, measured);
+    const analysedFiles = await readdir(audioDir);
+    assert.ok(analysedFiles.includes(`${realSet.id}.analysis.json`));
+    assert.match(nodeLog.join(""), /"job":"audio-analysis"/u);
     const play = (setId: string) =>
       runtime.dispatchFetch(`http://orbis/api/sets/${setId}/audio`, {
         headers: { authorization: "Bearer client-token" },
@@ -757,7 +790,9 @@ try {
     await request(`/sets/${realSet.id}`, "DELETE");
     await until(
       () => readdir(audioDir),
-      (files) => !files.includes(`${realSet.id}.mp3`)
+      (files) =>
+        !files.includes(`${realSet.id}.mp3`) &&
+        !files.includes(`${realSet.id}.analysis.json`)
     );
     const filesAfterRestart = await readdir(audioDir);
     assert.equal(
@@ -787,6 +822,7 @@ try {
     transcript.push(
       { groupRestart: true, resumedSameJob: true },
       {
+        analysisReported: true,
         killedDuringProgress: true,
         realNode: true,
         releasedFile: true,

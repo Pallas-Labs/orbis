@@ -86,7 +86,14 @@ export class Group extends DurableObject<Environment> {
       )
     );
     this.logging = groupLogging(ctx, env);
-    this.node = new GroupAudioNode(ctx, runtime, trustPath, this.logging);
+    this.node = new GroupAudioNode(
+      ctx,
+      runtime,
+      trustPath,
+      // `this.app` is assigned below; a node message arrives only after the constructor returns.
+      async (setId, analysis) => await this.app.recordAnalysis(setId, analysis),
+      this.logging
+    );
     // Answered without waking the Group; the node reconnects when a ping goes unanswered.
     ctx.setWebSocketAutoResponse(
       new WebSocketRequestResponsePair("ping", "pong")

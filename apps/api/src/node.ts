@@ -1,3 +1,4 @@
+import type { SetAnalysis } from "@orbis/contracts";
 import { NodeMessageSchema } from "@orbis/contracts/node";
 import type {
   NodeCommand,
@@ -22,6 +23,7 @@ import { Library } from "../../server/src/library.js";
 import { logEvent } from "../../server/src/logging.js";
 import type { LoggingOptions } from "../../server/src/logging.js";
 import { MetadataError } from "../../server/src/metadata-error.js";
+import type { SetAnalysisOutcome } from "../../server/src/set-analysis.js";
 
 const decodeNodeMessage = Schema.decodeUnknownSync(NodeMessageSchema);
 
@@ -90,16 +92,25 @@ export class GroupAudioNode {
   >;
   private readonly trustPath: string;
   private readonly logging: LoggingOptions;
+  private readonly recordAnalysis: (
+    setId: string,
+    analysis: SetAnalysis
+  ) => Promise<SetAnalysisOutcome>;
 
   constructor(
     ctx: DurableObjectState,
     runtime: ManagedRuntime.ManagedRuntime<Library | Database, unknown>,
     trustPath: string,
+    recordAnalysis: (
+      setId: string,
+      analysis: SetAnalysis
+    ) => Promise<SetAnalysisOutcome>,
     logging: LoggingOptions = {}
   ) {
     this.ctx = ctx;
     this.runtime = runtime;
     this.trustPath = trustPath;
+    this.recordAnalysis = recordAnalysis;
     this.logging = logging;
   }
 
@@ -544,6 +555,18 @@ export class GroupAudioNode {
         return;
       }
       if (await this.acceptDetails(socket, attached, message)) {
+        return;
+      }
+      if (message.kind === "analysis") {
+        const outcome = await this.recordAnalysis(
+          message.setId,
+          message.analysis
+        );
+        logEvent(
+          "info",
+          { event: "group-analysis-received", outcome, set: message.setId },
+          this.logging
+        );
         return;
       }
       if (message.kind === "details" || message.kind === "released") {

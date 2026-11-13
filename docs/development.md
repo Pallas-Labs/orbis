@@ -12,6 +12,7 @@ Source ownership, local setup, and verification.
 | Production Cloudflare Group | [`apps/api/src/group.ts`](../apps/api/src/group.ts) and [API README](../apps/api/README.md) |
 | Vanta audio-node startup and protocol | [`apps/server/src/node.ts`](../apps/server/src/node.ts), [`audio-node.ts`](../apps/server/src/audio-node.ts), and [operation guide](../deploy/orbis-server/README.md) |
 | Audio HTTP listener and API forwarding | [`node-http.ts`](../apps/server/src/node-http.ts) |
+| Set tempo and loudness (`orbis-analyze`, `set_analysis`) | [`apps/server/analysis`](../apps/server/analysis), [`audio-analysis.ts`](../apps/server/src/audio-analysis.ts), [`set-analysis.ts`](../apps/server/src/set-analysis.ts), and [operation guide](../deploy/orbis-server/README.md#analyse-each-sets-tempo-and-loudness) |
 | Download selection and retained files | [`download-backends.ts`](../apps/server/src/download-backends.ts) and [`media-store.ts`](../apps/server/src/media-store.ts) |
 | Identity, trust storage, and administration | [`identity.ts`](../apps/server/src/identity.ts), [`trust-storage.ts`](../apps/server/src/trust-storage.ts), and [`admin.ts`](../apps/server/src/admin.ts) |
 | Web routes and player | [`apps/web/src/routes`](../apps/web/src/routes) and [`player.tsx`](../apps/web/src/components/player/player.tsx) |
@@ -147,7 +148,8 @@ Build shared contracts before running a focused lane from the repository root:
 | --- | --- | --- |
 | Bun HTTP handlers | `bun run --filter @orbis/server test` | Real database HTTP tests in `apps/server/src`; retain command output for failures |
 | Orbis Link page and preview image | `bun scripts/share-preview.ts --out <directory>` | Writes the PNG, page HTML, and render times for a fixture Set; add `--serve` to keep it answering for curl |
-| Cloudflare Group and audio node | `bun run --filter @orbis/api test` | Workerd journeys write `.cache/api-group`, `.cache/audio-node`, `.cache/api-grants`, and `.cache/api-recovery`; requires ffmpeg and ffprobe |
+| Cloudflare Group and audio node | `bun run --filter @orbis/api test` | Workerd journeys write `.cache/api-group`, `.cache/audio-node`, `.cache/api-analysis`, `.cache/api-grants`, and `.cache/api-recovery`; requires ffmpeg and ffprobe |
+| `orbis-analyze` against the reference Sets | `uv run --frozen --project apps/server/analysis python -m orbis_analysis.check_reference <audio dir> <out dir>` | Needs the four reference Sets' Retained Audio and `ORBIS_ANALYZE_CHECKPOINT`; about 30 minutes at `nice 19` on Vanta |
 | Group data transfer | `bun run --filter @orbis/api test:transfer` | See [data transfer](data-transfer.md) for restore and comparison artifacts |
 | Web client | `bun run --filter @orbis/web test` | Production browser journeys and artifacts listed in [web verification](../apps/web/README.md#verify-the-migration); install Chromium with `bun x playwright install chromium` |
 | Rune desktop client | `apps/rune/scripts/check` | Press tests and scene goldens in `apps/rune/goldens`; for a live window, `apps/rune/scripts/stand-in` (see the [Rune README](../apps/rune/README.md#against-a-stand-in-orbis)) |

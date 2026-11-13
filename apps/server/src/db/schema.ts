@@ -91,6 +91,18 @@ export const setCues = sqliteTable(
   (table) => [primaryKey({ columns: [table.setId, table.position] })]
 );
 
+/**
+ * A Set's tempo and loudness, measured by the audio node from its Retained Audio. Shared Set data,
+ * like the Tracklist: one row per Set, the `SetAnalysis` contract as JSON.
+ */
+export const setAnalysis = sqliteTable("set_analysis", {
+  analysis: text("analysis").notNull(),
+  setId: text("set_id")
+    .primaryKey()
+    .references(() => sets.id, { onDelete: "cascade" }),
+  updatedAt: text("updated_at").notNull(),
+});
+
 export const libraryEntries = sqliteTable(
   "library_entries",
   {
@@ -399,6 +411,7 @@ export const schema = {
   presenceLegacyReports,
   presenceSessions,
   queueEntries,
+  setAnalysis,
   setCues,
   sets,
 };
