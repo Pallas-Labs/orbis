@@ -262,12 +262,12 @@ public struct PlaylistImportJob: Decodable, Equatable, Sendable {
   /// What the finished import did. `unavailable` counts tracks YouTube no longer serves and
   /// `overLimit` tracks past the Playlist maximum; neither was saved.
   public struct Summary: Decodable, Equatable, Sendable {
-    let added: Int
-    let downloading: Int
+    public let added: Int
+    public let downloading: Int
     /// Saved while the download queue was full, so they wait for a Download to be asked for.
-    let waiting: Int
-    let unavailable: Int
-    let overLimit: Int
+    public let waiting: Int
+    public let unavailable: Int
+    public let overLimit: Int
   }
 
   public enum State: Equatable, Sendable {
