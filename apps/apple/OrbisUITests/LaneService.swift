@@ -127,6 +127,12 @@ struct LaneService {
     try seed("late-tracklist/\(id)")
   }
 
+  /// Stores a measured tempo and loudness for the Set, as the audio node does after a download:
+  /// a 2 hr Set at a median 140 BPM in five sections.
+  func seedAnalysis(_ id: String) throws {
+    try seed("analysis/\(id)")
+  }
+
   /// Settles the Set's Tracklist as none found, as Versos leaves a Set it has no source for.
   func seedNoTracklist(_ id: String) throws {
     try seed("no-tracklist/\(id)")

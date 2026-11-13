@@ -8,11 +8,15 @@ struct SetPageV2<Controls: View>: View {
   let set: SavedSet
   @Binding var isRenaming: Bool
   @ViewBuilder let controls: () -> Controls
+  @State private var isShowingAbout = false
 
   /// The most cards the rail holds; See All shows the rest.
   private static var moreLimit: Int { 12 }
 
   var body: some View {
+    let analysis = model.analyses[set.id]
+    // About This Set opens only for a Set the node has measured and found a beat in.
+    let bpm = analysis?.medianBpm.map { Int($0.rounded()) }
     SetPage(
       title: set.title,
       source: set.source.label,
@@ -33,6 +37,8 @@ struct SetPageV2<Controls: View>: View {
         lastHeard: set.lastListenedAt.map(SetPresentation.day)
       ),
       retryName: { Task { await model.nameAgain(set.id) } },
+      bpm: bpm,
+      showAbout: bpm == nil ? nil : { isShowingAbout = true },
       controls: controls,
       tracklist: {
         TracklistSection(model: model, set: set, hidesNone: true)
@@ -45,6 +51,16 @@ struct SetPageV2<Controls: View>: View {
     .scrollEdgeEffectHidden(true, for: .top)
     .scrollEdgeEffectStyle(.soft, for: .bottom)
     .toolbarTitleDisplayMode(.inline)
+    .task(id: set.id) { await model.loadAnalysis(set.id) }
+    #if os(iOS)
+      .sheet(isPresented: $isShowingAbout) {
+        if let analysis {
+          AboutThisSetSheet(
+            analysis: analysis, position: set.resumePosition,
+            artwork: SetPresentation.pageArtwork(set))
+        }
+      }
+    #endif
   }
 
   @ViewBuilder private var moreFromCreator: some View {

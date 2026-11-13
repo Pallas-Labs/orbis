@@ -406,6 +406,44 @@ const seedTracklist = (action, setId) => {
   return true;
 };
 
+// The sections of a real 2 hr Set the node measured (PAL-2232), so About This Set reads as it
+// does on a real Set. Each 30 s window holds its section's tempo, and its loudness rises and
+// falls a little around -13.5 LUFS.
+const laneSections = [
+  { bpm: 140, endSeconds: 6090, name: "Locked in", startSeconds: 0 },
+  { bpm: 143, endSeconds: 6270, name: "Lift", startSeconds: 6090 },
+  { bpm: 160, endSeconds: 6690, name: "Peak", startSeconds: 6270 },
+  { bpm: 145, endSeconds: 7065, name: "Come down", startSeconds: 6690 },
+  { bpm: 130, endSeconds: 7200, name: "Close", startSeconds: 7065 },
+];
+
+const laneAnalysis = () => {
+  const windows = Array.from({ length: 240 }, (_, i) => i * 30);
+  return {
+    bpmCurve: windows.map((seconds) => ({
+      bpm: laneSections.findLast((s) => s.startSeconds <= seconds).bpm,
+      seconds,
+    })),
+    durationSeconds: 7200,
+    integratedLufs: -13.5,
+    loudnessCurve: windows.map((seconds, i) => ({
+      lufs:
+        Math.round(
+          (-13.5 + 1.5 * Math.sin(i / 3) - (i % 17 === 0 ? 4 : 0)) * 10
+        ) / 10,
+      seconds,
+    })),
+    medianBpm: 140,
+    sections: laneSections,
+  };
+};
+
+const seedAnalysis = (setId) => {
+  db.query(
+    "INSERT OR REPLACE INTO set_analysis (set_id, analysis, updated_at) VALUES (?, ?, ?)"
+  ).run(setId, JSON.stringify(laneAnalysis()), new Date().toISOString());
+};
+
 const handle = async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
   if (await routeDiagnostics(route, request, response)) {
@@ -428,7 +466,7 @@ const handle = async (request, response) => {
     return;
   }
   const match =
-    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist|running-tracklist|no-tracklist)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
+    /^\/(?<action>ready-audio|unavailable-audio|slow-download|slow-audio|finish-download|tracklist|late-tracklist|running-tracklist|no-tracklist|analysis)\/(?<setId>[a-zA-Z0-9-]+)$/u.exec(
       route
     );
   if (!match?.groups) {
@@ -477,6 +515,10 @@ const handle = async (request, response) => {
       db.query(
         "UPDATE sets SET download_state = 'ready', retained_audio_format = 'm4a', retained_audio_bytes = ?, duration_seconds = 30 WHERE id = ?"
       ).run(statSync(fixture).size, setId);
+      break;
+    }
+    case "analysis": {
+      seedAnalysis(setId);
       break;
     }
     default: {

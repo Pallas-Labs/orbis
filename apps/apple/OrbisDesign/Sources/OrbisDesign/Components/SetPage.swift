@@ -17,6 +17,10 @@ public struct SetPage: View {
   public let dates: SetDetail.Dates?
   public let statistics: SetDetail.Statistics?
   public let retryName: () -> Void
+  /// The Set's median tempo, once the audio node has measured it.
+  public let bpm: Int?
+  /// Opens About This Set. Nil leaves the source line as text that opens nothing.
+  public let showAbout: (() -> Void)?
   private let controls: AnyView
   private let tracklist: AnyView
   private let moreFromCreator: AnyView
@@ -27,6 +31,7 @@ public struct SetPage: View {
     length: String? = nil, artwork: URL? = nil, artworkStandIn: URL? = nil,
     failedToName: Bool = false, dates: SetDetail.Dates? = nil,
     statistics: SetDetail.Statistics? = nil, retryName: @escaping () -> Void = {},
+    bpm: Int? = nil, showAbout: (() -> Void)? = nil,
     @ViewBuilder controls: () -> some View,
     @ViewBuilder tracklist: () -> some View = { EmptyView() },
     @ViewBuilder moreFromCreator: () -> some View = { EmptyView() },
@@ -43,6 +48,8 @@ public struct SetPage: View {
     self.dates = dates
     self.statistics = statistics
     self.retryName = retryName
+    self.bpm = bpm
+    self.showAbout = showAbout
     self.controls = AnyView(controls())
     self.tracklist = AnyView(tracklist())
     self.moreFromCreator = AnyView(moreFromCreator())
@@ -168,12 +175,8 @@ public struct SetPage: View {
           name
         }
       }
-      Text(SetDetail.eyebrow(source: source, length: length, dates: dates))
-        .font(.caption.weight(.semibold))
-        .foregroundStyle(.secondary)
-        .multilineTextAlignment(.center)
+      sourceLine
         .padding(.top, 4)
-        .accessibilityIdentifier("detail-source-line")
       if failedToName {
         HStack(spacing: 6) {
           Text("Orbis could not name this set.")
@@ -188,6 +191,31 @@ public struct SetPage: View {
       }
     }
     .frame(maxWidth: .infinity)
+  }
+
+  /// The source, length and date. A measured Set adds its tempo and a chevron, and the line
+  /// opens About This Set.
+  @ViewBuilder private var sourceLine: some View {
+    let line = Text(SetDetail.eyebrow(source: source, length: length, dates: dates, bpm: bpm))
+      .font(.caption.weight(.semibold))
+      .foregroundStyle(.secondary)
+      .multilineTextAlignment(.center)
+    if let showAbout {
+      Button(action: showAbout) {
+        HStack(spacing: 4) {
+          line
+          Image(systemName: "chevron.right")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(.secondary)
+        }
+        .contentShape(.rect)
+      }
+      .buttonStyle(.plain)
+      .accessibilityHint("Shows the Set's tempo and energy")
+      .accessibilityIdentifier("detail-source-line")
+    } else {
+      line.accessibilityIdentifier("detail-source-line")
+    }
   }
 
   @ViewBuilder private var footer: some View {
