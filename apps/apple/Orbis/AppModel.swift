@@ -1736,8 +1736,9 @@ final class AppModel {
   @ObservationIgnored private var positionWrites: Task<Void, Never>?
 
   @discardableResult
-  private func reportPositionInOrder(_ id: String, seconds: Int, settled: Bool) -> Task<Void, Never>
-  {
+  private func reportPositionInOrder(
+    _ id: String, seconds: Int, settled: Bool
+  ) -> Task<Void, Never> {
     let previous = positionWrites
     let write = Task { [weak self] in
       await previous?.value
