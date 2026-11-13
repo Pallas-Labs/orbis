@@ -12,6 +12,9 @@ export const playSet = async (credentials: Credentials, setId: string) =>
     client.queue.play({ payload: { setId } })
   );
 
+export const readQueue = async (credentials: Credentials) =>
+  await callOrbis(credentials, (client) => client.queue.read());
+
 export const playPlaylist = async (
   credentials: Credentials,
   playlistId: string

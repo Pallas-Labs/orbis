@@ -26,6 +26,7 @@ import {
   playPlaylist,
   playSet,
   queueSet,
+  readQueue,
   reportPosition,
   sendPresence,
   streamUrl,
@@ -150,6 +151,16 @@ export const PlayerProvider = ({
   const presenceRoute = useRef(true);
   const lastRenew = useRef(0);
   const written = useRef<Promise<unknown>>(Promise.resolve());
+  // The Playback Position this player last knew the service held for the loaded Set: the one it
+  // loaded, or the last one it saved. A different value on the service came from another device.
+  const savedPosition = useRef<{ setId: string; seconds: number } | null>(null);
+  // True from a pause until the next play, so that play is a resume that reads the service first.
+  const resumable = useRef(false);
+  // True while a resume waits for that read. The element stays paused and reports nothing, so its
+  // old place cannot overwrite a newer one from another device.
+  const holding = useRef(false);
+  // Bumped by each resume read and by a seek, so a seek made during the read wins over its answer.
+  const resumeRead = useRef(0);
 
   // Position saves and the completion go out one at a time, in the order the player made them.
   // A Set that ends pauses first, which saves its last second; that save must not land after
@@ -165,6 +176,21 @@ export const PlayerProvider = ({
     })();
     written.current = sent;
     return await sent;
+  };
+
+  // Saves a Playback Position in write order, and remembers what the service stored for the loaded
+  // Set, so a later resume can tell this player's save from another device's.
+  const save = (setId: string, seconds: number) => {
+    void write(async () => {
+      const saved = await reportPosition(credentials, setId, seconds);
+      if (saved.ok && savedPosition.current?.setId === setId) {
+        savedPosition.current = {
+          seconds: saved.value.playbackPositionSeconds,
+          setId,
+        };
+      }
+      return saved;
+    });
   };
 
   // Actions go out one at a time, so each carries the generation its play returned.
@@ -231,6 +257,13 @@ export const PlayerProvider = ({
       state: "idle",
     };
     lastReport.current = 0;
+    savedPosition.current = {
+      seconds: set.playbackPositionSeconds,
+      setId: set.id,
+    };
+    resumable.current = false;
+    holding.current = false;
+    resumeRead.current += 1;
     setProblem(null);
     setElapsed(startAt);
     setPlaying({ attempt, set, src: src.value, startAt });
@@ -263,9 +296,7 @@ export const PlayerProvider = ({
       audio !== null &&
       !audio.paused
     ) {
-      const { id } = playing.set;
-      const seconds = audio.currentTime;
-      void write(async () => await reportPosition(credentials, id, seconds));
+      save(playing.set.id, audio.currentTime);
     }
     return await start(active, (playing?.attempt ?? 0) + 1, startAt, intent);
   };
@@ -281,6 +312,9 @@ export const PlayerProvider = ({
     const intent = playIntent.current;
     const audio = audioRef.current;
     if (playing?.set.id === set.id && audio !== null && audio.readyState > 0) {
+      // An explicit start time wins over the service's position, so this play reads nothing.
+      resumable.current = false;
+      resumeRead.current += 1;
       audio.currentTime = seconds;
       setElapsed(seconds);
       try {
@@ -309,12 +343,73 @@ export const PlayerProvider = ({
   const report = (event: SyntheticEvent<HTMLAudioElement>) => {
     const seconds = event.currentTarget.currentTime;
     if (playing !== null && Number.isFinite(seconds)) {
-      const { id } = playing.set;
-      void write(async () => await reportPosition(credentials, id, seconds));
+      save(playing.set.id, seconds);
     }
   };
 
+  const seeked = (event: SyntheticEvent<HTMLAudioElement>) => {
+    // A seek is the person's choice of place, so a resume read still out must not move it.
+    resumeRead.current += 1;
+    report(event);
+  };
+
+  // Every play after a pause, from any control, comes through here. The element waits, paused,
+  // while the player reads the service's position for the Set. When the service holds another
+  // value than the one this player last knew, another device saved it later: the player moves
+  // there, then plays. A read that fails plays from the element's own place.
+  const resume = (event: SyntheticEvent<HTMLAudioElement>) => {
+    const audio = event.currentTarget;
+    if (holding.current) {
+      // Play again during the read: the person wants sound now, and the read still moves it.
+      holding.current = false;
+      return;
+    }
+    if (playing === null || !resumable.current) {
+      return;
+    }
+    resumable.current = false;
+    holding.current = true;
+    audio.pause();
+    resumeRead.current += 1;
+    const read = resumeRead.current;
+    const setId = playing.set.id;
+    void (async () => {
+      // The pause's save goes first, so the read answers after it.
+      await written.current;
+      const answer = await readQueue(credentials);
+      if (audioRef.current !== audio) {
+        return;
+      }
+      const entry = answer.ok
+        ? answer.value.queue.entries.find((candidate) => candidate.id === setId)
+        : undefined;
+      const known = savedPosition.current;
+      if (
+        read === resumeRead.current &&
+        entry !== undefined &&
+        known?.setId === setId &&
+        entry.playbackPositionSeconds !== known.seconds
+      ) {
+        savedPosition.current = {
+          seconds: entry.playbackPositionSeconds,
+          setId,
+        };
+        audio.currentTime = entry.playbackPositionSeconds;
+        setElapsed(entry.playbackPositionSeconds);
+      }
+      if (holding.current) {
+        holding.current = false;
+        await audio.play().catch(() => {
+          setProblem("The audio could not play.");
+        });
+      }
+    })();
+  };
+
   const reportNowAndThen = (event: SyntheticEvent<HTMLAudioElement>) => {
+    if (holding.current) {
+      return;
+    }
     setElapsed(Math.floor(event.currentTarget.currentTime));
     const now = Date.now();
     if (now - lastReport.current >= REPORT_EVERY_MS) {
@@ -328,6 +423,11 @@ export const PlayerProvider = ({
   };
 
   const pause = (event: SyntheticEvent<HTMLAudioElement>) => {
+    // The resume's own wait is not the person's pause.
+    if (holding.current) {
+      return;
+    }
+    resumable.current = true;
     act("pause");
     report(event);
   };
@@ -341,7 +441,7 @@ export const PlayerProvider = ({
     // place only of the active Set, so a Set that is no longer active needs this save.
     const { id } = playing.set;
     const intent = playIntent.current;
-    void write(async () => await reportPosition(credentials, id, 0));
+    save(id, 0);
     const completed = await write(
       async () => await completeSet(credentials, id)
     );
@@ -403,10 +503,11 @@ export const PlayerProvider = ({
                 event.currentTarget.currentTime = playing.startAt;
               }}
               onPause={pause}
+              onPlay={resume}
               onPlaying={() => {
                 act("play");
               }}
-              onSeeked={report}
+              onSeeked={seeked}
               onTimeUpdate={reportNowAndThen}
               src={playing.src}
             />

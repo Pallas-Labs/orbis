@@ -13,6 +13,7 @@ const journeys = [
   "shared-audio",
   "admin-journey",
   "live-queue",
+  "resume-position",
   "journey",
   "tracklist",
   "sign-in",
