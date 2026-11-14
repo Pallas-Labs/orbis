@@ -21,7 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { flags } from "@/flags.gen";
 import { detach } from "@/lib/detach";
 import { listSets, requestDownload, saveSet } from "@/lib/library";
 import type { SavedSet } from "@/lib/library";
@@ -273,7 +272,7 @@ const ListenHistory = ({
               </li>
             ))}
           </ol>
-          {flags.listenHistoryPaging() && cursor !== null ? (
+          {cursor === null ? null : (
             <div>
               <Button
                 disabled={pending}
@@ -286,7 +285,7 @@ const ListenHistory = ({
                 Show older
               </Button>
             </div>
-          ) : null}
+          )}
           <Problem message={problem} />
         </div>
       )}
