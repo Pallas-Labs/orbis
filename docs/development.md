@@ -80,7 +80,7 @@ The fence (PAL-1543) puts rat-stack's first five principles into the checks, so 
 
 ### Local CI
 
-Orbis runs no GitHub Actions. The `Code quality` and `Release` workflows stay in `.github/workflows` but are disabled. CI is one local command on a clean checkout of the commit to check:
+Orbis runs no GitHub Actions of its own. The `Code quality` and `Release` workflows stay in `.github/workflows` but are disabled. GitHub's own Dependabot and CodeQL default setup run on GitHub-hosted runners; CodeQL scans each pull request and each push to `main`. CI is one local command on a clean checkout of the commit to check:
 
 ```sh
 bun run ci                  # Linux checks here, macOS checks on cortex over ssh
