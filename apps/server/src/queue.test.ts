@@ -1,8 +1,9 @@
 // The Listening Queue through `createApp` over HTTP with a real database.
 //
 // Ways it could fail:
-// - Playing a Set drops the queue behind it, or moves a Set that is already
-//   queued.
+// - Playing a Set drops what lies ahead of it, moves a Set that is already
+//   queued, or keeps the Set it replaces or any Set before it, so the queue
+//   grows with every Set started and not finished (PAL-2128).
 // - Play Next puts the Set at the end, or before the active Set, instead of
 //   directly after the active Set.
 // - Add to Queue puts the Set anywhere but the end, or a queued action starts
@@ -127,7 +128,7 @@ test("transcript: play, Play Next, Add to Queue, a refusal, and completion", asy
   );
 });
 
-test("tapping a playable Set makes it active and keeps the queue behind it", async () => {
+test("tapping a playable Set replaces the Set playing now and keeps what lies ahead", async () => {
   await withSeededApp(ready(["a", "b", "c"]), async (app) => {
     await play(app, "b");
     await addToQueue(app, "c");
@@ -136,20 +137,58 @@ test("tapping a playable Set makes it active and keeps the queue behind it", asy
 
     expect(response.statusCode).toBe(200);
     expect(queue.activeSetId).toBe("a");
-    expect(queue.entries.map((entry) => entry.id)).toEqual(["a", "b", "c"]);
+    expect(queue.entries.map((entry) => entry.id)).toEqual(["a", "c"]);
   });
 });
 
-test("a Set already in the queue takes the active place without moving", async () => {
-  await withSeededApp(ready(["a", "b", "c"]), async (app) => {
+test("a Set already in the queue takes the active place without moving, and the Sets before it leave", async () => {
+  await withSeededApp(ready(["a", "b", "c", "d"]), async (app) => {
     await play(app, "a");
     await addToQueue(app, "b");
     await addToQueue(app, "c");
+    await addToQueue(app, "d");
 
     const { queue } = await play(app, "c");
 
     expect(queue.activeSetId).toBe("c");
-    expect(queue.entries.map((entry) => entry.id)).toEqual(["a", "b", "c"]);
+    expect(queue.entries.map((entry) => entry.id)).toEqual(["c", "d"]);
+  });
+});
+
+test("transcript: the queue holds only what lies ahead as Sets start and stop unfinished", async () => {
+  await withSeededApp(ready(["a", "b", "c", "d", "e"]), async (app) => {
+    const t = transcript();
+    const queued = async (
+      step: string,
+      settled: Promise<{ queue: Queue; response: Response }>
+    ) => {
+      const { queue, response } = await settled;
+      t.step(step, `${response.statusCode} ${queueLine(queue)}`);
+    };
+
+    await queued("play next a, with nothing playing", playNext(app, "a"));
+    await queued("play b", play(app, "b"));
+    await queued("play c", play(app, "c"));
+    await queued("play d", play(app, "d"));
+    await queued("add a to the queue", addToQueue(app, "a"));
+    await queued("add b to the queue", addToQueue(app, "b"));
+    await queued("play e", play(app, "e"));
+    await queued("play b, which is queued", play(app, "b"));
+    await queued("play d", play(app, "d"));
+
+    expect(t.text()).toMatchInlineSnapshot(`
+      "
+      play next a, with nothing playing  -> 201 a
+      play b  -> 200 [b*] a
+      play c  -> 200 [c*] a
+      play d  -> 200 [d*] a
+      add a to the queue  -> 201 [d*] a
+      add b to the queue  -> 201 [d*] a b
+      play e  -> 200 [e*] a b
+      play b, which is queued  -> 200 [b*]
+      play d  -> 200 [d*]
+      "
+    `);
   });
 });
 

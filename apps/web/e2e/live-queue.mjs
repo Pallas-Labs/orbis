@@ -292,7 +292,13 @@ try {
     await page.getByText("Reconnecting…").waitFor();
     server = startApi(apiOptions);
     await waitFor(`${apiUrl}/health`, server);
+    // Playing the First set drops the Second set it replaces (PAL-2128), so
+    // the Second set is queued again for the completion below to start.
     await api("PUT", "/queue/active", { setId: sets["First set"] });
+    await api("POST", "/queue/entries", {
+      placement: "end",
+      setId: sets["Second set"],
+    });
     await queue.getByText("Now: First set").waitFor({ timeout: 15_000 });
     await page.getByText("Reconnecting…").waitFor({ state: "hidden" });
     await page.screenshot({

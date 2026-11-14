@@ -34,6 +34,7 @@ const failures = [
   "save copies another Person's title or tags",
   "removing one reference deletes shared audio",
   "last Playlist or Queue reference leaks retained audio",
+  "a Set played over stays queued and keeps its retained audio",
   "Listen or playback position prevents last-reference cleanup",
 ];
 
@@ -269,6 +270,22 @@ test("visible Sets share audio and storage releases only the last reference over
     ).toBe(200);
     expect(await retained(queued.id)).toBe(false);
     evidence.push("replacing the final Queue reference releases bytes");
+    const unfinished = await save("b", "shared00006");
+    const next = await save("b", "shared00007");
+    await download("a", unfinished.id);
+    await download("a", next.id);
+    expect(
+      await status("a", "/queue/active", "PUT", { setId: unfinished.id })
+    ).toBe(200);
+    expect(await status("b", `/sets/${unfinished.id}`, "DELETE")).toBe(200);
+    expect(await retained(unfinished.id)).toBe(true);
+    expect(await status("a", "/queue/active", "PUT", { setId: next.id })).toBe(
+      200
+    );
+    expect(await retained(unfinished.id)).toBe(false);
+    evidence.push(
+      "playing another Set drops the unfinished one from the Queue and releases its bytes"
+    );
     const output = path.resolve(
       import.meta.dir,
       "../../../.cache/shared-audio"
