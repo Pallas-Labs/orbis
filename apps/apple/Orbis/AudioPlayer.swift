@@ -556,6 +556,9 @@ final class AudioPlayer {
     capturePosition()
     if !reloadedStall {
       reloadedStall = true
+      // The stall's reload is its one automatic retry, so a failure of the reloaded item goes
+      // to the stall's Failed state instead of a second reload.
+      retriedFailure = true
       record(.stallUnrecovered)
       logger.error("Playback still stalled at \(clock(self.elapsed), privacy: .public)")
       logBuffer(engine, reason: .stalled)
@@ -939,7 +942,7 @@ final class AudioPlayer {
       itemNeedsReload = true
       timelineSample = nil
       engine.pause()
-      state = .failed("This audio would not play.")
+      state = .failed(reloadedStall ? "The audio stopped loading." : "This audio would not play.")
       publishNowPlaying(isPlaying: false)
     case .unknown:
       break
