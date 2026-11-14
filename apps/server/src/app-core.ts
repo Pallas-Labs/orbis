@@ -2672,9 +2672,12 @@ export const createPortableApp = (options: {
                 const batch = yield* Effect.try(() =>
                   decodePlaybackDiagnosticsBatch(JSON.parse(body))
                 );
-                const response = yield* Effect.tryPromise(
+                const { failure, response } = yield* Effect.tryPromise(
                   async (signal) => await relayPlayback(batch, signal)
                 );
+                if (failure !== undefined) {
+                  yield* annotateWideEvent({ playback: failure });
+                }
                 return HttpServerResponse.fromWeb(response);
               })
             )

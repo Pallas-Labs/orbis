@@ -6,6 +6,7 @@ import { connect } from "node:net";
 import path from "node:path";
 
 import { decodePlaybackDiagnosticsBatch } from "@orbis/contracts/http-api";
+import type { WideEvent } from "evlog";
 
 import { createTestApp } from "./test-app.js";
 
@@ -31,10 +32,29 @@ const post = (body = JSON.stringify(batch()), headers: HeadersInit = {}) =>
     method: "POST",
   });
 
+/** The `/diagnostics/playback` request events, which must never carry the export's secrets. */
+const playbackEvents = (events: WideEvent[]) => {
+  const found = events.filter(
+    (event) => event.path === "/diagnostics/playback"
+  );
+  const text = JSON.stringify(found);
+  for (const secret of [
+    "test-id",
+    "test-secret",
+    "CF-Access",
+    "127.0.0.1",
+    fixture.runId,
+  ]) {
+    expect(text).not.toContain(secret);
+  }
+  return found;
+};
+
 const setup = (
   respond: (request: Request) => Response | Promise<Response> = () =>
     Response.json({})
 ) => {
+  const events: WideEvent[] = [];
   const requests: { headers: Headers; body: unknown }[] = [];
   const collector = Bun.serve({
     fetch: async (request) => {
@@ -50,7 +70,12 @@ const setup = (
     port: 0,
   });
   const app = createTestApp({
-    logging: { silent: true },
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
     playbackDiagnostics: {
       accessClientId: "test-id",
       accessClientSecret: "test-secret",
@@ -65,6 +90,7 @@ const setup = (
       await collector.stop(true);
     },
     collector,
+    events,
     requests,
     send: (body = JSON.stringify(batch())) => app.handler(post(body), "device"),
   };
@@ -663,26 +689,52 @@ test("two active exports have no queue and deadline releases both slots", async 
     const next = await s.send();
     expect(next.status).toBe(503);
     expect(s.requests).toHaveLength(3);
+    expect(playbackEvents(s.events).map((event) => event.playback))
+      .toMatchInlineSnapshot(`
+      [
+        {
+          "reason": "busy",
+        },
+        {
+          "reason": "deadline-before-headers",
+        },
+        {
+          "reason": "deadline-before-headers",
+        },
+        {
+          "reason": "deadline-before-headers",
+        },
+      ]
+    `);
   } finally {
     await s.close();
   }
 });
 
 test.each([
-  () => new Response("x".repeat(65_537)),
-  () =>
-    Response.json({
-      partialSuccess: { rejectedLogRecords: "999999999999999999999" },
-    }),
-  () => Response.json({ partialSuccess: { rejectedLogRecords: "-1" } }),
-])(
-  "invalid collector receipt is bounded and never echoed",
-  async (response) => {
+  ["body-limit", () => new Response("x".repeat(65_537))],
+  [
+    "bad-receipt",
+    () =>
+      Response.json({
+        partialSuccess: { rejectedLogRecords: "999999999999999999999" },
+      }),
+  ],
+  [
+    "bad-receipt",
+    () => Response.json({ partialSuccess: { rejectedLogRecords: "-1" } }),
+  ],
+] as const)(
+  "invalid collector receipt is bounded, never echoed, and logged as %s",
+  async (reason, response) => {
     const s = setup(response);
     try {
       const relayResponse = await s.send();
       expect(relayResponse.status).toBe(500);
       expect(s.requests).toHaveLength(1);
+      expect(playbackEvents(s.events).map((event) => event.playback)).toEqual([
+        { reason },
+      ]);
     } finally {
       await s.close();
     }
@@ -690,11 +742,138 @@ test.each([
 );
 
 test("missing exporter configuration is retryable", async () => {
-  const app = createTestApp({ logging: { silent: true } });
+  const events: WideEvent[] = [];
+  const app = createTestApp({
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
+  });
   try {
     const response = await app.handler(post(), "device");
     expect(response.status).toBe(503);
+    expect(playbackEvents(events).map((event) => event.playback)).toEqual([
+      { reason: "not-configured" },
+    ]);
   } finally {
     await app.dispose();
+  }
+});
+
+/** The client's view of one upload, and the stage its request event names. */
+const outcome = async (s: ReturnType<typeof setup>) => {
+  const response = await s.send();
+  const [event] = playbackEvents(s.events);
+  return {
+    body: await response.json(),
+    playback: event?.playback,
+    retryAfter: response.headers.get("retry-after"),
+    status: response.status,
+  };
+};
+
+test("a collector that never sends headers fails as deadline-before-headers", async () => {
+  const s = setup(async () => {
+    await Bun.sleep(6500);
+    return Response.json({});
+  });
+  try {
+    expect(await outcome(s)).toEqual({
+      body: { message: "Playback collector unavailable." },
+      playback: { reason: "deadline-before-headers" },
+      retryAfter: "1",
+      status: 503,
+    });
+  } finally {
+    await s.close();
+  }
+});
+
+test("a collector that stalls its receipt fails as deadline-reading-receipt", async () => {
+  const s = setup(
+    () =>
+      new Response(
+        new ReadableStream({
+          start: (controller) => {
+            controller.enqueue(new TextEncoder().encode("{"));
+          },
+        }),
+        { headers: { "content-type": "application/json" } }
+      )
+  );
+  try {
+    expect(await outcome(s)).toEqual({
+      body: { message: "Playback collector unavailable." },
+      playback: { reason: "deadline-reading-receipt" },
+      retryAfter: "1",
+      status: 503,
+    });
+  } finally {
+    await s.close();
+  }
+});
+
+test("a collector that refuses the connection fails as transport", async () => {
+  const closed = Bun.serve({ fetch: () => new Response(), port: 0 });
+  const url = closed.url.toString();
+  await closed.stop(true);
+  const events: WideEvent[] = [];
+  const app = createTestApp({
+    logging: {
+      onEvent: (event) => {
+        events.push(event);
+      },
+      silent: true,
+    },
+    playbackDiagnostics: {
+      accessClientId: "test-id",
+      accessClientSecret: "test-secret",
+      environment: "test",
+      url,
+    },
+  });
+  try {
+    const response = await app.handler(post(), "device");
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("1");
+    const text = JSON.stringify(playbackEvents(events));
+    expect(text).not.toContain(url);
+    expect(playbackEvents(events).map((event) => event.playback)).toEqual([
+      { reason: "transport" },
+    ]);
+  } finally {
+    await app.dispose();
+  }
+});
+
+test("a collector 503 keeps its retry-after and logs collector-status 503", async () => {
+  const s = setup(
+    () => new Response("busy", { headers: { "retry-after": "7" }, status: 503 })
+  );
+  try {
+    expect(await outcome(s)).toEqual({
+      body: { message: "Playback collector unavailable." },
+      playback: { collectorStatus: 503, reason: "collector-status" },
+      retryAfter: "7",
+      status: 503,
+    });
+  } finally {
+    await s.close();
+  }
+});
+
+test("an accepted batch logs no failure reason", async () => {
+  const s = setup();
+  try {
+    expect(await outcome(s)).toEqual({
+      body: { accepted: fixture.entries.length, rejected: 0 },
+      playback: undefined,
+      retryAfter: null,
+      status: 200,
+    });
+  } finally {
+    await s.close();
   }
 });

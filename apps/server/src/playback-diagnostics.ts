@@ -385,6 +385,38 @@ const refused = () =>
     { status: 500 }
   );
 
+/**
+ * Why the relay answered 503 or 500. The request log carries it so a failed upload
+ * names its stage; clients see only the status, `retry-after` and message.
+ */
+export type PlaybackRelayReason =
+  | "deadline-before-headers"
+  | "deadline-reading-receipt"
+  | "transport"
+  | "collector-status"
+  | "busy"
+  | "not-configured"
+  | "bad-receipt"
+  | "body-limit";
+
+export interface PlaybackRelayResult {
+  readonly response: Response;
+  readonly failure?: {
+    readonly reason: PlaybackRelayReason;
+    readonly collectorStatus?: number;
+  };
+}
+
+const failed = (
+  response: Response,
+  reason: PlaybackRelayReason,
+  collectorStatus?: number
+): PlaybackRelayResult => ({
+  failure:
+    collectorStatus === undefined ? { reason } : { collectorStatus, reason },
+  response,
+});
+
 export const makePlaybackDiagnosticsRelay = (
   options?: PlaybackDiagnosticsOptions
 ) => {
@@ -392,19 +424,22 @@ export const makePlaybackDiagnosticsRelay = (
   return async (
     batch: PlaybackDiagnosticsPayload,
     signal: AbortSignal
-  ): Promise<Response> => {
+  ): Promise<PlaybackRelayResult> => {
     if (
       options === undefined ||
       options.url === "" ||
       options.accessClientId === "" ||
-      options.accessClientSecret === "" ||
-      active >= 2
+      options.accessClientSecret === ""
     ) {
-      return unavailable();
+      return failed(unavailable(), "not-configured");
+    }
+    if (active >= 2) {
+      return failed(unavailable(), "busy");
     }
     active += 1;
     const timeout = AbortSignal.timeout(5000);
     const abort = AbortSignal.any([timeout, signal]);
+    let headersArrived = false;
     try {
       const response = await fetch(options.url, {
         body: JSON.stringify(logsFor(batch, options.environment)),
@@ -418,11 +453,16 @@ export const makePlaybackDiagnosticsRelay = (
         redirect: "manual",
         signal: abort,
       });
+      headersArrived = true;
       if (response.status !== 200) {
         await response.body?.cancel();
-        return [429, 502, 503, 504].includes(response.status)
-          ? unavailable(response.headers.get("retry-after"))
-          : refused();
+        return failed(
+          [429, 502, 503, 504].includes(response.status)
+            ? unavailable(response.headers.get("retry-after"))
+            : refused(),
+          "collector-status",
+          response.status
+        );
       }
       const receiptText = await readBoundedBody(response.body, 65_536, abort);
       let rejected: number;
@@ -433,17 +473,26 @@ export const makePlaybackDiagnosticsRelay = (
         );
         rejected = receipt.partialSuccess?.rejectedLogRecords ?? 0;
       } catch {
-        return refused();
+        return failed(refused(), "bad-receipt");
       }
       const total = batch.entries.length + playbackLosses(batch).length;
       if (!Number.isSafeInteger(rejected) || rejected < 0 || rejected > total) {
-        return refused();
+        return failed(refused(), "bad-receipt");
       }
-      return Response.json({ accepted: total - rejected, rejected });
+      return {
+        response: Response.json({ accepted: total - rejected, rejected }),
+      };
     } catch (error) {
-      return error instanceof PlaybackBodyLimitError
-        ? refused()
-        : unavailable();
+      if (error instanceof PlaybackBodyLimitError) {
+        return failed(refused(), "body-limit");
+      }
+      if (!timeout.aborted) {
+        return failed(unavailable(), "transport");
+      }
+      return failed(
+        unavailable(),
+        headersArrived ? "deadline-reading-receipt" : "deadline-before-headers"
+      );
     } finally {
       active -= 1;
     }
