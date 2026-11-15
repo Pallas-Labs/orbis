@@ -64,6 +64,12 @@ interface AudioRequestFields {
   readonly size?: number;
   /** The response body length. A client that disconnects early receives fewer. */
   readonly bytes?: number;
+  /** Body bytes the node handed to the connection before the body ended or the client left. */
+  readonly sent?: number;
+  /** Milliseconds from the request to the last byte handed over, or to the client leaving. */
+  readonly lastByteMs?: number;
+  /** True when the client left before the whole body was handed over. */
+  readonly aborted?: boolean;
 }
 
 const MAX_RANGE_CHARACTERS = 64;
@@ -146,9 +152,81 @@ const serveAudio = async (
   return new Response(request.method === "HEAD" ? null : file, { headers });
 };
 
+interface BodyEnd {
+  readonly sent: number;
+  readonly aborted: boolean;
+  readonly error?: unknown;
+}
+
+const cancelQuietly = async (
+  reader: ReadableStreamDefaultReader<Uint8Array>
+) => {
+  try {
+    await reader.cancel();
+  } catch {
+    // The file read already ended; there is nothing left to stop.
+  }
+};
+
+/**
+ * Passes the body through one chunk at a time, counting what the server takes, and calls
+ * `ended` once: when the last chunk is taken, when the client leaves, or when the file read
+ * fails. The server pulls only as the connection drains, so the count trails the socket by
+ * at most one chunk and the file is never read whole into memory.
+ */
+const meteredBody = (
+  body: ReadableStream<Uint8Array>,
+  signal: AbortSignal,
+  ended: (end: BodyEnd) => void
+): ReadableStream<Uint8Array> => {
+  const reader = body.getReader();
+  const progress = { done: false, sent: 0 };
+  const end = (outcome: Omit<BodyEnd, "sent">) => {
+    if (progress.done) {
+      return;
+    }
+    progress.done = true;
+    ended({ ...outcome, sent: progress.sent });
+  };
+  signal.addEventListener(
+    "abort",
+    () => {
+      end({ aborted: true });
+      void cancelQuietly(reader);
+    },
+    { once: true }
+  );
+  return new ReadableStream<Uint8Array>(
+    {
+      cancel: async (reason) => {
+        end({ aborted: true });
+        await reader.cancel(reason);
+      },
+      pull: async (controller) => {
+        try {
+          const chunk = await reader.read();
+          if (chunk.done) {
+            controller.close();
+            end({ aborted: false });
+            return;
+          }
+          progress.sent += chunk.value.byteLength;
+          controller.enqueue(chunk.value);
+        } catch (error) {
+          end({ aborted: signal.aborted, error });
+          controller.error(error);
+        }
+      },
+    },
+    { highWaterMark: 0 }
+  );
+};
+
 /**
  * Serves granted audio from the node's disk and emits one wide event per request,
- * marked `ingress: "funnel-audio"`. The path is logged without its query string, so
+ * marked `ingress: "funnel-audio"`. A response with a body is logged when the body ends
+ * or the client leaves, with what was handed over and when, so the line tells a slow
+ * path to the client from a slow node. The path is logged without its query string, so
  * the grant never reaches a line.
  */
 export const makeNodeAudioHandler =
@@ -158,6 +236,7 @@ export const makeNodeAudioHandler =
     readonly streamSecret: Buffer;
   }): ((request: Request) => Promise<Response>) =>
   async (request) => {
+    const started = performance.now();
     const logger = startRequestLog({
       method: request.method,
       path: safeRequestPath(request.url),
@@ -168,12 +247,41 @@ export const makeNodeAudioHandler =
       const response = await serveAudio(request, options, (fields) => {
         logger.set({ audio: fields });
       });
-      finishRequestLog(
-        logger,
-        { outcome: outcomeForStatus(response.status), status: response.status },
-        options.logging
-      );
-      return response;
+      const { status } = response;
+      if (response.body === null) {
+        finishRequestLog(
+          logger,
+          { outcome: outcomeForStatus(status), status },
+          options.logging
+        );
+        return response;
+      }
+      const body = meteredBody(response.body, request.signal, (end) => {
+        const audio: AudioRequestFields = {
+          aborted: end.aborted,
+          lastByteMs: Math.round(performance.now() - started),
+          sent: end.sent,
+        };
+        logger.set({ audio });
+        if (end.error !== undefined) {
+          logger.set({ cause: describeCause(end.error) });
+          finishRequestLog(
+            logger,
+            { outcome: "failure", status },
+            options.logging
+          );
+          return;
+        }
+        finishRequestLog(
+          logger,
+          {
+            outcome: end.aborted ? "cancelled" : outcomeForStatus(status),
+            status,
+          },
+          options.logging
+        );
+      });
+      return new Response(body, { headers: response.headers, status });
     } catch (error) {
       logger.set({ cause: describeCause(error) });
       finishRequestLog(

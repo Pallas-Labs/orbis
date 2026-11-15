@@ -8,6 +8,7 @@ import type { WideEvent } from "evlog";
 import { createApp } from "./app.js";
 import { hashToken } from "./identity.js";
 import { makeNodeHttpHandler } from "./node-http.js";
+import { listen } from "./node-listener.js";
 import { issueStreamGrant } from "./stream-grant.js";
 
 test("forwarded requests log the authenticated key label at the API without copying trust to the node", async () => {
@@ -59,11 +60,7 @@ test("forwarded requests log the authenticated key label at the API without copy
     },
     streamSecret: Buffer.alloc(32),
   });
-  const node = Bun.serve({
-    fetch: forward,
-    hostname: "127.0.0.1",
-    port: 0,
-  });
+  const node = await listen(forward, { hostname: "127.0.0.1", port: 0 });
   try {
     const response = await fetch(new URL("/me", node.url), {
       headers: {
@@ -89,7 +86,7 @@ test("forwarded requests log the authenticated key label at the API without copy
     expect(JSON.stringify(events)).not.toContain(token);
     expect(JSON.stringify(events)).not.toContain("Spoofed label");
   } finally {
-    await node.stop(true);
+    await node.stop();
     await upstream.stop(true);
     await app.dispose();
     await rm(directory, { force: true, recursive: true });
@@ -107,8 +104,11 @@ test("an audio node forwards API reads and keeps grant-only Range audio local", 
   );
   const audioRequests: Headers[] = [];
   const upstream = Bun.serve({
-    fetch: (request) => {
+    fetch: async (request) => {
       const { pathname } = new URL(request.url);
+      if (request.method === "POST") {
+        return Response.json({ body: await request.json(), path: pathname });
+      }
       if (pathname === "/api/sets/fixture/audio") {
         audioRequests.push(new Headers(request.headers));
         return Response.json({ message: "Invalid API key." }, { status: 401 });
@@ -121,21 +121,29 @@ test("an audio node forwards API reads and keeps grant-only Range audio local", 
     hostname: "127.0.0.1",
     port: 0,
   });
-  const node = Bun.serve({
-    fetch: makeNodeHttpHandler({
+  const node = await listen(
+    makeNodeHttpHandler({
       apiUrl: new URL("/api", upstream.url),
       audioDir: directory,
       logging: { silent: true },
       streamSecret: secret,
     }),
-    hostname: "127.0.0.1",
-    port: 0,
-  });
+    { hostname: "127.0.0.1", port: 0 }
+  );
   try {
     const me = await fetch(new URL("/api/me", node.url));
     expect(await me.json()).toEqual({
       ingress: "funnel-forward",
       path: "/api/me",
+    });
+    const saved = await fetch(new URL("/api/sets", node.url), {
+      body: JSON.stringify({ url: "https://example.com/set" }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    });
+    expect(await saved.json()).toEqual({
+      body: { url: "https://example.com/set" },
+      path: "/api/sets",
     });
     const root = await fetch(new URL("/api?probe=1", node.url));
     expect(await root.json()).toEqual({
@@ -157,7 +165,7 @@ test("an audio node forwards API reads and keeps grant-only Range audio local", 
     expect(await response.text()).toBe("2345");
     expect(audioRequests).toHaveLength(1);
   } finally {
-    await node.stop(true);
+    await node.stop();
     await upstream.stop(true);
     await rm(directory, { force: true, recursive: true });
   }

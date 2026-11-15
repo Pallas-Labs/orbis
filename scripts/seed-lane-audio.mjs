@@ -16,8 +16,9 @@ import {
   decodePlaybackDiagnosticsBatch,
   playbackLosses,
 } from "../packages/contracts/dist/playback-diagnostics.js";
+import { makeAudioFaults } from "./lane-audio-faults.mjs";
 
-const [dataDirectory, fixture, port] = process.argv.slice(2);
+const [dataDirectory, fixture, port, serviceAddress] = process.argv.slice(2);
 if (!dataDirectory || !fixture || !port) {
   throw new Error("Expected a lane data directory, audio fixture, and port");
 }
@@ -27,6 +28,57 @@ const db = new Database(path.join(dataDirectory, "library.sqlite"));
 // that meets one of its writes fails with SQLITE_BUSY and takes this server down with it.
 db.run("PRAGMA busy_timeout = 5000");
 const audioDirectory = path.join(dataDirectory, "audio");
+// A five-minute AAC Set for the paused-body fault. AVPlayer starts a short file on a slow path
+// only once the whole rest of it has arrived, so a stall needs a long one. `afconvert` ships
+// with macOS, where the lane runs; ffmpeg is not on every lane host.
+const LONG_SECONDS = 300;
+const LONG_SAMPLE_RATE = 44_100;
+let m4a;
+const longM4a = () => {
+  if (m4a) {
+    return m4a;
+  }
+  const samples = LONG_SECONDS * LONG_SAMPLE_RATE;
+  const wav = Buffer.alloc(44 + samples * 2);
+  wav.write("RIFF", 0);
+  wav.writeUInt32LE(36 + samples * 2, 4);
+  wav.write("WAVEfmt ", 8);
+  wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20);
+  wav.writeUInt16LE(1, 22);
+  wav.writeUInt32LE(LONG_SAMPLE_RATE, 24);
+  wav.writeUInt32LE(LONG_SAMPLE_RATE * 2, 28);
+  wav.writeUInt16LE(2, 32);
+  wav.writeUInt16LE(16, 34);
+  wav.write("data", 36);
+  wav.writeUInt32LE(samples * 2, 40);
+  for (let index = 0; index < samples; index += 1) {
+    const value = Math.sin((2 * Math.PI * 440 * index) / LONG_SAMPLE_RATE);
+    wav.writeInt16LE(Math.round(value * 8000), 44 + index * 2);
+  }
+  const source = path.join(dataDirectory, "streaming-fixture.wav");
+  const destination = path.join(dataDirectory, "streaming-fixture.m4a");
+  writeFileSync(source, wav);
+  execFileSync("/usr/bin/afconvert", [
+    "-f",
+    "m4af",
+    "-d",
+    "aac",
+    "-b",
+    "64000",
+    source,
+    destination,
+  ]);
+  rmSync(source, { force: true });
+  m4a = destination;
+  return m4a;
+};
+
+const audioFaults = makeAudioFaults({
+  audioDirectory,
+  longAudio: longM4a,
+  serviceAddress,
+});
 const slowSets = new Map();
 const downloads = new Map();
 const audio = readFileSync(fixture);
@@ -444,25 +496,35 @@ const seedAnalysis = (setId) => {
   ).run(setId, JSON.stringify(laneAnalysis()), new Date().toISOString());
 };
 
+const routeCobalt = async (route, request, response) => {
+  if (request.method !== "POST" || route !== "/cobalt") {
+    return false;
+  }
+  const { url } = await new Response(Readable.toWeb(request)).json();
+  const setId = slowSets.get(url);
+  if (setId) {
+    respond(response, 200, {
+      status: "tunnel",
+      url: `http://127.0.0.1:${port}/slow-audio/${setId}`,
+    });
+  } else {
+    respond(response, 404);
+  }
+  return true;
+};
+
 const handle = async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
   if (await routeDiagnostics(route, request, response)) {
     return;
   }
+  if (await audioFaults.route(route, request, response)) {
+    return;
+  }
   if (handleStream(route, request, response)) {
     return;
   }
-  if (request.method === "POST" && route === "/cobalt") {
-    const { url } = await new Response(Readable.toWeb(request)).json();
-    const setId = slowSets.get(url);
-    if (setId) {
-      respond(response, 200, {
-        status: "tunnel",
-        url: `http://127.0.0.1:${port}/slow-audio/${setId}`,
-      });
-    } else {
-      respond(response, 404);
-    }
+  if (await routeCobalt(route, request, response)) {
     return;
   }
   const match =

@@ -121,6 +121,24 @@ final class AudioPlayer {
   private var sessionReady = false
   private var itemNeedsReload = false
 
+  /// What the current item was loaded from, so the player can load it again on its own.
+  private struct Source {
+    let set: SavedSet
+    let baseURL: URL
+    let token: String
+  }
+  @ObservationIgnored private var source: Source?
+  /// Whether this Set already had its one automatic retry after a network failure before it
+  /// first played, and its one automatic reload after a stall. A person's Play clears both.
+  @ObservationIgnored private var retriedFailure = false
+  @ObservationIgnored private var reloadedStall = false
+  /// Ends a stall, or a stall's reload, that has not played within `stallWindow`.
+  @ObservationIgnored private var stallWatchdog: Task<Void, Never>?
+
+  /// How long a stall may last, and how long its reload may take to play, before the player
+  /// acts on its own.
+  static let stallWindow: Duration = .seconds(20)
+
   private struct TimelineSample {
     let mediaTime: TimeInterval
     let uptime: TimeInterval
@@ -463,7 +481,16 @@ final class AudioPlayer {
     set: SavedSet, baseURL: URL, token: String, startAt: TimeInterval = 0,
     autoplay: Bool = true
   ) {
+    retriedFailure = false
+    reloadedStall = false
+    load(set: set, baseURL: baseURL, token: token, startAt: startAt, autoplay: autoplay)
+  }
+
+  private func load(
+    set: SavedSet, baseURL: URL, token: String, startAt: TimeInterval, autoplay: Bool
+  ) {
     stop()
+    source = Source(set: set, baseURL: baseURL, token: token)
     currentSetId = set.id
     currentTitle = set.title
     currentArtist = set.creator
@@ -496,6 +523,55 @@ final class AudioPlayer {
     // the screen waiting for both.
     if autoplay { startPlayback() }
     fetchArtwork(for: set, generation: generation)
+  }
+
+  /// Loads the current Set again from `position`, as the player's own act, and keeps its Cues.
+  private func reloadAutomatically(from position: TimeInterval) {
+    guard let source else { return }
+    record(.command(.init(kind: .reload, origin: .automatic, target: .init(position))))
+    logger.notice("Reloading on its own from \(clock(position), privacy: .public)")
+    let keptCues = cues
+    load(
+      set: source.set, baseURL: source.baseURL, token: source.token, startAt: position,
+      autoplay: true)
+    cues = keptCues
+  }
+
+  /// Watches a stall, or the reload after one, for `stallWindow`. A newer item or a stop
+  /// cancels it, and reaching playing ends it.
+  private func armStallWatchdog() {
+    stallWatchdog?.cancel()
+    let generation = playbackGeneration
+    stallWatchdog = Task { [weak self] in
+      try? await Task.sleep(for: Self.stallWindow)
+      guard !Task.isCancelled, let self, self.playbackGeneration == generation else { return }
+      self.stallWindowEnded()
+    }
+  }
+
+  /// A stall that is still loading after the window reloads the item once; one that still
+  /// does not play after its reload fails, so the screen says so instead of loading for good.
+  private func stallWindowEnded() {
+    guard state == .loading, let engine else { return }
+    capturePosition()
+    if !reloadedStall {
+      reloadedStall = true
+      // The stall's reload is its one automatic retry, so a failure of the reloaded item goes
+      // to the stall's Failed state instead of a second reload.
+      retriedFailure = true
+      record(.stallUnrecovered)
+      logger.error("Playback still stalled at \(clock(self.elapsed), privacy: .public)")
+      logBuffer(engine, reason: .stalled)
+      reloadAutomatically(from: elapsed)
+      armStallWatchdog()
+      return
+    }
+    logger.error("Playback did not recover at \(clock(self.elapsed), privacy: .public)")
+    itemNeedsReload = true
+    timelineSample = nil
+    engine.pause()
+    state = .failed("The audio stopped loading.")
+    publishNowPlaying(isPlaying: false)
   }
 
   /// Starts the sound once the audio session is up. Every start goes through here (the first
@@ -783,6 +859,9 @@ final class AudioPlayer {
     playbackGeneration += 1
     artworkFetch?.cancel()
     artworkFetch = nil
+    stallWatchdog?.cancel()
+    stallWatchdog = nil
+    source = nil
     currentArtwork = nil
     cues = []
     if engine != nil {
@@ -853,10 +932,17 @@ final class AudioPlayer {
       logger.error("Item failed: \(detail, privacy: .public)")
       record(.item(.init(phase: .failed, error: itemError)))
       capturePosition()
+      // A network failure before the first sound is often a slow path that the next try
+      // crosses, so the player tries once more on its own before it shows the failure.
+      if wantsSound, !hasStartedSound, !retriedFailure, itemError?.domain == .url {
+        retriedFailure = true
+        reloadAutomatically(from: elapsed)
+        return
+      }
       itemNeedsReload = true
       timelineSample = nil
       engine.pause()
-      state = .failed("This audio would not play.")
+      state = .failed(reloadedStall ? "The audio stopped loading." : "This audio would not play.")
       publishNowPlaying(isPlaying: false)
     case .unknown:
       break
@@ -1006,6 +1092,7 @@ final class AudioPlayer {
       record(.stalled)
       logger.notice("Playback stalled at \(clock(self.elapsed), privacy: .public)")
       logBuffer(engine, reason: .stalled)
+      armStallWatchdog()
     case .streamError(let entry):
       logger.notice("Stream error\(entry.map { "; " + Self.describe($0) } ?? "", privacy: .public)")
       if let entry { record(.error(entry)) }
@@ -1190,6 +1277,8 @@ final class AudioPlayer {
     case .playing:
       if state == .loading, sessionReady, pendingSeek == nil, !isSeeking, !itemNeedsReload {
         state = .playing
+        stallWatchdog?.cancel()
+        stallWatchdog = nil
         if !hasStartedSound {
           hasStartedSound = true
           let delay = soundRequestedAt.map { ProcessInfo.processInfo.systemUptime - $0 } ?? 0

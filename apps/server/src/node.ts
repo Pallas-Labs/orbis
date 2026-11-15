@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { startAudioNode } from "./audio-node.js";
 import { configureLogging, flushLogs, otlpFromEnvironment } from "./logging.js";
 import { makeNodeHttpHandler } from "./node-http.js";
+import { listen } from "./node-listener.js";
 
 const required = (name: string) => {
   const value = process.env[name];
@@ -24,15 +25,17 @@ const logging = {
   otlp: otlpFromEnvironment("node"),
 };
 configureLogging(logging);
-const audio = Bun.serve({
-  fetch: makeNodeHttpHandler({
+const audio = await listen(
+  makeNodeHttpHandler({
     apiUrl: new URL(required("ORBIS_API_FORWARD_URL")),
     audioDir,
     streamSecret,
   }),
-  hostname: process.env.ORBIS_NODE_HOST ?? "127.0.0.1",
-  port: Number(process.env.ORBIS_NODE_PORT ?? "4311"),
-});
+  {
+    hostname: process.env.ORBIS_NODE_HOST ?? "127.0.0.1",
+    port: Number(process.env.ORBIS_NODE_PORT ?? "4311"),
+  }
+);
 const node = await startAudioNode({
   analyzeBin: process.env.ORBIS_ANALYZE_BIN,
   audioDir,
@@ -46,7 +49,7 @@ const node = await startAudioNode({
 });
 const close = async () => {
   await node.close();
-  await audio.stop(true);
+  await audio.stop();
   await flushLogs();
   process.exit(0);
 };

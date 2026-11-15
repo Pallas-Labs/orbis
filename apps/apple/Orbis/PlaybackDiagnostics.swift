@@ -46,11 +46,12 @@ final class PlaybackDiagnostics {
   }
 
   enum Origin: String, Codable, Sendable {
-    case app, systemRemote, internalOperation, unknown
+    /// `automatic` is the player acting on its own after a failure or a stall, not a person.
+    case app, systemRemote, internalOperation, automatic, unknown
   }
 
   enum CommandKind: String, Codable, Sendable {
-    case play, pause, toggle, seek, nextCue, previousCue, skipForward, skipBackward, stop
+    case play, pause, toggle, seek, nextCue, previousCue, skipForward, skipBackward, stop, reload
   }
 
   enum ErrorDomain: String, Codable, Sendable {
@@ -219,6 +220,8 @@ final class PlaybackDiagnostics {
     case sample
     case waiting(WaitingEvent)
     case stalled
+    /// A stall that had not recovered when the stall window ran out.
+    case stallUnrecovered
     case discontinuity(TimelineEvent)
     case timeJumped(TimeJumpEvent)
     case buffer(BufferEvent)

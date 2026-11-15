@@ -3,10 +3,13 @@ import { copyFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { Schema } from "effect";
 import type { WideEvent } from "evlog";
 
 import { makeNodeAudioHandler } from "./node-audio-http.js";
+import { listen } from "./node-listener.js";
 import { grantSecret, issueStreamGrant } from "./stream-grant.js";
+import { transcript, waitUntil } from "./test-http.js";
 
 const LONG_AGO_MS = Date.UTC(2020, 0, 1);
 const FAR_FUTURE_MS = Date.UTC(2100, 0, 1);
@@ -20,6 +23,25 @@ const grantIssuedAt = (secret: Buffer, setId: string, at: number) => {
     setSystemTime();
   }
 };
+
+/** What a body that the client read to its end records. */
+const delivered = (sent: number) => ({
+  aborted: false,
+  lastByteMs: expect.any(Number),
+  sent,
+});
+
+const decodeDelivery = Schema.decodeUnknownSync(
+  Schema.Struct({
+    aborted: Schema.Boolean,
+    bytes: Schema.Int,
+    lastByteMs: Schema.Int,
+    sent: Schema.Int,
+  })
+);
+/** The body-finish fields of a logged request, parsed rather than assumed. */
+const deliveryOf = (event: WideEvent | undefined) =>
+  decodeDelivery(event?.audio);
 
 test("the audio node records one wide event per request, with the grant verdict and never the grant", async () => {
   const audioDir = await mkdtemp(path.join(tmpdir(), "orbis-node-events-"));
@@ -44,6 +66,9 @@ test("the audio node records one wide event per request, with the grant verdict 
     },
     streamSecret,
   });
+  const refusalBytes = JSON.stringify({
+    message: "Invalid stream grant.",
+  }).length;
   const send = async (target: string, init?: RequestInit) => {
     const response = await audio(new Request(`http://node${target}`, init));
     await response.arrayBuffer();
@@ -74,6 +99,7 @@ test("the audio node records one wide event per request, with the grant verdict 
     expect(events.map((event) => event.status)).toEqual(statuses);
     expect(events.map((event) => event.audio)).toEqual([
       {
+        ...delivered(size),
         bytes: size,
         file: "found",
         format: "m4a",
@@ -83,6 +109,7 @@ test("the audio node records one wide event per request, with the grant verdict 
         size,
       },
       {
+        ...delivered(16),
         bytes: 16,
         file: "found",
         format: "m4a",
@@ -101,12 +128,20 @@ test("the audio node records one wide event per request, with the grant verdict 
         set: "fixture",
         size,
       },
-      { file: "missing", grant: "valid", person: "host", set: "absent" },
-      { grant: "missing", set: "fixture" },
-      { grant: "malformed", set: "fixture" },
-      { grant: "bad-signature", set: "another" },
-      { grant: "expired", set: "fixture" },
-      { grant: "future-expiry", set: "fixture" },
+      {
+        ...delivered(
+          JSON.stringify({ message: "This Set has no audio yet." }).length
+        ),
+        file: "missing",
+        grant: "valid",
+        person: "host",
+        set: "absent",
+      },
+      { ...delivered(refusalBytes), grant: "missing", set: "fixture" },
+      { ...delivered(refusalBytes), grant: "malformed", set: "fixture" },
+      { ...delivered(refusalBytes), grant: "bad-signature", set: "another" },
+      { ...delivered(refusalBytes), grant: "expired", set: "fixture" },
+      { ...delivered(refusalBytes), grant: "future-expiry", set: "fixture" },
     ]);
     expect(events.every((event) => event.duration !== undefined)).toBe(true);
     const logged = JSON.stringify(events);
@@ -127,11 +162,13 @@ test("the audio node checks grants before keys and serves full, ranged, and HEAD
   await copyFile(fixture, path.join(audioDir, "fixture.m4a"));
   const streamSecret = grantSecret(path.join(audioDir, "stream-grant.key"));
   const grant = issueStreamGrant(streamSecret, "fixture", "host");
-  const server = Bun.serve({
-    fetch: makeNodeAudioHandler({ audioDir, streamSecret }),
-    hostname: "127.0.0.1",
-    port: 0,
-  });
+  const server = await listen(
+    makeNodeAudioHandler({ audioDir, streamSecret }),
+    {
+      hostname: "127.0.0.1",
+      port: 0,
+    }
+  );
   const url = new URL(`/sets/fixture/audio?grant=${grant}`, server.url);
   try {
     const full = await fetch(url);
@@ -144,6 +181,8 @@ test("the audio node checks grants before keys and serves full, ranged, and HEAD
     expect(range.headers.get("content-range")).toBe(
       `bytes 7-22/${bytes.length}`
     );
+    expect(range.headers.get("content-length")).toBe("16");
+    expect(range.headers.get("transfer-encoding")).toBeNull();
     expect(new Uint8Array(await range.arrayBuffer())).toEqual(
       bytes.slice(7, 23)
     );
@@ -191,7 +230,82 @@ test("the audio node checks grants before keys and serves full, ranged, and HEAD
     expect(nongrant.status).toBe(404);
     await nongrant.text();
   } finally {
-    await server.stop(true);
+    await server.stop();
+    await rm(audioDir, { force: true, recursive: true });
+  }
+});
+
+test("the audio node logs when each body left it, and how much, including a client that leaves mid-body", async () => {
+  const audioDir = await mkdtemp(path.join(tmpdir(), "orbis-node-delivery-"));
+  // Larger than the socket buffers on both ends, so a client that stops reading holds the
+  // node back and the node sees it leave before the body is done.
+  const size = 32 * 1024 * 1024;
+  const skipped = 1024 * 1024;
+  await Bun.write(path.join(audioDir, "long.m4a"), new Uint8Array(size));
+  const streamSecret = grantSecret(path.join(audioDir, "stream-grant.key"));
+  const grant = issueStreamGrant(streamSecret, "long", "host");
+  const events: WideEvent[] = [];
+  const server = await listen(
+    makeNodeAudioHandler({
+      audioDir,
+      logging: {
+        onEvent: (event) => {
+          events.push(event);
+        },
+        silent: true,
+      },
+      streamSecret,
+    }),
+    { hostname: "127.0.0.1", port: 0 }
+  );
+  const url = new URL(`/sets/long/audio?grant=${grant}`, server.url);
+  const flow = transcript();
+  const logged = async (count: number) => {
+    await waitUntil(() => events.length >= count, {
+      message: "The node did not log the request",
+    });
+    const event = events[count - 1];
+    const { aborted, bytes, lastByteMs, sent } = deliveryOf(event);
+    let share = "fewer than the range";
+    if (sent === bytes) {
+      share = "the whole range";
+    } else if (sent > bytes) {
+      share = "more than the range";
+    }
+    return `log ${String(event?.status)} ${String(event?.outcome)}, aborted ${String(aborted)}, sent ${share}, lastByteMs ${lastByteMs >= 0 ? "set" : "missing"}`;
+  };
+  try {
+    const whole = await fetch(url, {
+      headers: { range: `bytes=${String(skipped)}-${String(size - 1)}` },
+    });
+    const body = await whole.arrayBuffer();
+    const received = body.byteLength;
+    flow.step(
+      "GET a 31 MiB range and read it all",
+      `${String(whole.status)}, content-length ${String(whole.headers.get("content-length"))}, read ${String(received)}; ${await logged(1)}`
+    );
+    const partial = await fetch(url, { headers: { range: "bytes=0-" } });
+    const reader = partial.body?.getReader();
+    const first = await reader?.read();
+    await reader?.cancel();
+    flow.step(
+      "GET the whole file, read one chunk, then leave",
+      `${String(partial.status)}, read ${first?.done === false ? "one chunk" : "nothing"}; ${await logged(2)}`
+    );
+    expect(flow.text()).toMatchInlineSnapshot(`
+      "
+      GET a 31 MiB range and read it all  -> 206, content-length 32505856, read 32505856; log 206 success, aborted false, sent the whole range, lastByteMs set
+      GET the whole file, read one chunk, then leave  -> 206, read one chunk; log 206 cancelled, aborted true, sent fewer than the range, lastByteMs set
+      "
+    `);
+    expect(events.map((event) => event.ingress)).toEqual([
+      "funnel-audio",
+      "funnel-audio",
+    ]);
+    expect(deliveryOf(events[0]).sent).toBe(size - skipped);
+    expect(deliveryOf(events[1]).sent).toBeLessThan(size);
+  } finally {
+    await server.stop();
     await rm(audioDir, { force: true, recursive: true });
   }
 });
