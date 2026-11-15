@@ -25,13 +25,10 @@ public func evaluateFlag(_ state: FlagState, _ viewer: FlagViewer) -> Bool {
 public enum Flag: CaseIterable, Sendable {
     /// The iPhone Set page with full-bleed artwork, controls in thumb reach, and More from the creator. (PAL-2060, release).
     case setPageV2
-    /// A Show older control on a friend's profile that reads the next page of their Listen History. (PAL-2135, release).
-    case listenHistoryPaging
 
     public var key: String {
         switch self {
         case .setPageV2: "set-page-v2"
-        case .listenHistoryPaging: "listen-history-paging"
         }
     }
 
@@ -39,7 +36,6 @@ public enum Flag: CaseIterable, Sendable {
     public var declared: FlagState {
         switch self {
         case .setPageV2: .on
-        case .listenHistoryPaging: .on
         }
     }
 }
