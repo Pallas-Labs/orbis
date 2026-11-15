@@ -103,7 +103,11 @@ export const reportPosition = async (
   await callOrbis(credentials, (client) =>
     client.library.setPosition({
       params: { id: setId },
-      payload: { seconds: Math.max(0, Math.min(MAX_POSITION, seconds)) },
+      payload: {
+        seconds: Math.max(0, Math.min(MAX_POSITION, seconds)),
+        // The service draws the day of this Person's Listening Time in it.
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
     })
   );
 

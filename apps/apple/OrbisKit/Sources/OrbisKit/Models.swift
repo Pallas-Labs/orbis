@@ -606,4 +606,7 @@ public struct HeavyRotationQueueRequest: Encodable, Sendable {
 /// A Playback Position in whole seconds. The service bounds it to the Set's own length.
 public struct PlaybackPositionRequest: Encodable, Sendable {
   public let seconds: Int
+  /// The device's time zone, such as `America/Los_Angeles`. The service draws the day of this
+  /// Person's Listening Time in it.
+  public let timeZone: String
 }

@@ -1857,7 +1857,8 @@ export const createPortableApp = (options: {
                   const personal = yield* Library;
                   const saved = yield* personal.setPlaybackPosition(
                     params.id,
-                    input.seconds
+                    input.seconds,
+                    input.timeZone
                   );
                   if (caller.keyId !== null) {
                     yield* presence.recordLegacyReport(

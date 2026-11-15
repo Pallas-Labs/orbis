@@ -20,6 +20,7 @@ import {
   libraryEntries,
   listeningTime,
   listens,
+  personTimeZones,
   playbackPositions,
   playlistSets,
   playlists,
@@ -30,10 +31,11 @@ import { Database } from "./db/service.js";
 import { DownloadMoves, moveDownload } from "./download-state.js";
 import { asLibraryError, LibraryError } from "./errors.js";
 import {
+  dayIn,
   heavyRotation,
+  isTimeZone,
   LISTENING_RANGES,
   listenedBetween,
-  utcDay,
   windowStart,
 } from "./heavy-rotation.js";
 import type { ListeningRange, RankingOptions } from "./heavy-rotation.js";
@@ -171,9 +173,14 @@ export class Library extends Context.Service<
     readonly byIds: (
       ids: readonly string[]
     ) => Effect.Effect<SavedSet[], LibraryError>;
+    /**
+     * Saves where this Person is in a Set and credits the Listening Time since the last save.
+     * A known `timeZone` from the client becomes this Person's, and draws the day it credits.
+     */
     readonly setPlaybackPosition: (
       id: string,
-      seconds: number
+      seconds: number,
+      timeZone?: string
     ) => Effect.Effect<SavedSet, LibraryError>;
     readonly recordEnrichment: (
       id: string,
@@ -743,7 +750,7 @@ export class Library extends Context.Service<
     // second is not a value the app can read back, so both are settled here rather than stored
     // and explained later.
     const setPlaybackPosition = Effect.fn("Library.setPlaybackPosition")(
-      (id: string, seconds: number) =>
+      (id: string, seconds: number, timeZone?: string) =>
         execute(
           Effect.gen(function* setPlaybackPositionEffect() {
             const current = yield* resolve(id);
@@ -792,11 +799,27 @@ export class Library extends Context.Service<
                     ? null
                     : (now - previous.savedAt) / 1000
                 );
+                // A time zone this runtime does not know is dropped rather than refused, so a
+                // client's odd zone name never costs it the saved position.
+                if (timeZone !== undefined && isTimeZone(timeZone)) {
+                  yield* tx
+                    .insert(personTimeZones)
+                    .values({ personId, timeZone })
+                    .onConflictDoUpdate({
+                      set: { timeZone },
+                      target: personTimeZones.personId,
+                    });
+                }
                 if (heard > 0) {
+                  const [stored] = yield* tx
+                    .select({ timeZone: personTimeZones.timeZone })
+                    .from(personTimeZones)
+                    .where(eq(personTimeZones.personId, personId))
+                    .limit(1);
                   yield* tx
                     .insert(listeningTime)
                     .values({
-                      day: utcDay(new Date(now)),
+                      day: dayIn(new Date(now), stored?.timeZone ?? null),
                       personId,
                       seconds: heard,
                       setId: id,
@@ -1207,11 +1230,16 @@ export class Library extends Context.Service<
     ) =>
       execute(
         Effect.gen(function* rankedSetsEffect() {
-          const now = new Date();
+          const [stored] = yield* db
+            .select({ timeZone: personTimeZones.timeZone })
+            .from(personTimeZones)
+            .where(eq(personTimeZones.personId, personId))
+            .limit(1);
+          const today = dayIn(new Date(), stored?.timeZone ?? null);
           const entryTags = sql`coalesce(${libraryEntries.tags}, ${sets.tags})`;
           const conditions = [
             eq(listeningTime.personId, personId),
-            gte(listeningTime.day, windowStart(now, range)),
+            gte(listeningTime.day, windowStart(today, range)),
           ];
           const source = filter?.source ?? null;
           const creatorId = filter?.creatorId ?? null;
@@ -1248,7 +1276,7 @@ export class Library extends Context.Service<
             .where(and(...conditions))
             .orderBy(desc(listeningTime.day))
             .limit(LISTENING_RANGES[range].days * 200);
-          return yield* byIds(heavyRotation(days, now, range, ranking));
+          return yield* byIds(heavyRotation(days, today, range, ranking));
         })
       );
 

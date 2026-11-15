@@ -321,6 +321,11 @@ export const PositionPayload = Schema.Struct({
     Schema.isGreaterThanOrEqualTo(0),
     Schema.isLessThanOrEqualTo(604_800)
   ),
+  /**
+   * The client's IANA time zone, such as `America/Los_Angeles`. The service keeps the last one
+   * a Person's client sent and draws the day of their Listening Time in it; with none, the UTC day.
+   */
+  timeZone: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(64))),
 });
 export const TagsPayload = Schema.Struct({ tags: Tags });
 export const PresenceSchema = Schema.Struct({

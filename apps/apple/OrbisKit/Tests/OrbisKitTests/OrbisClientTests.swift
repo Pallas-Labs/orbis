@@ -190,6 +190,25 @@ final class OrbisClientTests: XCTestCase {
     XCTAssertNil(StubProtocol.lastBody)
   }
 
+  /// The service draws the day of Listening Time in the time zone a position save names
+  /// (PAL-2131). Without it, three minutes across midnight UTC split into two days that do not
+  /// count.
+  func testAPositionSaveNamesTheDeviceTimeZone() async throws {
+    let session = StubProtocol.session(status: 200, body: Fixtures.savedSet(title: "Set", tags: []))
+    let client = OrbisClient(
+      address: try XCTUnwrap(URL(string: "https://orbis.example.test")),
+      token: "token",
+      session: session
+    )
+    _ = try await client.reportPosition("42", seconds: 90)
+    XCTAssertEqual(StubProtocol.lastRequest?.httpMethod, "PUT")
+    XCTAssertEqual(StubProtocol.lastRequest?.url?.path(), "/sets/42/position")
+    let body = try XCTUnwrap(StubProtocol.lastBody)
+    let sent = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    XCTAssertEqual(sent["seconds"] as? Int, 90)
+    XCTAssertEqual(sent["timeZone"] as? String, TimeZone.current.identifier)
+  }
+
   func testLibraryAsksForOnePlaylistByItsIdentifier() async throws {
     let session = StubProtocol.session(status: 200, body: #"{"sets":[]}"#)
     let client = OrbisClient(
