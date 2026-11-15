@@ -1,0 +1,21 @@
+{
+  "observations" : [
+    {
+      "elapsedSeconds" : 0,
+      "failureVisible" : true,
+      "phase" : "failed"
+    },
+    {
+      "elapsedSeconds" : 2,
+      "failureVisible" : false,
+      "phase" : "after-retry"
+    },
+    {
+      "elapsedSeconds" : 4,
+      "failureVisible" : false,
+      "phase" : "advancing"
+    }
+  ],
+  "setId" : "87b73799-5955-4841-b4d2-a1c261d7edbd",
+  "surface" : "now-playing"
+}

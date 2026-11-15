@@ -1,0 +1,21 @@
+{
+  "observations" : [
+    {
+      "elapsedSeconds" : 0,
+      "failureVisible" : true,
+      "phase" : "failed"
+    },
+    {
+      "elapsedSeconds" : 6,
+      "failureVisible" : false,
+      "phase" : "after-retry"
+    },
+    {
+      "elapsedSeconds" : 8,
+      "failureVisible" : false,
+      "phase" : "advancing"
+    }
+  ],
+  "setId" : "25b5beaa-87d6-4a5d-a2d3-277e76c0edf4",
+  "surface" : "detail"
+}

@@ -1,0 +1,410 @@
+{
+  "audioRequests" : {
+    "kind" : "held-body",
+    "requests" : [
+      {
+        "faulted" : true,
+        "method" : "GET",
+        "range" : "bytes=0-1",
+        "sent" : 2,
+        "session" : "7914A1E5-D793-4FA6-8423-5D7B74406BD9"
+      },
+      {
+        "closed" : true,
+        "faulted" : true,
+        "method" : "GET",
+        "range" : "bytes=0-247268",
+        "sent" : 0,
+        "session" : "7914A1E5-D793-4FA6-8423-5D7B74406BD9"
+      },
+      {
+        "faulted" : false,
+        "method" : "GET",
+        "range" : "bytes=0-1",
+        "sent" : 2,
+        "session" : "B444EE2C-1BD9-418C-AB4A-01E3D31583A9"
+      },
+      {
+        "faulted" : false,
+        "method" : "GET",
+        "range" : "bytes=0-247268",
+        "sent" : 247269,
+        "session" : "B444EE2C-1BD9-418C-AB4A-01E3D31583A9"
+      }
+    ],
+    "sessions" : [
+      "7914A1E5-D793-4FA6-8423-5D7B74406BD9"
+    ],
+    "startedAt" : {
+      "7914A1E5-D793-4FA6-8423-5D7B74406BD9" : 1794714281211
+    }
+  },
+  "diagnostics" : [
+    {
+      "event" : {
+        "state" : {
+          "_0" : {
+            "from" : "idle",
+            "to" : "loading"
+          }
+        }
+      },
+      "sequence" : 4,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714281197.396
+    },
+    {
+      "event" : {
+        "item" : {
+          "_0" : {
+            "phase" : "installed"
+          }
+        }
+      },
+      "sequence" : 5,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714281202.8489
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "startRequested",
+            "playbackGeneration" : 2,
+            "requestID" : 1
+          }
+        }
+      },
+      "sequence" : 6,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714281202.8699
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "ready",
+            "playbackGeneration" : 2,
+            "requestID" : 1
+          }
+        }
+      },
+      "sequence" : 7,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714281332.634
+    },
+    {
+      "event" : {
+        "waiting" : {
+          "_0" : {
+            "reason" : "evaluatingBufferingRate"
+          }
+        }
+      },
+      "sequence" : 8,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714281336.468
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "waiting"
+          }
+        }
+      },
+      "sequence" : 9,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714281336.4849
+    },
+    {
+      "event" : {
+        "timeJumped" : {
+          "_0" : {
+            "actual" : 0
+          }
+        }
+      },
+      "sequence" : 10,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714290242.4299
+    },
+    {
+      "event" : {
+        "item" : {
+          "_0" : {
+            "error" : {
+              "code" : -1001,
+              "domain" : "url"
+            },
+            "phase" : "failed"
+          }
+        }
+      },
+      "sequence" : 11,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299254.405
+    },
+    {
+      "event" : {
+        "command" : {
+          "_0" : {
+            "kind" : "reload",
+            "origin" : "automatic",
+            "target" : 0
+          }
+        }
+      },
+      "sequence" : 12,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299254.4451
+    },
+    {
+      "event" : {
+        "command" : {
+          "_0" : {
+            "kind" : "stop",
+            "origin" : "internalOperation",
+            "target" : null
+          }
+        }
+      },
+      "sequence" : 13,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299254.6248
+    },
+    {
+      "event" : {
+        "state" : {
+          "_0" : {
+            "from" : "idle",
+            "to" : "loading"
+          }
+        }
+      },
+      "sequence" : 16,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299255.269
+    },
+    {
+      "event" : {
+        "item" : {
+          "_0" : {
+            "phase" : "installed"
+          }
+        }
+      },
+      "sequence" : 17,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299257.5369
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "startRequested",
+            "playbackGeneration" : 4,
+            "requestID" : 2
+          }
+        }
+      },
+      "sequence" : 18,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299257.5649
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "ended",
+            "playbackGeneration" : 2,
+            "requestID" : 1
+          }
+        }
+      },
+      "sequence" : 19,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299279.9622
+    },
+    {
+      "event" : {
+        "timeJumped" : {
+          "_0" : {
+            "actual" : 0
+          }
+        }
+      },
+      "sequence" : 20,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299285.4241
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "ready",
+            "playbackGeneration" : 4,
+            "requestID" : 2
+          }
+        }
+      },
+      "sequence" : 21,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299285.52
+    },
+    {
+      "event" : {
+        "waiting" : {
+          "_0" : {
+            "reason" : "evaluatingBufferingRate"
+          }
+        }
+      },
+      "sequence" : 22,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299285.7351
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "waiting"
+          }
+        }
+      },
+      "sequence" : 23,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299285.7539
+    },
+    {
+      "event" : {
+        "access" : {
+          "_0" : {
+            "metrics" : {
+              "bytesTransferred" : 247269,
+              "downloadedDuration" : 29.975328798185942,
+              "indicatedBitrate" : 65992.670616500953,
+              "observedBitrate" : 307688048.20220858,
+              "stalls" : 0,
+              "transferDuration" : -1
+            }
+          }
+        }
+      },
+      "sequence" : 24,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "loading",
+      "wallTime" : 1794714299392.8079
+    },
+    {
+      "event" : {
+        "state" : {
+          "_0" : {
+            "from" : "loading",
+            "to" : "playing"
+          }
+        }
+      },
+      "sequence" : 25,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "playing",
+      "wallTime" : 1794714299392.9009
+    },
+    {
+      "event" : {
+        "item" : {
+          "_0" : {
+            "phase" : "ready"
+          }
+        }
+      },
+      "sequence" : 26,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "playing",
+      "wallTime" : 1794714299411.186
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "ready"
+          }
+        }
+      },
+      "sequence" : 27,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "playing",
+      "wallTime" : 1794714299411.2292
+    },
+    {
+      "event" : {
+        "sample" : {
+
+        }
+      },
+      "sequence" : 28,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "playing",
+      "wallTime" : 1794714299459.8269
+    },
+    {
+      "event" : {
+        "timeJumped" : {
+          "_0" : {
+            "actual" : 0
+          }
+        }
+      },
+      "sequence" : 29,
+      "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24",
+      "state" : "playing",
+      "wallTime" : 1794714299459.929
+    }
+  ],
+  "elapsedSeconds" : 3,
+  "events" : [
+    "state.loading",
+    "item.installed",
+    "session",
+    "session",
+    "waiting",
+    "buffer",
+    "timeJumped",
+    "item.failed.url",
+    "command.reload.automatic",
+    "command.stop.internalOperation",
+    "state.loading",
+    "item.installed",
+    "session",
+    "session",
+    "timeJumped",
+    "session",
+    "waiting",
+    "buffer",
+    "access",
+    "state.playing",
+    "item.ready",
+    "buffer",
+    "sample",
+    "timeJumped"
+  ],
+  "setId" : "7010aa57-3cdc-479a-99ad-9dcc75575d24"
+}

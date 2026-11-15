@@ -1,0 +1,756 @@
+{
+  "audioRequests" : {
+    "kind" : "paused-body",
+    "requests" : [
+      {
+        "faulted" : true,
+        "method" : "GET",
+        "range" : "bytes=0-1",
+        "sent" : 2,
+        "session" : "865AE971-10EE-4F4D-AE71-514B5459AD3D"
+      },
+      {
+        "closed" : true,
+        "faulted" : true,
+        "method" : "GET",
+        "range" : "bytes=0-1991491",
+        "sent" : 1600,
+        "session" : "865AE971-10EE-4F4D-AE71-514B5459AD3D"
+      },
+      {
+        "closed" : true,
+        "faulted" : true,
+        "method" : "GET",
+        "range" : "bytes=49152-1991491",
+        "sent" : 9600,
+        "session" : "865AE971-10EE-4F4D-AE71-514B5459AD3D"
+      },
+      {
+        "closed" : true,
+        "faulted" : true,
+        "method" : "GET",
+        "range" : "bytes=1600-1991491",
+        "sent" : 112432,
+        "session" : "865AE971-10EE-4F4D-AE71-514B5459AD3D"
+      },
+      {
+        "faulted" : false,
+        "method" : "GET",
+        "range" : "bytes=0-1",
+        "sent" : 2,
+        "session" : "EB3109A8-36F5-410D-A2FF-AC6E9A9653C9"
+      },
+      {
+        "faulted" : false,
+        "method" : "GET",
+        "range" : "bytes=0-1991491",
+        "sent" : 1991492,
+        "session" : "EB3109A8-36F5-410D-A2FF-AC6E9A9653C9"
+      },
+      {
+        "faulted" : false,
+        "method" : "GET",
+        "range" : "bytes=1081240-1991491",
+        "sent" : 910252,
+        "session" : "EB3109A8-36F5-410D-A2FF-AC6E9A9653C9"
+      }
+    ],
+    "sessions" : [
+      "865AE971-10EE-4F4D-AE71-514B5459AD3D"
+    ],
+    "startedAt" : {
+      "865AE971-10EE-4F4D-AE71-514B5459AD3D" : 1794714356300
+    }
+  },
+  "diagnostics" : [
+    {
+      "event" : {
+        "state" : {
+          "_0" : {
+            "from" : "idle",
+            "to" : "loading"
+          }
+        }
+      },
+      "sequence" : 4,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714356285.8337
+    },
+    {
+      "event" : {
+        "item" : {
+          "_0" : {
+            "phase" : "installed"
+          }
+        }
+      },
+      "sequence" : 5,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714356290.866
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "startRequested",
+            "playbackGeneration" : 2,
+            "requestID" : 1
+          }
+        }
+      },
+      "sequence" : 6,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714356290.8879
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "ready",
+            "playbackGeneration" : 2,
+            "requestID" : 1
+          }
+        }
+      },
+      "sequence" : 7,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714356426.96
+    },
+    {
+      "event" : {
+        "waiting" : {
+          "_0" : {
+            "reason" : "evaluatingBufferingRate"
+          }
+        }
+      },
+      "sequence" : 8,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714356430.9421
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "waiting"
+          }
+        }
+      },
+      "sequence" : 9,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714356430.9568
+    },
+    {
+      "event" : {
+        "timeJumped" : {
+          "_0" : {
+            "actual" : 0
+          }
+        }
+      },
+      "sequence" : 10,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714357047.6479
+    },
+    {
+      "event" : {
+        "item" : {
+          "_0" : {
+            "phase" : "ready"
+          }
+        }
+      },
+      "sequence" : 11,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714360291.655
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "ready"
+          }
+        }
+      },
+      "sequence" : 12,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714360291.698
+    },
+    {
+      "event" : {
+        "waiting" : {
+          "_0" : {
+            "reason" : "minimizingStalls"
+          }
+        }
+      },
+      "sequence" : 13,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714360291.74
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "waiting"
+          }
+        }
+      },
+      "sequence" : 14,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714360291.7649
+    },
+    {
+      "event" : {
+        "access" : {
+          "_0" : {
+            "metrics" : {
+              "bytesTransferred" : 68800,
+              "downloadedDuration" : 10.364088833899409,
+              "indicatedBitrate" : 53106.453333333331,
+              "observedBitrate" : 119276.09767355808,
+              "stalls" : 0,
+              "transferDuration" : -1
+            }
+          }
+        }
+      },
+      "sequence" : 15,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714361169.3472
+    },
+    {
+      "event" : {
+        "state" : {
+          "_0" : {
+            "from" : "loading",
+            "to" : "playing"
+          }
+        }
+      },
+      "sequence" : 16,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714361169.4651
+    },
+    {
+      "event" : {
+        "sample" : {
+
+        }
+      },
+      "sequence" : 17,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714361191.6169
+    },
+    {
+      "event" : {
+        "timeJumped" : {
+          "_0" : {
+            "actual" : 0
+          }
+        }
+      },
+      "sequence" : 18,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714361191.7129
+    },
+    {
+      "event" : {
+        "sample" : {
+
+        }
+      },
+      "sequence" : 19,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714366278.7109
+    },
+    {
+      "event" : {
+        "sample" : {
+
+        }
+      },
+      "sequence" : 20,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714371277.9309
+    },
+    {
+      "event" : {
+        "stalled" : {
+
+        }
+      },
+      "sequence" : 21,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714371969.3953
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "stalled"
+          }
+        }
+      },
+      "sequence" : 22,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714371969.866
+    },
+    {
+      "event" : {
+        "access" : {
+          "_0" : {
+            "metrics" : {
+              "bytesTransferred" : 121712,
+              "downloadedDuration" : 18.33479622313321,
+              "indicatedBitrate" : 53106.453333333331,
+              "observedBitrate" : 64452.325104303389,
+              "stalls" : 1,
+              "transferDuration" : -1
+            }
+          }
+        }
+      },
+      "sequence" : 23,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714371970.156
+    },
+    {
+      "event" : {
+        "waiting" : {
+          "_0" : {
+            "reason" : "minimizingStalls"
+          }
+        }
+      },
+      "sequence" : 24,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714371970.562
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "waiting"
+          }
+        }
+      },
+      "sequence" : 25,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714371970.6379
+    },
+    {
+      "event" : {
+        "state" : {
+          "_0" : {
+            "from" : "playing",
+            "to" : "loading"
+          }
+        }
+      },
+      "sequence" : 26,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714371970.7598
+    },
+    {
+      "event" : {
+        "stallUnrecovered" : {
+
+        }
+      },
+      "sequence" : 27,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392083.739
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "stalled"
+          }
+        }
+      },
+      "sequence" : 28,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392084.0469
+    },
+    {
+      "event" : {
+        "command" : {
+          "_0" : {
+            "kind" : "reload",
+            "origin" : "automatic",
+            "target" : 10.653490965
+          }
+        }
+      },
+      "sequence" : 29,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392084.0901
+    },
+    {
+      "event" : {
+        "command" : {
+          "_0" : {
+            "kind" : "stop",
+            "origin" : "internalOperation",
+            "target" : null
+          }
+        }
+      },
+      "sequence" : 30,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392084.283
+    },
+    {
+      "event" : {
+        "state" : {
+          "_0" : {
+            "from" : "idle",
+            "to" : "loading"
+          }
+        }
+      },
+      "sequence" : 33,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392084.8469
+    },
+    {
+      "event" : {
+        "item" : {
+          "_0" : {
+            "phase" : "installed"
+          }
+        }
+      },
+      "sequence" : 34,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392087.3059
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "startRequested",
+            "playbackGeneration" : 4,
+            "requestID" : 2
+          }
+        }
+      },
+      "sequence" : 35,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392087.3279
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "ended",
+            "playbackGeneration" : 2,
+            "requestID" : 1
+          }
+        }
+      },
+      "sequence" : 36,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392114.7271
+    },
+    {
+      "event" : {
+        "timeJumped" : {
+          "_0" : {
+            "actual" : 0
+          }
+        }
+      },
+      "sequence" : 37,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392134.126
+    },
+    {
+      "event" : {
+        "session" : {
+          "_0" : {
+            "phase" : "ready",
+            "playbackGeneration" : 4,
+            "requestID" : 2
+          }
+        }
+      },
+      "sequence" : 38,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392134.6721
+    },
+    {
+      "event" : {
+        "item" : {
+          "_0" : {
+            "phase" : "ready"
+          }
+        }
+      },
+      "sequence" : 39,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392134.7761
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "ready"
+          }
+        }
+      },
+      "sequence" : 40,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392134.811
+    },
+    {
+      "event" : {
+        "sample" : {
+
+        }
+      },
+      "sequence" : 41,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392137.6399
+    },
+    {
+      "event" : {
+        "timeJumped" : {
+          "_0" : {
+            "actual" : 10.653333333333334,
+            "seekID" : 1
+          }
+        }
+      },
+      "sequence" : 42,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392137.6882
+    },
+    {
+      "event" : {
+        "seekResult" : {
+          "_0" : {
+            "actual" : 10.653333333333334,
+            "duration" : 0.003120000008493662,
+            "finished" : true,
+            "seekID" : 1,
+            "target" : 10.653490965
+          }
+        }
+      },
+      "sequence" : 43,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392137.958
+    },
+    {
+      "event" : {
+        "waiting" : {
+          "_0" : {
+            "reason" : "evaluatingBufferingRate"
+          }
+        }
+      },
+      "sequence" : 44,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392139.303
+    },
+    {
+      "event" : {
+        "buffer" : {
+          "_0" : {
+            "reason" : "waiting"
+          }
+        }
+      },
+      "sequence" : 45,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392139.3481
+    },
+    {
+      "event" : {
+        "access" : {
+          "_0" : {
+            "metrics" : {
+              "bytesTransferred" : 0,
+              "downloadedDuration" : 0,
+              "indicatedBitrate" : 53106.453333333331,
+              "observedBitrate" : 0,
+              "stalls" : 0,
+              "transferDuration" : -1
+            }
+          }
+        }
+      },
+      "sequence" : 46,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "loading",
+      "wallTime" : 1794714392139.6489
+    },
+    {
+      "event" : {
+        "state" : {
+          "_0" : {
+            "from" : "loading",
+            "to" : "playing"
+          }
+        }
+      },
+      "sequence" : 47,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714392141.1299
+    },
+    {
+      "event" : {
+        "timeJumped" : {
+          "_0" : {
+            "actual" : 10.653333333000001
+          }
+        }
+      },
+      "sequence" : 48,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714392165.689
+    },
+    {
+      "event" : {
+        "sample" : {
+
+        }
+      },
+      "sequence" : 49,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714397600.843
+    },
+    {
+      "event" : {
+        "sample" : {
+
+        }
+      },
+      "sequence" : 50,
+      "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047",
+      "state" : "playing",
+      "wallTime" : 1794714402601.0281
+    }
+  ],
+  "elapsedSeconds" : 25,
+  "events" : [
+    "state.loading",
+    "item.installed",
+    "session",
+    "session",
+    "waiting",
+    "buffer",
+    "timeJumped",
+    "item.ready",
+    "buffer",
+    "waiting",
+    "buffer",
+    "access",
+    "state.playing",
+    "sample",
+    "timeJumped",
+    "sample",
+    "sample",
+    "stalled",
+    "buffer",
+    "access",
+    "waiting",
+    "buffer",
+    "state.loading",
+    "stallUnrecovered",
+    "buffer",
+    "command.reload.automatic",
+    "command.stop.internalOperation",
+    "state.loading",
+    "item.installed",
+    "session",
+    "session",
+    "timeJumped",
+    "session",
+    "item.ready",
+    "buffer",
+    "sample",
+    "timeJumped",
+    "seekResult",
+    "waiting",
+    "buffer",
+    "access",
+    "state.playing",
+    "timeJumped",
+    "sample",
+    "sample"
+  ],
+  "eventsAtStall" : [
+    "state.loading",
+    "item.installed",
+    "session",
+    "session",
+    "waiting",
+    "buffer",
+    "timeJumped",
+    "item.ready",
+    "buffer",
+    "waiting",
+    "buffer",
+    "access",
+    "state.playing",
+    "sample",
+    "timeJumped",
+    "sample",
+    "sample",
+    "stalled",
+    "buffer",
+    "access",
+    "waiting",
+    "buffer",
+    "state.loading"
+  ],
+  "secondsFromStallToUnrecovered" : 20.11434375,
+  "setId" : "d7095eff-5e6e-4a07-ae2b-6bde4108d047"
+}

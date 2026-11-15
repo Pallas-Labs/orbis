@@ -1,0 +1,12 @@
+{
+  "elapsedSeconds": 321.878,
+  "requestedWorkers": 1,
+  "simulator": "Orbis Lanes",
+  "simulatorUdid": "27F95E7B-F76B-47B8-AC71-87D926B2F675",
+  "workers": [
+    {
+      "directory": "worker-1",
+      "name": "lease-PAL-1839-test-18-2026-11-15T03-41-45-725Z"
+    }
+  ]
+}
