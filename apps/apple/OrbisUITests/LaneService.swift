@@ -118,7 +118,7 @@ struct LaneService {
   /// How the lane's seed server spoils a Set's audio, for a journey that launches the app
   /// through `proxyAddress()`. `heldBody` sends the headers and never the body, as a path that
   /// holds the bytes does. `pausedBody` sends the first third of the file and its tail, then
-  /// pauses, so the item plays ten seconds and stalls.
+  /// the rest at 16 bytes a second, so the item plays ten seconds and stalls.
   enum AudioFault: String {
     case heldBody = "held-body"
     case pausedBody = "paused-body"

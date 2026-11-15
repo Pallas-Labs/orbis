@@ -16,13 +16,16 @@ import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playb
 // `held-body` answers each request's headers and never sends a body byte, as a path that
 // holds the bytes does: the item times out before it plays.
 // `paused-body` sends the file up to a third of its length, and its tail (where the fixture
-// keeps its `moov` box), and never the bytes between: the item plays its first ten seconds,
-// then stalls until it is replaced.
+// keeps its `moov` box), then the bytes between at 16 bytes a second: the item plays its first
+// ten seconds, then stalls until it is replaced. The trickle keeps the connection busy, as a
+// slow path does, so the stall is not cut short by the loader's idle timeout (url -1001).
 
 // Headers that belong to one connection, so the proxy sets its own. Bodies pass through
 // still encoded (`decompress: false`), so `content-encoding` and `content-length` stay true.
 const hopHeaders = new Set(["connection", "keep-alive", "transfer-encoding"]);
 const TAIL_BYTES = 16 * 1024;
+const TRICKLE_BYTES = 16;
+const TRICKLE_INTERVAL_MS = 1000;
 const MAX_KEPT_ENTRIES = 512;
 
 const parseRange = (header, size) => {
@@ -110,9 +113,27 @@ export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
       response.end();
       return;
     }
-    // The rest of the body never comes. The client gives up, or the lane ends.
+    // The rest of the body never comes, or trickles; the client gives up, or the lane ends.
     response.flushHeaders();
+    let next = span ? span.end + 1 : range.start;
+    const trickle =
+      fault.kind === "paused-body"
+        ? setInterval(() => {
+            const part = bytes.subarray(
+              next,
+              Math.min(next + TRICKLE_BYTES, range.end + 1)
+            );
+            next += part.length;
+            log.sent += part.length;
+            response.write(part);
+            if (next > range.end) {
+              clearInterval(trickle);
+              response.end();
+            }
+          }, TRICKLE_INTERVAL_MS)
+        : undefined;
     response.once("close", () => {
+      clearInterval(trickle);
       log.closed = true;
     });
   };

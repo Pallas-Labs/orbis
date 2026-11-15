@@ -91,7 +91,7 @@ final class PlaybackRecoveryUITests: LibraryJourney {
     XCTAssertTrue(
       stopped.waitForExistence(timeout: 150), "A stall the reload cannot cure must fail")
     capture("stall-failed")
-    XCTAssertEqual(app.buttons["detail-play-toggle"].label, "Play")
+    XCTAssertEqual(app.buttons["now-playing-play-toggle"].label, "Play")
     let events = try diagnostics(of: seeded.id, service: service) {
       $0.contains("state.failed")
     }
@@ -100,7 +100,8 @@ final class PlaybackRecoveryUITests: LibraryJourney {
     XCTAssertEqual(events.filter { $0 == "command.reload.automatic" }.count, 1, "\(events)")
   }
 
-  /// Opens the Set's detail and presses Play once; the journey taps nothing after this.
+  /// Opens the Set's detail and presses Play once, then opens Now Playing, whose seek bar shows
+  /// the position; the journey taps nothing else.
   private func startPlaying(_ set: LaneService.Set, in app: XCUIApplication)
     -> (play: XCUIElement, seek: XCUIElement)
   {
@@ -111,9 +112,23 @@ final class PlaybackRecoveryUITests: LibraryJourney {
     let play = app.buttons["detail-play-toggle"]
     XCTAssertTrue(play.waitForExistence(timeout: 30))
     play.tap()
-    let seek = app.sliders["detail-seek"]
+    openNowPlaying(set.title, in: app)
+    let seek = app.sliders["now-playing-seek"]
     XCTAssertTrue(seek.waitForExistence(timeout: 10))
-    return (play, seek)
+    return (app.buttons["now-playing-play-toggle"], seek)
+  }
+
+  /// Leaves the Set page for Now Playing, through the mini player. The Set page has no seek bar
+  /// (PAL-2293), so the journeys read the position on Now Playing.
+  private func openNowPlaying(_ title: String, in app: XCUIApplication) {
+    app.navigationBars.buttons.firstMatch.tap()
+    let miniPlayer = app.buttons.matching(
+      NSPredicate(
+        format: "identifier == %@ AND label == %@", "mini-player", "Now playing, \(title)")
+    ).firstMatch
+    XCTAssertTrue(miniPlayer.waitForExistence(timeout: 10))
+    miniPlayer.tap()
+    XCTAssertTrue(app.staticTexts["now-playing-title"].waitForExistence(timeout: 10))
   }
 
   /// Waits until the seek bar passes `seconds` of media time, checking `each` on every look.
@@ -217,23 +232,12 @@ final class PlaybackRecoveryUITests: LibraryJourney {
     XCTAssertTrue(failure.waitForExistence(timeout: 30), "The unavailable file must fail playback")
     capture("\(surface.rawValue)-retry-failed-item")
 
-    switch surface {
-    case .detail:
-      break
-    case .nowPlaying:
-      app.navigationBars.buttons.firstMatch.tap()
-      let openNowPlaying = app.buttons.matching(
-        NSPredicate(
-          format: "identifier == %@ AND label == %@", "mini-player", "Now playing, \(seeded.title)")
-      ).firstMatch
-      XCTAssertTrue(openNowPlaying.waitForExistence(timeout: 10))
-      openNowPlaying.tap()
-      XCTAssertTrue(app.staticTexts["now-playing-title"].waitForExistence(timeout: 10))
+    if surface == .nowPlaying {
+      openNowPlaying(seeded.title, in: app)
       XCTAssertTrue(failure.waitForExistence(timeout: 5))
     }
 
-    let seek = app.sliders["\(surface.rawValue)-seek"]
-    XCTAssertTrue(seek.waitForExistence(timeout: 10))
+    let seek = app.sliders["now-playing-seek"]
     let beforeRetry = Self.elapsedSeconds(seek.value as? String) ?? 0
     observations.append([
       "phase": "failed", "elapsedSeconds": beforeRetry, "failureVisible": failure.exists,
@@ -242,6 +246,10 @@ final class PlaybackRecoveryUITests: LibraryJourney {
     let play = app.buttons["\(surface.rawValue)-play-toggle"]
     XCTAssertEqual(play.label, "Play")
     play.tap()
+    if surface == .detail {
+      openNowPlaying(seeded.title, in: app)
+    }
+    XCTAssertTrue(seek.waitForExistence(timeout: 10))
     let firstAdvance = XCTWaiter.wait(
       for: [elapsed(on: seek) { $0 > beforeRetry }], timeout: 12)
     let resumedAt = Self.elapsedSeconds(seek.value as? String) ?? -1
@@ -257,10 +265,11 @@ final class PlaybackRecoveryUITests: LibraryJourney {
       "failureVisible": failure.exists,
     ])
     XCTAssertFalse(failure.exists, "A successful retry must clear the playback failure")
-    XCTAssertEqual(play.label, "Pause")
+    let shownPlay = app.buttons["now-playing-play-toggle"]
+    XCTAssertEqual(shownPlay.label, "Pause")
     capture("\(surface.rawValue)-retry-playing")
-    play.tap()
-    XCTAssertEqual(play.label, "Play")
+    shownPlay.tap()
+    XCTAssertEqual(shownPlay.label, "Play")
   }
 
 }
