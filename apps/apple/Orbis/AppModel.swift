@@ -232,8 +232,6 @@ final class AppModel {
     let requestedAt: TimeInterval
   }
   private var pendingActivation: PendingActivation?
-  /// Which mutation of the queue is the newest. A response publishes only while it still is.
-  private var queueMutationGeneration: Int { queueStore.revision }
 
   /// What the person has pasted but not filed yet, and what the last filing said.
   var linkToFile = ""
@@ -1197,7 +1195,15 @@ final class AppModel {
   private func enqueueQueueMutation<Value: Sendable>(
     _ operation: @escaping @MainActor () async throws -> Value
   ) -> Task<Value, Error> {
-    queueStore.submit(currentToken: { [weak self] in self?.client?.token }, operation).request
+    queueStore.submit(currentToken: currentToken, operation).request
+  }
+
+  /// The key a queue action may still send with: the one this device holds when it sends.
+  private var currentToken: @MainActor () -> String? { { [weak self] in self?.client?.token } }
+
+  /// Whether the play that held `generation` still owns the player.
+  private func isCurrent(_ generation: Int) -> @MainActor () -> Bool {
+    { [weak self] in self?.playGeneration == generation }
   }
 
   private func supersedePendingActivation(reassertCurrent: Bool = false) {
@@ -1208,27 +1214,29 @@ final class AppModel {
     guard let id = audioPlayer.currentSetId, let client else { return }
     startReportingPosition(id)
     let generation = playGeneration
-    let request = enqueueQueueMutation { try await client.playSet(id) }
-    let revision = queueMutationGeneration
     Task { [weak self] in
-      do {
-        let loaded = try await request.value
-        guard let self, generation == self.playGeneration,
-          revision == self.queueMutationGeneration
-        else {
-          return
-        }
-        self.queueStore.publish(loaded, revision: revision)
-      } catch OrbisError.cancelled {
-        return
-      } catch {
-        guard let self, generation == self.playGeneration,
-          revision == self.queueMutationGeneration
-        else {
-          return
-        }
-        self.setFailure = OrbisFailure.explaining(error, at: client.address)
-      }
+      guard let self else { return }
+      let outcome = await self.queueStore.play(
+        id, client: client, currentToken: self.currentToken,
+        isCurrent: self.isCurrent(generation))
+      guard case .failed(let error) = outcome, generation == self.playGeneration else { return }
+      self.setFailure = OrbisFailure.explaining(error, at: client.address)
+    }
+  }
+
+  /// Records how a play's queue action ended, and answers the queue to play from when it applied.
+  private func acceptedQueue(_ outcome: QueueOutcome, at address: URL) -> ListeningQueue? {
+    switch outcome {
+    case .applied(let queue):
+      recordPendingActivation(.accepted)
+      return queue
+    case .superseded:
+      recordPendingActivation(.cancelled)
+      return nil
+    case .failed(let error):
+      recordPendingActivation(.failed)
+      setFailure = error.failure(at: address)
+      return nil
     }
   }
 
@@ -1276,62 +1284,31 @@ final class AppModel {
       setId: id, wantsSound: true, startAt: startAt,
       requestedAt: ProcessInfo.processInfo.systemUptime)
     recordPendingActivation(.began)
-    let request = enqueueQueueMutation { [weak self] in
-      guard let self, generation == self.playGeneration, self.client?.token == client.token else {
-        throw CancellationError()
-      }
-      return try await client.playSet(id)
-    }
-    let revision = queueMutationGeneration
     defer {
       if generation == playGeneration {
         pendingActivation = nil
         if positionReporter == nil, let id = audioPlayer.currentSetId { startReportingPosition(id) }
       }
     }
-    do {
-      let loaded = try await withTaskCancellationHandler {
-        try await request.value
-      } onCancel: {
-        request.cancel()
-      }
-      // A newer play, or signing out, owns the player now. Playing this answer would start audio
-      // with a key the device may no longer hold.
-      guard generation == playGeneration else { return }
-      guard !Task.isCancelled else {
-        recordPendingActivation(.cancelled)
-        return
-      }
-      queueStore.publish(loaded, revision: revision)
-      recordPendingActivation(.accepted)
-      guard let playing = loaded.entries.first(where: { $0.id == id }) else { return }
-      let wantsSound = pendingActivation?.wantsSound ?? false
-      let requestedStart = pendingActivation?.startAt
-      pendingActivation = nil
-      savedPosition = (playing.id, playing.playbackPositionSeconds)
-      audioPlayer.play(
-        set: playing, baseURL: client.address, token: client.token,
-        startAt: requestedStart
-          ?? AudioPlayer.startPosition(
-            playing.resumePosition, duration: playing.durationSeconds.map(TimeInterval.init)),
-        autoplay: wantsSound)
-      attachTracklist(to: playing)
-      startReportingPosition(id)
-    } catch is CancellationError {
-      if generation == playGeneration { recordPendingActivation(.cancelled) }
-      return
-    } catch OrbisError.cancelled {
-      if generation == playGeneration { recordPendingActivation(.cancelled) }
-      return
-    } catch let error as OrbisError {
-      guard generation == playGeneration else { return }
-      recordPendingActivation(.failed)
-      setFailure = error.failure(at: client.address)
-    } catch {
-      guard generation == playGeneration else { return }
-      recordPendingActivation(.failed)
-      setFailure = OrbisError.unreachable.failure(at: client.address)
-    }
+    let outcome = await queueStore.play(
+      id, client: client, currentToken: currentToken, isCurrent: isCurrent(generation))
+    // A newer play, or signing out, owns the player now. Playing this answer would start audio
+    // with a key the device may no longer hold.
+    guard generation == playGeneration else { return }
+    guard let loaded = acceptedQueue(outcome, at: client.address) else { return }
+    guard let playing = loaded.entries.first(where: { $0.id == id }) else { return }
+    let wantsSound = pendingActivation?.wantsSound ?? false
+    let requestedStart = pendingActivation?.startAt
+    pendingActivation = nil
+    savedPosition = (playing.id, playing.playbackPositionSeconds)
+    audioPlayer.play(
+      set: playing, baseURL: client.address, token: client.token,
+      startAt: requestedStart
+        ?? AudioPlayer.startPosition(
+          playing.resumePosition, duration: playing.durationSeconds.map(TimeInterval.init)),
+      autoplay: wantsSound)
+    attachTracklist(to: playing)
+    startReportingPosition(id)
   }
 
   /// Whether a Set has a place to start over from: a saved position, or a place in the player.
@@ -1517,7 +1494,7 @@ final class AppModel {
     guard let client else { return }
     let outcome = await queueStore.add(
       id, placement: placement, notice: notice, client: client,
-      currentToken: { [weak self] in self?.client?.token })
+      currentToken: currentToken)
     if case .failed(let error) = outcome {
       setFailure = error.failure(at: client.address)
     }
@@ -1528,23 +1505,35 @@ final class AppModel {
   /// member leaves the queue empty, which stops playback: the queue no longer holds the Set that
   /// was playing.
   func playPlaylist(_ id: String, shuffled: Bool = false) async {
-    await replaceQueue { client in try await client.playPlaylist(id, shuffled: shuffled) }
+    await replaceQueue { store, client, token, isCurrent in
+      await store.playPlaylist(
+        id, shuffled: shuffled, client: client, currentToken: token, isCurrent: isCurrent)
+    }
   }
 
   /// Replaces the queue with the Sets in Heavy Rotation over a range, ranked or shuffled, and
   /// starts the first of them, as a Playlist does.
   func playHeavyRotation(_ range: ListeningRange, shuffled: Bool = false) async {
-    await replaceQueue { client in try await client.playHeavyRotation(range, shuffled: shuffled) }
+    await replaceQueue { store, client, token, isCurrent in
+      await store.playHeavyRotation(
+        range, shuffled: shuffled, client: client, currentToken: token, isCurrent: isCurrent)
+    }
   }
 
   /// Replaces the queue with a saved Collection's Sets, ranked or shuffled.
   func playCollection(_ id: String, shuffled: Bool = false) async {
-    await replaceQueue { client in try await client.playCollection(id, shuffled: shuffled) }
+    await replaceQueue { store, client, token, isCurrent in
+      await store.playCollection(
+        id, shuffled: shuffled, client: client, currentToken: token, isCurrent: isCurrent)
+    }
   }
 
-  /// Replaces the queue with what `call` answers and starts its active entry.
+  /// Replaces the queue with what `action` answers and starts its active entry.
   private func replaceQueue(
-    _ call: @escaping @Sendable (OrbisClient) async throws -> ListeningQueue
+    _ action: (
+      ListeningQueueStore, OrbisClient, @escaping @MainActor () -> String?,
+      @escaping @MainActor () -> Bool
+    ) async -> QueueOutcome
   ) async {
     guard let client else { return }
     queueNotice = nil
@@ -1557,59 +1546,27 @@ final class AppModel {
     pendingActivation = PendingActivation(
       setId: nil, wantsSound: true, requestedAt: ProcessInfo.processInfo.systemUptime)
     recordPendingActivation(.began)
-    let request = enqueueQueueMutation { [weak self] in
-      guard let self, generation == self.playGeneration, self.client?.token == client.token else {
-        throw CancellationError()
-      }
-      return try await call(client)
-    }
-    let revision = queueMutationGeneration
     defer {
       if generation == playGeneration {
         pendingActivation = nil
         if positionReporter == nil, let id = audioPlayer.currentSetId { startReportingPosition(id) }
       }
     }
-    do {
-      let loaded = try await withTaskCancellationHandler {
-        try await request.value
-      } onCancel: {
-        request.cancel()
-      }
+    let outcome = await action(queueStore, client, currentToken, isCurrent(generation))
+    guard generation == playGeneration else { return }
+    guard let loaded = acceptedQueue(outcome, at: client.address) else { return }
+    let wantsSound = pendingActivation?.wantsSound ?? false
+    pendingActivation = nil
+    // Which Set comes first is known only now, after a shuffle, so an Apple Music Set asks for
+    // access here, as it does when played by itself. Refused, the queue stays and nothing plays.
+    if let active = loaded.active, !(await mayPlay(active)) {
       guard generation == playGeneration else { return }
-      guard !Task.isCancelled else {
-        recordPendingActivation(.cancelled)
-        return
-      }
-      queueStore.publish(loaded, revision: revision)
-      recordPendingActivation(.accepted)
-      let wantsSound = pendingActivation?.wantsSound ?? false
-      pendingActivation = nil
-      // Which Set comes first is known only now, after a shuffle, so an Apple Music Set asks for
-      // access here, as it does when played by itself. Refused, the queue stays and nothing plays.
-      if let active = loaded.active, !(await mayPlay(active)) {
-        guard generation == playGeneration else { return }
-        audioPlayer.stop()
-        stopReportingPosition()
-        return
-      }
-      guard generation == playGeneration else { return }
-      playActiveEntry(of: loaded, from: client, autoplay: wantsSound)
-    } catch is CancellationError {
-      if generation == playGeneration { recordPendingActivation(.cancelled) }
+      audioPlayer.stop()
+      stopReportingPosition()
       return
-    } catch OrbisError.cancelled {
-      if generation == playGeneration { recordPendingActivation(.cancelled) }
-      return
-    } catch let error as OrbisError {
-      guard generation == playGeneration else { return }
-      recordPendingActivation(.failed)
-      setFailure = error.failure(at: client.address)
-    } catch {
-      guard generation == playGeneration else { return }
-      recordPendingActivation(.failed)
-      setFailure = OrbisError.unreachable.failure(at: client.address)
     }
+    guard generation == playGeneration else { return }
+    playActiveEntry(of: loaded, from: client, autoplay: wantsSound)
   }
 
   /// Plays the active entry of a queue, or stops when it holds none.
@@ -1647,76 +1604,17 @@ final class AppModel {
     defer {
       if generation == playGeneration { pendingActivation = nil }
     }
-    do {
-      guard let completed = try await reportCompletion(id, to: client, generation: generation)
-      else { return }
-      let loaded = completed.queue
-      guard !Task.isCancelled else {
-        recordPendingActivation(.cancelled)
-        return
-      }
-      queueStore.publish(loaded, revision: completed.revision)
-      recordPendingActivation(.accepted)
-      let wantsSound = pendingActivation?.wantsSound ?? false
-      pendingActivation = nil
-      playActiveEntry(of: loaded, from: client, autoplay: wantsSound)
-      // The finished Set left the queue and its position went back to the beginning, so the
-      // Library is read again rather than patched. Read quietly, because a spinner where the list
-      // was would be a flicker the person did not ask for.
-      await refreshLibraryQuietly()
-    } catch OrbisError.cancelled {
-      if generation == playGeneration { recordPendingActivation(.cancelled) }
-      return
-    } catch let error as OrbisError {
-      guard generation == playGeneration else { return }
-      recordPendingActivation(.failed)
-      setFailure = error.failure(at: client.address)
-    } catch {
-      guard generation == playGeneration else { return }
-      recordPendingActivation(.failed)
-      setFailure = OrbisError.unreachable.failure(at: client.address)
-    }
-  }
-
-  /// How long `finishedPlaying` waits before each further try of a completion that got no answer,
-  /// a 429 or a 5xx, as the web player does. The service counts a completion once, by whether the
-  /// Set is still the active one, so a repeat is safe. A test shortens the waits.
-  var completionWaits: [Duration] = [.seconds(1), .seconds(2), .seconds(4)]
-
-  /// Sends the completion of `id`, and again after each of `completionWaits` while the failure is
-  /// one a later try can outlast. Each try queues behind the mutations asked for since, so a Set
-  /// the person plays meanwhile is not held up by the waits. Nil when the person played something
-  /// else meanwhile; the last failure otherwise.
-  private func reportCompletion(
-    _ id: String, to client: OrbisClient, generation: Int
-  ) async throws -> (queue: ListeningQueue, revision: Int)? {
-    var waits = completionWaits[...]
-    while true {
-      let request = enqueueQueueMutation { try await client.reportCompletion(id) }
-      let revision = queueMutationGeneration
-      do {
-        let loaded = try await request.value
-        return generation == playGeneration ? (loaded, revision) : nil
-      } catch let error as OrbisError where Self.mayOutlast(error) && !waits.isEmpty {
-        guard generation == playGeneration else { return nil }
-        do {
-          try await Task.sleep(for: waits.removeFirst())
-        } catch {
-          throw OrbisError.cancelled
-        }
-        guard generation == playGeneration else { return nil }
-      }
-    }
-  }
-
-  /// Whether a request that failed this way may succeed when sent again: no answer came, or the
-  /// service was busy or broken rather than refusing the request.
-  private static func mayOutlast(_ error: OrbisError) -> Bool {
-    switch error {
-    case .unreachable: true
-    case .server(let status, _): status == 429 || status >= 500
-    default: false
-    }
+    let outcome = await queueStore.finished(
+      id, client: client, currentToken: currentToken, isCurrent: isCurrent(generation))
+    guard generation == playGeneration else { return }
+    guard let loaded = acceptedQueue(outcome, at: client.address) else { return }
+    let wantsSound = pendingActivation?.wantsSound ?? false
+    pendingActivation = nil
+    playActiveEntry(of: loaded, from: client, autoplay: wantsSound)
+    // The finished Set left the queue and its position went back to the beginning, so the
+    // Library is read again rather than patched. Read quietly, because a spinner where the list
+    // was would be a flicker the person did not ask for.
+    await refreshLibraryQuietly()
   }
 
   /// Reads the one Listening Queue. A failure keeps its reason, so the queue screen can say what
