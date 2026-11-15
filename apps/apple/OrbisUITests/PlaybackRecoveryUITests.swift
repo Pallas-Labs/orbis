@@ -238,7 +238,7 @@ final class PlaybackRecoveryUITests: LibraryJourney {
     }
 
     let seek = app.sliders["now-playing-seek"]
-    let beforeRetry = Self.elapsedSeconds(seek.value as? String) ?? 0
+    let beforeRetry = seek.exists ? Self.elapsedSeconds(seek.value as? String) ?? 0 : 0
     observations.append([
       "phase": "failed", "elapsedSeconds": beforeRetry, "failureVisible": failure.exists,
     ])

@@ -13,19 +13,28 @@ import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playb
 // `X-Playback-Session-Id`, so the first `sessions` items the app loads get the fault, and a
 // reload, which is a new item, gets the file once that count is spent.
 //
-// `held-body` answers each request's headers and never sends a body byte, as a path that
+// Both faults answer AVPlayer's two-byte probe (`bytes=0-1`) in full, as the node did in the
+// Sets that failed through the Funnel; holding the probe too makes AVFoundation fail the item
+// after two minutes with its own error instead of a URL timeout.
+//
+// `held-body` answers each other request's headers and never sends a body byte, as a path that
 // holds the bytes does: the item times out before it plays.
-// `paused-body` sends the file up to a third of its length, and its tail (where the fixture
-// keeps its `moov` box), then the bytes between at 16 bytes a second: the item plays its first
-// ten seconds, then stalls until it is replaced. The trickle keeps the connection busy, as a
-// slow path does, so the stall is not cut short by the loader's idle timeout (url -1001).
+// `paused-body` sends the file up to a third of its length, and its last 64 KB (where the
+// fixture keeps its `moov` box, which AVPlayer reads from an aligned offset before it), at
+// 32 KB/s, about four times the fixture's bitrate, then the bytes between at 16 bytes a
+// second: the item starts, plays its first ten seconds, then stalls until it is replaced. At
+// full speed or with no fast part, AVPlayer judges the path too slow and never starts; with no
+// trickle, the loader's idle timeout (url -1001) fails the item instead of a stall.
 
 // Headers that belong to one connection, so the proxy sets its own. Bodies pass through
 // still encoded (`decompress: false`), so `content-encoding` and `content-length` stay true.
 const hopHeaders = new Set(["connection", "keep-alive", "transfer-encoding"]);
-const TAIL_BYTES = 16 * 1024;
+const TAIL_BYTES = 64 * 1024;
+const PROBE_BYTES = 2;
+const TICK_MS = 100;
+const FAST_BYTES_PER_TICK = 3200;
 const TRICKLE_BYTES = 16;
-const TRICKLE_INTERVAL_MS = 1000;
+const TICKS_PER_TRICKLE = 10;
 const MAX_KEPT_ENTRIES = 512;
 
 const parseRange = (header, size) => {
@@ -46,16 +55,16 @@ const parseRange = (header, size) => {
   return start < size && start <= end ? { end, ranged: true, start } : null;
 };
 
-/** The part of `[start, end]` a faulted session may receive before the body pauses. */
-const allowedSpan = (fault, start, end, size) => {
-  if (fault.kind === "held-body") {
-    return null;
-  }
-  if (start >= size - TAIL_BYTES) {
-    return { end, start };
+/**
+ * The last byte from `position` that a paused body sends at the fast rate, or -1 when
+ * `position` is in the part it trickles.
+ */
+const fastThrough = (position, size) => {
+  if (position >= size - TAIL_BYTES) {
+    return size - 1;
   }
   const cutoff = Math.floor(size / 3);
-  return start < cutoff ? { end: Math.min(end, cutoff - 1), start } : null;
+  return position < cutoff ? cutoff - 1 : -1;
 };
 
 export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
@@ -78,9 +87,6 @@ export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
       fault.sessions.push(session);
     }
     const faulted = fault.sessions.includes(session);
-    const span = faulted
-      ? allowedSpan(fault, range.start, range.end, bytes.length)
-      : range;
     const log = {
       faulted,
       method: request.method,
@@ -104,37 +110,40 @@ export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
       response.end();
       return;
     }
-    if (span) {
-      const part = bytes.subarray(span.start, span.end + 1);
-      log.sent = part.length;
-      response.write(part);
-    }
-    if (span?.start === range.start && span.end === range.end) {
-      response.end();
+    if (!faulted || range.end - range.start + 1 <= PROBE_BYTES) {
+      log.sent = range.end - range.start + 1;
+      response.end(bytes.subarray(range.start, range.end + 1));
       return;
     }
-    // The rest of the body never comes, or trickles; the client gives up, or the lane ends.
-    response.flushHeaders();
-    let next = span ? span.end + 1 : range.start;
-    const trickle =
-      fault.kind === "paused-body"
-        ? setInterval(() => {
-            const part = bytes.subarray(
-              next,
-              Math.min(next + TRICKLE_BYTES, range.end + 1)
-            );
-            next += part.length;
-            log.sent += part.length;
-            response.write(part);
-            if (next > range.end) {
-              clearInterval(trickle);
-              response.end();
-            }
-          }, TRICKLE_INTERVAL_MS)
-        : undefined;
     response.once("close", () => {
-      clearInterval(trickle);
       log.closed = true;
+    });
+    // A held body never comes; the client gives up, or the lane ends.
+    response.flushHeaders();
+    if (fault.kind === "held-body") {
+      return;
+    }
+    let next = range.start;
+    let tick = 0;
+    const pace = setInterval(() => {
+      tick += 1;
+      const fast = fastThrough(next, bytes.length);
+      let through = Math.min(next + FAST_BYTES_PER_TICK - 1, fast);
+      if (fast < 0) {
+        through =
+          tick % TICKS_PER_TRICKLE === 0 ? next + TRICKLE_BYTES - 1 : next - 1;
+      }
+      const part = bytes.subarray(next, Math.min(through, range.end) + 1);
+      next += part.length;
+      log.sent += part.length;
+      response.write(part);
+      if (next > range.end) {
+        clearInterval(pace);
+        response.end();
+      }
+    }, TICK_MS);
+    response.once("close", () => {
+      clearInterval(pace);
     });
   };
 
