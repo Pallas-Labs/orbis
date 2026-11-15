@@ -446,6 +446,23 @@ const seedAnalysis = (setId) => {
   ).run(setId, JSON.stringify(laneAnalysis()), new Date().toISOString());
 };
 
+const routeCobalt = async (route, request, response) => {
+  if (request.method !== "POST" || route !== "/cobalt") {
+    return false;
+  }
+  const { url } = await new Response(Readable.toWeb(request)).json();
+  const setId = slowSets.get(url);
+  if (setId) {
+    respond(response, 200, {
+      status: "tunnel",
+      url: `http://127.0.0.1:${port}/slow-audio/${setId}`,
+    });
+  } else {
+    respond(response, 404);
+  }
+  return true;
+};
+
 const handle = async (request, response) => {
   const route = new URL(request.url, `http://127.0.0.1:${port}`).pathname;
   if (await routeDiagnostics(route, request, response)) {
@@ -457,17 +474,7 @@ const handle = async (request, response) => {
   if (handleStream(route, request, response)) {
     return;
   }
-  if (request.method === "POST" && route === "/cobalt") {
-    const { url } = await new Response(Readable.toWeb(request)).json();
-    const setId = slowSets.get(url);
-    if (setId) {
-      respond(response, 200, {
-        status: "tunnel",
-        url: `http://127.0.0.1:${port}/slow-audio/${setId}`,
-      });
-    } else {
-      respond(response, 404);
-    }
+  if (await routeCobalt(route, request, response)) {
     return;
   }
   const match =
