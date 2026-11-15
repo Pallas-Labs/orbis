@@ -73,9 +73,10 @@ final class SetPageV2UITests: LibraryJourney {
     let sourceLine = app.staticTexts["detail-source-line"]
     XCTAssertTrue(sourceLine.exists, "the source line must show")
 
-    // Tags is an icon in the top bar, beside More.
-    let tagsButton = app.navigationBars.buttons["detail-tags-button"]
-    let more = app.navigationBars.buttons["detail-actions"]
+    // Tags is an icon in the top bar, beside More. An unfolded iPhone Duo, with the sidebar,
+    // reports no navigation bar, so the journey finds both by identifier, as other journeys do.
+    let tagsButton = app.buttons["detail-tags-button"]
+    let more = app.buttons["detail-actions"]
     XCTAssertTrue(tagsButton.waitForExistence(timeout: 10), "\(app.debugDescription)")
     XCTAssertTrue(more.exists)
     XCTAssertLessThan(tagsButton.frame.maxX, more.frame.minX + 1, "Tags must sit before More")
@@ -164,7 +165,7 @@ final class SetPageV2UITests: LibraryJourney {
     capture("set-page-v2-04-nothing-more")
 
     // More asks for the Tracklist instead.
-    app.navigationBars.buttons["detail-actions"].tap()
+    app.buttons["detail-actions"].tap()
     let find = app.buttons["detail-find-tracklist"]
     XCTAssertTrue(find.waitForExistence(timeout: 5), "More must offer Find Tracklist")
     capture("set-page-v2-05-find-tracklist")
