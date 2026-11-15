@@ -19,13 +19,15 @@ import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playb
 //
 // `held-body` answers each other request's headers and never sends a body byte, as a path that
 // holds the bytes does: the item times out before it plays.
-// `paused-body` sends the file up to two thirds of its length, and its last 64 KB (where the
-// fixture keeps its `moov` box, which AVPlayer reads from an aligned offset before it), at
-// 32 KB/s, about four times the fixture's bitrate, then the bytes between at 16 bytes a
-// second: the item starts, plays its first twenty seconds, then stalls until it is replaced.
-// With a shorter fast part (a third of the file, 2.5 s), AVPlayer judges the path too slow and
-// never starts; with no trickle, the loader's idle timeout (url -1001) fails the item instead
-// of a stall.
+// `paused-body` sends at 16 KB/s, about twice the fixture's bitrate, for the first 8 s of the
+// first item's session, then at 16 bytes a second: the item starts, plays what arrived (about
+// 15 s), then stalls until it is replaced. A later item of the same fault gets no fast start.
+// The file's last 64 KB (where the fixture keeps its `moov` box, which AVPlayer reads from an
+// aligned offset before it) always comes at the fast rate.
+// The path slows by time, not at a byte offset, because AVPlayer starts only once it expects
+// the rest of the file in time: a collapse at a fixed offset of this short file kept it waiting
+// (`minimizingStalls`) with 20 s buffered. With no trickle, the loader's idle timeout
+// (url -1001) fails the item instead of a stall.
 
 // Headers that belong to one connection, so the proxy sets its own. Bodies pass through
 // still encoded (`decompress: false`), so `content-encoding` and `content-length` stay true.
@@ -33,7 +35,8 @@ const hopHeaders = new Set(["connection", "keep-alive", "transfer-encoding"]);
 const TAIL_BYTES = 64 * 1024;
 const PROBE_BYTES = 2;
 const TICK_MS = 100;
-const FAST_BYTES_PER_TICK = 3200;
+const FAST_BYTES_PER_TICK = 1600;
+const FAST_FOR_MS = 8000;
 const TRICKLE_BYTES = 16;
 const TICKS_PER_TRICKLE = 10;
 const MAX_KEPT_ENTRIES = 512;
@@ -56,17 +59,9 @@ const parseRange = (header, size) => {
   return start < size && start <= end ? { end, ranged: true, start } : null;
 };
 
-/**
- * The last byte from `position` that a paused body sends at the fast rate, or -1 when
- * `position` is in the part it trickles.
- */
-const fastThrough = (position, size) => {
-  if (position >= size - TAIL_BYTES) {
-    return size - 1;
-  }
-  const cutoff = Math.floor((size * 2) / 3);
-  return position < cutoff ? cutoff - 1 : -1;
-};
+/** Whether a paused body still sends `position` at the fast rate. */
+const isFast = (position, size, sessionStartedAt) =>
+  position >= size - TAIL_BYTES || Date.now() - sessionStartedAt < FAST_FOR_MS;
 
 export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
   const faults = new Map();
@@ -85,6 +80,10 @@ export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
       !fault.sessions.includes(session) &&
       fault.sessions.length < fault.limit
     ) {
+      // Only the first item gets the fast start, so a reload that meets the fault never plays.
+      if (fault.sessions.length === 0) {
+        fault.startedAt[session] = Date.now();
+      }
       fault.sessions.push(session);
     }
     const faulted = fault.sessions.includes(session);
@@ -128,9 +127,8 @@ export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
     let tick = 0;
     const pace = setInterval(() => {
       tick += 1;
-      const fast = fastThrough(next, bytes.length);
-      let through = Math.min(next + FAST_BYTES_PER_TICK - 1, fast);
-      if (fast < 0) {
+      let through = next + FAST_BYTES_PER_TICK - 1;
+      if (!isFast(next, bytes.length, fault.startedAt[session] ?? 0)) {
         through =
           tick % TICKS_PER_TRICKLE === 0 ? next + TRICKLE_BYTES - 1 : next - 1;
       }
@@ -232,6 +230,7 @@ export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
             : 1,
         requests: [],
         sessions: [],
+        startedAt: {},
       });
       response.writeHead(204).end();
       return true;

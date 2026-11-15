@@ -55,8 +55,8 @@ final class PlaybackRecoveryUITests: LibraryJourney {
     }
     findings["eventsAtStall"] = stalled
     capture("stall-reload-stalled")
-    // The faulted item holds everything past its first twenty seconds, so playing beyond them
-    // proves the reload replaced it.
+    // The faulted item gets about its first fifteen seconds, so playing beyond 24 s proves the
+    // reload replaced it.
     let recovered = waitForSound(on: seek, beyond: 24, seconds: 60) {}
     findings["elapsedSeconds"] = Self.elapsedSeconds(seek.value as? String) ?? -1
     capture("stall-reload-playing")
