@@ -245,6 +245,11 @@ export const listens = sqliteTable(
   },
   (table) => [
     index("listens_by_person_set").on(table.personId, table.setId, table.id),
+    index("listens_by_person_started").on(
+      table.personId,
+      table.startedAt,
+      table.id
+    ),
     index("listens_by_set").on(table.setId),
   ]
 );
