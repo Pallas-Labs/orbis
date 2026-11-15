@@ -28,7 +28,42 @@ const db = new Database(path.join(dataDirectory, "library.sqlite"));
 // that meets one of its writes fails with SQLITE_BUSY and takes this server down with it.
 db.run("PRAGMA busy_timeout = 5000");
 const audioDirectory = path.join(dataDirectory, "audio");
-const audioFaults = makeAudioFaults({ audioDirectory, serviceAddress });
+// A ten-minute AAC Set for the paused-body fault, `moov` first. AVPlayer starts a short file on
+// a slow path only once the whole rest of it has arrived, so a stall needs a long one.
+let m4a;
+const longM4a = () => {
+  if (m4a) {
+    return m4a;
+  }
+  const destination = path.join(dataDirectory, "streaming-fixture.m4a");
+  execFileSync("ffmpeg", [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    "-f",
+    "lavfi",
+    "-i",
+    "sine=frequency=440:sample_rate=44100",
+    "-t",
+    "600",
+    "-c:a",
+    "aac",
+    "-b:a",
+    "64k",
+    "-movflags",
+    "+faststart",
+    destination,
+  ]);
+  m4a = destination;
+  return m4a;
+};
+
+const audioFaults = makeAudioFaults({
+  audioDirectory,
+  longAudio: longM4a,
+  serviceAddress,
+});
 const slowSets = new Map();
 const downloads = new Map();
 const audio = readFileSync(fixture);

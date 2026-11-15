@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { copyFileSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
 
@@ -19,15 +19,14 @@ import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playb
 //
 // `held-body` answers each other request's headers and never sends a body byte, as a path that
 // holds the bytes does: the item times out before it plays.
-// `paused-body` sends at 16 KB/s, about twice the fixture's bitrate, for the first 8 s of the
-// first item's session, then at 16 bytes a second: the item starts, plays what arrived (about
-// 15 s), then stalls until it is replaced. A later item of the same fault gets no fast start.
-// The file's last 64 KB (where the fixture keeps its `moov` box, which AVPlayer reads from an
-// aligned offset before it) always comes at the fast rate.
-// The path slows by time, not at a byte offset, because AVPlayer starts only once it expects
-// the rest of the file in time: a collapse at a fixed offset of this short file kept it waiting
-// (`minimizingStalls`) with 20 s buffered. With no trickle, the loader's idle timeout
-// (url -1001) fails the item instead of a stall.
+// `paused-body` swaps the Set's audio for the lane's ten-minute 64 kbit/s AAC file, then sends
+// it at 16 KB/s, twice its bitrate, for the first 8 s of the first item's session, and at 16
+// bytes a second after that: the item starts, plays what arrived (about 15 s), then stalls
+// until it is replaced. A later item of the same fault gets no fast start. The last 64 KB
+// always come at the fast rate, for a file that keeps its `moov` box at the end.
+// AVPlayer starts a short file on a slow path only once the whole rest of it has arrived, so
+// the 30 s fixture never started and never stalled; the long file starts as a real Set does.
+// With no trickle, the loader's idle timeout (url -1001) fails the item instead of a stall.
 
 // Headers that belong to one connection, so the proxy sets its own. Bodies pass through
 // still encoded (`decompress: false`), so `content-encoding` and `content-length` stay true.
@@ -63,7 +62,11 @@ const parseRange = (header, size) => {
 const isFast = (position, size, sessionStartedAt) =>
   position >= size - TAIL_BYTES || Date.now() - sessionStartedAt < FAST_FOR_MS;
 
-export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
+export const makeAudioFaults = ({
+  audioDirectory,
+  longAudio,
+  serviceAddress,
+}) => {
   const faults = new Map();
   const diagnostics = [];
 
@@ -222,6 +225,12 @@ export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
         pathname
       )?.groups;
     if (seed && request.method === "POST") {
+      if (seed.kind === "paused-body") {
+        copyFileSync(
+          longAudio(),
+          path.join(audioDirectory, `${seed.setId}.m4a`)
+        );
+      }
       faults.set(seed.setId, {
         kind: seed.kind,
         limit:
