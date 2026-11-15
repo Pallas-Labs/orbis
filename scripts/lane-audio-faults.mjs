@@ -138,10 +138,15 @@ export const makeAudioFaults = ({ audioDirectory, serviceAddress }) => {
   };
 
   const forward = async (route, request, response) => {
-    const target = new URL(
-      `${route.slice("/via".length) || "/"}${new URL(request.url, "http://seed").search}`,
-      serviceAddress
-    );
+    // Only the path and query come from the request, so a path such as `//host` cannot send the
+    // request anywhere but the lane service.
+    const target = new URL(serviceAddress);
+    target.pathname = route.slice("/via".length) || "/";
+    target.search = new URL(request.url, "http://seed").search;
+    if (target.origin !== new URL(serviceAddress).origin) {
+      response.writeHead(400).end();
+      return;
+    }
     const headers = new Headers();
     for (const [name, value] of Object.entries(request.headers)) {
       if (!hopHeaders.has(name) && name !== "host" && value !== undefined) {
