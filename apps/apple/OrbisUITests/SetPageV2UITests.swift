@@ -73,12 +73,24 @@ final class SetPageV2UITests: LibraryJourney {
     let sourceLine = app.staticTexts["detail-source-line"]
     XCTAssertTrue(sourceLine.exists, "the source line must show")
 
-    // Tags is an icon in the top bar, beside More.
-    let tagsButton = app.navigationBars.buttons["detail-tags-button"]
-    let more = app.navigationBars.buttons["detail-actions"]
+    // Tags is an icon in the bar, before More. On iPhone 17 Pro the bar runs across the top, so
+    // Tags sits left of More. On iPhone Duo the bar runs down the trailing edge, reports no
+    // navigation bar, and puts Tags above More, so the journey finds both by identifier.
+    let tagsButton = app.buttons["detail-tags-button"]
+    let more = app.buttons["detail-actions"]
     XCTAssertTrue(tagsButton.waitForExistence(timeout: 10), "\(app.debugDescription)")
     XCTAssertTrue(more.exists)
-    XCTAssertLessThan(tagsButton.frame.maxX, more.frame.minX + 1, "Tags must sit before More")
+    let tagsFrame = tagsButton.frame
+    let moreFrame = more.frame
+    let frames = "Tags \(tagsFrame), More \(moreFrame)"
+    if tagsFrame.minY < moreFrame.maxY && moreFrame.minY < tagsFrame.maxY {
+      XCTAssertLessThan(tagsFrame.maxX, moreFrame.minX + 1, "Tags must sit before More: \(frames)")
+    } else {
+      XCTAssertTrue(
+        tagsFrame.minX < moreFrame.maxX && moreFrame.minX < tagsFrame.maxX,
+        "Tags and More must share a row or a column: \(frames)")
+      XCTAssertLessThan(tagsFrame.maxY, moreFrame.minY + 1, "Tags must sit above More: \(frames)")
+    }
 
     // Every control shows on the first screen, without scrolling.
     let play = app.buttons["detail-play-toggle"]
@@ -164,7 +176,7 @@ final class SetPageV2UITests: LibraryJourney {
     capture("set-page-v2-04-nothing-more")
 
     // More asks for the Tracklist instead.
-    app.navigationBars.buttons["detail-actions"].tap()
+    app.buttons["detail-actions"].tap()
     let find = app.buttons["detail-find-tracklist"]
     XCTAssertTrue(find.waitForExistence(timeout: 5), "More must offer Find Tracklist")
     capture("set-page-v2-05-find-tracklist")

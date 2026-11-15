@@ -127,7 +127,7 @@
         "apps/apple/Orbis/SetManagementSection.swift"
       ],
       "platform": "ios",
-      "tests": ["OrbisUITests/SetPageUITests"]
+      "tests": ["OrbisUITests/SetPageUITests", "OrbisUITests/SetPageV2UITests"]
     },
     {
       "paths": ["apps/apple/Orbis/FilingSheet.swift"],
@@ -169,7 +169,8 @@
         "OrbisUITests/LayoutUITests",
         "OrbisUITests/PlaybackRecoveryUITests",
         "OrbisUITests/PlaybackUITests",
-        "OrbisUITests/SetPageUITests"
+        "OrbisUITests/SetPageUITests",
+        "OrbisUITests/SetPageV2UITests"
       ]
     },
     {
@@ -187,7 +188,8 @@
       "platform": "ios",
       "tests": [
         "OrbisUITests/PlaybackReportUITests",
-        "OrbisUITests/SetPageUITests"
+        "OrbisUITests/SetPageUITests",
+        "OrbisUITests/SetPageV2UITests"
       ]
     },
     {
@@ -210,7 +212,8 @@
         "OrbisUITests/LayoutUITests",
         "OrbisUITests/PlaybackRecoveryUITests",
         "OrbisUITests/PlaybackUITests",
-        "OrbisUITests/SetPageUITests"
+        "OrbisUITests/SetPageUITests",
+        "OrbisUITests/SetPageV2UITests"
       ]
     },
     {
@@ -229,7 +232,8 @@
         "OrbisUITests/LayoutUITests",
         "OrbisUITests/PlaybackRecoveryUITests",
         "OrbisUITests/PlaybackUITests",
-        "OrbisUITests/SetPageUITests"
+        "OrbisUITests/SetPageUITests",
+        "OrbisUITests/SetPageV2UITests"
       ]
     },
     {
@@ -271,7 +275,7 @@
     {
       "paths": ["apps/apple/Orbis/Transport.swift"],
       "platform": "ios",
-      "tests": ["OrbisUITests/SetPageUITests"]
+      "tests": ["OrbisUITests/SetPageUITests", "OrbisUITests/SetPageV2UITests"]
     },
     {
       "paths": ["apps/apple/Orbis/ZoomTransition.swift"],
@@ -288,7 +292,8 @@
       "platform": "ios",
       "tests": [
         "OrbisUITests/PlaybackReportUITests",
-        "OrbisUITests/SetPageUITests"
+        "OrbisUITests/SetPageUITests",
+        "OrbisUITests/SetPageV2UITests"
       ]
     },
     {
@@ -296,7 +301,8 @@
       "platform": "ios",
       "tests": [
         "OrbisUITests/PlaybackReportUITests",
-        "OrbisUITests/SetPageUITests"
+        "OrbisUITests/SetPageUITests",
+        "OrbisUITests/SetPageV2UITests"
       ]
     },
     {
@@ -304,7 +310,8 @@
       "platform": "ios",
       "tests": [
         "OrbisUITests/PlaybackReportUITests",
-        "OrbisUITests/SetPageUITests"
+        "OrbisUITests/SetPageUITests",
+        "OrbisUITests/SetPageV2UITests"
       ]
     },
     {
@@ -314,7 +321,8 @@
         "OrbisUITests/LayoutUITests",
         "OrbisUITests/PlaybackRecoveryUITests",
         "OrbisUITests/PlaybackUITests",
-        "OrbisUITests/SetPageUITests"
+        "OrbisUITests/SetPageUITests",
+        "OrbisUITests/SetPageV2UITests"
       ]
     },
     {
