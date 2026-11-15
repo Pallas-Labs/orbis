@@ -19,12 +19,13 @@ import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playb
 //
 // `held-body` answers each other request's headers and never sends a body byte, as a path that
 // holds the bytes does: the item times out before it plays.
-// `paused-body` sends the file up to a third of its length, and its last 64 KB (where the
+// `paused-body` sends the file up to two thirds of its length, and its last 64 KB (where the
 // fixture keeps its `moov` box, which AVPlayer reads from an aligned offset before it), at
 // 32 KB/s, about four times the fixture's bitrate, then the bytes between at 16 bytes a
-// second: the item starts, plays its first ten seconds, then stalls until it is replaced. At
-// full speed or with no fast part, AVPlayer judges the path too slow and never starts; with no
-// trickle, the loader's idle timeout (url -1001) fails the item instead of a stall.
+// second: the item starts, plays its first twenty seconds, then stalls until it is replaced.
+// With a shorter fast part (a third of the file, 2.5 s), AVPlayer judges the path too slow and
+// never starts; with no trickle, the loader's idle timeout (url -1001) fails the item instead
+// of a stall.
 
 // Headers that belong to one connection, so the proxy sets its own. Bodies pass through
 // still encoded (`decompress: false`), so `content-encoding` and `content-length` stay true.
@@ -63,7 +64,7 @@ const fastThrough = (position, size) => {
   if (position >= size - TAIL_BYTES) {
     return size - 1;
   }
-  const cutoff = Math.floor(size / 3);
+  const cutoff = Math.floor((size * 2) / 3);
   return position < cutoff ? cutoff - 1 : -1;
 };
 
