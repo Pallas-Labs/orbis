@@ -123,10 +123,13 @@ try {
     // Moves the playing element to `seconds` and pauses it there with the play
     // control, then waits for the pause's own save to reach the service. The
     // seek must land first: a seek that ends during the next resume's read is
-    // the person's choice of place and drops the read. The seek saves the same
-    // second, so only the pause's answer shows that no save of this page can
-    // still land after another device's.
+    // the person's choice of place and drops the read. The page sends its saves
+    // one at a time, so on a busy host the seek's save can leave after the
+    // pause click. The wait takes the seek's save first, then the save of the
+    // paused element's own second, so no save of this page can still land
+    // after another device's.
     const pauseAt = async (seconds) => {
+      const savesBeforeSeek = positionSaves.length;
       await page.evaluate((target) => {
         const element = document.querySelector("audio");
         element.currentTime = target;
@@ -139,17 +142,27 @@ try {
           state.currentTime < seconds + 2
         );
       }, `the audio did not move to ${seconds} s`);
+      await waitUntil(
+        () => positionSaves.length > savesBeforeSeek,
+        "the seek did not save its position"
+      );
+      await positionSaves[savesBeforeSeek].response();
       const savesBefore = positionSaves.length;
       await playButton.click();
       await waitUntil(async () => {
         const state = await audioState();
         return state.paused;
       }, "the play control did not pause the audio");
+      const { currentTime: paused } = await audioState();
+      const pauseSave = () =>
+        positionSaves
+          .slice(savesBefore)
+          .find((request) => request.postDataJSON().seconds === paused);
       await waitUntil(
-        () => positionSaves.length > savesBefore,
+        () => pauseSave() !== undefined,
         "the pause did not save its position"
       );
-      await positionSaves[savesBefore].response();
+      await pauseSave().response();
       await waitUntil(
         async () => Math.abs((await servicePosition()) - seconds) <= 1,
         `the pause at ${seconds} s did not reach the service`

@@ -277,8 +277,9 @@ export const collections = sqliteTable(
   ]
 );
 
-// One Person's Listening Time with one Set on one UTC day, credited where the Playback Position
-// is saved. A day rather than a Listen, because resuming a Set the next day reopens no Listen.
+// One Person's Listening Time with one Set on one day in their time zone, credited where the
+// Playback Position is saved. A day rather than a Listen, because resuming a Set the next day
+// reopens no Listen. A day saved before PAL-2131 is the UTC day, and keeps it.
 export const listeningTime = sqliteTable(
   "listening_time",
   {
@@ -294,6 +295,13 @@ export const listeningTime = sqliteTable(
     index("listening_time_by_set").on(table.setId),
   ]
 );
+
+// The time zone a Person's client last sent with a Playback Position. It draws the day of their
+// Listening Time; a Person with no row keeps the UTC day.
+export const personTimeZones = sqliteTable("person_time_zones", {
+  personId: text("person_id").primaryKey(),
+  timeZone: text("time_zone").notNull(),
+});
 
 // `actionNumber` outlives result pruning so a pruned action can never reacquire ownership.
 export const presenceSessions = sqliteTable(
@@ -395,6 +403,7 @@ export const schema = {
   libraryEntries,
   listeningTime,
   listens,
+  personTimeZones,
   playbackPositions,
   playlistEditors,
   playlistImports,

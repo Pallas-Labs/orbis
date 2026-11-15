@@ -754,7 +754,8 @@ public struct OrbisClient: Sendable {
   /// Reports where playback has reached. The answer is the Set, so the stored position comes
   /// back rather than being assumed.
   public func reportPosition(_ id: String, seconds: Int) async throws -> SavedSet {
-    let body = try Self.encoder.encode(PlaybackPositionRequest(seconds: seconds))
+    let request = PlaybackPositionRequest(seconds: seconds, timeZone: TimeZone.current.identifier)
+    let body = try Self.encoder.encode(request)
     let response = try await send(path: "sets/\(id)/position", method: "PUT", body: body)
     return try decodedSet(response)
   }

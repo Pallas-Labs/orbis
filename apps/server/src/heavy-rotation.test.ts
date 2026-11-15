@@ -24,12 +24,12 @@ import {
 } from "./heavy-rotation.js";
 import type { ListeningDay } from "./heavy-rotation.js";
 
-const NOW = new Date("2026-11-10T18:00:00.000Z");
+const TODAY = "2026-11-10";
 const HOUR = 3600;
 
-/** The UTC day `age` days before NOW. */
+/** The day `age` days before TODAY. */
 const daysAgo = (age: number) =>
-  new Date(NOW.getTime() - age * 86_400_000).toISOString().slice(0, 10);
+  new Date(Date.parse(TODAY) - age * 86_400_000).toISOString().slice(0, 10);
 
 const day = (setId: string, age: number, seconds: number): ListeningDay => ({
   day: daysAgo(age),
@@ -51,7 +51,7 @@ test("ranks by listening time, not by how many days a Set was played", () => {
       day("middle", 2, 2 * HOUR),
       day("short", 1, HOUR / 2),
     ],
-    NOW
+    TODAY
   );
   expect(ranked).toEqual(["full", "middle", "short", "skims"]);
 });
@@ -63,7 +63,7 @@ test("a day under the floor does not count, a day at the floor does", () => {
       day("under", 0, HEAVY_ROTATION.floorSeconds - 1),
       day("at", 0, HEAVY_ROTATION.floorSeconds),
     ],
-    NOW
+    TODAY
   );
   expect(ranked).toEqual(["x", "y", "z", "at"]);
 });
@@ -76,7 +76,7 @@ test("only the last 30 days count, today being the first", () => {
       day("day 30", 30, 10 * HOUR),
       day("tomorrow", -1, 10 * HOUR),
     ],
-    NOW
+    TODAY
   );
   expect(ranked).toEqual(["x", "y", "z", "day 29"]);
 });
@@ -89,7 +89,7 @@ test("recent days weigh a little more", () => {
       day("three weeks ago, long", 21, 3 * HOUR),
       day("today, short", 0, 1.5 * HOUR),
     ],
-    NOW
+    TODAY
   );
   expect(ranked).toEqual([
     "three weeks ago, long",
@@ -107,15 +107,15 @@ test("time on several days adds up for one Set", () => {
       day("c", 0, 30 * 60),
       day("a", 1, 30 * 60),
     ],
-    NOW
+    TODAY
   );
   expect(ranked).toEqual(["a", "b", "c"]);
 });
 
 test("the shelf is empty until three Sets qualify", () => {
-  expect(heavyRotation([], NOW)).toEqual([]);
+  expect(heavyRotation([], TODAY)).toEqual([]);
   expect(
-    heavyRotation([day("a", 0, HOUR), day("b", 0, 2 * HOUR)], NOW)
+    heavyRotation([day("a", 0, HOUR), day("b", 0, 2 * HOUR)], TODAY)
   ).toEqual([]);
   expect(
     heavyRotation(
@@ -125,13 +125,13 @@ test("the shelf is empty until three Sets qualify", () => {
         day("skim", 0, 60),
         day("old", 40, HOUR),
       ],
-      NOW
+      TODAY
     )
   ).toEqual([]);
   expect(
     heavyRotation(
       [day("a", 0, HOUR), day("b", 0, 2 * HOUR), day("c", 0, 3 * HOUR)],
-      NOW
+      TODAY
     )
   ).toEqual(["c", "b", "a"]);
 });
@@ -146,11 +146,11 @@ test("3 months and a year each hold their own days", () => {
   ];
   expect(LISTENING_RANGES.quarter.days).toBe(90);
   expect(LISTENING_RANGES.year.days).toBe(365);
-  expect(withoutFiller(heavyRotation(days, NOW, "month"))).toEqual([]);
-  expect(withoutFiller(heavyRotation(days, NOW, "quarter"))).toEqual([
+  expect(withoutFiller(heavyRotation(days, TODAY, "month"))).toEqual([]);
+  expect(withoutFiller(heavyRotation(days, TODAY, "quarter"))).toEqual([
     "day 89",
   ]);
-  expect(withoutFiller(heavyRotation(days, NOW, "year"))).toEqual([
+  expect(withoutFiller(heavyRotation(days, TODAY, "year"))).toEqual([
     "day 364",
     "day 89",
     "day 90",
@@ -165,13 +165,13 @@ test("a year weighs every day the same; 30 days and 3 months favour now", () => 
     day("this week", 3, (110 / 60) * HOUR),
     day("last month", 40, 2 * HOUR),
   ];
-  expect(withoutFiller(heavyRotation(days, NOW, "year"))).toEqual([
+  expect(withoutFiller(heavyRotation(days, TODAY, "year"))).toEqual([
     "january",
     "last month",
     "this week",
   ]);
   // In 3 months, day 40 weighs 1 - 0.25 * 40 / 89 ≈ 0.89, under this week's ≈ 0.99.
-  expect(withoutFiller(heavyRotation(days, NOW, "quarter"))).toEqual([
+  expect(withoutFiller(heavyRotation(days, TODAY, "quarter"))).toEqual([
     "this week",
     "last month",
   ]);
@@ -185,7 +185,7 @@ test("the collection holds at most its limit, and equal time orders by id", () =
   );
   const ranked = heavyRotation(
     ids.map((id) => day(id, 0, HOUR)),
-    NOW
+    TODAY
   );
   const expected = [...ids];
   expected.sort();
@@ -194,14 +194,14 @@ test("the collection holds at most its limit, and equal time orders by id", () =
 
 test("a Collection can show one Set, and can ask for a least time heard", () => {
   const days = [day("long", 0, 2 * HOUR), day("short", 1, HOUR / 2)];
-  expect(heavyRotation(days, NOW)).toEqual([]);
-  expect(heavyRotation(days, NOW, "month", { minimumSets: 1 })).toEqual([
+  expect(heavyRotation(days, TODAY)).toEqual([]);
+  expect(heavyRotation(days, TODAY, "month", { minimumSets: 1 })).toEqual([
     "long",
     "short",
   ]);
   // The least time counts the seconds heard, not the weighted score.
   expect(
-    heavyRotation([day("old hour", 29, HOUR), ...days], NOW, "month", {
+    heavyRotation([day("old hour", 29, HOUR), ...days], TODAY, "month", {
       minimumSeconds: HOUR,
       minimumSets: 1,
     })

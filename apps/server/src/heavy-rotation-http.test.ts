@@ -399,3 +399,125 @@ test("transcript: Listens from before Listening Time fill Heavy Rotation", async
     await rm(directory, { force: true, recursive: true });
   }
 });
+
+// A Person's time zone draws the day of their Listening Time (PAL-2131). Midnight UTC is 16:00
+// in Los Angeles, so a UTC day split an afternoon's listening in two. Ways it could fail:
+// - A save that names a time zone still credits the UTC day, so three minutes across midnight
+//   UTC split into two days under the floor and count as nothing.
+// - A save that names no time zone forgets the one this Person's client sent before.
+// - A Person whose client never sent a time zone stops reading the UTC day.
+// - An unknown time zone is stored, and every later save or read fails on it; or it refuses
+//   the save, and the client loses its place.
+// - Heavy Rotation still reads "today" as the UTC day, so a day ahead of UTC (Auckland) is a
+//   day in the future and drops out, or a day behind UTC reads as a day old.
+// - Saving a time zone moves the days stored before it.
+const listenAt = async (
+  app: App,
+  setId: string,
+  at: string,
+  timeZone?: string
+) => {
+  clock = Date.parse(at);
+  await runInOrder([0, 60, 120, 180], async (seconds) => {
+    clock += 60_000;
+    setSystemTime(new Date(clock));
+    await request(app, {
+      method: "PUT",
+      payload: timeZone === undefined ? { seconds } : { seconds, timeZone },
+      url: `/sets/${setId}/position`,
+    });
+  });
+};
+
+const timeZones = (databasePath: string) => {
+  const database = new Database(databasePath, { readonly: true });
+  try {
+    return database
+      .query<{ person_id: string; time_zone: string }, []>(
+        "SELECT person_id, time_zone FROM person_time_zones ORDER BY person_id"
+      )
+      .all()
+      .map((row) => `${row.person_id} ${row.time_zone}`)
+      .join(", ");
+  } finally {
+    database.close();
+  }
+};
+
+test("transcript: a Person's time zone draws the Listening Time day", async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "orbis-rotation-"));
+  const databasePath = path.join(directory, "library.sqlite");
+  try {
+    await seedSets(databasePath, ready(["a", "b", "c", "d", "e"]));
+    // Each Set plays three minutes from 23:58:30 UTC, 15:58:30 in Los Angeles.
+    const beforeMidnight = "2026-11-10T23:57:30Z";
+    setSystemTime(new Date(beforeMidnight));
+    const app = createApp({ databasePath });
+    try {
+      const t = transcript();
+      await listenAt(app, "c", beforeMidnight);
+      t.step(
+        "no time zone yet: play c across midnight UTC",
+        listeningDays(databasePath)
+      );
+
+      await listenAt(app, "a", beforeMidnight, "America/Los_Angeles");
+      t.step(
+        "play a across midnight UTC in America/Los_Angeles",
+        listeningDays(databasePath)
+      );
+
+      await listenAt(app, "b", beforeMidnight);
+      t.step(
+        "play b across midnight UTC, naming no time zone",
+        listeningDays(databasePath)
+      );
+
+      const unknown = await request(app, {
+        method: "PUT",
+        payload: { seconds: 200, timeZone: "Mars/Olympus" },
+        url: "/sets/b/position",
+      });
+      t.step(
+        `save b in Mars/Olympus (${unknown.statusCode})`,
+        timeZones(databasePath)
+      );
+
+      await listenAt(app, "d", beforeMidnight, "America/Los_Angeles");
+      t.step(
+        "play d across midnight UTC; read the shelf on 10 Nov in Los Angeles",
+        await shelf(app)
+      );
+
+      await request(app, {
+        method: "PUT",
+        payload: { seconds: 0, timeZone: "Pacific/Auckland" },
+        url: "/sets/e/position",
+      });
+      t.step(
+        "save e in Pacific/Auckland; read the shelf on 11 Nov there",
+        await shelf(app)
+      );
+      t.step("time zones", timeZones(databasePath));
+      t.step("listening time", listeningDays(databasePath));
+
+      expect(t.text()).toMatchInlineSnapshot(`
+        "
+        no time zone yet: play c across midnight UTC  -> host c 2026-11-10 60, host c 2026-11-11 120
+        play a across midnight UTC in America/Los_Angeles  -> host a 2026-11-10 180, host c 2026-11-10 60, host c 2026-11-11 120
+        play b across midnight UTC, naming no time zone  -> host a 2026-11-10 180, host b 2026-11-10 180, host c 2026-11-10 60, host c 2026-11-11 120
+        save b in Mars/Olympus (200)  -> host America/Los_Angeles
+        play d across midnight UTC; read the shelf on 10 Nov in Los Angeles  -> 200 a b d
+        save e in Pacific/Auckland; read the shelf on 11 Nov there  -> 200 a b d c
+        time zones  -> host Pacific/Auckland
+        listening time  -> host a 2026-11-10 180, host b 2026-11-10 180, host c 2026-11-10 60, host c 2026-11-11 120, host d 2026-11-10 180
+        "
+      `);
+    } finally {
+      await app.dispose();
+    }
+  } finally {
+    setSystemTime();
+    await rm(directory, { force: true, recursive: true });
+  }
+});

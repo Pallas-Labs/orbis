@@ -1,7 +1,7 @@
-/** The seconds of one Set one Person heard on one UTC day. */
+/** The seconds of one Set one Person heard on one day in their time zone. */
 export interface ListeningDay {
   readonly setId: string;
-  /** The UTC day, as `YYYY-MM-DD`. */
+  /** The day, as `YYYY-MM-DD`. */
   readonly day: string;
   readonly seconds: number;
 }
@@ -46,8 +46,35 @@ export const HEAVY_ROTATION = {
 
 const DAY_MS = 86_400_000;
 
-/** The UTC day a moment falls on, as `YYYY-MM-DD`. */
-export const utcDay = (at: Date): string => at.toISOString().slice(0, 10);
+/** Whether `name` is a time zone this runtime knows, such as `America/Los_Angeles`. */
+export const isTimeZone = (name: string): boolean => {
+  try {
+    // The constructor throws a RangeError for a name it does not know.
+    const known = new Intl.DateTimeFormat("en-US", { timeZone: name });
+    return known.resolvedOptions().timeZone !== "";
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * The day a moment falls on in a Person's time zone, as `YYYY-MM-DD`. A Person whose client
+ * never sent a time zone keeps the UTC day.
+ */
+export const dayIn = (at: Date, timeZone: string | null): string => {
+  if (timeZone === null) {
+    return at.toISOString().slice(0, 10);
+  }
+  const parts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone,
+    year: "numeric",
+  }).formatToParts(at);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((entry) => entry.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+};
 
 /**
  * The seconds heard between two saved Playback Positions. Only a short step forward that matches
@@ -78,9 +105,11 @@ export const listenedBetween = (
   return Math.min(step, Math.ceil(elapsedSeconds) + 1);
 };
 
-/** The first day a range holds. */
-export const windowStart = (now: Date, range: ListeningRange): string =>
-  utcDay(new Date(now.getTime() - (LISTENING_RANGES[range].days - 1) * DAY_MS));
+/** The first day a range holds, counted back from `today`. */
+export const windowStart = (today: string, range: ListeningRange): string =>
+  new Date(Date.parse(today) - (LISTENING_RANGES[range].days - 1) * DAY_MS)
+    .toISOString()
+    .slice(0, 10);
 
 /** What a Collection asks of the ranking beyond Heavy Rotation's own rule. */
 export interface RankingOptions {
@@ -92,23 +121,24 @@ export interface RankingOptions {
 
 /**
  * The Sets in Heavy Rotation over a range, most heard first: listening time in the range, where
- * a day under the floor does not count and a recent day weighs as the range says. Empty when
- * fewer than three Sets qualify, or fewer than `options.minimumSets`.
+ * a day under the floor does not count and a recent day weighs as the range says. `today` is the
+ * Person's day, from `dayIn`. Empty when fewer than three Sets qualify, or fewer than
+ * `options.minimumSets`.
  */
 export const heavyRotation = (
   days: readonly ListeningDay[],
-  now: Date,
+  today: string,
   range: ListeningRange = "month",
   options: RankingOptions = {}
 ): string[] => {
   const { minimumSeconds = 0, minimumSets = HEAVY_ROTATION.minimumSets } =
     options;
   const { days: windowDays, oldestWeight } = LISTENING_RANGES[range];
-  const today = Date.parse(utcDay(now));
+  const todayAt = Date.parse(today);
   const scores = new Map<string, number>();
   const heard = new Map<string, number>();
   for (const entry of days) {
-    const age = Math.round((today - Date.parse(entry.day)) / DAY_MS);
+    const age = Math.round((todayAt - Date.parse(entry.day)) / DAY_MS);
     if (
       age < 0 ||
       age >= windowDays ||
