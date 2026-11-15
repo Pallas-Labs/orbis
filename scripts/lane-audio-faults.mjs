@@ -19,10 +19,10 @@ import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playb
 //
 // `held-body` answers each other request's headers and never sends a body byte, as a path that
 // holds the bytes does: the item times out before it plays.
-// `paused-body` swaps the Set's audio for the lane's ten-minute 64 kbit/s AAC file, then sends
+// `paused-body` swaps the Set's audio for the lane's five-minute 64 kbit/s AAC file, then sends
 // it at 16 KB/s, twice its bitrate, for the first 8 s of the first item's session, and at 16
 // bytes a second after that: the item starts, plays what arrived (about 15 s), then stalls
-// until it is replaced. A later item of the same fault gets no fast start. The last 64 KB
+// until it is replaced. A later item of the same fault gets no fast start. The last 256 KB
 // always come at the fast rate, for a file that keeps its `moov` box at the end.
 // AVPlayer starts a short file on a slow path only once the whole rest of it has arrived, so
 // the 30 s fixture never started and never stalled; the long file starts as a real Set does.
@@ -31,7 +31,7 @@ import { decodePlaybackDiagnosticsBatch } from "../packages/contracts/dist/playb
 // Headers that belong to one connection, so the proxy sets its own. Bodies pass through
 // still encoded (`decompress: false`), so `content-encoding` and `content-length` stay true.
 const hopHeaders = new Set(["connection", "keep-alive", "transfer-encoding"]);
-const TAIL_BYTES = 64 * 1024;
+const TAIL_BYTES = 256 * 1024;
 const PROBE_BYTES = 2;
 const TICK_MS = 100;
 const FAST_BYTES_PER_TICK = 1600;
@@ -226,10 +226,17 @@ export const makeAudioFaults = ({
       )?.groups;
     if (seed && request.method === "POST") {
       if (seed.kind === "paused-body") {
-        copyFileSync(
-          longAudio(),
-          path.join(audioDirectory, `${seed.setId}.m4a`)
-        );
+        try {
+          copyFileSync(
+            longAudio(),
+            path.join(audioDirectory, `${seed.setId}.m4a`)
+          );
+        } catch (error) {
+          // A journey's seed call would otherwise wait out its timeout with no reason.
+          console.error("paused-body could not build its long Set", error);
+          response.writeHead(500).end(String(error));
+          return true;
+        }
       }
       faults.set(seed.setId, {
         kind: seed.kind,
