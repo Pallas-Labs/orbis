@@ -31,6 +31,29 @@ class LibraryJourney: XCTestCase {
       object: nil)
   }
 
+  /// Waits until the element matches the predicate, such as `label == "Pause"`.
+  func waitUntil(_ element: XCUIElement, _ predicate: NSPredicate, timeout: TimeInterval) -> Bool {
+    let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+    return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
+  }
+
+  /// Leaves the Set page for Now Playing, through the mini player, and returns its seek bar. The
+  /// Set page has no seek bar (PAL-2293), so the journeys read the position on Now Playing.
+  @discardableResult
+  func openNowPlaying(_ title: String, in app: XCUIApplication) -> XCUIElement {
+    app.navigationBars.buttons.firstMatch.tap()
+    let miniPlayer = app.buttons.matching(
+      NSPredicate(
+        format: "identifier == %@ AND label == %@", "mini-player", "Now playing, \(title)")
+    ).firstMatch
+    XCTAssertTrue(miniPlayer.waitForExistence(timeout: 10))
+    miniPlayer.tap()
+    XCTAssertTrue(app.staticTexts["now-playing-title"].waitForExistence(timeout: 10))
+    let seek = app.sliders["now-playing-seek"]
+    XCTAssertTrue(seek.waitForExistence(timeout: 10))
+    return seek
+  }
+
   static func elapsedSeconds(_ value: String?) -> Int? {
     guard let elapsed = value?.components(separatedBy: " of ").first else { return nil }
     var seconds = 0

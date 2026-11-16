@@ -112,23 +112,8 @@ final class PlaybackRecoveryUITests: LibraryJourney {
     let play = app.buttons["detail-play-toggle"]
     XCTAssertTrue(play.waitForExistence(timeout: 30))
     play.tap()
-    openNowPlaying(set.title, in: app)
-    let seek = app.sliders["now-playing-seek"]
-    XCTAssertTrue(seek.waitForExistence(timeout: 10))
+    let seek = openNowPlaying(set.title, in: app)
     return (app.buttons["now-playing-play-toggle"], seek)
-  }
-
-  /// Leaves the Set page for Now Playing, through the mini player. The Set page has no seek bar
-  /// (PAL-2293), so the journeys read the position on Now Playing.
-  private func openNowPlaying(_ title: String, in app: XCUIApplication) {
-    app.navigationBars.buttons.firstMatch.tap()
-    let miniPlayer = app.buttons.matching(
-      NSPredicate(
-        format: "identifier == %@ AND label == %@", "mini-player", "Now playing, \(title)")
-    ).firstMatch
-    XCTAssertTrue(miniPlayer.waitForExistence(timeout: 10))
-    miniPlayer.tap()
-    XCTAssertTrue(app.staticTexts["now-playing-title"].waitForExistence(timeout: 10))
   }
 
   /// Waits until the seek bar passes `seconds` of media time, checking `each` on every look.
