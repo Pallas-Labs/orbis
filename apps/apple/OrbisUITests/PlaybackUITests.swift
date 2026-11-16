@@ -186,6 +186,16 @@ final class PlaybackUITests: LibraryJourney {
     XCTAssertTrue(waitUntil(second, isSelected, timeout: 8), "The Set must play from 0:12")
     capture("tracklist-second-cue-playing")
 
+    // A selected Cue bounds the position from below only, so Now Playing reads where it landed.
+    var seek = openNowPlaying(seeded.title, in: app)
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 8), .completed,
+      "The 0:12 Cue must play from 0:12")
+    capture("tracklist-elapsed-after-cue")
+    app.buttons["now-playing-close"].tap()
+    tapAtCentre(of: row, in: app)
+    XCTAssertTrue(tracklist.waitForExistence(timeout: 30))
+
     for _ in 0..<3 {
       if first.isHittable { break }
       app.swipeDown()
@@ -199,7 +209,7 @@ final class PlaybackUITests: LibraryJourney {
     pause.tap()
     XCTAssertEqual(pause.label, "Play")
 
-    let seek = openNowPlaying(seeded.title, in: app)
+    seek = openNowPlaying(seeded.title, in: app)
     XCTAssertEqual(XCTWaiter.wait(for: [elapsed(on: seek) { $0 < 10 }], timeout: 5), .completed)
     XCTAssertEqual(app.staticTexts["now-playing-cue"].label, "First Cue · First Artist")
     capture("tracklist-now-playing")
