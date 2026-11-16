@@ -13,7 +13,7 @@
     "test": "turbo run test && node --test scripts/smoke-cobalt.test.mjs scripts/design-tokens.test.mjs scripts/garden-launcher.test.mjs scripts/local-ci.test.mjs",
     "smoke:cobalt": "node scripts/smoke-cobalt.mjs",
     "test:cobalt": "node --test scripts/smoke-cobalt.test.mjs",
-    "prepare": "effect-tsgo patch --typescript --oxlint --skip-missing && lefthook install",
+    "prepare": "effect-tsgo patch --typescript --oxlint --skip-missing && if git rev-parse --git-dir >/dev/null 2>&1; then lefthook install; fi",
     "format": "ultracite fix",
     "format:check": "oxfmt --check .",
     "lint": "oxlint --deny-warnings .",
