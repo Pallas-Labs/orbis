@@ -66,6 +66,33 @@ final class SearchUITests: LibraryJourney {
     XCTAssertEqual(searchText(in: app), own.word, "returning must keep the query")
   }
 
+  /// The sidebar lists each Playlist as a tab of its own. On an iPhone those tabs once reached
+  /// the tab bar, which then held six and put Search under More, so Search went missing for
+  /// anyone with a Playlist (PAL-2443).
+  func testSearchStaysInTheTabBarWithAPlaylist() throws {
+    let service = try LaneService()
+    let name = "Tab bar \(UUID().uuidString.prefix(6))"
+    let playlist = try service.createPlaylist(named: name)
+    addTeardownBlock { try? service.deletePlaylist(playlist.id) }
+    let app = try launch()
+
+    let bar = app.tabBars.firstMatch
+    guard bar.waitForExistence(timeout: 15) else {
+      throw XCTSkip("this device shows a sidebar, not a tab bar")
+    }
+    // The Playlists load after the bar first draws, so the check waits until this one shows.
+    selectTab("Playlists", in: app, sidebarIdentifier: "sidebar-playlists")
+    let shown = app.descendants(matching: .any)
+      .matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+    XCTAssertTrue(
+      shown.waitForExistence(timeout: 30), "Playlists must list the new one\n\(app.debugDescription)")
+    capture("16-tab-bar-with-a-playlist")
+    XCTAssertTrue(
+      bar.buttons["Search"].exists, "Search must stay in the tab bar\n\(app.debugDescription)")
+    XCTAssertFalse(
+      bar.buttons["More"].exists, "the tab bar must not overflow into More")
+  }
+
   /// Clearing a search that found nothing is the one way out of the no-match state, so it has
   /// to empty the field and return the screen to the state it shows before any query. It once
   /// left the query in the field and the result area on Loading, forever.
