@@ -28,18 +28,16 @@ const git = (cwd, ...args) => {
   return result.stdout.trim();
 };
 
-// A checkout shaped like the repository: a package.json with a native format command and
-// apps/apple, which the macOS lane copies with git archive.
-const checkout = (name, { apple = true } = {}) => {
+// A checkout shaped like the repository: a package.json with a native format command, which
+// the leased macOS step runs, and a tracked file under apps/apple.
+const checkout = (name) => {
   const dir = path.join(scratch, name);
   mkdirSync(path.join(dir, "apps/apple"), { recursive: true });
   writeFileSync(
     path.join(dir, "package.json"),
     JSON.stringify({ scripts: { "native:format": "true" } })
   );
-  if (apple) {
-    writeFileSync(path.join(dir, "apps/apple/marker.txt"), "start\n");
-  }
+  writeFileSync(path.join(dir, "apps/apple/marker.txt"), "start\n");
   git(dir, "init", "--quiet");
   git(dir, "add", "--all");
   git(
@@ -58,7 +56,9 @@ const checkout = (name, { apple = true } = {}) => {
 
 // Every command the script runs comes from this directory. `bun run check` changes the
 // checkout the way another process in the same worktree would; the rest succeed quietly and
-// the gh stub records any call, so a test can tell that no status was posted.
+// the gh stub records any call, so a test can tell that no status was posted. The factory stub
+// stands in for `factory lease run`, so no test waits on a real Mac lease; it fails when
+// LOCAL_CI_TEST_FACTORY is `fail`.
 const bin = (name) => {
   const dir = path.join(scratch, `bin-${name}`);
   mkdirSync(dir, { recursive: true });
@@ -87,7 +87,10 @@ exit 0
     "sh",
     'case "$*" in\n  *"command -v ffprobe"*) exit 0 ;;\nesac\ncat > /dev/null\nexit 0\n'
   );
-  write("ssh", "cat > /dev/null\nexit 0\n");
+  write(
+    "factory",
+    'if [ "$LOCAL_CI_TEST_FACTORY" = "fail" ]; then exit 1; fi\nexit 0\n'
+  );
   write("gh", 'echo "$@" >> "$LOCAL_CI_TEST_GH_LOG"\nexit 0\n');
   return dir;
 };
@@ -96,7 +99,12 @@ const run = (dir, binDir, env) =>
   spawnSync(process.execPath, [script], {
     cwd: dir,
     encoding: "utf-8",
-    env: { ...process.env, PATH: `${binDir}:${process.env.PATH}`, ...env },
+    env: {
+      ...process.env,
+      FACTORY_CLI: path.join(binDir, "factory"),
+      PATH: `${binDir}:${process.env.PATH}`,
+      ...env,
+    },
   });
 
 test("a tracked file that changes mid-run exits 1 and posts no status", () => {
@@ -126,15 +134,16 @@ test("a HEAD that moves mid-run exits 1 and posts no status", () => {
   assert.equal(existsSync(ghLog), false);
 });
 
-test("a git archive that fails exits 1 and posts no status", () => {
-  const dir = checkout("no-apple", { apple: false });
-  const ghLog = path.join(scratch, "gh-archive.log");
-  const result = run(dir, bin("archive"), {
+test("a leased Mac step that fails exits 1 and posts no status", () => {
+  const dir = checkout("lease-fails");
+  const ghLog = path.join(scratch, "gh-lease.log");
+  const result = run(dir, bin("lease"), {
+    LOCAL_CI_TEST_FACTORY: "fail",
     LOCAL_CI_TEST_GH_LOG: ghLog,
     LOCAL_CI_TEST_MUTATE: "none",
   });
   assert.equal(result.status, 1, result.stderr);
-  assert.match(result.stderr, /failed at macos on cortex: Copy apps\/apple/u);
+  assert.match(result.stderr, /failed at macos on a leased Mac/u);
   assert.match(result.stderr, /No status posted/u);
   assert.equal(existsSync(ghLog), false);
 });

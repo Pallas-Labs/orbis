@@ -93,6 +93,46 @@
         ]
       },
       {
+        "id": "flags:check",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "flags:check",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "bounded-reads",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "bounded-reads",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "hosts",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "hosts",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "fence",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "fence",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
         "id": "typecheck",
         "argv": [
           "node_modules/.bin/turbo",
@@ -113,11 +153,31 @@
         ]
       },
       {
+        "id": "test:scripts",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "test:scripts",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
         "id": "diagnostics",
         "argv": [
           "node_modules/.bin/turbo",
           "run",
           "diagnostics",
+          "--force",
+          "--output-logs=errors-only"
+        ]
+      },
+      {
+        "id": "doctor",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "doctor",
           "--force",
           "--output-logs=errors-only"
         ]
@@ -138,7 +198,10 @@
         "apps/apple/OrbisTVUITests",
         "apps/apple/OrbisDesign/Sources",
         "apps/apple/OrbisDesign/Tests",
-        "apps/apple/OrbisDesign/Package.swift"
+        "apps/apple/OrbisDesign/Package.swift",
+        "apps/apple/OrbisKit/Sources",
+        "apps/apple/OrbisKit/Tests",
+        "apps/apple/OrbisKit/Package.swift"
       ],
       "platforms": ["darwin"]
     }
