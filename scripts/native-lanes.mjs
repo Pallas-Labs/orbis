@@ -8,13 +8,14 @@
 //   node scripts/native-lanes.mjs --journeys    # UI journeys on two simulator clones
 //   node scripts/native-lanes.mjs               # both
 //   node scripts/native-lanes.mjs --unit --macos # unit tests on the macOS host
-//   node scripts/native-lanes.mjs --tvos --journeys # the TV journey on the Apple TV simulator
+//   node scripts/native-lanes.mjs --tvos --journeys # the TV journey on the Apple TV 4K simulator
 //
 // Options: --name <simulator name>  --udid <simulator UUID>  --out <screenshot directory>
 // --macos runs the unit tests on the macOS destination instead of the simulator.
 // --unsigned (with --macos) builds without code signing, for a Mac with no development
 // certificate, such as Cortex.
-// --tvos runs the OrbisTV scheme on the Apple TV simulator (default name "Apple TV"), with
+// --tvos runs the OrbisTV scheme on a tvOS simulator (default name "Apple TV 4K (3rd
+// generation)", the device type every Mac's tvOS runtime has), with
 // silent audio seeded so a playback check never sounds in the room.
 
 import { spawn, spawnSync } from "node:child_process";
@@ -53,7 +54,10 @@ if (unsigned && !macos) {
   console.error("--unsigned applies only to --macos runs");
   process.exit(2);
 }
-const simulator = argument("name", tvos ? "Apple TV" : "Orbis Lanes");
+const simulator = argument(
+  "name",
+  tvos ? "Apple TV 4K (3rd generation)" : "Orbis Lanes"
+);
 const simulatorUdid = argument("udid");
 const shots = path.resolve(
   argument("out", path.join(tmpdir(), "orbis-lane-shots"))
