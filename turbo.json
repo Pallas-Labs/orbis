@@ -17,6 +17,16 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
+    "@orbis/api#build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/server/drizzle/**"],
+      "outputs": ["dist/**", ".vite/**", "out/**", "*.tsbuildinfo"]
+    },
+    "@orbis/api#test": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/server/drizzle/**"],
+      "outputs": []
+    },
     "@orbis/web#test": {
       "dependsOn": ["^build"],
       "cache": false
