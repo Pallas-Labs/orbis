@@ -59,9 +59,14 @@ pub fn set_tags(id: &str, tags: &[String]) -> Result<Set, String> {
     request("PATCH", &set_path(id, "/tags"), Some(json!({ "tags": tags })))
 }
 
-/// Saves where the caller is in `id`, in whole seconds.
+/// Saves where the caller is in `id`, in whole seconds, with the system's time zone when it has
+/// one: Orbis draws the day of the Person's Listening Time in it.
 pub fn save_position(id: &str, seconds: f64) -> Result<Set, String> {
-    request("PUT", &set_path(id, "/position"), Some(json!({ "seconds": seconds.clamp(0.0, 604_800.0).floor() })))
+    let mut body = json!({ "seconds": seconds.clamp(0.0, 604_800.0).floor() });
+    if let Some(zone) = crate::clock::zone() {
+        body["timeZone"] = zone.into();
+    }
+    request("PUT", &set_path(id, "/position"), Some(body))
 }
 
 /// A Set's Tracklist.

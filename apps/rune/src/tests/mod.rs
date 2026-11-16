@@ -21,9 +21,11 @@ pub(super) fn set_json(id: &str, title: &str) -> Value {
     })
 }
 
-/// The demo app, talking to the fixture, its first frame drawn, on `screen`.
+/// The demo app, talking to the fixture, its first frame drawn, on `screen`. It has no time zone,
+/// as on a host that names none, so what it sends is the same on every host.
 pub(super) fn live(screen: Screen) -> Runtime<App> {
     crate::clock::freeze_here();
+    crate::clock::zone_here(None);
     let mut s = crate::demo_app();
     s.service = api::Service::Fixture;
     s.screen = screen;
