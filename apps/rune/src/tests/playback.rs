@@ -275,6 +275,21 @@ fn a_late_position_save_never_lands_after_the_completion_reset() {
 }
 
 #[test]
+fn a_position_save_carries_the_time_zone_the_app_found() {
+    let mut rt = live(Screen::Library);
+    crate::clock::zone_here(Some("Europe/Berlin"));
+    fixture::reply("PUT /sets/s-sunrise/position", set_json("s-sunrise", "Sunrise on the Pier"));
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    rt.update(|s, _| {
+        s.playing.position = 1_800.0;
+        s.toggle();
+    });
+    land(&mut rt);
+    assert_eq!(fixture::bodies("PUT /sets/s-sunrise/position"), [json!({ "seconds": 1800.0, "timeZone": "Europe/Berlin" })]);
+}
+
+#[test]
 fn next_partway_starts_the_set_over_next_time_it_plays() {
     let mut rt = live(Screen::Library);
     let mut reset = set_json("s-sunrise", "Sunrise on the Pier");
