@@ -187,10 +187,17 @@ final class PlaybackUITests: LibraryJourney {
     capture("tracklist-second-cue-playing")
 
     // A selected Cue bounds the position from below only, so Now Playing reads where it landed.
+    // A pause first holds the position while the journey walks there.
+    let pause = app.buttons["detail-play-toggle"]
+    pause.tap()
+    XCTAssertTrue(waitUntil(pause, NSPredicate(format: "label == %@", "Play"), timeout: 4))
     var seek = openNowPlaying(seeded.title, in: app)
     XCTAssertEqual(
       XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 8), .completed,
       "The 0:12 Cue must play from 0:12")
+    try record(
+      "tracklist-second-cue",
+      ["cueSeconds": 12, "elapsedSeconds": Self.elapsedSeconds(seek.value as? String) ?? -1])
     capture("tracklist-elapsed-after-cue")
     app.buttons["now-playing-close"].tap()
     tapAtCentre(of: row, in: app)
@@ -203,9 +210,11 @@ final class PlaybackUITests: LibraryJourney {
     first.tap()
     XCTAssertTrue(waitUntil(first, isSelected, timeout: 5), "The Set must move back to 0:00")
     XCTAssertFalse(second.isSelected)
+    XCTAssertTrue(
+      waitUntil(pause, NSPredicate(format: "label == %@", "Pause"), timeout: 4),
+      "A Cue must play a paused Set")
     capture("tracklist-first-cue-playing")
 
-    let pause = app.buttons["detail-play-toggle"]
     pause.tap()
     XCTAssertEqual(pause.label, "Play")
 
