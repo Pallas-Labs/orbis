@@ -66,9 +66,10 @@ import SwiftUI
           }
         }
         // The sidebar lists every Playlist, so a person moves between them without going back
-        // to the grid. The tab bar has no room for them: on an iPhone, a Playlist in the bar
-        // pushed Search into More (PAL-2443). `defaultVisibility` applies only where the bar can
-        // be customized, so the placement keeps them out of the bar everywhere.
+        // to the grid. The tab bar has no room for them: on an iPhone each Playlist took a place
+        // in the bar and pushed Search under More (PAL-2443). `defaultVisibility` works only
+        // where the bar can be customized, and `tabPlacement(.sidebarOnly)` still left them in
+        // the compact bar, so the section is hidden where the bar replaces the sidebar.
         TabSection("Playlists") {
           ForEach(model.playlistItems) { playlist in
             Tab(
@@ -80,7 +81,8 @@ import SwiftUI
             }
           }
         }
-        .tabPlacement(.sidebarOnly)
+        .defaultVisibility(.hidden, for: .tabBar)
+        .hidden(sizeClass == .compact)
       }
       .tabViewStyle(.sidebarAdaptable)
       .sidebarWhereThereIsRoom()

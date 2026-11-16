@@ -252,6 +252,12 @@ class LibraryJourney: XCTestCase {
       app.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count))
     }
     app.typeText(query)
+    // The field searches as it is typed into, and on a slow host it once lost focus before the
+    // query was submitted, with the keyboard still up. Return then reached nothing, so the
+    // field is tapped again when nothing holds focus.
+    let focused = app.descendants(matching: .any)
+      .matching(NSPredicate(format: "hasKeyboardFocus == true")).firstMatch
+    if !focused.exists { app.searchFields.firstMatch.tap() }
     app.typeText("\n")
   }
 
