@@ -1,0 +1,11 @@
+factory lease: PAL-2263:test:1856089@2026-11-16T09:58:41.594Z granted: mac: simulator-4
+factory lease: PAL-2263:test:1856089@2026-11-16T09:58:41.594Z: another lease holds sat-orbis-pal-2263, so this one copies to lease-PAL-2263-test-1856089-2026-11-16T09-58-41-594Z
+factory lease: PAL-2263:test:1856089@2026-11-16T09:58:41.594Z simulator boots slim, profile orbis
+factory lease: PAL-2263:test:1856089@2026-11-16T09:58:41.594Z runs on mac, simulator AA285FFC-9342-4674-85B3-6BA3D8A4A184
+factory lease: PAL-2263:test:1856089@2026-11-16T09:58:41.594Z copied .lease-out back to /home/parth/.cache/agent-scratch/pal-2263/agent-pal-2263-11160928/run-final-1794823118/17pro
+Test Case '-[OrbisUITests.SetPageV2UITests testASetWithNothingMoreSaysNothingAndOffersFindTracklist]' passed (34.782 seconds).
+Test Case '-[OrbisUITests.SetPageV2UITests testFirstScreenHoldsTheControlsAndTheRestFollowsOnScroll]' passed (27.736 seconds).
+	 Executed 2 tests, with 0 failures (0 unexpected) in 62.517 (62.522) seconds
+	 Executed 2 tests, with 0 failures (0 unexpected) in 62.517 (62.523) seconds
+	 Executed 2 tests, with 0 failures (0 unexpected) in 62.517 (62.524) seconds
+** TEST SUCCEEDED **
