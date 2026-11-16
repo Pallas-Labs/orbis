@@ -1,0 +1,31 @@
+# bun run ci on 43d2690fa6869c6171b8a10baee9c8b0200d4b54 (Vanta, verify skill gate)
+{"sha":"43d2690fa6869c6171b8a10baee9c8b0200d4b54","exit":0,"posted":true,"log":"/home/parth/.cache/agent-scratch/verify-orbis/43d2690-1794823387/ci.log"}
+
+Test Suite 'OrbisClientTests' passed at 2026-11-16 02:03:53.377
+Test Suite 'QueueTests' passed at 2026-11-16 02:03:53.412
+Test Suite 'Debug-linux-x86_64.xctest' passed at 2026-11-16 02:03:53.412
+Test Suite 'All tests' passed at 2026-11-16 02:03:53.412
+//:fence:   ✔ no tsconfig keeps an Effect diagnostic out of the tsc exit code (76.267695ms)
+@orbis/web:test: [e2e] admin-journey: passed in 21.7 s
+@orbis/web:test: [e2e] shared-audio: passed in 25.9 s
+@orbis/web:test: [e2e] presence: passed in 32.1 s
+@orbis/web:test: [e2e] playlists: passed in 40.9 s
+@orbis/web:test: [e2e] resume-position: passed in 21.2 s
+@orbis/web:test: [e2e] live-queue: passed in 35.8 s
+@orbis/web:test: [e2e] journey: passed in 25.9 s
+@orbis/web:test: [e2e] tracklist: passed in 25.4 s
+@orbis/web:test: [e2e] sign-in: passed in 26.8 s
+@orbis/web:test: [e2e] apple-music: passed in 19.0 s
+@orbis/web:test: [e2e] devices: passed in 20.8 s
+@orbis/web:test: [e2e] pair: passed in 16.8 s
+@orbis/web:test: [e2e] share: passed in 11.7 s
+@orbis/web:test: [e2e] join: passed in 11.2 s
+@orbis/web:test: [e2e] timeout: passed in 11.8 s
+ Tasks:    21 successful, 21 total
+factory lease: PAL-2263:test:1881314@2026-11-16T10:03:08.603Z granted: mac: xcode-1
+factory lease: PAL-2263:test:1881314@2026-11-16T10:03:08.603Z runs on mac, no simulator
+Test Suite 'All tests' passed at 2026-11-16 02:03:30.002.
+Test Suite 'OrbisClientTests' passed at 2026-11-16 02:03:41.222.
+Test Suite 'QueueTests' passed at 2026-11-16 02:03:41.232.
+Test Suite 'OrbisKitTests.xctest' passed at 2026-11-16 02:03:41.232.
+Test Suite 'All tests' passed at 2026-11-16 02:03:41.232.

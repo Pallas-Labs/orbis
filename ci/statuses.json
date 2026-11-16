@@ -1,0 +1,14 @@
+[
+  {
+    "context": "local-ci",
+    "state": "success",
+    "description": "bun run ci passed (macOS checks on a leased Mac)",
+    "created_at": "2026-11-16T10:27:38Z"
+  },
+  {
+    "context": "verify",
+    "state": "success",
+    "description": "bun run ci passed (macOS checks on a leased Mac)",
+    "created_at": "2026-11-16T10:27:39Z"
+  }
+]
