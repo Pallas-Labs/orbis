@@ -10,7 +10,7 @@ Automated journeys run through [native lanes](../development.md#native-clients).
 4. Build on the lease with `factory lease run --lease <lease> --out <dir> -- <command>`, where the command copies `Orbis.app` into `$LEASE_OUT`. The build comes back to `<dir>`.
 5. In T3, call `device_open` with `hubHostId` and `udid`, install the `.app` from `<dir>` with the `agent-device` command it returns, then open, drive, screenshot, and record through that command. Keep the exact launcher, host configuration, and session flags returned by `device_open` on each agent-device command. Open no simulator but the lease's.
 6. Take at least one `device_screenshot`. End with `device_close`, then `factory lease release <lease>`, which deletes the clone. A hold with no step for 20 min releases itself.
-7. Use `xcrun simctl` only for what the hub cannot do, such as a permission grant, and only as a step on the lease: `factory lease run --lease <lease> -- xcrun simctl <...> "$LEASE_SIMULATOR_UDID" <...>`. tvOS simulators, which `device_list` does not show, run as `factory lease run --needs simulator --device "<Apple TV>"` steps and record with `simctl io`. Run `xcodebuild test` and the native lanes through `factory lease run` too.
+7. Use `xcrun simctl` only for what the hub cannot do, such as a permission grant, and only as a step on the lease: `factory lease run --lease <lease> -- xcrun simctl <...> "$LEASE_SIMULATOR_UDID" <...>`. tvOS simulators, which `device_list` does not show, run as `factory lease run --needs simulator --device "Apple TV 4K (3rd generation)"` steps and record with `simctl io`. Run `xcodebuild test` and the native lanes through `factory lease run` too.
 
 For a Mac-hosted CLI session outside T3, select an explicit target:
 
