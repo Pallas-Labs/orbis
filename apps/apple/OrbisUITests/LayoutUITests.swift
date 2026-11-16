@@ -48,9 +48,7 @@ final class LayoutUITests: LibraryJourney {
     let play = app.buttons["detail-play-toggle"]
     XCTAssertTrue(play.waitForExistence(timeout: 30))
     play.tap()
-    let detailSeek = app.sliders["detail-seek"]
-    XCTAssertEqual(
-      XCTWaiter.wait(for: [elapsed(on: detailSeek) { $0 > 0 }], timeout: 8), .completed)
+    XCTAssertTrue(waitUntil(play, NSPredicate(format: "label == %@", "Pause"), timeout: 8))
     capture("\(prefix)-set-page")
 
     // Another tab, not Back: where the bars sit, and so where Back is, depends on the pose.

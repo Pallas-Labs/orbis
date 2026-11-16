@@ -79,10 +79,11 @@ final class PlaybackUITests: LibraryJourney {
     XCTAssertTrue(play.waitForExistence(timeout: 30))
     XCTAssertFalse(app.buttons["Download"].exists)
     play.tap()
-    let seek = app.sliders["detail-seek"]
-    XCTAssertEqual(XCTWaiter.wait(for: [elapsed(on: seek) { $0 > 0 }], timeout: 6), .completed)
-    XCTAssertEqual(app.buttons["detail-play-toggle"].label, "Pause")
+    XCTAssertTrue(waitUntil(play, NSPredicate(format: "label == %@", "Pause"), timeout: 6))
     capture("16-ready-audio-playing")
+    let seek = openNowPlaying(seeded.title, in: app)
+    XCTAssertEqual(XCTWaiter.wait(for: [elapsed(on: seek) { $0 > 0 }], timeout: 6), .completed)
+    capture("16-ready-audio-now-playing")
   }
 
   func testPlaysFromBeginningInsteadOfResuming() throws {
@@ -108,32 +109,38 @@ final class PlaybackUITests: LibraryJourney {
     capture("play-from-beginning-offered")
 
     fromBeginning.tap()
-    let seek = app.sliders["detail-seek"]
-    XCTAssertTrue(seek.waitForExistence(timeout: 15))
+    XCTAssertTrue(waitUntil(toggle, NSPredicate(format: "label == %@", "Pause"), timeout: 15))
+    var seek = openNowPlaying(seeded.title, in: app)
     XCTAssertEqual(
       XCTWaiter.wait(for: [elapsed(on: seek) { $0 < 10 }], timeout: 8),
       .completed, "A saved position must not be resumed")
-    XCTAssertEqual(toggle.label, "Pause")
     capture("play-from-beginning-from-saved-position")
     let restarted = try service.position(of: seeded.id) { $0 < 10 }
     XCTAssertLessThan(restarted, 10, "The saved position must move back to the start")
 
     XCTAssertEqual(
       XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 20), .completed)
-    toggle.tap()
-    XCTAssertEqual(toggle.label, "Play")
+    let nowPlayingToggle = app.buttons["now-playing-play-toggle"]
+    nowPlayingToggle.tap()
+    XCTAssertTrue(
+      waitUntil(nowPlayingToggle, NSPredicate(format: "label == %@", "Play"), timeout: 4))
     let paused = try service.position(of: seeded.id, becomesAtLeast: 10)
     XCTAssertGreaterThanOrEqual(paused, 10)
+    app.buttons["now-playing-close"].tap()
+    tapAtCentre(of: row, in: app)
+    XCTAssertTrue(toggle.waitForExistence(timeout: 30))
+    XCTAssertEqual(toggle.label, "Play")
     XCTAssertTrue(fromBeginning.exists, "The paused Set in the player must offer to start over")
     capture("play-from-beginning-current-paused")
 
     fromBeginning.tap()
+    XCTAssertTrue(waitUntil(toggle, NSPredicate(format: "label == %@", "Pause"), timeout: 5))
+    seek = openNowPlaying(seeded.title, in: app)
     XCTAssertEqual(
       XCTWaiter.wait(for: [elapsed(on: seek) { $0 < 10 }], timeout: 5),
       .completed, "The Set in the player must move back to the start")
-    XCTAssertEqual(toggle.label, "Pause")
     capture("play-from-beginning-current-restarted")
-    toggle.tap()
+    nowPlayingToggle.tap()
     let stored = try service.position(of: seeded.id) { $0 < 10 }
     XCTAssertLessThan(stored, 10)
     try record(
@@ -173,40 +180,46 @@ final class PlaybackUITests: LibraryJourney {
     XCTAssertTrue(second.isHittable)
     capture("tracklist-before-play")
 
+    // The player marks the Cue the elapsed time falls in, so a selected Cue places the position.
+    let isSelected = NSPredicate(format: "selected == true")
     second.tap()
-    let seek = app.sliders["detail-seek"]
-    XCTAssertTrue(seek.waitForExistence(timeout: 15))
-    XCTAssertEqual(
-      XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 8), .completed)
-    XCTAssertTrue(second.isSelected)
+    XCTAssertTrue(waitUntil(second, isSelected, timeout: 8), "The Set must play from 0:12")
     capture("tracklist-second-cue-playing")
 
+    // A selected Cue bounds the position from below only, so Now Playing reads where it landed.
+    // A pause first holds the position while the journey walks there.
+    let pause = app.buttons["detail-play-toggle"]
+    pause.tap()
+    XCTAssertTrue(waitUntil(pause, NSPredicate(format: "label == %@", "Play"), timeout: 4))
+    var seek = openNowPlaying(seeded.title, in: app)
+    XCTAssertEqual(
+      XCTWaiter.wait(for: [elapsed(on: seek) { (10..<20).contains($0) }], timeout: 8), .completed,
+      "The 0:12 Cue must play from 0:12")
+    try record(
+      "tracklist-second-cue",
+      ["cueSeconds": 12, "elapsedSeconds": Self.elapsedSeconds(seek.value as? String) ?? -1])
+    capture("tracklist-elapsed-after-cue")
+    app.buttons["now-playing-close"].tap()
+    tapAtCentre(of: row, in: app)
+    XCTAssertTrue(tracklist.waitForExistence(timeout: 30))
+
     for _ in 0..<3 {
-      if seek.isHittable { break }
+      if first.isHittable { break }
       app.swipeDown()
     }
-    XCTAssertTrue(seek.isHittable)
-    capture("tracklist-elapsed-after-cue")
-
-    let canSeek = XCTNSPredicateExpectation(
-      predicate: NSPredicate(format: "enabled == true"), object: seek)
-    XCTAssertEqual(XCTWaiter.wait(for: [canSeek], timeout: 8), .completed)
     first.tap()
-    XCTAssertEqual(XCTWaiter.wait(for: [elapsed(on: seek) { $0 < 10 }], timeout: 5), .completed)
-    XCTAssertTrue(first.isSelected)
+    XCTAssertTrue(waitUntil(first, isSelected, timeout: 5), "The Set must move back to 0:00")
+    XCTAssertFalse(second.isSelected)
+    XCTAssertTrue(
+      waitUntil(pause, NSPredicate(format: "label == %@", "Pause"), timeout: 4),
+      "A Cue must play a paused Set")
     capture("tracklist-first-cue-playing")
 
-    let pause = app.buttons["detail-play-toggle"]
     pause.tap()
     XCTAssertEqual(pause.label, "Play")
 
-    app.navigationBars.buttons.firstMatch.tap()
-    let openNowPlaying = app.buttons.matching(
-      NSPredicate(
-        format: "identifier == %@ AND label == %@", "mini-player", "Now playing, \(seeded.title)")
-    ).firstMatch
-    XCTAssertTrue(openNowPlaying.waitForExistence(timeout: 10))
-    openNowPlaying.tap()
+    seek = openNowPlaying(seeded.title, in: app)
+    XCTAssertEqual(XCTWaiter.wait(for: [elapsed(on: seek) { $0 < 10 }], timeout: 5), .completed)
     XCTAssertEqual(app.staticTexts["now-playing-cue"].label, "First Cue · First Artist")
     capture("tracklist-now-playing")
   }
@@ -270,11 +283,10 @@ final class PlaybackUITests: LibraryJourney {
     XCTAssertTrue(cue.isHittable)
     capture("cold-late-cue-before-play")
     cue.tap()
-    let seek = app.sliders["detail-seek"]
-    XCTAssertTrue(seek.waitForExistence(timeout: 10))
-    XCTAssertEqual(
-      XCTWaiter.wait(for: [elapsed(on: seek) { (26...29).contains($0) }], timeout: 6),
-      .completed, "An explicit Cue must keep its timestamp even within five seconds of the end")
+    // The player marks the Cue the elapsed time falls in, so a selected Cue places the position.
+    XCTAssertTrue(
+      waitUntil(cue, NSPredicate(format: "selected == true"), timeout: 6),
+      "An explicit Cue must keep its timestamp even within five seconds of the end")
     let deadline = Date().addingTimeInterval(12)
     var finishes = 0
     repeat {
