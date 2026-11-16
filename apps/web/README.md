@@ -104,10 +104,11 @@ Run from the repository root after a frozen install:
 ```sh
 	bun run --filter @orbis/contracts build
 	bun run --filter @orbis/web test
+	bun run --filter @orbis/web e2e
 	bun test --timeout 60000 apps/server/src
 ```
 
-The web test command builds the production client, then runs the journeys selected in `package.json` against real HTTP listeners and a temporary SQLite database. Only the external providers are replaced: audio comes from the retained-audio fixture, and Apple Music answers with the responses recorded in `apps/server/src/fixtures/apple-music`. Each journey exports screenshots and `result.json` under the root `.cache` directory. It leaves the production service and database untouched.
+The web `test` command runs the Worker tests in `infra`. The `e2e` command builds the production client, then runs the journeys listed in `e2e/run.mjs` against real HTTP listeners and a temporary SQLite database. Only the external providers are replaced: audio comes from the retained-audio fixture, and Apple Music answers with the responses recorded in `apps/server/src/fixtures/apple-music`. Each journey exports screenshots and `result.json` under the root `.cache` directory. It leaves the production service and database untouched.
 
 The four original journey groups keep their entrypoint names. Their assertions now use the rebuilt client:
 

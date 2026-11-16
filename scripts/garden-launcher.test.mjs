@@ -102,12 +102,16 @@ test("the swift-format probe runs the native:format command, on macOS only", () 
 });
 
 test("the gate steps are the turbo tasks of bun run check, each forced", () => {
-  const words = manifest().scripts.check.split(/\s+/u);
-  assert.deepEqual(words.slice(0, 2), ["turbo", "run"]);
-  const tasks = words.slice(
-    2,
-    words.findIndex((word) => word.startsWith("-"))
-  );
+  // `check` runs the web journeys in a second `turbo run` after the first passes (PAL-2472), so
+  // the tasks come from every `turbo run` it chains with `&&`.
+  const tasks = manifest()
+    .scripts.check.split("&&")
+    .flatMap((command) => {
+      const words = command.trim().split(/\s+/u);
+      assert.deepEqual(words.slice(0, 2), ["turbo", "run"]);
+      const flag = words.findIndex((word) => word.startsWith("-"));
+      return words.slice(2, flag === -1 ? undefined : flag);
+    });
   assert.deepEqual(
     config().gate.steps,
     tasks.map((task) => ({
