@@ -113,6 +113,15 @@ export const startPreview = ({ apiUrl, port }) =>
   );
 
 /**
+ * How long a server may take to listen. `vite preview` needs about 1 s of CPU
+ * to start, but on a host whose CPU quota other work fills, such as the 4 CPUs
+ * every agent on Vanta shares, it took up to 15 s, and longer three times in
+ * one run (PAL-2472). A server that fails to start exits, and `waitFor` reports
+ * that at once, so only a server that hangs waits this long.
+ */
+const startLimitSeconds = 60;
+
+/**
  * Waits until `server` says it listens on its port, then polls `url` until it
  * answers, 150 attempts 100 ms apart. An answer counts only while `server` still
  * runs, so another process on the same port never stands in for it: when
@@ -122,9 +131,9 @@ export const startPreview = ({ apiUrl, port }) =>
  */
 export const waitFor = async (url, server) => {
   const startup = async () => {
-    await setTimeout(15_000, undefined, { ref: false });
+    await setTimeout(startLimitSeconds * 1000, undefined, { ref: false });
     return new Error(
-      `${server.name} did not listen on port ${server.port} in 15 s`
+      `${server.name} did not listen on port ${server.port} in ${startLimitSeconds} s`
     );
   };
   const failure = await Promise.race([

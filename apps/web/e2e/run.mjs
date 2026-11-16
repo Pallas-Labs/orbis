@@ -1,10 +1,14 @@
 // Runs the browser journeys side by side against the built client. Each journey asks the OS for
 // free ports (`freePort` in `helpers.mjs`) and has its own data directory and artifacts directory,
-// so none waits for another, here or in another checkout on the same host. All twelve at once overload
-// the host and time out, so at most four run together, longest first. Each one's output
-// prints when it ends, so the logs never interleave.
+// so none waits for another, here or in another checkout on the same host. Each journey runs an
+// API server, `vite preview` and Chromium, so too many at once starve each other of CPU, and their
+// server starts and page waits time out. One runs for every two CPUs this process may use
+// (`availableParallelism` reads the cgroup quota, such as the 4 CPUs every agent on Vanta shares),
+// at least one and at most four, longest first (PAL-2472). Each one's output prints when it ends,
+// so the logs never interleave.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
+import { availableParallelism } from "node:os";
 import path from "node:path";
 
 const journeys = [
@@ -24,7 +28,10 @@ const journeys = [
   "join",
   "timeout",
 ];
-const concurrency = 4;
+const concurrency = Math.min(
+  4,
+  Math.max(1, Math.floor(availableParallelism() / 2))
+);
 
 /// Runs one journey and returns its name when it fails.
 const run = async (name) => {

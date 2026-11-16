@@ -27,7 +27,7 @@
       "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/apps/server/drizzle/**"],
       "outputs": []
     },
-    "@orbis/web#test": {
+    "@orbis/web#e2e": {
       "dependsOn": ["^build"],
       "cache": false
     },

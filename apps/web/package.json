@@ -10,7 +10,8 @@
     "doctor": "bunx react-doctor@0.9.18 . --scope changed --base origin/main --blocking error --no-telemetry --yes",
     "deploy": "bun ../api/scripts/migrations.ts --check && alchemy deploy --stage prod",
     "destroy": "alchemy destroy --stage prod",
-    "test": "bun test infra && vite build && node e2e/run.mjs"
+    "test": "bun test infra",
+    "e2e": "vite build && node e2e/run.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.8.0",
