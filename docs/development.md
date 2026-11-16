@@ -26,7 +26,7 @@ Resolve a filename with `rg --files <directory>` before reading it. Server HTTP 
 
 ## Setup
 
-Requires Bun 1.4.4 and Node.js 24. TypeScript 7 is pinned and patched with Effect diagnostics by the install preparation script. The audio node and disposable HTTP fixtures run on Bun.
+Requires Bun 1.4.4 and Node.js 26. TypeScript 7 is pinned and patched with Effect diagnostics by the install preparation script. The audio node and disposable HTTP fixtures run on Bun.
 
 ```sh
 bun install

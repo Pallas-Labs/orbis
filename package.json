@@ -37,7 +37,7 @@
     "@effect/tsgo": "0.55.0",
     "@oxlint/plugins": "^1.63.0",
     "@stylexjs/eslint-plugin": "0.19.1",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "ajv": "^8.20.0",
     "effect": "4.1.2",
     "evalite": "^1.0.0-beta.16",

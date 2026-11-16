@@ -193,7 +193,7 @@ const mac = async () => {
   return { failed, log };
 };
 
-console.log(`local-ci: ${sha}`);
+console.log(`local-ci: ${sha} on Node ${process.version}`);
 const macRun = mac();
 const linuxFailed = await linux();
 const { failed: macFailed, log } = await macRun;

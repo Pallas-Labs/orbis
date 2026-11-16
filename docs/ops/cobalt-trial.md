@@ -31,7 +31,7 @@ Run the deployment and live smoke check on Vanta. The Mac can review the configu
 - SSH access with `ssh vanta`.
 - Docker and Docker Compose, with network access from the host for the image build, which installs one npm package.
 - A current Tailscale IPv4 address and no service using port 9000.
-- Node.js 24, `ffmpeg`, and `ffprobe` on the machine running the smoke check.
+- Node.js 26, `ffmpeg`, and `ffprobe` on the machine running the smoke check.
 - Public YouTube and SoundCloud URLs that the operator is allowed to download. Include one set longer than three hours and no longer than six hours.
 - Enough temporary disk space for one sequential audio download. The smoke check deletes media after each case and on interruption.
 
