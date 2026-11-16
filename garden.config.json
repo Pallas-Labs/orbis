@@ -181,6 +181,16 @@
           "--force",
           "--output-logs=errors-only"
         ]
+      },
+      {
+        "id": "e2e",
+        "argv": [
+          "node_modules/.bin/turbo",
+          "run",
+          "e2e",
+          "--force",
+          "--output-logs=errors-only"
+        ]
       }
     ]
   },
