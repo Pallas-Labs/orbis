@@ -77,6 +77,7 @@ The fence (PAL-1543) puts rat-stack's first five principles into the checks, so 
 - Effect diagnostics. `tsconfig.base.json` sets `ignoreEffectWarningsInTscExitCode: false`, so an Effect warning fails the typecheck, and lists the unstable Effect modules Orbis uses in `allowedUnstableApis`.
 - Flags. `bun run flags:check` fails when `flags.json` is malformed or not canonical, a generated file is stale, or no code reads a declared flag. `orbis/no-flag-read-by-string` refuses a `getBooleanValue` call outside `flags.gen.ts`. See [Feature flags](#feature-flags).
 - [`scripts/fence.test.mjs`](../scripts/fence.test.mjs) (`bun run fence`) runs real Oxlint on `lint-plugins/orbis/fixtures`, plants unbounded reads, host details and hook bypasses, and type-checks a planted Effect warning.
+- Root script tests. `bun run test:scripts` (PAL-2438) runs the root `node --test` files: `scripts/smoke-cobalt.test.mjs`, `scripts/design-tokens.test.mjs`, `scripts/garden-launcher.test.mjs` and `scripts/local-ci.test.mjs`. The local CI test replaces `factory` with a stub through `FACTORY_CLI`, so it never waits on a real Mac lease.
 
 ### Local CI
 

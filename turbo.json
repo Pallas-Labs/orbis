@@ -59,6 +59,9 @@
     },
     "//#flags:check": {
       "outputs": []
+    },
+    "//#test:scripts": {
+      "outputs": []
     }
   },
   "globalPassThroughEnv": ["ORBIS_DATA_DIR"],
