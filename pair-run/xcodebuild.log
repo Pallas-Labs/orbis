@@ -1,0 +1,186 @@
+lane service: http://127.0.0.1:49912
+2026-11-16 17:15:39.172 xcodebuild[15426:91567880]  IDETestOperationsObserverDebug: Failure collecting diagnostics from simulator: Timed out after 600.0 seconds while waiting for a response from the invoked process
+2026-11-16 17:15:39.649 xcodebuild[15426:91555836] [MT] IDETestOperationsObserverDebug: 712.945 elapsed -- Testing started completed.
+2026-11-16 17:15:39.652 xcodebuild[15426:91555836] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-16 17:15:39.652 xcodebuild[15426:91555836] [MT] IDETestOperationsObserverDebug: 712.948 sec, +712.948 sec -- end
+Testing failed:
+	OrbisUITests-Runner (16991) encountered an error (Early unexpected exit, operation never finished bootstrapping - no restart will be attempted. (Underlying Error: Test crashed with signal kill before establishing connection.))
+
+** TEST FAILED **
+
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project Orbis.xcodeproj -scheme Orbis -destination "platform=iOS Simulator,id=432A347D-7E43-4500-B376-55130BDF0BE0" CODE_SIGN_IDENTITY=- -derivedDataPath /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData -resultBundlePath /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/result.xcresult "-only-testing:OrbisUITests/SearchUITests" "-only-testing:OrbisUITests/FilterUITests" -parallel-testing-enabled YES -parallel-testing-worker-count 2 test
+
+Build settings from command line:
+    CODE_SIGN_IDENTITY = -
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  OrbisDesign: /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/OrbisDesign
+  OrbisKit: /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/OrbisKit
+
+Writing result bundle at path:
+	/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/result.xcresult
+
+note: Using codesigning identity override: -
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (10 targets)
+    Target 'OrbisUITests' in project 'Orbis'
+        ➜ Explicit dependency on target 'Orbis' in project 'Orbis'
+    Target 'OrbisTests' in project 'Orbis'
+        ➜ Explicit dependency on target 'Orbis' in project 'Orbis'
+        ➜ Explicit dependency on target 'OrbisDesign-product' in project 'OrbisDesign'
+        ➜ Explicit dependency on target 'OrbisKit-product' in project 'OrbisKit'
+        ➜ Explicit dependency on target 'OrbisKitTesting-product' in project 'OrbisKit'
+    Target 'OrbisKitTesting-product' in project 'OrbisKit'
+        ➜ Explicit dependency on target 'OrbisKitTesting' in project 'OrbisKit'
+    Target 'OrbisKitTesting' in project 'OrbisKit' (no dependencies)
+    Target 'Orbis' in project 'Orbis'
+        ➜ Explicit dependency on target 'OrbisShare' in project 'Orbis'
+        ➜ Explicit dependency on target 'OrbisDesign-product' in project 'OrbisDesign'
+        ➜ Explicit dependency on target 'OrbisKit-product' in project 'OrbisKit'
+    Target 'OrbisShare' in project 'Orbis'
+        ➜ Explicit dependency on target 'OrbisDesign-product' in project 'OrbisDesign'
+        ➜ Explicit dependency on target 'OrbisKit-product' in project 'OrbisKit'
+    Target 'OrbisKit-product' in project 'OrbisKit'
+        ➜ Explicit dependency on target 'OrbisKit' in project 'OrbisKit'
+    Target 'OrbisKit' in project 'OrbisKit' (no dependencies)
+    Target 'OrbisDesign-product' in project 'OrbisDesign'
+        ➜ Explicit dependency on target 'OrbisDesign' in project 'OrbisDesign'
+    Target 'OrbisDesign' in project 'OrbisDesign' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/Assets.xcassets /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/orbis.icon
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+Build description signature: 5ed5116ed2c591295f35885e2f43614c
+Build description path: /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/XCBuildData/5ed5116ed2c591295f35885e2f43614c.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/SDKStatCaches.noindex/iphonesimulator27.0-24A430-e829b21a6f8c9b70876ba0858053c0448dc58220667be655e1bcc261a7455254.sdkstatcache
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.0.sdk -o /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/SDKStatCaches.noindex/iphonesimulator27.0-24A430-e829b21a6f8c9b70876ba0858053c0448dc58220667be655e1bcc261a7455254.sdkstatcache
+
+ProcessInfoPlistFile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework/Info.plist /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/OrbisDesign.build/Debug-iphonesimulator/OrbisDesign-product-t.build/empty-OrbisDesign_-417F4A7804452F9C_PackageProduct.plist (in target 'OrbisDesigndynamic-product' from project 'OrbisDesign')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/OrbisDesign
+    builtin-infoPlistUtility /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/OrbisDesign.build/Debug-iphonesimulator/OrbisDesign-product-t.build/empty-OrbisDesign_-417F4A7804452F9C_PackageProduct.plist -producttype com.apple.product-type.framework -expandbuildsettings -format binary -platform iphonesimulator -o /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework/Info.plist
+
+ProcessInfoPlistFile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisKit_-3950980C87FFD2D1_PackageProduct.framework/Info.plist /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/OrbisKit.build/Debug-iphonesimulator/OrbisKit-product-t.build/empty-OrbisKit_-3950980C87FFD2D1_PackageProduct.plist (in target 'OrbisKitdynamic-product' from project 'OrbisKit')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/OrbisKit
+    builtin-infoPlistUtility /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/OrbisKit.build/Debug-iphonesimulator/OrbisKit-product-t.build/empty-OrbisKit_-3950980C87FFD2D1_PackageProduct.plist -producttype com.apple.product-type.framework -expandbuildsettings -format binary -platform iphonesimulator -o /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisKit_-3950980C87FFD2D1_PackageProduct.framework/Info.plist
+
+ProcessInfoPlistFile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisShare.appex/Info.plist /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/OrbisShare/Info.plist (in target 'OrbisShare' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-infoPlistUtility /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/OrbisShare/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -o /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisShare.appex/Info.plist
+
+GenerateAssetSymbols /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/Assets.xcassets /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/orbis.icon (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/Assets.xcassets /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/orbis.icon --compile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app --output-format human-readable-text --notices --warnings --export-dependency-info /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_dependencies --output-partial-info-plist /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_generated_info.plist --app-icon orbis --accent-color AccentColor --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 26.1 --platform iphonesimulator --bundle-identifier app.orbis.client --generate-swift-asset-symbol-extensions NO --generate-swift-asset-symbols /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.compilation-results */
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/DerivedSources/GeneratedAssetSymbols.h
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+CompileAssetCatalogVariant thinned /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/Assets.xcassets /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/orbis.icon (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/Assets.xcassets /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/orbis.icon --compile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_dependencies_thinned --output-partial-info-plist /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_generated_info.plist_thinned --app-icon orbis --accent-color AccentColor --compress-pngs --enable-on-demand-resources YES --filter-for-thinning-device-configuration iPhone18,1 --filter-for-device-os-version 27.0 --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 26.1 --platform iphonesimulator
+/* com.apple.actool.compilation-results */
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_generated_info.plist_thinned
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_output/thinned/Assets.car
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_output/thinned/orbis60x60@2x.png
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_output/thinned/orbis76x76@2x~ipad.png
+
+
+LinkAssetCatalog /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/Assets.xcassets /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/orbis.icon (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-linkAssetCatalog --thinned /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_output/thinned --thinned-dependencies /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_generated_info.plist_thinned --unthinned /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_output/unthinned --unthinned-dependencies /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_generated_info.plist_unthinned --output /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app --plist-output /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_generated_info.plist
+note: Emplaced /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/orbis76x76@2x~ipad.png (in target 'Orbis' from project 'Orbis')
+note: Emplaced /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Assets.car (in target 'Orbis' from project 'Orbis')
+note: Emplaced /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/orbis60x60@2x.png (in target 'Orbis' from project 'Orbis')
+
+ProcessInfoPlistFile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Info.plist /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/Info.plist (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-infoPlistUtility /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/Orbis/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/assetcatalog_generated_info.plist -scanforprivacyfile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Frameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework -scanforprivacyfile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Frameworks/OrbisKit_-3950980C87FFD2D1_PackageProduct.framework -scanforprivacyfile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisShare.appex -o /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Info.plist
+
+CopySwiftLibs /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Orbis.debug.dylib --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Frameworks --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/SystemExtensions --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Extensions --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisKit_-3950980C87FFD2D1_PackageProduct.framework --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v27.1.266.1.f1GoxF/Metal.xctoolchain --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+
+ProcessInfoPlistFile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/Info.plist /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisTests.build/empty-OrbisTests.plist (in target 'OrbisTests' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-infoPlistUtility /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisTests.build/empty-OrbisTests.plist -producttype com.apple.product-type.bundle.unit-test -expandbuildsettings -format binary -platform iphonesimulator -o /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/Info.plist
+
+CopySwiftLibs /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest (in target 'OrbisTests' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/OrbisTests --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/Frameworks --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/PlugIns --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/SystemExtensions --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/Extensions --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisDesign_-417F4A7804452F9C_PackageProduct.framework --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/PackageFrameworks/OrbisKit_-3950980C87FFD2D1_PackageProduct.framework --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v27.1.266.1.f1GoxF/Metal.xctoolchain --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/PlugIns/OrbisTests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+
+CodeSign /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Orbis.debug.dylib (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Orbis.debug.dylib
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/Orbis.debug.dylib: replacing existing signature
+
+CodeSign /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/__preview.dylib (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/__preview.dylib
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app/__preview.dylib: replacing existing signature
+
+CodeSign /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/Orbis.build/Orbis.app.xcent --timestamp\=none --generate-entitlement-der /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app
+/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app: replacing existing signature
+
+Validate /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app (in target 'Orbis' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-validationUtility /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/Orbis.app -shallow-bundle -infoplist-subpath Info.plist
+
+ProcessInfoPlistFile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Info.plist /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisUITests.build/empty-OrbisUITests.plist (in target 'OrbisUITests' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-infoPlistUtility /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisUITests.build/empty-OrbisUITests.plist -producttype com.apple.product-type.bundle.ui-testing -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisUITests.build/ProductTypeInfoPlistAdditions.plist -o /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Info.plist
+
+CopySwiftLibs /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest (in target 'OrbisUITests' from project 'Orbis')
+    cd /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/OrbisUITests --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Frameworks --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/PlugIns --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/SystemExtensions --scan-folder /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Extensions --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v27.1.266.1.f1GoxF/Metal.xctoolchain --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Products/Debug-iphonesimulator/OrbisUITests-Runner.app/PlugIns/OrbisUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/Orbis.build/Debug-iphonesimulator/OrbisUITests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+
+PruneExplicitPrecompiledModules /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/SDKExplicitPrecompiledModules
+
+
+Test session results, code coverage, and logs:
+	/Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/result.xcresult
+
+Testing started
+xcodebuild -project Orbis.xcodeproj -scheme Orbis -destination platform=iOS Simulator,id=432A347D-7E43-4500-B376-55130BDF0BE0 CODE_SIGN_IDENTITY=- -derivedDataPath /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData -resultBundlePath /Users/parth/.cache/agent-scratch/sat-orbis-pal-2443/apps/apple/DerivedData/result.xcresult -only-testing:OrbisUITests/SearchUITests -only-testing:OrbisUITests/FilterUITests -parallel-testing-enabled YES -parallel-testing-worker-count 2 test exited 65

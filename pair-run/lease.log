@@ -1,0 +1,23 @@
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z waits: cortex CI runner has a job
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z waits: cortex simulator 1/1 (PAL-2417)
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z waits: cortex CI runner has a job
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z waits: cortex simulator 1/1 (PAL-2417)
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z granted: cortex: simulator-1
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z simulator boots slim, profile orbis
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z runs on cortex, simulator 432A347D-7E43-4500-B376-55130BDF0BE0
+fixture: estimated duration: 30.000000 sec
+parallel with --only: 1
+
+$ effect-tsgo patch --typescript --oxlint --skip-missing && if git rev-parse --git-dir >/dev/null 2>&1; then lefthook install; fi
+typescript skipped because its hash matches the replacement.
+oxlint skipped because its hash matches the replacement.
+oxlint-dts skipped because its hash matches the replacement.
+oxlint-tsgolint skipped because its hash matches the replacement.
+$ tsc -p tsconfig.json
+=== pair start 2026-11-17T01:03:34Z
+=== pair end 2026-11-17T01:15:55Z
+memory: System-wide memory free percentage: 43%
+=== pair exit 1: 0 passed, 0 failed, 0 skipped
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z copied .lease-out back to /home/parth/.cache/agent-scratch/pal-2443/agent-pal-2443-11161858/pair-e859b29-1794877048
+factory lease: PAL-2443:test:2318802@2026-11-17T00:57:29.134Z clones: 238C1B21-A105-4CDF-AED8-26015F3A186C stock (simslim on failed: simslim: 173/173 launchctl transitions incomplete: context deadline exceeded); clonesOverSlots: 1
+exit 1
