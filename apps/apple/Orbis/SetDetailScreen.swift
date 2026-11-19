@@ -50,7 +50,7 @@ struct SetDetailScreen: View {
     .setChangeStatus(model)
   }
 
-  /// Today's page, or on an iPhone with `set-page-v2` on, the redesigned one (PAL-2060).
+  /// The redesigned page on an iPhone (PAL-2060), or today's page everywhere else.
   @ViewBuilder
   private func page(_ set: SavedSet) -> some View {
     if Self.usesPageV2 {
@@ -97,7 +97,7 @@ struct SetDetailScreen: View {
   /// The redesigned page is for iPhone only; iPad, the Mac and the TV keep today's page.
   static var usesPageV2: Bool {
     #if os(iOS)
-      UIDevice.current.userInterfaceIdiom == .phone && Flags.client.getBooleanValue(.setPageV2)
+      UIDevice.current.userInterfaceIdiom == .phone
     #else
       false
     #endif
@@ -113,7 +113,7 @@ struct SetDetailScreen: View {
   }
 
   /// How the controls sit. `.today` puts the seek bar under them once the Set is in the player.
-  /// `.thumbReach`, the `set-page-v2` page, has no seek bar, because Now Playing has one and
+  /// `.thumbReach`, the iPhone page, has no seek bar, because Now Playing has one and
   /// Resume shows the position (PAL-2293). It draws Play from Beginning and Play Next as icons,
   /// so the whole row fits one line.
   enum AudioLayout {
@@ -388,7 +388,7 @@ extension View {
 struct TracklistSection: View {
   @Bindable var model: AppModel
   let set: SavedSet
-  /// The `set-page-v2` page says nothing for a Set with no Tracklist; its More menu offers Find
+  /// The iPhone page says nothing for a Set with no Tracklist; its More menu offers Find
   /// Tracklist instead.
   var hidesNone = false
 

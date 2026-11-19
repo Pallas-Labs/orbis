@@ -2,7 +2,7 @@ import OrbisDesign
 import OrbisKit
 import SwiftUI
 
-/// The iPhone Set page behind the `set-page-v2` flag (PAL-2060). It reuses today's controls,
+/// The iPhone Set page (PAL-2060). It reuses today's controls,
 /// Tracklist, Tags sheet and More menu, and lays them out as `SetPage` does.
 struct SetPageV2<Controls: View>: View {
   @Bindable var model: AppModel

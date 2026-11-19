@@ -11,7 +11,7 @@ struct SetManagementSection: View {
   var style: Style = .page
 
   /// `.page` shows the Tags and puts the menu in the toolbar; `.inline` is the
-  /// menu alone, as one button, for Now Playing. `.pageV2`, the `set-page-v2` page, puts a Tags
+  /// menu alone, as one button, for Now Playing. `.pageV2`, the iPhone page, puts a Tags
   /// button beside the menu, shows the Tags only when the Set has some, and offers Find Tracklist
   /// in the menu while the Set has none.
   enum Style {
@@ -150,7 +150,7 @@ struct SetManagementSection: View {
     .accessibilityIdentifier("detail-actions")
   }
 
-  /// The `set-page-v2` page shows nothing for a Set with no Tracklist, so its menu is where a
+  /// The iPhone page shows nothing for a Set with no Tracklist, so its menu is where a
   /// person asks for one.
   private var offersFindTracklist: Bool {
     style == .pageV2 && (model.tracklists[set.id]?.state ?? set.tracklistState) == .none
