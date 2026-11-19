@@ -1,7 +1,7 @@
 import UIKit
 import XCTest
 
-/// The iPhone Set page behind `set-page-v2` (PAL-2060), launched with every flag on. The journey
+/// The iPhone Set page (PAL-2060), launched with every flag on. The journey
 /// proves the controls sit directly under the words on the first screen (PAL-2293), and that the
 /// sections below arrive on scroll in their order, each only when the Set has something to show.
 final class SetPageV2UITests: LibraryJourney {
@@ -25,7 +25,7 @@ final class SetPageV2UITests: LibraryJourney {
   /// Only an iPhone draws the redesigned page; an iPad keeps today's.
   private func skipUnlessPhone() throws {
     guard UIDevice.current.userInterfaceIdiom == .phone else {
-      throw XCTSkip("set-page-v2 is an iPhone page")
+      throw XCTSkip("the redesigned Set page is an iPhone page")
     }
   }
 

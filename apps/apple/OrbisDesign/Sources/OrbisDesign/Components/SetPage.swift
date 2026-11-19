@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One Set's page on iPhone, as the `set-page-v2` flag lays it out (PAL-2060).
+/// One Set's page on iPhone (PAL-2060).
 ///
 /// The page opens on the artwork, full-bleed behind the top bar and fading into the page, then
 /// the words and, directly under them, the controls. The hero is landscape, as most Sets'

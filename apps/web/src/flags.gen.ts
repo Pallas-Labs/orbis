@@ -2,7 +2,7 @@
 
 export type FlagState = "off" | "internal" | "on";
 
-export type FlagKey = "set-page-v2";
+export type FlagKey = never;
 
 /** Who reads the flag: `internal` is the owner or a named tester. */
 export interface FlagViewer {
@@ -13,7 +13,6 @@ export const anonymous: FlagViewer = { internal: false };
 
 /** Each flag's declared state on this commit: the compiled default. */
 export const declared: Readonly<Record<FlagKey, FlagState>> = {
-  "set-page-v2": "on",
 };
 
 export const evaluate = (state: FlagState, viewer: FlagViewer): boolean =>
@@ -56,14 +55,9 @@ export const makeClient = (provider: FlagProvider): FlagClient => ({
 });
 
 /** One accessor per flag. */
-export interface Flags {
-  /** The iPhone Set page with full-bleed artwork, controls in thumb reach, and More from the creator. (PAL-2060, release). */
-  readonly setPageV2: (viewer?: FlagViewer) => boolean;
-}
+export type Flags = Record<never, never>;
 
-export const makeFlags = (client: FlagClient): Flags => ({
-  setPageV2: (viewer) =>
-    client.getBooleanValue("set-page-v2", declared["set-page-v2"] === "on", viewer),
+export const makeFlags = (_client: FlagClient): Flags => ({
 });
 
 /** The accessors over the declared states. A server or a debug build passes its own client. */

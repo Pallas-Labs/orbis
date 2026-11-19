@@ -1,17 +1,7 @@
 {
-  "flags": [
-    {
-      "key": "set-page-v2",
-      "kind": "release",
-      "issue": "PAL-2060",
-      "owner": "Parth",
-      "purpose": "The iPhone Set page with full-bleed artwork, controls in thumb reach, and More from the creator.",
-      "state": "on",
-      "onAt": "2026-11-12",
-      "removeBy": "2026-11-19"
-    }
-  ],
+  "flags": [],
   "retired": [
-    "listen-history-paging"
+    "listen-history-paging",
+    "set-page-v2"
   ]
 }
