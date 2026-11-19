@@ -54,6 +54,17 @@ class LibraryJourney: XCTestCase {
     return seek
   }
 
+  /// Closes Now Playing and waits until it has folded into the mini player. The player takes
+  /// taps until the fold ends, so a tap during it lands on the player, not the page below
+  /// (PAL-2609). Its buttons turn disabled once it is folded.
+  func closeNowPlaying(in app: XCUIApplication) {
+    let close = app.buttons["now-playing-close"]
+    close.tap()
+    XCTAssertTrue(
+      waitUntil(close, NSPredicate(format: "exists == false OR enabled == false"), timeout: 5),
+      "Now Playing must fold into the mini player")
+  }
+
   static func elapsedSeconds(_ value: String?) -> Int? {
     guard let elapsed = value?.components(separatedBy: " of ").first else { return nil }
     var seconds = 0
