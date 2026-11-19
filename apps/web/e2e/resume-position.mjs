@@ -6,7 +6,9 @@
 // artifact.
 //
 // The audio fixture is 30 s long and the service bounds a position by the Set's
-// length, so the journey pauses at 5 s and the other device saves 20 s.
+// length. Playback goes on until the pause click lands, so on a busy host the
+// page pauses seconds past the place it moved to; each step checks against the
+// second the page paused at, and the other device saves a place 8 s after it.
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -32,6 +34,11 @@ const webPort = await freePort();
 const apiUrl = `http://127.0.0.1:${devicePort}`;
 const webUrl = `http://127.0.0.1:${webPort}`;
 const key = randomBytes(24).toString("base64url");
+
+// The place another device saves while the page is paused at `pausedAt`: later
+// than it, so a resume from the page's own place cannot pass for one from the
+// other device's.
+const otherDevicePlace = (pausedAt) => pausedAt + 8;
 
 // The same Person from a second client, as another device would call the API.
 const api = async (method, route, body) => {
@@ -120,8 +127,10 @@ try {
       .getByRole("region", { name: "Audio player" })
       .locator("media-play-button");
 
-    // Moves the playing element to `seconds` and pauses it there with the play
-    // control, then waits for the pause's own save to reach the service. The
+    // Moves the playing element to `seconds` and pauses it with the play
+    // control, then waits for the pause's own save to reach the service, and
+    // answers the second the service holds. Playback goes on until the click
+    // lands, so the pause can be seconds past `seconds` on a busy host. The
     // seek must land first: a seek that ends during the next resume's read is
     // the person's choice of place and drops the read. The page sends its saves
     // one at a time, so on a busy host the seek's save can leave after the
@@ -163,21 +172,24 @@ try {
         "the pause did not save its position"
       );
       await pauseSave().response();
-      await waitUntil(
-        async () => Math.abs((await servicePosition()) - seconds) <= 1,
-        `the pause at ${seconds} s did not reach the service`
+      // The service rounds a position to the whole second.
+      const held = await servicePosition();
+      assert.equal(
+        held,
+        Math.round(paused),
+        `the service holds ${held} s after the pause at ${paused} s (moved to ${seconds} s)`
       );
-      return await servicePosition();
+      return held;
     };
-    // Presses play on a Set paused at `pausedAt` and answers where the sound
-    // went on, once it has played half a second past the pause, along with the
-    // number of position reads the resume made.
-    const resume = async (pausedAt, message) => {
+    // Presses play on a paused Set and answers where the sound went on, once it
+    // has played half a second past `from`, along with the number of position
+    // reads the resume made.
+    const resume = async (from, message) => {
       const reads = queueReads.length;
       await playButton.click();
       await waitUntil(async () => {
         const state = await audioState();
-        return !state.paused && state.currentTime > pausedAt + 0.5;
+        return !state.paused && state.currentTime > from + 0.5;
       }, message);
       const state = await audioState();
       return {
@@ -198,32 +210,33 @@ try {
 
     // 1. Another device saves a later place while the page is paused.
     const pausedAt = await pauseAt(5);
-    await api("PUT", `/sets/${saved.id}/position`, { seconds: 20 });
+    const otherDevice = otherDevicePlace(pausedAt);
+    await api("PUT", `/sets/${saved.id}/position`, { seconds: otherDevice });
     const { reads, seconds: resumedAt } = await resume(
-      pausedAt,
+      otherDevice,
       "the page did not resume after another device saved"
     );
     await page.screenshot({
       path: path.join(artifacts, "resumed-at-other-device.png"),
     });
     assert.ok(
-      resumedAt >= 20 && resumedAt < 24,
-      `the page resumed at ${resumedAt} s, not at the other device's 20 s`
+      resumedAt >= otherDevice && resumedAt < otherDevice + 4,
+      `the page resumed at ${resumedAt} s, not at the other device's ${otherDevice} s`
     );
     assert.equal(reads, 1, "the resume did not read the service's position");
     // The resume's seek is the page's next report.
     await waitUntil(
-      async () => (await servicePosition()) >= 20,
+      async () => (await servicePosition()) >= otherDevice,
       "the page's next report did not keep the other device's place"
     );
     const afterNextReport = await servicePosition();
     assert.ok(
-      afterNextReport >= 20,
-      `the service holds ${afterNextReport} s after the page reported, not 20 s or more`
+      afterNextReport >= otherDevice,
+      `the service holds ${afterNextReport} s after the page reported, not ${otherDevice} s or more`
     );
     step("a resume after another device saved plays from that device's place", {
       afterNextReport,
-      otherDevice: 20,
+      otherDevice,
       pausedAt,
       reads,
       resumedAt,
@@ -239,8 +252,8 @@ try {
       path: path.join(artifacts, "resumed-at-own-pause.png"),
     });
     assert.ok(
-      localResume >= 8 && localResume < 12,
-      `the page resumed at ${localResume} s, not at its own 8 s`
+      localResume >= localPause && localResume < localPause + 4,
+      `the page resumed at ${localResume} s, not at its own ${localPause} s`
     );
     step("a resume with no other save plays from the page's own pause", {
       localPause,
@@ -249,7 +262,9 @@ try {
 
     // 3. The read fails: the resume still plays, from the page's own place.
     const failedPause = await pauseAt(6);
-    await api("PUT", `/sets/${saved.id}/position`, { seconds: 25 });
+    await api("PUT", `/sets/${saved.id}/position`, {
+      seconds: otherDevicePlace(failedPause),
+    });
     await page.route("**/queue", async (route) => {
       await (route.request().method() === "GET"
         ? route.abort("failed")
@@ -261,8 +276,8 @@ try {
     );
     await page.unroute("**/queue");
     assert.ok(
-      failedResume >= 6 && failedResume < 10,
-      `the page resumed at ${failedResume} s after a failed read, not at its own 6 s`
+      failedResume >= failedPause && failedResume < failedPause + 4,
+      `the page resumed at ${failedResume} s after a failed read, not at its own ${failedPause} s`
     );
     step("a resume whose read fails plays from the page's own place", {
       failedPause,
@@ -272,7 +287,8 @@ try {
     // 4. Play twice while the read is out: the page stays quiet and saves
     // nothing until the read answers, then plays from the other device's place.
     const heldPause = await pauseAt(4);
-    await api("PUT", `/sets/${saved.id}/position`, { seconds: 18 });
+    const heldOther = otherDevicePlace(heldPause);
+    await api("PUT", `/sets/${saved.id}/position`, { seconds: heldOther });
     const { promise: readReleased, resolve: releaseRead } =
       Promise.withResolvers();
     await page.route("**/queue", async (route) => {
@@ -314,17 +330,17 @@ try {
     releaseRead();
     await waitUntil(async () => {
       const state = await audioState();
-      return !state.paused && state.currentTime > 18.5;
+      return !state.paused && state.currentTime > heldOther + 0.5;
     }, "the page did not resume at the other device's place after a second play");
     const { currentTime: heldResume } = await audioState();
     await page.unroute("**/queue");
     assert.ok(
-      heldResume >= 18 && heldResume < 22,
-      `the page resumed at ${heldResume} s after a second play, not at the other device's 18 s`
+      heldResume >= heldOther && heldResume < heldOther + 4,
+      `the page resumed at ${heldResume} s after a second play, not at the other device's ${heldOther} s`
     );
     await waitUntil(
-      async () => (await servicePosition()) >= 18,
-      "the page's next report after a second play did not keep 18 s"
+      async () => (await servicePosition()) >= heldOther,
+      `the page's next report after a second play did not keep ${heldOther} s`
     );
     const heldService = await servicePosition();
     step(
@@ -333,7 +349,7 @@ try {
         heldPause,
         heldResume,
         heldService,
-        otherDevice: 18,
+        otherDevice: heldOther,
         savesWhileHeld,
         whileHeld,
       }
