@@ -8,18 +8,20 @@ final class FilterUITests: LibraryJourney {
     // An untagged Set, so the filter has something to hide.
     _ = try LaneService().saveSet(
       title: "Untagged set", url: "https://www.youtube.com/watch?v=untagged001")
+    let own = try saveOwnSet("Filtered")
     let app = try launch()
     openLibrary(in: app)
 
-    let tile = app.buttons["tag-filter-techno"]
+    let tile = app.buttons["tag-filter-\(own.tag)"]
     XCTAssertTrue(
       tile.waitForExistence(timeout: 60),
       "the tag filter must appear above the rows\n\(app.debugDescription)")
     XCTAssertFalse(tile.isSelected, "the Library must open unfiltered\n\(app.debugDescription)")
 
+    reveal(tile, in: app)
     tapAtCentre(of: tile, in: app)
     let hidden = app.descendants(matching: .any)
-      .matching(NSPredicate(format: "label CONTAINS %@", "tagged techno")).firstMatch
+      .matching(NSPredicate(format: "label CONTAINS %@", "tagged \(own.tag)")).firstMatch
     XCTAssertTrue(
       hidden.waitForExistence(timeout: 20),
       "pressing the tile must turn the filter on\n\(app.debugDescription)")
@@ -34,27 +36,30 @@ final class FilterUITests: LibraryJourney {
   }
 
   func testHomeTagOpensFilteredLibraryAfterOpeningASet() throws {
+    let own = try saveOwnSet("Home tag")
     let app = try launch()
     openLibrary(in: app)
 
-    let night = app.descendants(matching: .any)
+    let row = app.descendants(matching: .any)
       .matching(
-        NSPredicate(
-          format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "set-row-", "Night session"
-        )
+        NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "set-row-", own.title)
       )
       .firstMatch
-    XCTAssertTrue(night.waitForExistence(timeout: 30), "the seeded Set must appear in the Library")
-    tapAtCentre(of: night, in: app)
+    XCTAssertTrue(
+      row.waitForExistence(timeout: 30),
+      "the seeded Set must appear in the Library\n\(app.debugDescription)")
+    tapAtCentre(of: row, in: app)
     XCTAssertTrue(app.staticTexts["detail-title"].waitForExistence(timeout: 15))
 
     selectTab("Home", in: app, sidebarIdentifier: "sidebar-home")
-    let tag = app.buttons["home-tag-techno"]
-    XCTAssertTrue(tag.waitForExistence(timeout: 15), "Home must show the seeded tag")
+    let tag = app.buttons["home-tag-\(own.tag)"]
+    XCTAssertTrue(
+      tag.waitForExistence(timeout: 15), "Home must show the seeded tag\n\(app.debugDescription)")
+    reveal(tag, in: app)
     capture("home")
     tapAtCentre(of: tag, in: app)
 
-    let filter = app.buttons["tag-filter-techno"]
+    let filter = app.buttons["tag-filter-\(own.tag)"]
     XCTAssertTrue(filter.waitForExistence(timeout: 15), "the tag must open the Library list")
     XCTAssertTrue(filter.isSelected, "the Library must filter by the tapped tag")
     XCTAssertFalse(app.staticTexts["detail-title"].exists, "the opened Set must be closed")

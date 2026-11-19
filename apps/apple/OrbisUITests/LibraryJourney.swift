@@ -12,6 +12,45 @@ class LibraryJourney: XCTestCase {
       arguments: tag.map { ["-orbisStartTagFiltered", $0] } ?? [])
   }
 
+  /// A Set this journey saves for itself, with a word in its title and a Tag that no other Set
+  /// carries. The full run tests on two simulators that share one Person, and the Library lists
+  /// the newest Set first and draws only the rows near the screen. A Set seeded once at the
+  /// start of the run sinks out of the tree while the other simulator saves its own (PAL-2443),
+  /// so a journey that looks for a Set saves one just before it launches.
+  struct OwnSet {
+    let set: LaneService.Set
+    /// The lowercase word that only this Set's title holds, so a search finds this Set alone.
+    let word: String
+    let title: String
+    let tag: String
+  }
+
+  func saveOwnSet(_ name: String) throws -> OwnSet {
+    let word = String((0..<8).map { _ in "abcdefghijklmnopqrstuvwxyz".randomElement() ?? "a" })
+    let title = "\(name) \(word)"
+    let tag = "lane\(word)"
+    let set = try LaneService().saveSet(
+      title: title, url: "https://www.youtube.com/watch?v=\(word)abc", tags: [tag])
+    return OwnSet(set: set, word: word, title: title, tag: tag)
+  }
+
+  /// Scrolls a row of Tag chips until the chip sits inside the window. The row leads with the
+  /// Tags this simulator used last and then the newest, so a chip can start past the edge, where
+  /// a tap at its centre lands on nothing.
+  func reveal(_ chip: XCUIElement, in app: XCUIApplication) {
+    let window = app.windows.firstMatch.frame
+    let origin = app.coordinate(withNormalizedOffset: .zero)
+    for _ in 0..<6 where !window.contains(chip.frame) {
+      let y = chip.frame.midY
+      let (from, to) = chip.frame.minX < window.minX ? (0.2, 0.8) : (0.8, 0.2)
+      origin.withOffset(CGVector(dx: window.width * from, dy: y))
+        .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: window.width * to, dy: y)))
+    }
+    XCTAssertTrue(
+      window.contains(chip.frame),
+      "\(chip.identifier) must scroll into the window\n\(app.debugDescription)")
+  }
+
   func record(_ name: String, _ values: [String: Any]) throws {
     let data = try JSONSerialization.data(
       withJSONObject: values, options: [.prettyPrinted, .sortedKeys])
@@ -213,6 +252,12 @@ class LibraryJourney: XCTestCase {
       app.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count))
     }
     app.typeText(query)
+    // The field searches as it is typed into, and on a slow host it once lost focus before the
+    // query was submitted, with the keyboard still up. Return then reached nothing, so the
+    // field is tapped again when nothing holds focus.
+    let focused = app.descendants(matching: .any)
+      .matching(NSPredicate(format: "hasKeyboardFocus == true")).firstMatch
+    if !focused.exists { app.searchFields.firstMatch.tap() }
     app.typeText("\n")
   }
 
