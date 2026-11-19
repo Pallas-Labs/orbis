@@ -126,7 +126,7 @@ final class PlaybackUITests: LibraryJourney {
       waitUntil(nowPlayingToggle, NSPredicate(format: "label == %@", "Play"), timeout: 4))
     let paused = try service.position(of: seeded.id, becomesAtLeast: 10)
     XCTAssertGreaterThanOrEqual(paused, 10)
-    app.buttons["now-playing-close"].tap()
+    closeNowPlaying(in: app)
     tapAtCentre(of: row, in: app)
     XCTAssertTrue(toggle.waitForExistence(timeout: 30))
     XCTAssertEqual(toggle.label, "Play")
@@ -199,7 +199,7 @@ final class PlaybackUITests: LibraryJourney {
       "tracklist-second-cue",
       ["cueSeconds": 12, "elapsedSeconds": Self.elapsedSeconds(seek.value as? String) ?? -1])
     capture("tracklist-elapsed-after-cue")
-    app.buttons["now-playing-close"].tap()
+    closeNowPlaying(in: app)
     tapAtCentre(of: row, in: app)
     XCTAssertTrue(tracklist.waitForExistence(timeout: 30))
 

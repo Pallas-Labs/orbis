@@ -103,7 +103,9 @@ import SwiftUI
       .allowsHitTesting(isExpanded || isMoving)
       // Folded, its buttons stay out of a keyboard's reach and its Escape shortcut unclaimed.
       .disabled(!isExpanded && !isMoving)
-      .accessibilityHidden(!isExpanded)
+      // Hidden only once folded, with hit testing and `disabled` above, so a reader or a UI test
+      // does not take the player for gone while it still takes taps (PAL-2609).
+      .accessibilityHidden(!isExpanded && !isMoving)
       .accessibilityAddTraits(isExpanded ? .isModal : [])
       .onChange(of: isPresented, initial: true) { _, isPresented in
         if isPresented, !isExpanded { expand() }
