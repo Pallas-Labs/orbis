@@ -1122,9 +1122,9 @@ final class AudioPlayer {
       // A second early end at the same place, with no progress between and the item loaded to
       // the expected end, means the audio is shorter than the expected length and nothing more
       // will arrive. A held stream also ends twice at one place, but its loaded range stops short.
+      let loadedToEnd = engine.buffer.ranges.contains { $0.start + $0.duration >= duration - 2 }
       if let end = prematureEnd, end.generation == playbackGeneration,
-        abs(actual - end.position) <= 0.5,
-        engine.buffer.ranges.contains(where: { $0.start + $0.duration >= duration - 2 })
+        abs(actual - end.position) <= 0.5, loadedToEnd
       {
         record(
           .ended(
@@ -1145,6 +1145,9 @@ final class AudioPlayer {
       )
       if wantsSound { state = .loading }
       publishNowPlaying(isPlaying: false)
+      // With every byte loaded, no buffer change follows to play the item again, so the second
+      // end never comes and the Set waits in Loading. Play once more to see whether it repeats.
+      if loadedToEnd { playAfterLoadedEnd() }
       return
     }
     record(
@@ -1153,6 +1156,21 @@ final class AudioPlayer {
           actual: .init(actual), expected: .init(duration ?? serviceDuration), premature: false)))
     completionReported = true
     onFinished?(finished)
+  }
+
+  /// Plays an item that ended early with its expected end already loaded, after the end notice
+  /// has settled the engine's rate. A newer item, a seek or a pause in between cancels it.
+  private func playAfterLoadedEnd() {
+    let generation = playbackGeneration
+    Task { [weak self] in
+      guard let self, self.playbackGeneration == generation, self.prematureEnd != nil,
+        !self.completionReported
+      else { return }
+      logger.notice(
+        "Playing again after a premature end with the item loaded generation=\(generation, privacy: .public) rate=\(self.engine?.rate ?? 0, privacy: .public)"
+      )
+      self.playIfReady()
+    }
   }
 
   private func capturePosition() {
