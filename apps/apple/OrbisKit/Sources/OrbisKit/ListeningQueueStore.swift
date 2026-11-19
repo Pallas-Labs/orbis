@@ -12,10 +12,11 @@ public enum QueueLoad: Equatable, Sendable {
 
 /// How a queue action ended.
 public enum QueueOutcome: Equatable, Sendable {
-  /// The service answered and its queue is now the one on show.
+  /// The service applied the action and answered with this queue. It is the one on show unless
+  /// a newer action was asked meanwhile, whose own answer follows it.
   case applied(ListeningQueue)
-  /// A newer action, a sign-out or a cancelled caller owns the queue now, so nothing changed here.
-  /// Never shown to anyone.
+  /// A sign-out, a cancelled caller, or a caller that no longer wants the answer owns the queue
+  /// now, so nothing changed here. Never shown to anyone.
   case superseded
   /// The service refused, or could not be reached. Nothing changed.
   case failed(OrbisError)
@@ -122,10 +123,17 @@ public final class ListeningQueueStore {
   // MARK: - Actions
 
   /// Makes a Set the active entry, so every device agrees on what is playing.
+  ///
+  /// `isCurrent` says whether the caller still wants the answer: the store sends nothing, and
+  /// answers `.superseded`, once it says no, so a play the person already replaced never reaches
+  /// the service.
   public func play(
-    _ id: String, client: OrbisClient, currentToken: @escaping @MainActor () -> String?
+    _ id: String, client: OrbisClient, currentToken: @escaping @MainActor () -> String?,
+    isCurrent: @escaping @MainActor () -> Bool = { true }
   ) async -> QueueOutcome {
-    await run(client: client, currentToken: currentToken, notice: nil) { try await $0.playSet(id) }
+    await run(client: client, currentToken: currentToken, isCurrent: isCurrent, notice: nil) {
+      try await $0.playSet(id)
+    }
   }
 
   /// Puts a Set in the queue to play after the one playing now.
@@ -156,9 +164,10 @@ public final class ListeningQueueStore {
   /// Replaces the queue with a Playlist's playable members, in Playlist order or shuffled.
   public func playPlaylist(
     _ id: String, shuffled: Bool = false, client: OrbisClient,
-    currentToken: @escaping @MainActor () -> String?
+    currentToken: @escaping @MainActor () -> String?,
+    isCurrent: @escaping @MainActor () -> Bool = { true }
   ) async -> QueueOutcome {
-    await run(client: client, currentToken: currentToken, notice: nil) {
+    await run(client: client, currentToken: currentToken, isCurrent: isCurrent, notice: nil) {
       try await $0.playPlaylist(id, shuffled: shuffled)
     }
   }
@@ -166,9 +175,10 @@ public final class ListeningQueueStore {
   /// Replaces the queue with a saved Collection's Sets, ranked or shuffled.
   public func playCollection(
     _ id: String, shuffled: Bool = false, client: OrbisClient,
-    currentToken: @escaping @MainActor () -> String?
+    currentToken: @escaping @MainActor () -> String?,
+    isCurrent: @escaping @MainActor () -> Bool = { true }
   ) async -> QueueOutcome {
-    await run(client: client, currentToken: currentToken, notice: nil) {
+    await run(client: client, currentToken: currentToken, isCurrent: isCurrent, notice: nil) {
       try await $0.playCollection(id, shuffled: shuffled)
     }
   }
@@ -176,47 +186,96 @@ public final class ListeningQueueStore {
   /// Replaces the queue with the Sets in Heavy Rotation over a range, ranked or shuffled.
   public func playHeavyRotation(
     _ range: ListeningRange, shuffled: Bool = false, client: OrbisClient,
-    currentToken: @escaping @MainActor () -> String?
+    currentToken: @escaping @MainActor () -> String?,
+    isCurrent: @escaping @MainActor () -> Bool = { true }
   ) async -> QueueOutcome {
-    await run(client: client, currentToken: currentToken, notice: nil) {
+    await run(client: client, currentToken: currentToken, isCurrent: isCurrent, notice: nil) {
       try await $0.playHeavyRotation(range, shuffled: shuffled)
     }
   }
 
+  /// How long `finished` waits before each further try of a completion that got no answer, a 429
+  /// or a 5xx, as the web player does. The service counts a completion once, by whether the Set
+  /// is still the active one, so a repeat is safe. A test shortens the waits.
+  @ObservationIgnored public var completionWaits: [Duration] = [
+    .seconds(1), .seconds(2), .seconds(4),
+  ]
+
   /// The active Set reached its natural end: the Listen finishes on the service, and the queue
   /// that comes back holds what plays next.
+  ///
+  /// A completion that got no answer, a 429 or a 5xx is sent again after each of
+  /// `completionWaits`. Each try queues behind the mutations asked for since, so a Set the person
+  /// plays meanwhile is not held up by the waits, and the tries stop once `isCurrent` says the
+  /// person played something else.
   public func finished(
-    _ id: String, client: OrbisClient, currentToken: @escaping @MainActor () -> String?
+    _ id: String, client: OrbisClient, currentToken: @escaping @MainActor () -> String?,
+    isCurrent: @escaping @MainActor () -> Bool = { true }
   ) async -> QueueOutcome {
-    await run(client: client, currentToken: currentToken, notice: nil) {
-      try await $0.reportCompletion(id)
+    var waits = completionWaits[...]
+    while true {
+      let outcome = await run(
+        client: client, currentToken: currentToken, isCurrent: isCurrent, notice: nil
+      ) { try await $0.reportCompletion(id) }
+      guard case .failed(let error) = outcome, Self.mayOutlast(error),
+        let wait = waits.popFirst()
+      else { return outcome }
+      do {
+        try await Task.sleep(for: wait)
+      } catch {
+        return .superseded
+      }
+      guard isCurrent(), currentToken() == client.token else { return .superseded }
     }
   }
 
+  /// Whether a request that failed this way may succeed when sent again: no answer came, or the
+  /// service was busy or broken rather than refusing the request.
+  static func mayOutlast(_ error: OrbisError) -> Bool {
+    switch error {
+    case .unreachable: true
+    case .server(let status, _): status == 429 || status >= 500
+    default: false
+    }
+  }
+
+  /// Sends `call` behind the mutations already asked for, while the key and `isCurrent` still
+  /// hold. An answer the caller still wants is `.applied`, and is shown when no newer mutation
+  /// was asked since; a newer one answers after it and shows its own.
   private func run(
     client: OrbisClient,
     currentToken: @escaping @MainActor () -> String?,
+    isCurrent: @escaping @MainActor () -> Bool = { true },
     notice message: String?,
     _ call: @escaping @Sendable (OrbisClient) async throws -> ListeningQueue
   ) async -> QueueOutcome {
     notice = nil
-    let submission = submit(currentToken: currentToken) { try await call(client) }
+    let submission = submit(currentToken: currentToken) {
+      guard isCurrent() else { throw CancellationError() }
+      return try await call(client)
+    }
     do {
-      let loaded = try await submission.request.value
-      guard !Task.isCancelled, publish(loaded, revision: submission.revision) else {
-        return .superseded
+      let loaded = try await withTaskCancellationHandler {
+        try await submission.request.value
+      } onCancel: {
+        submission.request.cancel()
       }
-      notice = message
+      guard !Task.isCancelled, isCurrent() else { return .superseded }
+      if publish(loaded, revision: submission.revision) { notice = message }
       return .applied(loaded)
     } catch is CancellationError {
       return .superseded
     } catch OrbisError.cancelled {
       return .superseded
     } catch let error as OrbisError {
-      guard currentToken() == client.token, !Task.isCancelled else { return .superseded }
+      guard currentToken() == client.token, isCurrent(), !Task.isCancelled else {
+        return .superseded
+      }
       return .failed(error)
     } catch {
-      guard currentToken() == client.token, !Task.isCancelled else { return .superseded }
+      guard currentToken() == client.token, isCurrent(), !Task.isCancelled else {
+        return .superseded
+      }
       return .failed(.unreachable)
     }
   }
