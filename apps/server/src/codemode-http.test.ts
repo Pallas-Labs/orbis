@@ -152,7 +152,10 @@ test("transcript: a Code Mode program reads and curates the caller's library in 
         namespace: "curate",
         query: "setTags",
       }).results;
-      t.step("  curate.setTags declaration", setTags?.declaration ?? "none");
+      t.step(
+        "  curate.setTags declaration",
+        (setTags?.declaration ?? "none").replaceAll("\n", " ")
+      );
 
       const joined = await run(`
         const [{ sets: techno }, { tags }, { playlists: own }] = await Promise.all([
@@ -244,12 +247,78 @@ test("transcript: a Code Mode program reads and curates the caller's library in 
       `);
       t.step('execute curate.setPlaylistSets on "Warm up"', said(intoOwn));
 
+      const sharedName = t.name("playlist", shared.id);
+      const otherWrites = await run(`
+        const [{ id }] = (await playlists.shared()).playlists;
+        const tried = {};
+        for (const [name, write] of [
+          ["setPlaylists", () => curate.setPlaylists({ id: "a", playlistIds: [id] })],
+          ["renamePlaylist", () => curate.renamePlaylist({ id, name: "Taken" })],
+        ]) {
+          try {
+            await write();
+            tried[name] = "written";
+          } catch (error) {
+            tried[name] = error.message;
+          }
+        }
+        return tried;
+      `);
+      t.step(
+        "execute curate.setPlaylists and renamePlaylist on it",
+        said(otherWrites).replaceAll(shared.id, sharedName)
+      );
+      const afterOthers = await call(
+        "friend",
+        "GET",
+        `/playlists/${shared.id}`
+      );
+      t.step(
+        `  GET /playlists/${sharedName}`,
+        `"${afterOthers.name}", ${afterOthers.sets.length} Sets`
+      );
+
+      // Every other capability once, against the real app: the names that threw.
+      const rest = await run(`
+        const { id: me } = await people.me();
+        const created = await curate.createCollection({
+          creatorId: null, minimumMinutes: 0, name: "All", range: "month", source: null, tag: "techno",
+        });
+        const steps = {
+          "sets.tracklist": () => sets.tracklist({ id: "a" }),
+          "sets.audioState": () => sets.audioState({ id: "a" }),
+          "library.heavyRotation": () => library.heavyRotation({ range: "year" }),
+          "library.collectionSets": () => library.collectionSets({ id: created.id }),
+          "curate.updateCollection": () => curate.updateCollection({ ...created, name: "Techno", id: created.id }),
+          "queue.read": () => queue.read(),
+          "people.list": () => people.list(),
+          "people.sets": () => people.sets({ id: "friend" }),
+          "people.playlists": () => people.playlists({ id: "friend" }),
+          "people.listens": () => people.listens({ id: "friend", limit: 5 }),
+          "curate.createPlaylist": () => curate.createPlaylist({ name: "Later" }),
+        };
+        const failed = [];
+        for (const [name, step] of Object.entries(steps)) {
+          try { await step(); } catch (error) { failed.push(name + ": " + error.message); }
+        }
+        const { sets: audio } = await sets.list();
+        return {
+          me,
+          failed,
+          audio: (await Promise.all(audio.map((set) => sets.audioState({ id: set.id })))).map((each) => each.state),
+          collections: (await library.collections()).collections.map((each) => each.name),
+        };
+      `);
+      t.step(
+        "execute every other capability",
+        rest.ok ? JSON.stringify(rest.value) : said(rest)
+      );
+
       expect(t.text()).toMatchInlineSnapshot(`
         "
         seed  -> host Sets a b c d; a [techno], b [techno, live]; <playlist 1> "Warm up" holds a c
         search tags  -> 3: library.tags curate.setTags sets.list
-          curate.setTags declaration  -> /** Replaces one Set's tags with \`tags\` (at most 20, each at most 40 characters). Read the Set first to keep its other tags. */
-        function setTags(input: { id: string; tags: string[] }): Promise<{ artworkLargeUrl: string | null; artworkUrl: string | null; createdAt: string; creator: string | null; creatorId: string | null; downloadState: "none" | "queued" | "downloading" | "ready" | "failed" | "canceled"; durationSeconds: number | null; finishCount: number; id: string; lastListenedAt: string | null; listenCount: number; metadataState: "pending" | "enriched" | "failed"; playbackPositionSeconds: number; playlistIds: string[]; releasedAt: string | null; retainedAudioBytes: number | null; retainedAudioFormat: string | null; source: "youtube" | "soundcloud" | "apple-music"; tags: string[]; title: string; titleEditedByUser: boolean; tracklistState: "pending" | "ready" | "none" | "failed"; url: string }>;
+          curate.setTags declaration  -> /** Replaces one Set's tags with \`tags\` (at most 20, each at most 40 characters). Read the Set first to keep its other tags. */ function setTags(input: { id: string; tags: string[] }): Promise<{ artworkLargeUrl: string | null; artworkUrl: string | null; createdAt: string; creator: string | null; creatorId: string | null; downloadState: "none" | "queued" | "downloading" | "ready" | "failed" | "canceled"; durationSeconds: number | null; finishCount: number; id: string; lastListenedAt: string | null; listenCount: number; metadataState: "pending" | "enriched" | "failed"; playbackPositionSeconds: number; playlistIds: string[]; releasedAt: string | null; retainedAudioBytes: number | null; retainedAudioFormat: string | null; source: "youtube" | "soundcloud" | "apple-music"; tags: string[]; title: string; titleEditedByUser: boolean; tracklistState: "pending" | "ready" | "none" | "failed"; url: string }>;
         execute join Sets, tags and playlists  -> {"tags":["live","techno"],"playlists":1,"technoInAPlaylist":1} (calls: sets.list library.tags playlists.list playlists.read)
         execute tag c and d "sunrise"  -> ["c","d"] (calls: sets.read curate.setTags sets.read curate.setTags)
           GET /sets?tag=sunrise  -> d [sunrise] c [sunrise]
@@ -260,6 +329,9 @@ test("transcript: a Code Mode program reads and curates the caller's library in 
         execute curate.setPlaylistSets on it  -> Refused: curate.setPlaylistSets: <playlist 2> is not your Playlist
           GET /playlists/<playlist 2>  -> 0 Sets
         execute curate.setPlaylistSets on "Warm up"  -> ["d","a","c"] (calls: playlists.list curate.setPlaylistSets)
+        execute curate.setPlaylists and renamePlaylist on it  -> {"setPlaylists":"curate.setPlaylists: Playlist not found.","renamePlaylist":"curate.renamePlaylist: Playlist not found."} (calls: playlists.shared curate.setPlaylists curate.renamePlaylist)
+          GET /playlists/<playlist 2>  -> "Friend's mix", 0 Sets
+        execute every other capability  -> {"me":"host","failed":[],"audio":["ready","ready","ready","ready"],"collections":["Techno"]}
         "
       `);
     } finally {
