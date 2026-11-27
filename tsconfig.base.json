@@ -25,6 +25,7 @@
         "ignoreEffectWarningsInTscExitCode": false,
         "allowedUnstableApis": [
           "@effect/ai-openrouter",
+          "@effect/platform-bun",
           "@effect/sql-sqlite-bun",
           "@effect/sql-sqlite-do",
           "effect/ai",

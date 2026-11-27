@@ -18,6 +18,7 @@ Source ownership, local setup, and verification.
 | Web routes and player | [`apps/web/src/routes`](../apps/web/src/routes) and [`player.tsx`](../apps/web/src/components/player/player.tsx) |
 | Orbis service client, models and Listening Queue state (Swift, no simulator) | [`apps/apple/OrbisKit`](../apps/apple/OrbisKit) and [OrbisKit](#orbiskit) |
 | Apple client and project specification | [`apps/apple/Orbis`](../apps/apple/Orbis) and [`project.yml`](../apps/apple/project.yml) |
+| Code Mode MCP server (`search` and `execute` over the API) | [`apps/mcp`](../apps/mcp) and its [README](../apps/mcp/README.md) |
 | Rune desktop client | [`apps/rune`](../apps/rune) and its [README](../apps/rune/README.md) |
 | Native fixture setup and HTTP client | [`scripts/native-lanes.mjs`](../scripts/native-lanes.mjs), [`seed-lane-audio.mjs`](../scripts/seed-lane-audio.mjs) with its audio faults and `/via` proxy in [`lane-audio-faults.mjs`](../scripts/lane-audio-faults.mjs), and [`LaneService.swift`](../apps/apple/OrbisUITests/LaneService.swift) |
 | Domain terms and decisions | [GLOSSARY.md](../GLOSSARY.md) and [ADRs](adr) |
