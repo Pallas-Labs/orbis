@@ -39,7 +39,7 @@
       "cache": false
     },
     "//#lint": {
-      "dependsOn": ["@orbis/contracts#build"],
+      "dependsOn": ["@orbis/contracts#build", "@orbis/mcp#build"],
       "outputs": []
     },
     "//#bounded-reads": {

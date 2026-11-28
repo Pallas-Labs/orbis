@@ -1,0 +1,30 @@
+{
+  "name": "@orbis/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "bin": {
+    "orbis-mcp": "./dist/main.js"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "bun src/main.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit --tsBuildInfoFile .cache/typecheck.tsbuildinfo",
+    "diagnostics": "effect-tsgo diagnostics --project tsconfig.json --format text"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "4.1.2",
+    "@orbis/contracts": "workspace:*",
+    "effect": "4.1.2",
+    "psychoscript": "0.3.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.0"
+  }
+}
