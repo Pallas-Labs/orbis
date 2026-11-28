@@ -241,7 +241,7 @@ final class QueueTests: XCTestCase {
       }
     }
     // The waits of the service's retry schedule, shortened: the order is what is tested.
-    model.completionWaits = [.milliseconds(1), .milliseconds(2), .milliseconds(4)]
+    model.queueStore.completionWaits = [.milliseconds(1), .milliseconds(2), .milliseconds(4)]
     return model
   }
 

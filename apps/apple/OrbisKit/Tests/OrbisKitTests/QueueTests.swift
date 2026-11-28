@@ -224,6 +224,109 @@ final class QueueTests: XCTestCase {
     XCTAssertEqual(queue.activeSetId, "b")
   }
 
+  /// Answers handed out one at a time, the last one standing once the rest are used.
+  final class Answers: @unchecked Sendable {
+    private let lock = NSLock()
+    private var queue: [(Int, String)]
+
+    init(_ answers: [(Int, String)]) { queue = answers }
+
+    func next() -> (Int, String) {
+      lock.withLock { queue.count > 1 ? queue.removeFirst() : queue[0] }
+    }
+  }
+
+  private nonisolated static var nextQueue: (Int, String) {
+    (200, queueBody(active: "b", entries: [set(id: "b")]))
+  }
+
+  /// A store whose completion meets `answers` in order, with the retry waits shortened: the
+  /// order of the tries is what is tested, not the clock.
+  private func finishing(
+    log: RequestLog, answers: [(Int, String)]
+  ) throws -> (ListeningQueueStore, OrbisClient) {
+    let remaining = Answers(answers)
+    let client = try client(log: log) { _ in remaining.next() }
+    let store = ListeningQueueStore()
+    store.completionWaits = [.milliseconds(1), .milliseconds(2), .milliseconds(4)]
+    return (store, client)
+  }
+
+  func testACompletionRefusedWith503IsSentAgainAndTheQueueAdvances() async throws {
+    let log = RequestLog()
+    let (store, client) = try finishing(
+      log: log, answers: [(503, #"{"message":"Try again."}"#), Self.nextQueue])
+
+    let outcome = await store.finished("a", client: client, currentToken: signedIn)
+
+    XCTAssertEqual(log.all, ["POST /queue/completion", "POST /queue/completion"])
+    guard case .applied(let queue) = outcome else { return XCTFail("\(outcome)") }
+    XCTAssertEqual(queue.activeSetId, "b")
+    XCTAssertEqual(loaded(store)?.activeSetId, "b")
+  }
+
+  func testACompletionThatFailsFourTimesSaysSoAfterTheFourthRequest() async throws {
+    let log = RequestLog()
+    let failure = (503, #"{"message":"Try again."}"#)
+    let (store, client) = try finishing(
+      log: log, answers: [failure, failure, failure, failure, Self.nextQueue])
+
+    let outcome = await store.finished("a", client: client, currentToken: signedIn)
+
+    XCTAssertEqual(log.all.count, 4)
+    XCTAssertEqual(outcome, .failed(.server(status: 503, message: "Try again.")))
+    XCTAssertNil(loaded(store))
+  }
+
+  func testACompletionRefusedWith404IsSentOnce() async throws {
+    let log = RequestLog()
+    let (store, client) = try finishing(
+      log: log, answers: [(404, #"{"message":"No such set."}"#), Self.nextQueue])
+
+    let outcome = await store.finished("a", client: client, currentToken: signedIn)
+
+    XCTAssertEqual(log.all, ["POST /queue/completion"])
+    XCTAssertEqual(outcome, .failed(.server(status: 404, message: "No such set.")))
+  }
+
+  /// A completion that failed is not sent again once the person played something else.
+  func testACompletionIsNotSentAgainOnceThePersonPlayedSomethingElse() async throws {
+    let log = RequestLog()
+    let (store, client) = try finishing(
+      log: log, answers: [(503, #"{"message":"Try again."}"#), Self.nextQueue])
+    final class Tries: @unchecked Sendable { var count = 0 }
+    let tries = Tries()
+
+    let outcome = await store.finished(
+      "a", client: client, currentToken: signedIn,
+      isCurrent: {
+        tries.count += 1
+        return tries.count == 1
+      })
+
+    XCTAssertEqual(log.all, ["POST /queue/completion"])
+    XCTAssertEqual(outcome, .superseded)
+  }
+
+  /// A play the person already replaced never reaches the service.
+  func testAMutationTheCallerReplacedIsNotSent() async throws {
+    let log = RequestLog()
+    let client = try client(log: log) { _ in
+      (200, Self.queueBody(active: "a", entries: [Self.set(id: "a")]))
+    }
+    let store = ListeningQueueStore()
+
+    let played = await store.play("a", client: client, currentToken: signedIn) { false }
+    let replaced = await store.playPlaylist(
+      "closing", client: client, currentToken: signedIn, isCurrent: { false })
+    let finished = await store.finished(
+      "a", client: client, currentToken: signedIn, isCurrent: { false })
+
+    XCTAssertEqual(log.all, [])
+    XCTAssertEqual([played, replaced, finished], [.superseded, .superseded, .superseded])
+    XCTAssertNil(loaded(store))
+  }
+
   func testTheQueueIsReadWithAGet() async throws {
     let client = try client { _ in
       (200, Self.queueBody(active: "a", entries: [Self.set(id: "a"), Self.set(id: "b")]))
