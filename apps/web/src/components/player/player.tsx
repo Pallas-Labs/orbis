@@ -23,6 +23,7 @@ import { FAILURE_MESSAGES } from "@/lib/orbis";
 import type { ApiResult, Credentials } from "@/lib/orbis";
 import {
   completeSet,
+  mayOutlast,
   playPlaylist,
   playSet,
   queueSet,
@@ -161,6 +162,8 @@ export const PlayerProvider = ({
   const holding = useRef(false);
   // Bumped by each resume read and by a seek, so a seek made during the read wins over its answer.
   const resumeRead = useRef(0);
+  // The timer that sends a paused place again after a save got no answer (PAL-3192).
+  const resend = useRef<number | null>(null);
 
   // Position saves and the completion go out one at a time, in the order the player made them.
   // A Set that ends pauses first, which saves its last second; that save must not land after
@@ -180,6 +183,14 @@ export const PlayerProvider = ({
 
   // Saves a Playback Position in write order, and remembers what the service stored for the loaded
   // Set, so a later resume can tell this player's save from another device's.
+  //
+  // A save that got no answer may still have landed: the request failed, or its answer was lost,
+  // and the page cannot tell which. Either way the player does not know what the service holds, so
+  // a pause would never reach the other device, or a resume would skip that device's next pause
+  // (PAL-3192). While the element stays paused, its place is saved again on the report tick until
+  // a save is answered. The resend reads the element's place when it goes and joins the write
+  // order, so it never lands after a newer save. A playing element reports on its own tick; an
+  // ended one has its completion.
   const save = (setId: string, seconds: number) => {
     void write(async () => {
       const saved = await reportPosition(credentials, setId, seconds);
@@ -188,6 +199,20 @@ export const PlayerProvider = ({
           seconds: saved.value.playbackPositionSeconds,
           setId,
         };
+      } else if (mayOutlast(saved) && resend.current === null) {
+        resend.current = window.setTimeout(() => {
+          resend.current = null;
+          const audio = audioRef.current;
+          if (
+            audio !== null &&
+            audio.paused &&
+            !audio.ended &&
+            !holding.current &&
+            savedPosition.current?.setId === setId
+          ) {
+            save(setId, audio.currentTime);
+          }
+        }, REPORT_EVERY_MS);
       }
       return saved;
     });

@@ -34,6 +34,16 @@ final class PositionReportingTests: XCTestCase {
     XCTAssertNil(reports.position(elapsed: 45.2, state: .paused))
   }
 
+  func testAReportWithNoAnswerIsSentAgain() {
+    var reports = PositionReporting()
+
+    XCTAssertEqual(reports.position(elapsed: 45.9, state: .paused), 45)
+    // The request failed or its answer was lost: the service may not hold the pause.
+    reports.forget()
+    XCTAssertEqual(reports.position(elapsed: 45.2, state: .paused), 45)
+    XCTAssertNil(reports.position(elapsed: 45.2, state: .paused))
+  }
+
   func testASettledReportIsTheOneTheLibraryIsUpdatedWith() {
     XCTAssertTrue(PositionReporting.settles(.paused))
     XCTAssertTrue(PositionReporting.settles(.idle))
