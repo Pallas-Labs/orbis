@@ -270,6 +270,11 @@ export class Library extends Context.Service<
       id: string
     ) => Effect.Effect<SavedSet, LibraryError>;
     readonly resetStuckDownloads: Effect.Effect<number, LibraryError>;
+    /**
+     * Releases each ready Set that nobody keeps. A finish and the release after
+     * it run in two transactions, so a crash between them leaves such a row.
+     */
+    readonly releaseUnkeptReady: Effect.Effect<number, LibraryError>;
   }
 >()("@orbis/Library") {
   static readonly make = Effect.gen(function* layer() {
@@ -1205,6 +1210,22 @@ export class Library extends Context.Service<
         return queued.length;
       })
     ).pipe(Effect.withSpan("Library.resetStuckDownloads"));
+    const releaseUnkeptReady = execute(
+      Effect.gen(function* releaseUnkeptReadyEffect() {
+        // bounded-read: the worker finishes one Download at a time, so each crash leaves one row at most.
+        const unkept = yield* db.all<{ readonly id: string }>(sql`
+          SELECT id FROM sets
+          WHERE download_state = 'ready'
+            AND id NOT IN (SELECT set_id FROM library_entries)
+            AND id NOT IN (SELECT set_id FROM playlist_sets)
+            AND id NOT IN (SELECT set_id FROM queue_entries)
+        `);
+        yield* Effect.forEach((set: { readonly id: string }) =>
+          release(set.id)
+        )(unkept);
+        return unkept.length;
+      })
+    ).pipe(Effect.withSpan("Library.releaseUnkeptReady"));
     const tags = Effect.suspend(() =>
       execute(
         db
@@ -1887,6 +1908,7 @@ export class Library extends Context.Service<
       recordEnrichment,
       recordEnrichmentFailure,
       release,
+      releaseUnkeptReady,
       remove,
       removeCollection,
       renamePlaylist,
