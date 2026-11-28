@@ -101,7 +101,12 @@ import {
   sets as setRows,
 } from "./db/schema.js";
 import { Database } from "./db/service.js";
-import { DownloadMoves, moveDownload } from "./download-state.js";
+import {
+  DownloadMoveObserver,
+  DownloadMoves,
+  moveDownload,
+} from "./download-state.js";
+import type { ObservedMove } from "./download-state.js";
 import { asLibraryError, LibraryError } from "./errors.js";
 import type {
   AccessDecision,
@@ -501,6 +506,8 @@ export const createPortableApp = (options: {
   shortLinkFetch?: (url: string, signal: AbortSignal) => Promise<Response>;
   titleReviser?: Layer.Layer<TitleReviser>;
   versos?: Layer.Layer<Versos>;
+  /** Hears each Download move; a test records them as a trace of `SetDownload.tla`. */
+  observeDownloadMoves?: (move: ObservedMove) => void;
 }) => {
   configureLogging(options.logging);
   const { trustPath } = options;
@@ -2916,7 +2923,13 @@ export const createPortableApp = (options: {
       Layer.provide(options.titleReviser ?? TitleReviser.unconfigured()),
       Layer.provide(options.versos ?? Versos.unconfigured()),
       Layer.provide(database),
-      Layer.provide(loggingLayer)
+      Layer.provide(loggingLayer),
+      Layer.provide(
+        Layer.succeed(
+          DownloadMoveObserver,
+          options.observeDownloadMoves ?? DownloadMoveObserver.defaultValue()
+        )
+      )
     ),
     {
       disableLogger: true,

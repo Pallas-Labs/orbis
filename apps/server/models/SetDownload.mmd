@@ -1,0 +1,40 @@
+---
+title: A Set's Download and its file on the audio node
+---
+stateDiagram-v2
+  state "downloading" as s0
+  state "downloading, file on node" as s1
+  state "failed" as s2
+  state "failed, file on node" as s3
+  state "none" as s4
+  state "none, file on node" as s5
+  state "queued" as s6
+  state "queued, file on node" as s7
+  state "ready, file on node" as s8
+  [*] --> s4
+  s0 --> s1: Store
+  s0 --> s2: Fail
+  s0 --> s4: Cancel, Drop, Release
+  s0 --> s6: Requeue
+  s1 --> s0: NodeRelease
+  s1 --> s3: Fail
+  s1 --> s5: Cancel, Drop, Release
+  s1 --> s7: Requeue
+  s1 --> s8: Adopt, Finish
+  s2 --> s4: Cancel, Release
+  s2 --> s6: Queue
+  s3 --> s2: NodeRelease
+  s3 --> s5: Cancel, Release
+  s3 --> s7: Queue
+  s4 --> s5: Store
+  s4 --> s6: Queue
+  s5 --> s4: Discard, NodeRelease, RemoveFiles
+  s5 --> s7: Queue
+  s6 --> s0: Claim
+  s6 --> s4: Cancel, Drop, Release
+  s6 --> s7: Store
+  s7 --> s1: Claim
+  s7 --> s5: Cancel, Drop, Release
+  s7 --> s6: Discard, NodeRelease, RemoveFiles
+  s7 --> s8: Adopt
+  s8 --> s5: Release
