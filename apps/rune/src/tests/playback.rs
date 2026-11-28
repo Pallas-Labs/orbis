@@ -466,3 +466,125 @@ fn a_completion_orbis_refused_with_404_is_sent_once() {
     wait(&mut rt, 8.0);
     assert_eq!(completions(), 1, "{:?}", calls());
 }
+
+fn position_saves() -> Vec<String> {
+    calls().into_iter().filter(|c| c.starts_with("PUT /sets/s-sunrise/position")).collect()
+}
+
+/// Plays Sunrise on the Pier and pauses it at 1800 s, where Orbis answers that pause's save with
+/// `status` (`None` is no answer) once, and stores 1830 s after that.
+fn pause_at_1800(rt: &mut Runtime<App>, status: Option<u16>, why: &str) {
+    let mut stored = set_json("s-sunrise", "Sunrise on the Pier");
+    (stored["playbackPositionSeconds"], stored["durationSeconds"]) = (json!(1_830), json!(3_492));
+    fixture::reply("PUT /sets/s-sunrise/position", stored);
+    rt.key(space());
+    rt.frame(1.0 / 60.0);
+    land(rt);
+    let before = position_saves().len();
+    // Armed only now, so a save the start itself makes takes the stored answer.
+    fixture::refuse_once("PUT /sets/s-sunrise/position", status, why);
+    rt.update(|s, _| {
+        s.playing.position = 1_800.0;
+        s.toggle();
+    });
+    land(rt);
+    assert_eq!(rt.state.playing.status, Status::Paused);
+    assert_eq!(position_saves()[before..], ["PUT /sets/s-sunrise/position {\"seconds\":1800.0}"]);
+}
+
+/// The saves of Sunrise on the Pier after the pause at 1800 s.
+fn saves_from_the_pause() -> Vec<String> {
+    let saves = position_saves();
+    let at = saves.iter().position(|c| c.ends_with("{\"seconds\":1800.0}")).expect("the pause's save");
+    saves[at..].to_vec()
+}
+
+#[test]
+fn a_paused_place_whose_save_got_no_answer_is_saved_again_in_order() {
+    let mut rt = live(Screen::Library);
+    pause_at_1800(&mut rt, None, "Orbis didn't answer");
+    // While paused, the place moves: the save that goes again carries the place at that time.
+    rt.update(|s, _| s.playing.position = 1_830.0);
+    wait(&mut rt, 14.9);
+    assert_eq!(saves_from_the_pause().len(), 1, "not before the wait is over");
+    wait(&mut rt, 0.1);
+    assert_eq!(saves_from_the_pause(), ["PUT /sets/s-sunrise/position {\"seconds\":1800.0}", "PUT /sets/s-sunrise/position {\"seconds\":1830.0}"]);
+    assert_eq!(rt.state.playing.saved, 1_830.0, "the place last saved");
+    let library = rt.state.library.sets.data.as_ref().unwrap().iter().find(|x| x.id == "s-sunrise").unwrap();
+    assert_eq!(library.playback_position_seconds, 1_830.0, "what Orbis sent back lands");
+    wait(&mut rt, 60.0);
+    assert_eq!(saves_from_the_pause().len(), 2, "an answered save goes once");
+}
+
+#[test]
+fn a_paused_place_orbis_refused_with_503_is_saved_again_until_it_answers() {
+    let mut rt = live(Screen::Library);
+    pause_at_1800(&mut rt, Some(503), "Orbis answered 503");
+    fixture::refuse_once("PUT /sets/s-sunrise/position", Some(429), "Orbis answered 429");
+    wait(&mut rt, 15.0);
+    assert_eq!(saves_from_the_pause().len(), 2);
+    wait(&mut rt, 15.0);
+    assert_eq!(saves_from_the_pause().len(), 3, "a 429 goes again too: {:?}", calls());
+    wait(&mut rt, 60.0);
+    assert_eq!(saves_from_the_pause().len(), 3, "and stops once Orbis answers");
+}
+
+#[test]
+fn a_save_that_waits_to_go_again_never_overtakes_a_completion_after_it() {
+    let mut rt = live(Screen::Library);
+    pause_at_1800(&mut rt, None, "Orbis didn't answer");
+    fixture::reply("POST /queue/completion", json!({ "queue": { "activeSetId": null, "entries": [] } }));
+    rt.update(|s, _| s.next());
+    land(&mut rt);
+    wait(&mut rt, 60.0);
+    let all: Vec<String> = calls().into_iter().filter(|c| c.contains("/position") || c.contains("/queue/completion")).collect();
+    let order = &all[all.iter().position(|c| c.ends_with("{\"seconds\":1800.0}")).unwrap()..];
+    assert_eq!(
+        order,
+        ["PUT /sets/s-sunrise/position {\"seconds\":1800.0}", "PUT /sets/s-sunrise/position {\"seconds\":0.0}", "POST /queue/completion {\"setId\":\"s-sunrise\"}"],
+        "the reset stays last"
+    );
+}
+
+#[test]
+fn a_paused_place_orbis_refused_with_404_is_saved_once() {
+    let mut rt = live(Screen::Library);
+    pause_at_1800(&mut rt, Some(404), "No such Set");
+    wait(&mut rt, 60.0);
+    assert_eq!(saves_from_the_pause().len(), 1, "{:?}", calls());
+}
+
+#[test]
+fn a_save_that_got_no_answer_is_not_sent_again_after_sign_out() {
+    let mut rt = live(Screen::Library);
+    pause_at_1800(&mut rt, None, "Orbis didn't answer");
+    rt.update(|s, _| s.forget_account());
+    wait(&mut rt, 60.0);
+    assert_eq!(saves_from_the_pause().len(), 1, "{:?}", calls());
+}
+
+#[test]
+fn a_pause_whose_save_fails_while_another_set_waits_to_go_again_is_saved_again() {
+    let mut rt = live(Screen::Library);
+    fixture::reply("GET /sets/s-low-tide/tracklist", json!({ "cues": [], "state": "none" }));
+    fixture::reply("PUT /queue/active", json!({ "queue": { "activeSetId": "s-low-tide", "entries": [set_json("s-low-tide", "Low Tide Dub")] } }));
+    let mut stored = set_json("s-low-tide", "Low Tide Dub");
+    (stored["playbackPositionSeconds"], stored["durationSeconds"]) = (json!(900), json!(3_492));
+    fixture::reply("PUT /sets/s-low-tide/position", stored);
+    pause_at_1800(&mut rt, None, "Orbis didn't answer");
+    rt.update(|s, _| s.play("s-low-tide"));
+    land(&mut rt);
+    wait(&mut rt, 5.0);
+    // Low Tide Dub's pause gets no answer while Sunrise's resend still waits.
+    fixture::refuse_once("PUT /sets/s-low-tide/position", None, "Orbis didn't answer");
+    rt.update(|s, _| {
+        s.playing.position = 900.0;
+        s.toggle();
+    });
+    land(&mut rt);
+    wait(&mut rt, 30.0);
+    let low_tide: Vec<String> = calls().into_iter().filter(|c| c == "PUT /sets/s-low-tide/position {\"seconds\":900.0}").collect();
+    assert_eq!(low_tide.len(), 2, "sent again: {:?}", calls());
+    let library = rt.state.library.sets.data.as_ref().unwrap().iter().find(|x| x.id == "s-low-tide").unwrap();
+    assert_eq!(library.playback_position_seconds, 900.0, "what Orbis stored lands");
+}

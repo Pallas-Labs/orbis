@@ -60,13 +60,14 @@ pub fn set_tags(id: &str, tags: &[String]) -> Result<Set, String> {
 }
 
 /// Saves where the caller is in `id`, in whole seconds, with the system's time zone when it has
-/// one: Orbis draws the day of the Person's Listening Time in it.
-pub fn save_position(id: &str, seconds: f64) -> Result<Set, String> {
+/// one: Orbis draws the day of the Person's Listening Time in it. The failure keeps Orbis's
+/// status, which says whether sending it again can help.
+pub fn save_position(id: &str, seconds: f64) -> Result<Set, Failure> {
     let mut body = json!({ "seconds": seconds.clamp(0.0, 604_800.0).floor() });
     if let Some(zone) = crate::clock::zone() {
         body["timeZone"] = zone.into();
     }
-    request("PUT", &set_path(id, "/position"), Some(body))
+    exchange(As::Device, None, "PUT", &set_path(id, "/position"), Some(body))
 }
 
 /// A Set's Tracklist.

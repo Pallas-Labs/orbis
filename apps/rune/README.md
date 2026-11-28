@@ -52,7 +52,7 @@ Scenes: `queue`, `queue-empty`, `queue-loading`, `queue-failed`.
 
 Pressing Play makes the Set the queue's active one and streams it through a stream grant (ADR 0007). Now Playing shows the Set's large Artwork, a seek bar (press, drag, or the arrow keys), Back 15 s, Play and Pause, Ahead 30 s and Next, and the Tracklist with the Cue playing now; pressing a Cue with a start time goes there. In a narrow window the Tracklist moves under the controls. The other screens show the same Set in a bar at the foot.
 
-The app saves the place every 15 s while a Set plays, on pause and when another Set starts. When a Set plays out, the app resets its place, tells Orbis it finished, and plays the next Set; at the end of the queue it stops. Closing the window stops the sound.
+The app saves the place every 15 s while a Set plays, on pause and when another Set starts. When a save gets no answer, a 429 or a 5xx, the app saves the place again every 15 s until Orbis answers, while that Set stays loaded and not playing. It never resends after a 4xx or after sign-out. When a Set plays out, the app resets its place, tells Orbis it finished, and plays the next Set; at the end of the queue it stops. Closing the window stops the sound.
 
 Scenes: `playing`, `playing-loading`, `playing-failed`, `playing-no-tracklist`, `playing-long`, `playing-empty`.
 
