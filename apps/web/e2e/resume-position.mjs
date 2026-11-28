@@ -354,6 +354,135 @@ try {
         whileHeld,
       }
     );
+
+    // 5. The pause's save lands, but its answer is lost (PAL-3192). The page
+    // cannot tell that from a failed request, so it sends the pause again
+    // once the service answers. The other device then saves the place this
+    // page last heard before the loss: only a page that heard the resent
+    // pause's answer sees that save as newer and resumes there.
+    const answered = [];
+    const onAnswer = async (response) => {
+      const request = response.request();
+      if (
+        request.method() === "PUT" &&
+        new URL(request.url()).pathname === `/sets/${saved.id}/position` &&
+        response.ok()
+      ) {
+        // An answer that arrives as the browser closes has no body to read.
+        const body = await response.json().catch(() => null);
+        if (body !== null) {
+          answered.push(body.playbackPositionSeconds);
+        }
+      }
+    };
+    page.on("response", onAnswer);
+    const lostSeek = 3;
+    const seekSaves = positionSaves.length;
+    await page.evaluate((target) => {
+      document.querySelector("audio").currentTime = target;
+    }, lostSeek);
+    await waitUntil(
+      () => positionSaves.length > seekSaves,
+      "the seek before the lost answer did not save its position"
+    );
+    await positionSaves[seekSaves].response();
+    await waitUntil(
+      () => answered.length > 0,
+      "the page heard no answer to a save"
+    );
+    const lostPaths = `**/sets/${saved.id}/position`;
+    const lost = [];
+    await page.route(lostPaths, async (route) => {
+      if (route.request().method() !== "PUT") {
+        await route.continue();
+        return;
+      }
+      // The save reaches the service; the page never hears its answer.
+      await route.fetch();
+      lost.push(route.request().postDataJSON().seconds);
+      await route.abort("failed");
+    });
+    const heard = answered.at(-1);
+    // Every save from here on reaches the service unheard, the seek's too, so
+    // the page's known place stays at `heard`.
+    const lostTo = 10;
+    await page.evaluate((target) => {
+      document.querySelector("audio").currentTime = target;
+    }, lostTo);
+    await waitUntil(async () => {
+      const state = await audioState();
+      return (
+        !state.seeking &&
+        state.currentTime >= lostTo &&
+        state.currentTime < lostTo + 2
+      );
+    }, `the audio did not move to ${lostTo} s`);
+    await playButton.click();
+    await waitUntil(async () => {
+      const state = await audioState();
+      return state.paused;
+    }, "the play control did not pause the audio before the lost answer");
+    const { currentTime: lostPause } = await audioState();
+    await waitUntil(
+      () => lost.includes(lostPause),
+      "the pause's save did not reach the service"
+    );
+    const storedWhileLost = await servicePosition();
+    assert.equal(storedWhileLost, Math.round(lostPause));
+    assert.notEqual(
+      heard,
+      storedWhileLost,
+      `the page last heard ${heard} s, the same as its pause`
+    );
+    const savesAfterLoss = positionSaves.length;
+    const answersAfterLoss = answered.length;
+    await page.unroute(lostPaths);
+    // The page resends on a 15 s tick, so this waits up to 30 s.
+    await waitUntil(
+      () => answered.length > answersAfterLoss,
+      "the page did not send its pause again after the service answered",
+      150
+    );
+    const resent = positionSaves
+      .slice(savesAfterLoss)
+      .map((request) => request.postDataJSON().seconds);
+    assert.equal(
+      resent[0],
+      lostPause,
+      `the page resent ${resent[0]} s, not its pause at ${lostPause} s`
+    );
+    assert.equal(answered[answersAfterLoss], Math.round(lostPause));
+    await api("PUT", `/sets/${saved.id}/position`, { seconds: heard });
+    // The other device's place is behind the pause, so the element plays past
+    // it for a moment after the click, before the page holds it for the read.
+    // The wait starts once the read has gone out.
+    const readsBeforeResume = queueReads.length;
+    await playButton.click();
+    await waitUntil(
+      () => queueReads.length > readsBeforeResume,
+      "the resume after the resent pause did not read the service's position"
+    );
+    await waitUntil(async () => {
+      const state = await audioState();
+      return !state.paused && state.currentTime > heard + 0.5;
+    }, "the page did not resume after its pause was sent again");
+    const { currentTime: afterLoss } = await audioState();
+    await page.screenshot({
+      path: path.join(artifacts, "resumed-after-lost-answer.png"),
+    });
+    page.off("response", onAnswer);
+    assert.ok(
+      afterLoss >= heard && afterLoss < heard + 4,
+      `the page resumed at ${afterLoss} s, not at the other device's ${heard} s`
+    );
+    step("a pause whose answer is lost is sent again and heard", {
+      heard,
+      lost,
+      lostPause,
+      resent,
+      resumedAt: afterLoss,
+      storedWhileLost,
+    });
   } finally {
     await browser.close();
   }

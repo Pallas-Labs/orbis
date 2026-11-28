@@ -657,7 +657,13 @@ export class GroupAudioNode {
           file.setId
         )
         .toArray();
-      if (
+      if (state?.state === "ready" && state.referenced === 0) {
+        // A finish or a removal whose release has not run. The release moves the row to
+        // `none` and then sends `release`, so the row never reads ready without its file.
+        await this.runtime.runPromise(
+          Library.pipe(Effect.flatMap((library) => library.release(file.setId)))
+        );
+      } else if (
         state === undefined ||
         state.referenced === 0 ||
         !["ready", "downloading", "queued"].includes(state.state)

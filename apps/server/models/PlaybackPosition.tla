@@ -7,8 +7,10 @@
 (*                                                                         *)
 (* Devices: each sends one report at a time, in order (Apple:              *)
 (* AppModel.startReportingPosition, one loop; web: player.tsx `write`, a   *)
-(* chain). A report that fails is dropped, not retried. Each device keeps  *)
-(* the stored position its last answered save returned (`savedPosition`). *)
+(* chain). A report that gets no answer, because the request failed or   *)
+(* the answer was lost, is sent again: the next report carries the        *)
+(* player's position at that time. Each device keeps the stored position  *)
+(* its last answered save returned (`savedPosition`).                      *)
 (* On resume it reads the Listening Queue and moves to the stored position *)
 (* only when that differs from the one it knows (newerSavedPosition).      *)
 (***************************************************************************)
@@ -70,10 +72,10 @@ Pause(d) ==
   /\ UNCHANGED <<server, writer, settledSave, local, known, outbox, outSettled, reply, online, missed>>
 
 \* The reporter sends the player's position (PositionReporting). Offline, the request
-\* fails and the report is dropped.
+\* fails and the report stays unsent, so the next one sends the position again.
 Report(d) ==
   /\ unsent[d] /\ Idle(d)
-  /\ unsent' = [unsent EXCEPT ![d] = FALSE]
+  /\ unsent' = [unsent EXCEPT ![d] = ~online[d]]
   /\ outbox' = [outbox EXCEPT ![d] = IF online[d] THEN local[d] ELSE None]
   /\ outSettled' = [outSettled EXCEPT ![d] = ~playing[d]]
   /\ UNCHANGED <<server, writer, settledSave, local, playing, known, reply, online, missed>>
@@ -95,11 +97,13 @@ Answer(d) ==
   /\ reply' = [reply EXCEPT ![d] = None]
   /\ UNCHANGED <<server, writer, settledSave, local, playing, unsent, outbox, outSettled, online, missed>>
 
-\* The answer never arrives (`try?` gives nil): the known position stays as it was.
+\* The answer never arrives: the known position stays as it was. The device cannot tell this
+\* from a failed request, so the report stays unsent and is sent again.
 LoseAnswer(d) ==
   /\ reply[d] # None /\ ~online[d]
   /\ reply' = [reply EXCEPT ![d] = None]
-  /\ UNCHANGED <<server, writer, settledSave, local, playing, unsent, known, outbox, outSettled, online, missed>>
+  /\ unsent' = [unsent EXCEPT ![d] = TRUE]
+  /\ UNCHANGED <<server, writer, settledSave, local, playing, known, outbox, outSettled, online, missed>>
 
 GoOffline(d) ==
   /\ Lossy /\ online[d]

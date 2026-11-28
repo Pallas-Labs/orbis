@@ -20,9 +20,9 @@ A pass covers the model at the bounds in its `.cfg`, not the code. The conform t
 | --- | --- | --- |
 | `SetDownload.cfg` | pass | The Download moves keep every rule. |
 | `SetDownloadBroken.cfg` | `ReadyHasAudio` breaks | Negative check: `finish` without its state check, so a finish after a release marks a Set ready with no file. |
-| `SetDownloadReleaseGap.cfg` | `ReadyHasAudio` breaks | Known gap; see [Findings](#findings). |
+| `SetDownloadReleaseGap.cfg` | pass | Any step may run between a finish or a removal and the release that follows it. The inventory pass releases an unkept ready row before it drops the file. Closed finding 1; see [Findings](#findings). |
 | `PlaybackPosition.cfg` | pass | On a network that delivers every request, a resume finds the other device's pause. |
-| `PlaybackPositionLossy.cfg` | `HandoffResumes` breaks | Known gap; see [Findings](#findings). |
+| `PlaybackPositionLossy.cfg` | pass | A device can go offline, so a request or its answer is lost. A report with no answer is sent again, so a resume still finds the other device's pause. Closed finding 2; see [Findings](#findings). |
 | `PlaybackPositionDevice.cfg` | (chart only) | One device, so the chart shows one device's steps. |
 | `PlaybackPositionTrace.cfg` | (trace only) | Positions 0 to 2 and no symmetry, so `position-trace.test.ts` can name each device and record a save that goes back. |
 | `PlayNextQueue.cfg` | pass | Every `Queue.change` decision keeps the queue and its open Listen whole. |
@@ -43,7 +43,7 @@ One Set's Download (`sets.download_state`) and its Retained Audio on the audio n
 | `FailLate`, `Discard` | `fail` or `finish` changes no row because a cancel, drop or release landed first. `Discard` removes the stored file. |
 | `RemoveFiles` | `releaseAudio`'s `removeFiles`, after its transaction. |
 | `Restart`, `Boot` | The node process dies; on start, `resetStuckDownloads` runs. |
-| `NodeRelease`, `Reconciled` | The Group's inventory pass (`reconcile` in `apps/api/src/node.ts`) sends `release`, or changes nothing. |
+| `NodeRelease`, `Reconciled` | The Group's inventory pass (`reconcile` in `apps/api/src/node.ts`) sends `release`, or changes nothing. For a ready row that nobody keeps, the pass runs `Library.release` instead: its transaction moves the row (`Release`), then it sends `release`. |
 
 Rules:
 
@@ -54,14 +54,14 @@ Rules:
 Assumptions:
 
 - A release's file removal reaches the node before the node starts the next download of the same Set.
-- With `ReleaseAtOnce`, no other step runs between a removal or a finish and the release that follows it.
+- With `ReleaseAtOnce`, no other step runs between a removal or a finish and the release that follows it. `SetDownload.cfg` sets it; `SetDownloadReleaseGap.cfg` does not, and every rule still holds.
 
 ## `PlaybackPosition.tla`
 
 One Person's Playback Position for one Set, shared by two devices. Bounds: two devices (symmetric), positions 0 to 1.
 
 - The server keeps the last save that arrives (`Library.setPlaybackPosition`).
-- Each device sends one report at a time, in order (`AppModel.startReportingPosition`; `write` in the web `player.tsx`), and drops a report that fails.
+- Each device sends one report at a time, in order (`AppModel.startReportingPosition`; `write` in the web `player.tsx`), and sends a report again when it gets no answer: the request failed or the answer was lost, which the device cannot tell apart. The new report carries the player's position at that time.
 - On resume, a device moves to the stored position only when it differs from the last one it heard (`AppModel.newerSavedPosition`).
 
 Rule `HandoffResumes`: when every save has landed and the stored one is a pause from another device, a resume starts at that pause.
@@ -93,13 +93,13 @@ Not modelled: the playable check, the release of a Set that leaves the queue (af
 
 ## Findings
 
-Neither finding is reproduced on the running service. Each is a counterexample in the model, and CI keeps it visible: when the code closes the gap, the expected verdict must change.
+Neither finding is reproduced on the running service. Each is a counterexample in the model, and CI keeps an open one visible: when the code closes the gap, the expected verdict must change.
 
-1. `SetDownloadReleaseGap`: a Person who does not keep a Set asks for its Download (ADR 0010 allows it). The download finishes, and the node restarts before the release that follows the finish. The Group's inventory pass then sends `release` for the file, because nobody keeps the Set, while the row still reads `ready`. The next inventory pass moves it to `none` (`lose`). The same gap exists between `Library.remove` and its `release`.
-2. `PlaybackPositionLossy`: a device pauses while offline. The settled report fails and is never sent again. The other device resumes from the older stored position and pauses there. When the first device resumes, the stored position equals the one it last heard, so it plays on from its own place and skips the other device's pause.
+1. Closed (PAL-3194). `SetDownloadReleaseGap`: a Person who does not keep a Set asks for its Download (ADR 0010 allows it). The download finishes, and the node restarts before the release that follows the finish. The Group's inventory pass then sent `release` for the file, because nobody keeps the Set, while the row still read `ready`. The next inventory pass moved it to `none` (`lose`). The same gap existed between `Library.remove` and its `release`. The fix is in the inventory pass: for a ready row that nobody keeps, it runs the release, whose transaction moves the row to `none` before the command goes out. On the Group, the same pass also settles a ready file whose release never ran, for example after a crash, so the fix leaks no file there.
+2. Closed (PAL-3192). `PlaybackPositionLossy`: a device pauses while offline. The settled report fails and is never sent again. The other device resumes from the older stored position and pauses there. When the first device resumes, the stored position equals the one it last heard, so it plays on from its own place and skips the other device's pause. The fix sends a report again until it gets an answer. Resending only a failed request is not enough: a save that lands but whose answer is lost leaves the device's known position old, and a later pause by the other device at that old position is then skipped.
 
 ## Statecharts
 
 `SetDownload.mmd`, `PlaybackPosition.mmd` and `PlayNextQueue.mmd` are drawn from each model's full state graph (`everystate -dump dot`) by `src/models.ts`. Each chart state groups the model states that look the same to a reader. Steps that stay inside one chart state are not drawn.
 
-Last confirmed against the code at the commit that added these models (PAL-3179), and for `PlayNextQueue.tla` and the Position trace, PAL-3193.
+Last confirmed against the code at the commit that added these models (PAL-3179), for `PlayNextQueue.tla` and the Position trace, PAL-3193, and for `NodeRelease`, PAL-3194.

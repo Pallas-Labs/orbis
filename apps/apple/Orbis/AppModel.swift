@@ -1748,8 +1748,11 @@ final class AppModel {
           let seconds = reports.position(
             elapsed: elapsed, state: state)
         else { continue }
-        await self.reportPosition(
+        let answered = await self.reportPosition(
           id, seconds: seconds, settled: PositionReporting.settles(state))
+        // The next tick sends the place the player holds then, so a retry is never older than
+        // what this loop already sent.
+        if !answered { reports.forget() }
       }
     }
   }
@@ -1763,14 +1766,24 @@ final class AppModel {
   /// Library holds the position for a row's progress bar, and rebuilding that list every five
   /// seconds would redraw the screen for a bar nobody is watching. A report that settles — a pause
   /// or a stop — is published, because that is the value the row and the other device should show.
-  private func reportPosition(_ id: String, seconds: Int, settled: Bool) async {
-    guard let client else { return }
-    guard let updated = try? await client.reportPosition(id, seconds: seconds) else { return }
-    guard self.client?.token == client.token, !Task.isCancelled else { return }
+  /// Answers false when the report got no answer and may get one if sent again: the request failed,
+  /// or it landed and its answer was lost, which this device cannot tell apart.
+  private func reportPosition(_ id: String, seconds: Int, settled: Bool) async -> Bool {
+    guard let client else { return true }
+    let updated: SavedSet
+    do {
+      updated = try await client.reportPosition(id, seconds: seconds)
+    } catch let error as OrbisError {
+      return !Self.mayOutlast(error)
+    } catch {
+      return true
+    }
+    guard self.client?.token == client.token, !Task.isCancelled else { return true }
     if savedPosition?.setId == id { savedPosition = (id, updated.playbackPositionSeconds) }
     if settled {
       await publish(updated)
     }
+    return true
   }
 
   /// Where a paused Set should play from when another device saved a newer place since this one

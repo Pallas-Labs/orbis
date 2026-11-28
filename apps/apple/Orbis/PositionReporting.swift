@@ -29,6 +29,15 @@ struct PositionReporting {
     return seconds
   }
 
+  /// Forgets the last report, so the next call answers the player's position again. For a report
+  /// that got no answer: the request failed or its answer was lost, and the service may not hold
+  /// it. A pause would never reach the other device, and a pause whose answer was lost leaves
+  /// `AppModel.newerSavedPosition` comparing with an older place (PAL-3192).
+  mutating func forget() {
+    lastSent = nil
+    lastState = nil
+  }
+
   /// True when a report settles playback — a pause, or the end of a Set. A settled report is the
   /// one the Library is updated with, because it is the position a row and another device should
   /// now show.

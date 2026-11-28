@@ -224,9 +224,12 @@ Adopt ==
   /\ UNCHANGED <<stored, worker, kept, releaseDue, removing, booting, restarts>>
 
 \* The Group sends `release` for a file that nobody keeps or no Download wants. Not a move.
+\* For a ready row that nobody keeps, the pass runs `Release` on the row first, so the
+\* command never goes out while the row reads ready.
 NodeRelease ==
   /\ Inventory
   /\ Unwanted
+  /\ state # "ready"
   /\ stored' = FALSE
   /\ linked' = TRUE
   /\ UNCHANGED <<state, worker, kept, releaseDue, removing, booting, restarts>>

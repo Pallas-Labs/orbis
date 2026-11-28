@@ -33,11 +33,19 @@ export class Group extends ProductionGroup {
       return Response.json(
         this.ctx.storage.sql
           .exec(
-            "SELECT details_state, source_tags FROM sets WHERE id = ?",
+            "SELECT details_state, download_state, source_tags FROM sets WHERE id = ?",
             new URL(request.url).searchParams.get("id")
           )
           .toArray()[0]
       );
+    }
+    if (pathname === "/__crash-before-release") {
+      // `Library.remove` committed and the process died before its release ran.
+      this.ctx.storage.sql.exec(
+        "DELETE FROM library_entries WHERE set_id = ?",
+        new URL(request.url).searchParams.get("id")
+      );
+      return new Response("removed");
     }
     if (pathname === "/__node-jobs") {
       return Response.json(
