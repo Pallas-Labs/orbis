@@ -26,6 +26,10 @@ const decodeDetailsState = Schema.decodeUnknownSync(
 
 const decodeAudioState = Schema.decodeUnknownSync(AudioStateSchema);
 
+const decodeRowState = Schema.decodeUnknownSync(
+  Schema.Struct({ download_state: Schema.String })
+);
+
 const decodeSavedSet = Schema.decodeUnknownSync(SavedSetSchema);
 
 const decodeSetPage = Schema.decodeUnknownSync(SetPageSchema);
@@ -258,6 +262,11 @@ const detailsFilled = (setId: string) =>
     },
     (value) => value.details_state === "filled"
   );
+/** The row's state, for a Set no Person keeps any more. */
+const rowState = async (id: string) => {
+  const response = await request(`/__node-set?id=${id}`);
+  return decodeRowState(await response.json()).download_state;
+};
 const state = async (id: string) => {
   const response = await request(`/sets/${id}/audio/state`);
   return decodeAudioState(await response.json());
@@ -624,9 +633,7 @@ try {
     () => state(replacedSet.id),
     (value) => value.state === "ready"
   );
-  await runInOrder([replacedSet.id, lostSet.id], async (id) => {
-    await request(`/sets/${id}`, "DELETE");
-  });
+  await request(`/sets/${lostSet.id}`, "DELETE");
   restored.socket.close();
   transcript.push({
     linkCloses: closesSince(),
@@ -634,6 +641,29 @@ try {
     lostLinkDetailsResolvedAfterReconnect: lostRead.requestId,
     replacedLinkDetailsResolvedOnReplacement: moved.requestId,
   });
+  // A removal whose release never ran leaves a ready row that nobody keeps. One
+  // inventory pass moves the row to `none` and sends `release`, so the row never
+  // reads ready while the node drops the file.
+  const crashed = await request(`/__crash-before-release?id=${replacedSet.id}`);
+  assert.equal(crashed.status, 200);
+  assert.equal(await rowState(replacedSet.id), "ready");
+  const afterCrash = await connect([
+    { bytes: 500, durationSeconds: 2, format: "mp3", setId: replacedSet.id },
+  ]);
+  await until(
+    () =>
+      afterCrash.commands.some(
+        (command) =>
+          command.kind === "release" && command.setId === replacedSet.id
+      ),
+    Boolean
+  );
+  assert.equal(
+    await rowState(replacedSet.id),
+    "none",
+    "the first inventory pass moves the unkept ready row before it drops the file"
+  );
+  afterCrash.socket.close();
   await Bun.sleep(30);
   const fixture = path.join(artifact, "fixture.mp3");
   const generated = Bun.spawn([

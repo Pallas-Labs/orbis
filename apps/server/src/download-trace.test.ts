@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -151,9 +151,21 @@ test("a real Download's moves conform to SetDownload.tla", async () => {
       url: `/sets/${id}/audio/download`,
     });
     expect(cancel.statusCode).toBe(400);
-    // The Host removes the Set, and nobody else keeps it: Release.
-    await request(app, { method: "DELETE", url: `/sets/${id}` });
+    const audioFiles = async () => {
+      const names = await readdir(path.join(root, "audio"));
+      return names.filter((name) => name.startsWith(id));
+    };
+    expect(await audioFiles()).toEqual([`${id}.mp3`]);
+    // The Host removes the Set, and nobody else keeps it: Release. The removal
+    // answers after the release, so the row and the file agree by then.
+    const removed = await request(app, {
+      method: "DELETE",
+      url: `/sets/${id}`,
+    });
+    expect(removed.statusCode).toBe(200);
     await record.until("Release");
+    expect(record.moves.at(-1)?.state).toBe("none");
+    expect(await audioFiles()).toEqual([]);
 
     expect(record.moves.every((move) => move.setId === id)).toBe(true);
     const observations: readonly Observation[] = [

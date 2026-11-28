@@ -63,9 +63,9 @@ export const checks: readonly Check[] = [
   },
   {
     config: "SetDownloadReleaseGap",
-    expect: { name: "ReadyHasAudio", status: "invariant" },
+    expect: { status: "ok" },
     reason:
-      "Known gap: an inventory pass between a finish and its release drops a ready file.",
+      "Any step may run between a finish or removal and its release; the inventory pass releases the row first.",
     spec: "SetDownload",
   },
   {
