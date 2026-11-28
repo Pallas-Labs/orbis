@@ -1,0 +1,7 @@
+Test Case '-[OrbisTests.PlaybackReliabilityTests testAPauseWhoseAnswerIsLostIsSentAgain]' started.
+Test Case '-[OrbisTests.PlaybackReliabilityTests testAPauseWhoseAnswerIsLostIsSentAgain]' passed (15.156 seconds).
+Test Case '-[OrbisTests.PositionReportingTests testAReportWithNoAnswerIsSentAgain]' started.
+Test Case '-[OrbisTests.PositionReportingTests testAReportWithNoAnswerIsSentAgain]' passed (0.001 seconds).
+	 Executed 198 tests, with 0 failures (0 unexpected) in 194.307 (194.391) seconds
+	 Executed 198 tests, with 0 failures (0 unexpected) in 194.307 (194.392) seconds
+** TEST SUCCEEDED **

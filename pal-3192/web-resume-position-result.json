@@ -1,0 +1,54 @@
+{
+  "apiUrl": "http://127.0.0.1:35875",
+  "steps": [
+    {
+      "name": "the Set plays in the page"
+    },
+    {
+      "name": "a resume after another device saved plays from that device's place",
+      "afterNextReport": 13,
+      "otherDevice": 13,
+      "pausedAt": 5,
+      "reads": 1,
+      "resumedAt": 13.511201
+    },
+    {
+      "name": "a resume with no other save plays from the page's own pause",
+      "localPause": 8,
+      "localResume": 8.600205
+    },
+    {
+      "name": "a resume whose read fails plays from the page's own place",
+      "failedPause": 6,
+      "failedResume": 6.61341
+    },
+    {
+      "name": "a second play during the read waits for it and keeps the newer place",
+      "heldPause": 4,
+      "heldResume": 12.537354,
+      "heldService": 12,
+      "otherDevice": 12,
+      "savesWhileHeld": [],
+      "whileHeld": {
+        "currentTime": 4.04644,
+        "paused": true,
+        "seeking": false
+      }
+    },
+    {
+      "name": "a pause whose answer is lost is sent again and heard",
+      "heard": 3,
+      "lost": [
+        10,
+        10.026969
+      ],
+      "lostPause": 10.026969,
+      "resent": [
+        10.026969
+      ],
+      "resumedAt": 3.664318,
+      "storedWhileLost": 10
+    }
+  ],
+  "webUrl": "http://127.0.0.1:37559"
+}

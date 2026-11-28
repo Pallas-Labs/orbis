@@ -1,0 +1,9 @@
+file:///home/parth/.t3/worktrees/orbis/agent-pal-3192-11280828-f5b8c9ddce4b5d45/apps/web/e2e/helpers.mjs:175
+      throw new Error(message);
+            ^
+
+Error: the page did not send its pause again after the service answered
+    at poll (file:///home/parth/.t3/worktrees/orbis/agent-pal-3192-11280828-f5b8c9ddce4b5d45/apps/web/e2e/helpers.mjs:175:13)
+
+Node.js v26.13.1
+exit=1
