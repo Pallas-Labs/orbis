@@ -12,6 +12,7 @@
 pub mod presence;
 mod select;
 mod view;
+mod writes;
 
 use std::time::Duration;
 
@@ -90,7 +91,7 @@ pub struct State {
     /// Rune's clock at the last `poll`, for the silent player.
     clock: Option<f64>,
     /// The place last saved.
-    saved: f64,
+    pub(crate) saved: f64,
     /// Counts the plays the person asked for (a Set, a Playlist, Next, Play after a failure).
     /// A play's answer acts only while its count is still the latest, so the newest choice wins.
     intent: u64,
@@ -100,6 +101,9 @@ pub struct State {
     /// after a completion reset the place to the start.
     writes: std::collections::VecDeque<Write>,
     writing: bool,
+    /// Counts saves that got no answer: only the newest one's wait sends the place again
+    /// ([`App::resend_place`]).
+    resends: u64,
     /// The Set whose activation (`PUT /queue/active`) is still out.
     activating: Option<String>,
     /// A completion held until that activation answers, so Orbis hears them in order.
@@ -387,12 +391,12 @@ impl App {
             None => {
                 self.save_place();
                 self.set_status(Status::Idle);
-                let (generation, intent) = (self.playing.generation + 1, self.playing.intent);
+                let (generation, intent, resends) = (self.playing.generation + 1, self.playing.intent, self.playing.resends);
                 // Writes still waiting or out, and an activation still out with the completion
                 // it holds, outlive the Set: they keep their order.
                 let p = &mut self.playing;
                 let (writes, writing, activating, held, lane) = (std::mem::take(&mut p.writes), p.writing, p.activating.take(), p.held.take(), std::mem::take(&mut p.lane));
-                self.playing = State { generation, intent, writes, writing, activating, held, lane, ..State::default() };
+                self.playing = State { generation, intent, resends, writes, writing, activating, held, lane, ..State::default() };
                 generation
             }
         }
@@ -602,33 +606,6 @@ impl App {
         self.write(Write::Save(id, seconds));
     }
 
-    fn write(&mut self, write: Write) {
-        self.playing.writes.push_back(write);
-        self.next_write();
-    }
-
-    /// Sends the oldest waiting write, when none is out.
-    fn next_write(&mut self) {
-        if self.playing.writing {
-            return;
-        }
-        let Some(write) = self.playing.writes.pop_front() else { return };
-        self.playing.writing = true;
-        match write {
-            Write::Save(id, seconds) => self.spawn(
-                move || api::save_position(&id, seconds),
-                |s, got| {
-                    s.playing.writing = false;
-                    if let Ok(set) = got {
-                        s.replace_set(&set);
-                    }
-                    s.next_write();
-                },
-            ),
-            Write::Complete(id, generation) => self.send_completion(id, generation),
-        }
-    }
-
     /// The Set played out: it leaves the queue and the next one plays at once (ADR 0001). Orbis
     /// resets the Set's place and names the next too; when it names another, that one plays.
     fn finish(&mut self) {
@@ -684,7 +661,7 @@ impl App {
 
     /// What try `tried` (from 0) of a completion met: done, or wait and send it again.
     fn complete_tried(&mut self, id: String, generation: u64, got: Result<crate::model::Queue, api::Failure>, tried: usize) {
-        let outlast = matches!(&got, Err(f) if f.status.is_none_or(|status| status == 429 || status >= 500));
+        let outlast = matches!(&got, Err(f) if writes::may_outlast(f));
         if let Some(wait) = COMPLETION_WAITS.get(tried).filter(|_| outlast && self.playing.generation == generation) {
             let session = self.session;
             self.after(*wait, move |s| {
