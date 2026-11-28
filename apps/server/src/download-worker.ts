@@ -93,12 +93,18 @@ export class DownloadWorker extends Context.Service<
         const wakeQueue = yield* Queue.unbounded<true>();
         const progress = new Map<string, DownloadProgress>();
         const aborts = new Map<string, AbortController>();
-        const requeued =
-          options.recoverInterruptedDownloads === false
-            ? 0
-            : yield* library.resetStuckDownloads.pipe(Effect.orDie);
+        const recover = options.recoverInterruptedDownloads !== false;
+        const requeued = recover
+          ? yield* library.resetStuckDownloads.pipe(Effect.orDie)
+          : 0;
+        // The standalone server has no inventory pass to catch a crash between
+        // finishDownload and the release after it.
+        const released = recover
+          ? yield* library.releaseUnkeptReady.pipe(Effect.orDie)
+          : 0;
         yield* Effect.logInfo("download worker started").pipe(
           Effect.annotateLogs({
+            released,
             requeued,
             soundcloud: backends.forSource("soundcloud").join(","),
             youtube: backends.forSource("youtube").join(","),

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -573,6 +573,75 @@ test("a restart re-queues a download stuck mid-flight", async () => {
       url: `/sets/${savedId}/audio/state`,
     });
     expect(state.json().state).toBe("queued");
+  } finally {
+    await app.dispose();
+    await rm(root, { force: true, recursive: true });
+  }
+});
+
+test("a restart releases a ready Set nobody keeps, left by a crash before its release", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "orbis-audio-"));
+  const databasePath = path.join(root, "library.sqlite");
+  const audioDir = path.join(root, "audio");
+  const boot = createApp({ databasePath });
+  const save = async (url: string) =>
+    idIn(
+      await request(boot, {
+        method: "POST",
+        payload: { tags: [], title: "Seeded set", url },
+        url: "/sets",
+      })
+    );
+  const kept = await save(youTubeUrl);
+  const unkept = await save("https://www.youtube.com/watch?v=bqzKEbpKQAA");
+  const removed = await request(boot, {
+    method: "DELETE",
+    url: `/sets/${unkept}`,
+  });
+  expect(removed.statusCode).toBe(200);
+  await boot.dispose();
+  // The process died after finishDownload and before the release: both rows
+  // read ready and both files are on disk.
+  await mkdir(audioDir, { recursive: true });
+  const { Database } = await import("bun:sqlite");
+  const database = new Database(databasePath);
+  const finished = [kept, unkept];
+  for (const id of finished) {
+    database
+      .query(
+        "UPDATE sets SET download_state = 'ready', retained_audio_format = 'ogg', retained_audio_bytes = 6, duration_seconds = 2 WHERE id = ?"
+      )
+      .run(id);
+  }
+  database.close();
+  await Promise.all(
+    finished.map((id) => writeFile(path.join(audioDir, `${id}.ogg`), "stored"))
+  );
+  const app = createApp({
+    audio: { audioDir, startWorker: false },
+    databasePath,
+  });
+  try {
+    const keptState = await request(app, {
+      method: "GET",
+      url: `/sets/${kept}/audio/state`,
+    });
+    expect(keptState.json().state).toBe("ready");
+    // Nobody keeps the other Set, so no route shows it; its row tells.
+    const reopened = new Database(databasePath, { readonly: true });
+    const row = reopened
+      .query(
+        "SELECT download_state, retained_audio_format FROM sets WHERE id = ?"
+      )
+      .get(unkept);
+    reopened.close();
+    expect(row).toEqual({
+      download_state: "none",
+      retained_audio_format: null,
+    });
+    expect(await Array.fromAsync(new Bun.Glob("*").scan(audioDir))).toEqual([
+      `${kept}.ogg`,
+    ]);
   } finally {
     await app.dispose();
     await rm(root, { force: true, recursive: true });
