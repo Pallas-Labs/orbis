@@ -32,7 +32,8 @@
     "native:format": "xcrun swift-format lint --strict --recursive apps/apple/Orbis apps/apple/OrbisTests apps/apple/OrbisUITests apps/apple/OrbisTVUITests apps/apple/OrbisDesign/Sources apps/apple/OrbisDesign/Tests apps/apple/OrbisDesign/Package.swift apps/apple/OrbisKit/Sources apps/apple/OrbisKit/Tests apps/apple/OrbisKit/Package.swift",
     "native:lanes": "node scripts/native-lanes.mjs",
     "native:perf": "node scripts/native-perf.mjs",
-    "garden": "scripts/garden sense"
+    "garden": "scripts/garden sense",
+    "statecharts": "bun apps/server/src/models.ts --write"
   },
   "devDependencies": {
     "@effect/tsgo": "0.55.0",
@@ -42,6 +43,7 @@
     "ajv": "^8.20.0",
     "effect": "4.1.2",
     "evalite": "^1.0.0-beta.16",
+    "everystate": "0.4.1",
     "lefthook": "2.2.2",
     "oxfmt": "^0.66.0",
     "oxlint": "1.88.0",

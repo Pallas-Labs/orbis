@@ -1,0 +1,51 @@
+---
+title: One device's Playback Position reports
+---
+stateDiagram-v2
+  state "Paused" as s0
+  state "Paused, answer on the way" as s1
+  state "Paused, answer on the way, offline" as s2
+  state "Paused, offline" as s3
+  state "Paused, save on the way" as s4
+  state "Paused, save on the way, offline" as s5
+  state "Playing" as s6
+  state "Playing, answer on the way" as s7
+  state "Playing, answer on the way, offline" as s8
+  state "Playing, offline" as s9
+  state "Playing, save on the way" as s10
+  state "Playing, save on the way, offline" as s11
+  [*] --> s0
+  s0 --> s3: GoOffline
+  s0 --> s4: Report
+  s0 --> s6: Resume
+  s1 --> s0: Answer
+  s1 --> s2: GoOffline
+  s1 --> s7: Resume
+  s10 --> s11: GoOffline
+  s10 --> s4: Pause
+  s10 --> s7: Save
+  s11 --> s10: GoOnline
+  s11 --> s5: Pause
+  s11 --> s8: Save
+  s2 --> s1: GoOnline
+  s2 --> s3: LoseAnswer
+  s2 --> s8: Resume
+  s3 --> s0: GoOnline
+  s3 --> s9: Resume
+  s4 --> s10: Resume
+  s4 --> s1: Save
+  s4 --> s5: GoOffline
+  s5 --> s11: Resume
+  s5 --> s2: Save
+  s5 --> s4: GoOnline
+  s6 --> s0: Pause
+  s6 --> s10: Report
+  s6 --> s9: GoOffline
+  s7 --> s1: Pause
+  s7 --> s6: Answer
+  s7 --> s8: GoOffline
+  s8 --> s2: Pause
+  s8 --> s7: GoOnline
+  s8 --> s9: LoseAnswer
+  s9 --> s3: Pause
+  s9 --> s6: GoOnline

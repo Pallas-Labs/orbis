@@ -9,6 +9,7 @@ import { Audio } from "./audio.js";
 import type { AudioFile, AudioOptions } from "./audio.js";
 import type { Database, DatabaseStartupError } from "./db/database.js";
 import { layer as databaseLayer } from "./db/database.js";
+import type { ObservedMove } from "./download-state.js";
 import { migrateTrustStore } from "./identity.js";
 import type { LoggingOptions } from "./logging.js";
 import { MediaStore } from "./media-store.js";
@@ -111,6 +112,8 @@ export const createApp = (
     shortLinkFetch?: (url: string, signal: AbortSignal) => Promise<Response>;
     titleReviser?: Layer.Layer<TitleReviser>;
     versos?: Layer.Layer<Versos>;
+    /** Hears each Download move; a test records them as a trace of `SetDownload.tla`. */
+    observeDownloadMoves?: (move: ObservedMove) => void;
   } = {}
 ) => {
   useNonblockingTrustStorage();
