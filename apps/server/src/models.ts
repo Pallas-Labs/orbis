@@ -82,6 +82,27 @@ export const checks: readonly Check[] = [
       "Known gap: a pause saved while offline is dropped, so the handoff can miss.",
     spec: "PlaybackPosition",
   },
+  {
+    config: "PlayNextQueue",
+    expect: { status: "ok" },
+    reason:
+      "Every Queue.change decision keeps the queue and its open Listen whole.",
+    spec: "PlayNextQueue",
+  },
+  {
+    config: "PlayNextQueueActiveInsert",
+    expect: { name: "ActiveInsertUnchanged", status: "invariant" },
+    reason:
+      "Negative check: Play Next or Add to Queue without its active-Set guard.",
+    spec: "PlayNextQueue",
+  },
+  {
+    config: "PlayNextQueueStaleCompletion",
+    expect: { name: "StaleCompletionUnchanged", status: "invariant" },
+    reason:
+      "Negative check: a completion that does not check the Set is the active one.",
+    spec: "PlayNextQueue",
+  },
 ];
 
 const exitCodeFor = (verdict: Verdict) => (verdict.status === "ok" ? 0 : 12);
@@ -177,6 +198,24 @@ export const charts: readonly Chart[] = [
     },
     spec: "PlaybackPosition",
     title: "One device's Playback Position reports",
+  },
+  {
+    config: "PlayNextQueue",
+    file: "PlayNextQueue.mmd",
+    label: (values) => {
+      const entries = (values.queue ?? "").replaceAll(/[<>\s]/gu, "");
+      const count = entries === "" ? 0 : entries.split(",").length;
+      if (values.active === "None") {
+        return count === 0
+          ? "Stopped, queue empty"
+          : `Stopped, ${count} queued`;
+      }
+      return count === 1
+        ? "Playing, nothing next"
+        : `Playing, ${count - 1} next`;
+    },
+    spec: "PlayNextQueue",
+    title: "One Person's Listening Queue",
   },
 ];
 

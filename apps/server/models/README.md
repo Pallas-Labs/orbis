@@ -1,17 +1,18 @@
 # Models
 
-TLA+ models of two Orbis protocols, checked by [everystate](https://github.com/mattzcarey/everystate) (`everystate@0.4.1`, a TLA+ model checker with no Java). `bun run check` runs them in the `@orbis/server` tests:
+TLA+ models of three Orbis protocols, checked by [everystate](https://github.com/mattzcarey/everystate) (`everystate@0.4.1`, a TLA+ model checker with no Java). `bun run check` runs them in the `@orbis/server` tests:
 
 - `src/models.test.ts` checks each configuration below and fails when a verdict changes. It also fails when a committed chart no longer matches its model.
 - `src/download-trace.test.ts` records the Download moves of a real run (HTTP requests and the download worker, on a real SQLite database) and checks the log against `SetDownload.tla` with `everystate conform`. It also checks that conform refuses the same log with one step removed. It writes the trace and both reports to `.cache/everystate/`.
+- `src/position-trace.test.ts` plays two devices against a real server over HTTP: each saves and reads one Set's Playback Position. It records each step with the stored position the server answered, and checks the log against `PlaybackPosition.tla` (`PlaybackPositionTrace.cfg`) with `everystate conform`. The test scripts the client steps; the trace checks the server's last-save-wins answers, not the Apple or web clients. Conform must refuse the log with the backward save removed, and the log where that save reads what a server that keeps the largest save would answer. It writes the trace and the three reports to `.cache/everystate/`.
 
 ```sh
-bun test --timeout 60000 apps/server/src/models.test.ts apps/server/src/download-trace.test.ts
+bun test --timeout 60000 apps/server/src/models.test.ts apps/server/src/download-trace.test.ts apps/server/src/position-trace.test.ts
 node_modules/.bin/everystate -config SetDownloadBroken.cfg SetDownload.tla   # from this folder: one check, TLC output
 bun run statecharts                                                          # redraw the charts after a model change
 ```
 
-A pass covers the model at the bounds in its `.cfg`, not the code. The conform test is the link to the code: it shows that one recorded run is a behaviour of the spec.
+A pass covers the model at the bounds in its `.cfg`, not the code. The conform tests are the link to the code: each shows that one recorded run is a behaviour of its spec.
 
 ## Configurations
 
@@ -23,6 +24,10 @@ A pass covers the model at the bounds in its `.cfg`, not the code. The conform t
 | `PlaybackPosition.cfg` | pass | On a network that delivers every request, a resume finds the other device's pause. |
 | `PlaybackPositionLossy.cfg` | `HandoffResumes` breaks | Known gap; see [Findings](#findings). |
 | `PlaybackPositionDevice.cfg` | (chart only) | One device, so the chart shows one device's steps. |
+| `PlaybackPositionTrace.cfg` | (trace only) | Positions 0 to 2 and no symmetry, so `position-trace.test.ts` can name each device and record a save that goes back. |
+| `PlayNextQueue.cfg` | pass | Every `Queue.change` decision keeps the queue and its open Listen whole. |
+| `PlayNextQueueActiveInsert.cfg` | `ActiveInsertUnchanged` breaks | Negative check: `inserted` without its active-Set guard moves the playing Set behind the others. `ActiveIsFirst` breaks in the same state. |
+| `PlayNextQueueStaleCompletion.cfg` | `StaleCompletionUnchanged` breaks | Negative check: `completed` without its `isActive` check finishes a Set that is not playing. |
 
 A configuration expected to break must break on the named rule with exit status 12. A parse error (150 or 151) fails the test.
 
@@ -61,6 +66,31 @@ One Person's Playback Position for one Set, shared by two devices. Bounds: two d
 
 Rule `HandoffResumes`: when every save has landed and the stored one is a pause from another device, a resume starts at that pause.
 
+## `PlayNextQueue.tla`
+
+One Person's Listening Queue (`queue_entries`) and the Listen it keeps open. Bounds: 3 Sets (symmetric), every order of every group of them as a replacement queue.
+
+| Action | Code |
+| --- | --- |
+| `Play` | `played`, from `Queue.play` (`PUT /queue/active`). |
+| `Insert` | `inserted` with placement `next` (Play Next) or `end` (Add to Queue), from `Queue.insert`. |
+| `Replace` | `replaced`, from `replaceWithPlaylist`, `replaceWithCollection` and `replaceWithHeavyRotation`. |
+| `Complete` | `completed`, from `Queue.complete` (`POST /queue/completion`). |
+
+Each action is one `Queue.change` transaction: the entries, the Finish of the completed Set's Listen, and the Listen of a Set that becomes active. A decision that returns `null` is a step that changes nothing.
+
+Rules:
+
+- `NoDuplicates`: no Set is in the queue twice.
+- `ActiveIsFirst`: the active Set is the first entry, so the queue holds only what lies ahead (PAL-2128).
+- `ActiveHasOpenListen`: no queue is stored without the Listen it stands for. The active Set has the newest Listen, and that Listen has no Finish.
+- `ActiveInsertUnchanged`: Play Next or Add to Queue on the active Set changes nothing.
+- `StaleCompletionUnchanged`: a completion of a Set that is not active changes nothing, so a retried signal is safe.
+
+The model does not say the active Set has the only Listen without a Finish. That is false by design: playing another Set leaves the old Listen with no Finish (`finishedAt` stays null), because it did not reach the end. No reader takes a null `finishedAt` to mean "playing now"; the web profile shows it as "Listened to".
+
+Not modelled: the playable check, the release of a Set that leaves the queue (after the commit), and the position reset before a completion.
+
 ## Findings
 
 Neither finding is reproduced on the running service. Each is a counterexample in the model, and CI keeps it visible: when the code closes the gap, the expected verdict must change.
@@ -70,6 +100,6 @@ Neither finding is reproduced on the running service. Each is a counterexample i
 
 ## Statecharts
 
-`SetDownload.mmd` and `PlaybackPosition.mmd` are drawn from each model's full state graph (`everystate -dump dot`) by `src/models.ts`. Each chart state groups the model states that look the same to a reader. Steps that stay inside one chart state are not drawn.
+`SetDownload.mmd`, `PlaybackPosition.mmd` and `PlayNextQueue.mmd` are drawn from each model's full state graph (`everystate -dump dot`) by `src/models.ts`. Each chart state groups the model states that look the same to a reader. Steps that stay inside one chart state are not drawn.
 
-Last confirmed against the code at the commit that added these models (PAL-3179).
+Last confirmed against the code at the commit that added these models (PAL-3179), and for `PlayNextQueue.tla` and the Position trace, PAL-3193.

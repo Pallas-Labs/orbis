@@ -1,0 +1,39 @@
+---
+title: One Person's Listening Queue
+---
+stateDiagram-v2
+  state "Playing, 1 next" as s0
+  state "Playing, 2 next" as s1
+  state "Playing, nothing next" as s2
+  state "Stopped, 1 queued" as s3
+  state "Stopped, 2 queued" as s4
+  state "Stopped, 3 queued" as s5
+  state "Stopped, queue empty" as s6
+  [*] --> s6
+  s0 --> s1: Insert, Replace
+  s0 --> s2: Complete, Play, Replace
+  s0 --> s6: Replace
+  s1 --> s0: Complete, Play, Replace
+  s1 --> s2: Play, Replace
+  s1 --> s6: Replace
+  s2 --> s0: Insert, Replace
+  s2 --> s1: Replace
+  s2 --> s6: Complete, Replace
+  s3 --> s0: Play, Replace
+  s3 --> s1: Replace
+  s3 --> s2: Play, Replace
+  s3 --> s4: Insert
+  s3 --> s6: Replace
+  s4 --> s0: Play, Replace
+  s4 --> s1: Play, Replace
+  s4 --> s2: Play, Replace
+  s4 --> s5: Insert
+  s4 --> s6: Replace
+  s5 --> s0: Play, Replace
+  s5 --> s1: Play, Replace
+  s5 --> s2: Play, Replace
+  s5 --> s6: Replace
+  s6 --> s0: Replace
+  s6 --> s1: Replace
+  s6 --> s2: Play, Replace
+  s6 --> s3: Insert
