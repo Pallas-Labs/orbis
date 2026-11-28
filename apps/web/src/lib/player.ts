@@ -40,6 +40,16 @@ const completeOnce = async (credentials: Credentials, setId: string) =>
     client.queue.complete({ payload: { setId } })
   );
 
+/**
+ * Whether a call that failed this way may succeed when sent again: no answer came, or the service
+ * was busy or broken rather than refusing the call.
+ */
+export const mayOutlast = (result: ApiResult<unknown>): boolean =>
+  !result.ok &&
+  (result.failure === "unreachable" ||
+    result.failure === "limited" ||
+    (result.status ?? 0) >= 500);
+
 const completeAfter = async (
   credentials: Credentials,
   setId: string,
@@ -47,12 +57,7 @@ const completeAfter = async (
 ): Promise<Awaited<ReturnType<typeof completeOnce>>> => {
   const completed = await completeOnce(credentials, setId);
   const [wait, ...later] = waits;
-  const lost =
-    !completed.ok &&
-    (completed.failure === "unreachable" ||
-      completed.failure === "limited" ||
-      (completed.status ?? 0) >= 500);
-  if (!lost || wait === undefined) {
+  if (!mayOutlast(completed) || wait === undefined) {
     return completed;
   }
   await Effect.runPromise(Effect.sleep(Duration.millis(wait)));

@@ -21,7 +21,7 @@ A pass covers the model at the bounds in its `.cfg`, not the code. The conform t
 | `SetDownloadBroken.cfg` | `ReadyHasAudio` breaks | Negative check: `finish` without its state check, so a finish after a release marks a Set ready with no file. |
 | `SetDownloadReleaseGap.cfg` | `ReadyHasAudio` breaks | Known gap; see [Findings](#findings). |
 | `PlaybackPosition.cfg` | pass | On a network that delivers every request, a resume finds the other device's pause. |
-| `PlaybackPositionLossy.cfg` | `HandoffResumes` breaks | Known gap; see [Findings](#findings). |
+| `PlaybackPositionLossy.cfg` | pass | A device can go offline, so a request or its answer is lost. A report with no answer is sent again, so a resume still finds the other device's pause. Closed finding 2; see [Findings](#findings). |
 | `PlaybackPositionDevice.cfg` | (chart only) | One device, so the chart shows one device's steps. |
 
 A configuration expected to break must break on the named rule with exit status 12. A parse error (150 or 151) fails the test.
@@ -56,17 +56,17 @@ Assumptions:
 One Person's Playback Position for one Set, shared by two devices. Bounds: two devices (symmetric), positions 0 to 1.
 
 - The server keeps the last save that arrives (`Library.setPlaybackPosition`).
-- Each device sends one report at a time, in order (`AppModel.startReportingPosition`; `write` in the web `player.tsx`), and drops a report that fails.
+- Each device sends one report at a time, in order (`AppModel.startReportingPosition`; `write` in the web `player.tsx`), and sends a report again when it gets no answer: the request failed or the answer was lost, which the device cannot tell apart. The new report carries the player's position at that time.
 - On resume, a device moves to the stored position only when it differs from the last one it heard (`AppModel.newerSavedPosition`).
 
 Rule `HandoffResumes`: when every save has landed and the stored one is a pause from another device, a resume starts at that pause.
 
 ## Findings
 
-Neither finding is reproduced on the running service. Each is a counterexample in the model, and CI keeps it visible: when the code closes the gap, the expected verdict must change.
+Neither finding is reproduced on the running service. Each is a counterexample in the model, and CI keeps an open one visible: when the code closes the gap, the expected verdict must change.
 
 1. `SetDownloadReleaseGap`: a Person who does not keep a Set asks for its Download (ADR 0010 allows it). The download finishes, and the node restarts before the release that follows the finish. The Group's inventory pass then sends `release` for the file, because nobody keeps the Set, while the row still reads `ready`. The next inventory pass moves it to `none` (`lose`). The same gap exists between `Library.remove` and its `release`.
-2. `PlaybackPositionLossy`: a device pauses while offline. The settled report fails and is never sent again. The other device resumes from the older stored position and pauses there. When the first device resumes, the stored position equals the one it last heard, so it plays on from its own place and skips the other device's pause.
+2. Closed (PAL-3192). `PlaybackPositionLossy`: a device pauses while offline. The settled report fails and is never sent again. The other device resumes from the older stored position and pauses there. When the first device resumes, the stored position equals the one it last heard, so it plays on from its own place and skips the other device's pause. The fix sends a report again until it gets an answer. Resending only a failed request is not enough: a save that lands but whose answer is lost leaves the device's known position old, and a later pause by the other device at that old position is then skipped.
 
 ## Statecharts
 

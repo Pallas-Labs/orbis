@@ -387,6 +387,53 @@ final class PlaybackReliabilityTests: XCTestCase {
     return forwarded.value
   }
 
+  /// Loses the answer to each Playback Position report while told to: the report reaches the
+  /// service, and the app hears a 503. Records the seconds of each lost report, and the stored
+  /// seconds of each answer the app hears.
+  private final class PositionAnswers: @unchecked Sendable {
+    private let lock = NSLock()
+    private var losing = false
+    private var lostSeconds: [Int] = []
+    private var heardSeconds: [Int] = []
+    func lose(_ value: Bool) { lock.withLock { losing = value } }
+    var lost: [Int] { lock.withLock { lostSeconds } }
+    var heard: [Int] { lock.withLock { heardSeconds } }
+    /// Answers true when this report's answer is to be lost.
+    func record(seconds: Int?, stored: Int?) -> Bool {
+      lock.withLock {
+        if losing {
+          if let seconds { lostSeconds.append(seconds) }
+          return true
+        }
+        if let stored { heardSeconds.append(stored) }
+        return false
+      }
+    }
+  }
+
+  nonisolated private static func isPositionReport(_ request: URLRequest) -> Bool {
+    request.httpMethod == "PUT" && request.url?.path().hasSuffix("/position") == true
+  }
+
+  nonisolated private static func seconds(in data: Data?) -> Int? {
+    guard let data,
+      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    else { return nil }
+    return (object["seconds"] ?? object["playbackPositionSeconds"]) as? Int
+  }
+
+  /// A session that sends each request on to the real service, and loses the answers to Playback
+  /// Position reports while `answers` is told to.
+  private static func sessionLosingPositionAnswers(_ answers: PositionAnswers) -> URLSession {
+    StubProtocol.session(responder: { request in
+      let forwarded = forward(request)
+      guard isPositionReport(request) else { return forwarded }
+      let lost = answers.record(
+        seconds: seconds(in: request.httpBody), stored: seconds(in: Data(forwarded.1.utf8)))
+      return lost ? (503, "{}") : forwarded
+    })
+  }
+
   nonisolated private static func isQueueRead(_ request: URLRequest) -> Bool {
     request.httpMethod == "GET" && request.url?.path() == "/queue"
   }
@@ -558,6 +605,57 @@ final class PlaybackReliabilityTests: XCTestCase {
       [
         "togglePlayback": ["pausedAt": togglePause, "otherDevice": 15, "resumedAt": toggled] as [String: Any],
         "playSet": ["pausedAt": playPause, "otherDevice": 18, "resumedAt": played] as [String: Any],
+      ])
+  }
+
+  /// The pause's report reaches the service, but its answer is lost, so this device does not know
+  /// what the service holds. The report goes again once the service answers, so this device hears
+  /// the pause. Another device then saves the place this device last heard before the loss: only
+  /// a device that heard the resent pause sees that save as newer, and resumes there (PAL-3192).
+  func testAPauseWhoseAnswerIsLostIsSentAgain() async throws {
+    let fixture = try await fixture()
+    let answers = PositionAnswers()
+    let client = OrbisClient(
+      address: fixture.client.address, token: fixture.client.token,
+      session: Self.sessionLosingPositionAnswers(answers))
+    let model = AppModel(client: client, settings: MemoryClientSettings())
+    defer { model.signOut() }
+    let otherDevice = OrbisClient(address: fixture.client.address, token: fixture.client.token)
+    try await start(model, fixture)
+
+    model.audioPlayer.seek(to: 3)
+    try await waitUntil("A report must be heard") { !answers.heard.isEmpty }
+    answers.lose(true)
+    let heard = try XCTUnwrap(answers.heard.last)
+    model.audioPlayer.seek(to: 14)
+    try await waitUntil("The seek to 14 s must land") {
+      model.audioPlayer.settledPosition.map { $0 >= 14 && $0 < 15 } ?? false
+    }
+    model.togglePlayback()
+    try await waitUntil("The Set must pause") { model.audioPlayer.state == .paused }
+    let paused = Int(try XCTUnwrap(model.audioPlayer.settledPosition).rounded(.down))
+    try await waitUntil("The pause must reach the service unheard") {
+      answers.lost.contains(paused)
+    }
+    XCTAssertNotEqual(heard, paused)
+    let heardBeforeAnswering = answers.heard.count
+    answers.lose(false)
+    try await waitUntil("The pause must be sent again and heard") {
+      answers.heard.dropFirst(heardBeforeAnswering).contains(paused)
+    }
+
+    _ = try await otherDevice.reportPosition(fixture.set.id, seconds: heard)
+    model.togglePlayback()
+    try await waitUntil("The Set must resume at the other device's \(heard) s") {
+      let at = model.audioPlayer.player?.currentTime().seconds ?? 0
+      return model.audioPlayer.state == .playing && at >= Double(heard) && at < Double(heard) + 3
+    }
+    let resumedAt = try XCTUnwrap(model.audioPlayer.player?.currentTime().seconds)
+    try record(
+      "pause-answer-lost",
+      [
+        "heardBeforeLoss": heard, "pausedAt": paused, "lost": answers.lost,
+        "heard": answers.heard, "otherDevice": heard, "resumedAt": resumedAt,
       ])
   }
 

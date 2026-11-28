@@ -77,9 +77,9 @@ export const checks: readonly Check[] = [
   },
   {
     config: "PlaybackPositionLossy",
-    expect: { name: "HandoffResumes", status: "invariant" },
+    expect: { status: "ok" },
     reason:
-      "Known gap: a pause saved while offline is dropped, so the handoff can miss.",
+      "A report with no answer is sent again, so a pause made offline still reaches the other device.",
     spec: "PlaybackPosition",
   },
 ];
