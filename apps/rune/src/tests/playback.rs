@@ -537,7 +537,7 @@ fn a_save_that_waits_to_go_again_never_overtakes_a_completion_after_it() {
     rt.update(|s, _| s.next());
     land(&mut rt);
     wait(&mut rt, 60.0);
-    let all: Vec<String> = calls().into_iter().filter(|c| c.contains("/position") || c.contains("/queue/completion")).collect();
+    let all: Vec<String> = calls().into_iter().filter(|c| c.contains("/sets/s-sunrise/position") || c.contains("/queue/completion")).collect();
     let order = &all[all.iter().position(|c| c.ends_with("{\"seconds\":1800.0}")).unwrap()..];
     assert_eq!(
         order,

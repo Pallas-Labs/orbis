@@ -12,6 +12,7 @@
 pub mod presence;
 mod select;
 mod view;
+mod writes;
 
 use std::time::Duration;
 
@@ -605,56 +606,6 @@ impl App {
         self.write(Write::Save(id, seconds));
     }
 
-    fn write(&mut self, write: Write) {
-        self.playing.writes.push_back(write);
-        self.next_write();
-    }
-
-    /// Sends the oldest waiting write, when none is out.
-    fn next_write(&mut self) {
-        if self.playing.writing {
-            return;
-        }
-        let Some(write) = self.playing.writes.pop_front() else { return };
-        self.playing.writing = true;
-        match write {
-            Write::Save(id, seconds) => self.spawn(
-                move || (api::save_position(&id, seconds), id),
-                |s, (got, id)| {
-                    s.playing.writing = false;
-                    match got {
-                        Ok(set) => s.replace_set(&set),
-                        Err(f) if may_outlast(&f) => s.resend_place(id),
-                        Err(_) => {}
-                    }
-                    s.next_write();
-                },
-            ),
-            Write::Complete(id, generation) => self.send_completion(id, generation),
-        }
-    }
-
-    /// A save of `id`'s place got no answer, a 429 or a 5xx. It may have landed or not, and either
-    /// way the place Orbis holds is unknown here: a pause would not reach the other device, or a
-    /// resume here would skip that device's next pause (PAL-3192, `apps/server/models/README.md`
-    /// finding 2). After [`SAVE_EVERY`], while `id` is still loaded and not playing, its place then
-    /// goes again through the write queue, so it never lands after a newer write. A newer failure
-    /// takes over the wait. A playing Set saves on its own tick. Nothing goes after sign-out.
-    fn resend_place(&mut self, id: String) {
-        self.playing.resends += 1;
-        let (session, resend) = (self.session, self.playing.resends);
-        self.after(Duration::from_secs_f64(SAVE_EVERY), move |s| {
-            let p = &mut s.playing;
-            let loaded = p.set.as_ref().is_some_and(|x| x.id == id);
-            if s.session != session || p.resends != resend || !loaded || matches!(p.status, Status::Playing | Status::Idle | Status::Loading) {
-                return;
-            }
-            p.saved = p.position;
-            let seconds = p.position;
-            s.write(Write::Save(id, seconds));
-        });
-    }
-
     /// The Set played out: it leaves the queue and the next one plays at once (ADR 0001). Orbis
     /// resets the Set's place and names the next too; when it names another, that one plays.
     fn finish(&mut self) {
@@ -710,7 +661,7 @@ impl App {
 
     /// What try `tried` (from 0) of a completion met: done, or wait and send it again.
     fn complete_tried(&mut self, id: String, generation: u64, got: Result<crate::model::Queue, api::Failure>, tried: usize) {
-        let outlast = matches!(&got, Err(f) if may_outlast(f));
+        let outlast = matches!(&got, Err(f) if writes::may_outlast(f));
         if let Some(wait) = COMPLETION_WAITS.get(tried).filter(|_| outlast && self.playing.generation == generation) {
             let session = self.session;
             self.after(*wait, move |s| {
@@ -751,12 +702,6 @@ impl App {
         self.set_status(Status::Idle);
         self.playing.stop();
     }
-}
-
-/// Whether a write that failed this way may still land, or land if sent again: no answer, a 429
-/// or a 5xx. A 4xx says sending it again cannot help.
-fn may_outlast(f: &api::Failure) -> bool {
-    f.status.is_none_or(|status| status == 429 || status >= 500)
 }
 
 impl Player {
