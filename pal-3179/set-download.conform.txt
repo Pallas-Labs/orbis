@@ -1,0 +1,2 @@
+Trace conforms: 8 observations matched; the recorded run is a behaviour of SetDownload.
+5 spec states are consistent with the whole trace.

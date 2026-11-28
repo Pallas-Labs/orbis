@@ -1,0 +1,144 @@
+bun test v1.4.4 (38afee6c8)
+
+src/models.test.ts:
+19 | 
+20 | test.each(checks.map((check) => [check.config, check] as const))(
+21 |   "%s keeps its verdict",
+22 |   (_config, check) => {
+23 |     const result = runCheck(check);
+24 |     expect({ exitCode: result.exitCode, verdict: result.verdict }).toEqual({
+                                                                        ^
+error: expect(received).toEqual(expected)
+
+@@ -1,5 +1,6 @@
+  {
+-   "exitCode": 0,
++   "exitCode": 12,
+    "verdict": {
+-     "status": "ok",
++     "name": "ReadyHasAudio",
++     "status": "invariant",
+    },
+
+- Expected  - 2
++ Received  + 3
+
+      at <anonymous> (/home/parth/.t3/worktrees/orbis/agent-pal-3179-11280622-c6087640ede21b26/apps/server/src/models.test.ts:24:68)
+(fail) SetDownload keeps its verdict [96.63ms]
+231 |       "-config",
+232 |       `${chart.config}.cfg`,
+233 |       `${chart.spec}.tla`,
+234 |     ]);
+235 |     if (run.exitCode !== 0) {
+236 |       throw new Error(`everystate failed on ${chart.config}:\n${run.output}`);
+                                                                                  ^
+error: everystate failed on SetDownload:
+TLC2 Version 2.19 of 08 August 2024 (everystate 0.4.1)
+Running breadth-first search Model-Checking with fp 0 and seed 0 with 1 worker on 1 cores with 0MB heap and 0MB offheap memory (everystate 0.4.1, Rust, HashFPSet, MemStateQueue).
+Parsing file /home/parth/.t3/worktrees/orbis/agent-pal-3179-11280622-c6087640ede21b26/apps/server/models/SetDownload.tla
+Semantic processing of module SetDownload
+Starting... (2026-11-28 06:47:55)
+Computing initial states...
+Finished computing initial states: 1 distinct state generated at 2026-11-28 06:47:55.
+Error: Invariant ReadyHasAudio is violated.
+Error: The behavior up to this point is:
+State 1: <Initial predicate>
+/\ state = "none"
+/\ kept = TRUE
+/\ restarts = 0
+/\ removing = FALSE
+/\ linked = TRUE
+/\ stored = FALSE
+/\ releaseDue = FALSE
+/\ worker = "idle"
+/\ booting = FALSE
+
+State 2: <Queue line 74, col 3 to line 77, col 88 of module SetDownload>
+/\ state = "queued"
+/\ kept = TRUE
+/\ restarts = 0
+/\ removing = FALSE
+/\ linked = TRUE
+/\ stored = FALSE
+/\ releaseDue = FALSE
+/\ worker = "idle"
+/\ booting = FALSE
+
+State 3: <Claim line 122, col 3 to line 127, col 80 of module SetDownload>
+/\ state = "downloading"
+/\ kept = TRUE
+/\ restarts = 0
+/\ removing = FALSE
+/\ linked = TRUE
+/\ stored = FALSE
+/\ releaseDue = FALSE
+/\ worker = "fetching"
+/\ booting = FALSE
+
+State 4: <Unkeep line 65, col 3 to line 68, col 77 of module SetDownload>
+/\ state = "downloading"
+/\ kept = FALSE
+/\ restarts = 0
+/\ removing = FALSE
+/\ linked = TRUE
+/\ stored = FALSE
+/\ releaseDue = TRUE
+/\ worker = "fetching"
+/\ booting = FALSE
+
+State 5: <Release line 97, col 3 to line 101, col 66 of module SetDownload>
+/\ state = "none"
+/\ kept = FALSE
+/\ restarts = 0
+/\ removing = TRUE
+/\ linked = TRUE
+/\ stored = FALSE
+/\ releaseDue = FALSE
+/\ worker = "fetching"
+/\ booting = FALSE
+
+State 6: <Store line 131, col 3 to line 135, col 79 of module SetDownload>
+/\ state = "none"
+/\ kept = FALSE
+/\ restarts = 0
+/\ removing = TRUE
+/\ linked = TRUE
+/\ stored = TRUE
+/\ releaseDue = FALSE
+/\ worker = "stored"
+/\ booting = FALSE
+
+State 7: <RemoveFiles line 111, col 3 to line 115, col 77 of module SetDownload>
+/\ state = "none"
+/\ kept = FALSE
+/\ restarts = 0
+/\ removing = FALSE
+/\ linked = TRUE
+/\ stored = FALSE
+/\ releaseDue = FALSE
+/\ worker = "stored"
+/\ booting = FALSE
+
+State 8: <Finish line 156, col 3 to line 162, col 68 of module SetDownload>
+/\ state = "ready"
+/\ kept = FALSE
+/\ restarts = 0
+/\ removing = FALSE
+/\ linked = TRUE
+/\ stored = FALSE
+/\ releaseDue = TRUE
+/\ worker = "idle"
+/\ booting = FALSE
+
+519 states generated, 185 distinct states found, 64 states left on queue.
+The depth of the complete state graph search is 8.
+Finished in 00s at (2026-11-28 06:47:55)
+
+      at drawChart (/home/parth/.t3/worktrees/orbis/agent-pal-3179-11280622-c6087640ede21b26/apps/server/src/models.ts:236:77)
+      at <anonymous> (/home/parth/.t3/worktrees/orbis/agent-pal-3179-11280622-c6087640ede21b26/apps/server/src/models.test.ts:35:12)
+(fail) SetDownload.mmd matches its model [391.80ms]
+
+ 5 pass
+ 2 fail
+ 10 expect() calls
+Ran 7 tests across 1 file. [4.01s]
